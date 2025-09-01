@@ -56,9 +56,11 @@ echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
 # Docker aliases used by scripts (JSON-aware for clean output)
 dockerup() { 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        # Remove --quiet-pull as it can cause hanging, and add timeout
-        timeout 300 docker compose up -d "$@" > /dev/null 2>&1
+        # Clear the log file first, then pipe Docker output to temp file for JSON mode
+        > /tmp/podium-docker-progress.log
+        timeout 300 docker compose up -d "$@" > /tmp/podium-docker-progress.log 2>&1
     else
+        # Interactive mode - show normal progress
         docker compose up -d "$@"
     fi
 }
