@@ -59,7 +59,8 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git unzip jq software-properties-common build-essential
+    git unzip jq software-properties-common build-essential mariadb-client \
+    p7zip-full trash-cli net-tools
 
 ###############################
 # Install Docker
