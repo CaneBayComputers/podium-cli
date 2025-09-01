@@ -19,19 +19,76 @@ Built for modern PHP development, Podium CLI eliminates the complexity of managi
 
 ## 💾 Installation
 
-### Quick Install (Recommended)
+### 🐧 Linux (Ubuntu/Debian)
+
+**Quick Install (Recommended):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash
 ```
 
-### Manual Install
+**What it installs:**
+- Docker CE with Compose plugin
+- Node.js 20 with NPM
+- GitHub CLI
+- MariaDB client, p7zip, trash-cli, net-tools
+- All system dependencies
+
+### 🍎 macOS
+
+**Quick Install (Recommended):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
+```
+
+**What it installs:**
+- Homebrew (if not installed)
+- Docker Desktop
+- Node.js with NPM
+- GitHub CLI
+- Additional tools: jq, p7zip, trash, mysql-client
+
+**Note:** You'll need to start Docker Desktop manually after installation.
+
+### 🪟 Windows
+
+Podium CLI runs on Windows through **WSL2** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
+
+**Step 1: Install WSL2**
+```powershell
+# Run in PowerShell as Administrator
+wsl --install
+```
+
+**Step 2: Install Ubuntu**
+```powershell
+wsl --install -d Ubuntu
+```
+
+**Step 3: Install Docker Desktop**
+- Download from [docker.com](https://www.docker.com/products/docker-desktop/)
+- Enable WSL2 integration during installation
+- In Docker Desktop settings, enable integration with your Ubuntu distribution
+
+**Step 4: Install Podium CLI in WSL2**
+```bash
+# Inside your WSL2 Ubuntu terminal
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash
+```
+
+**Resources:**
+- [WSL2 Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install)
+- [Docker Desktop WSL2 Backend](https://docs.docker.com/desktop/wsl/)
+
+### 📦 Manual Installation (Any Platform)
+
 ```bash
 # Clone the repository
 git clone https://github.com/CaneBayComputers/podium-cli.git
 cd podium-cli
 
-# Run the installer
-./install.sh
+# Run the appropriate installer
+./install.sh        # Linux
+./install-mac.sh    # macOS
 ```
 
 ## 🚀 Quick Start
