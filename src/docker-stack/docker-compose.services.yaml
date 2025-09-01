@@ -1,0 +1,117 @@
+services:
+  mysql:
+    image: mariadb
+    container_name: mariadb
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+    volumes:
+      - STACK_ID_mysql_data:/var/lib/mysql
+    restart: always
+    expose:
+      - "3306"
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.2"
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: "${VPC_SUBNET}.2"
+      PMA_USER: root
+      UPLOAD_LIMIT: 256M
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.3"
+
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    expose:
+      - "6379"
+    volumes:
+      - STACK_ID_redis_data:/data
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.5"
+
+  memcached:
+    image: memcached
+    container_name: memcached
+    restart: always
+    expose:
+      - "11211"
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.7"
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    expose:
+      - "27017"
+    volumes:
+      - STACK_ID_mongo_data:/data/db
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.4"
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    expose:
+      - "5432"
+    volumes:
+      - STACK_ID_postgres_data:/var/lib/postgresql/data
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.6"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: always
+    ports:
+      - "8025:8025"
+    expose:
+      - "1025"
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.8"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - STACK_ID_ollama_data:/root/.ollama
+    networks:
+      STACK_ID_vpc:
+        ipv4_address: "${VPC_SUBNET}.9"
+
+volumes:
+  STACK_ID_redis_data:
+  STACK_ID_mysql_data:
+  STACK_ID_mongo_data:
+  STACK_ID_postgres_data:
+  STACK_ID_ollama_data:
+
+networks:
+  STACK_ID_vpc:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "${VPC_SUBNET}.0/24"

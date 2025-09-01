@@ -1,0 +1,389 @@
+#!/bin/bash
+# Podium - Universal PHP Development Environment
+# One command to rule them all
+
+set -e
+
+# Get the directory where this script is actually located (resolve symlinks)
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+# Resolve symlink if this script is symlinked
+while [ -L "$SCRIPT_PATH" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# Source functions
+source "$SCRIPT_DIR/scripts/functions.sh"
+
+# Note: --no-coloring option removed - use --json-output for clean output instead
+
+# Check for --json-output flag and set JSON_OUTPUT environment variable
+new_args=()
+for arg in "$@"; do
+    if [[ "$arg" == "--json-output" ]]; then
+        export JSON_OUTPUT=1
+    else
+        new_args+=("$arg")
+    fi
+done
+set -- "${new_args[@]}"
+
+# Initialize projects directory
+init_projects_dir
+
+# Help text
+show_help() {
+    echo-cyan "Podium - Universal PHP Development Environment"
+    echo
+    echo-white "CONTAINERIZED DEVELOPMENT TOOLS: (Run from project directory)"
+    echo "  podium composer <args>    - Run Composer inside container"
+    echo "  podium art <args>         - Run Laravel Artisan inside container"
+    echo "  podium wp <args>          - Run WP-CLI inside container"
+    echo "  podium php <args>         - Run PHP inside container"
+    echo
+    echo-white "CONTAINER EXECUTION: (Run from project directory)"
+    echo "  podium exec <cmd>         - Execute command as developer user"
+    echo "  podium exec-root <cmd>    - Execute command as root user"
+    echo
+    echo-white "ENHANCED LARAVEL COMMANDS: (Run from project directory)"
+    echo "  podium db-refresh         - Fresh migration + seed"
+    echo "  podium cache-refresh      - Clear all Laravel caches"
+    echo
+    echo-white "SERVICE MANAGEMENT: (Run from project directory)"
+    echo "  podium redis <cmd>        - Run Redis CLI commands"
+    echo "  podium redis-flush        - Flush all Redis data"
+    echo "  podium memcache <cmd>     - Run Memcached commands via telnet"
+    echo "  podium memcache-flush     - Flush all Memcached data"
+    echo "  podium memcache-stats     - Show Memcached statistics"
+    echo "  podium supervisor <cmd>   - Run supervisorctl commands (from project dir)"
+    echo "  podium supervisor-status  - Show all supervised processes"
+    echo
+    echo-white "PROJECT MANAGEMENT:"
+    echo "  podium up [project]       - Start project containers"
+    echo "  podium down [project]     - Stop project containers"
+    echo "  podium status [project]   - Show project status"
+    echo "  podium new [options]      - Create new project"
+    echo "  podium clone <repo>       - Clone existing project"
+    echo "  podium remove <project> [options] - Remove project"
+    echo
+    echo-white "SYSTEM MANAGEMENT:"
+    echo "  podium config             - Configure Podium environment"
+    echo "  podium start-services     - Start shared services"
+    echo "  podium stop-services      - Stop shared services"
+    echo "  podium config projects <path> - Set custom projects directory"
+    echo "  podium gui                - Launch desktop GUI interface"
+    echo
+    echo-white "TESTING:"
+    echo "  podium test-interactive   - Run interactive test suite"
+    echo "  podium test-json-output   - Run JSON output test suite"
+    echo
+    echo-white "GLOBAL OPTIONS:"
+    echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
+    echo "  --no-colors               - Disable colored output"
+    echo
+    echo-white "NEW PROJECT OPTIONS:"
+    echo "  --framework <name>        - Framework: laravel (default), wordpress, php"
+    echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
+    echo "  --database <type>         - Database: mysql (default), postgres, mongodb"
+    echo "  --github                  - Create GitHub repository in user account"
+    echo "  --github-org <org>        - Create GitHub repository in organization"
+    echo "  --no-github               - Skip GitHub repository creation (default)"
+    echo
+    echo-white "REMOVE PROJECT OPTIONS:"
+    echo "  --force                   - Skip confirmation prompts"
+    echo "  --force-db-delete         - Force database deletion without prompt"
+    echo "  --preserve-database       - Keep database (skip deletion)"
+    echo
+    echo-white "EXAMPLES WITH EXPLANATIONS:"
+    echo "  podium composer install                    # Install PHP dependencies in current project"
+    echo "  podium art migrate --seed                  # Run Laravel migrations with seeders"
+    echo "  podium wp plugin list --status=active     # List active WordPress plugins"
+    echo "  podium up myproject                        # Start containers for specific project"
+    echo "  podium status --json-output                # Get project status as JSON"
+    echo "  podium start-services --json-output        # Start services and get JSON confirmation"
+    echo "  podium new --framework laravel --version 11.x --database postgres --github --non-interactive"
+    echo "                                             # Create Laravel 11.x project with PostgreSQL and GitHub repo"
+    echo "  podium new test-api --framework laravel --version 11.x --database mysql --no-github --json-output"
+    echo "                                             # Create project with clean JSON output for automation"
+    echo "  podium remove myproject --force --preserve-database"
+    echo "                                             # Remove project but keep database"
+    echo "  podium exec 'ls -la'                       # Execute shell command in project container"
+    echo "  podium supervisor restart all              # Restart all supervised processes"
+    echo
+    echo-white "NOTES:"
+    echo "  • Development tools (composer, art, wp, php, exec, supervisor) require being in project directory"
+    echo "  • Use --json-output for programmatic integration (GUI, scripts, automation)"
+    echo "  • Non-interactive mode uses sensible defaults for automated deployment"
+}
+
+# Get current project name (directory basename)
+get_project_name() {
+    basename "$(pwd)"
+}
+
+# Docker exec helper
+docker_exec() {
+    local user="$1"
+    shift
+    local project_name="$(get_project_name)"
+    
+    if [ "$user" = "root" ]; then
+        docker container exec -it --user root "$project_name" "$@"
+    else
+        docker container exec -it --user "$(id -u):$(id -g)" "$project_name" "$@"
+    fi
+}
+
+# Main command dispatcher
+case "$1" in
+    # Containerized development tools
+    "composer")
+        shift
+        docker_exec developer composer -d /usr/share/nginx/html "$@"
+        ;;
+    "art"|"artisan")
+        shift
+        docker_exec developer php /usr/share/nginx/html/artisan "$@"
+        ;;
+    "wp")
+        shift
+        docker_exec developer wp "$@"
+        ;;
+    "php")
+        shift
+        docker_exec developer php "$@"
+        ;;
+    
+    # Container execution
+    "exec")
+        shift
+        docker_exec developer "$@"
+        ;;
+    "exec-root")
+        shift
+        docker_exec root "$@"
+        ;;
+    
+    # Enhanced Laravel commands
+    "db-refresh")
+        echo-yellow "Refreshing database..."
+        docker_exec developer php /usr/share/nginx/html/artisan migrate:fresh
+        docker_exec developer php /usr/share/nginx/html/artisan db:seed
+        echo-green "Database refreshed!"
+        ;;
+    "cache-refresh")
+        echo-yellow "Clearing Laravel caches..."
+        docker_exec developer php /usr/share/nginx/html/artisan cache:clear
+        docker_exec developer php /usr/share/nginx/html/artisan route:clear
+        docker_exec developer php /usr/share/nginx/html/artisan config:clear
+        docker_exec developer composer -d /usr/share/nginx/html dump-autoload
+        echo-green "Caches cleared!"
+        ;;
+    
+    # Service management
+    "redis")
+        shift
+        docker container exec -it redis redis-cli "$@"
+        ;;
+    "redis-flush")
+        docker container exec -it redis redis-cli FLUSHALL
+        echo-green "Redis flushed!"
+        ;;
+    "memcache")
+        shift
+        if [ $# -eq 0 ]; then
+            echo-yellow "Available Memcached commands:"
+            echo "  stats           - Show server statistics"
+            echo "  version         - Show server version"
+            echo "  flush_all       - Flush all cached items"
+            echo "  get <key>       - Get value for key"
+            echo "  set <key> <val> - Set key to value"
+            echo
+            echo-white "Usage: podium memcache <command>"
+            echo-white "Example: podium memcache stats"
+        else
+            echo "$@" | docker container exec -i memcached nc localhost 11211
+        fi
+        ;;
+    "memcache-flush")
+        echo "flush_all" | docker container exec -i memcached nc localhost 11211
+        echo-green "Memcached flushed!"
+        ;;
+    "memcache-stats")
+        echo "stats" | docker container exec -i memcached nc localhost 11211
+        ;;
+    "supervisor")
+        shift
+        if [ $# -eq 0 ]; then
+            echo-yellow "Available supervisorctl commands:"
+            echo "  status          - Show process status"
+            echo "  start <name>    - Start a process"
+            echo "  stop <name>     - Stop a process"
+            echo "  restart <name>  - Restart a process"
+            echo "  reload          - Reload configuration"
+            echo "  reread          - Reread configuration files"
+            echo
+            echo-white "Usage: podium supervisor <command>"
+            echo-white "Example: podium supervisor status"
+        else
+            # Find a running project container to execute supervisorctl in
+            CONTAINER=$(docker ps --format "table {{.Names}}" | grep -v NAMES | head -n 1)
+            if [ -n "$CONTAINER" ]; then
+                docker container exec -it "$CONTAINER" supervisorctl "$@"
+            else
+                echo-red "No running project containers found!"
+                echo-white "Start a project first: podium up <project-name>"
+            fi
+        fi
+        ;;
+    "supervisor-status")
+        # Find a running project container to execute supervisorctl in
+        CONTAINER=$(docker ps --format "table {{.Names}}" | grep -v NAMES | head -n 1)
+        if [ -n "$CONTAINER" ]; then
+            echo-cyan "Supervisor status in container: $CONTAINER"
+            docker container exec -it "$CONTAINER" supervisorctl status
+        else
+            echo-red "No running project containers found!"
+            echo-white "Start a project first: podium up <project-name>"
+        fi
+        ;;
+    
+    # Project management
+    "up")
+        (
+            cd "$(get_projects_dir)"
+            if [ -n "$2" ]; then
+                "$SCRIPT_DIR/scripts/startup.sh" "$2"
+            else
+                "$SCRIPT_DIR/scripts/startup.sh"
+            fi
+        )
+        ;;
+    "down")
+        (
+            cd "$(get_projects_dir)"
+            if [ -n "$2" ]; then
+                "$SCRIPT_DIR/scripts/shutdown.sh" "$2"
+            else
+                "$SCRIPT_DIR/scripts/shutdown.sh"
+            fi
+        )
+        ;;
+    "status")
+        (
+            cd "$(get_projects_dir)"
+            if [ -n "$2" ]; then
+                "$SCRIPT_DIR/scripts/status.sh" "$2"
+            else
+                "$SCRIPT_DIR/scripts/status.sh"
+            fi
+        )
+        ;;
+    "new")
+        "$SCRIPT_DIR/scripts/new_project.sh" "${@:2}"
+        ;;
+    "clone")
+        if [ -z "$2" ]; then
+            echo-red "Usage: podium clone <repository-url> [project-name]"
+            exit 1
+        fi
+        "$SCRIPT_DIR/scripts/clone_project.sh" "${@:2}"
+        ;;
+    "remove")
+        if [ -z "$2" ]; then
+            echo-red "Usage: podium remove <project-name> [options]"
+            echo-white "Options: --force-trash-project, --force-db-delete, --force"
+            exit 1
+        fi
+        "$SCRIPT_DIR/scripts/remove_project.sh" "${@:2}"
+        ;;
+    
+    # System management
+    "config")
+        "$SCRIPT_DIR/scripts/configure.sh" "${@:2}"
+        ;;
+    "start-services")
+        "$SCRIPT_DIR/scripts/start_services.sh"
+        ;;
+    "stop-services")
+        "$SCRIPT_DIR/scripts/stop_services.sh"
+        ;;
+    
+    # Testing
+    "test-interactive")
+        (
+            cd "$(get_projects_dir)"
+            "$SCRIPT_DIR/scripts/test_interactive.sh"
+        )
+        ;;
+    "test-json-output")
+        (
+            cd "$(get_projects_dir)"
+            "$SCRIPT_DIR/scripts/test_json_output.sh"
+        )
+        ;;
+    
+    # GUI Interface
+    "gui")
+        # Check if GUI is available (in .deb install it will be in /usr/local/share/podium-gui)
+        if [ -x "/usr/local/share/podium-gui/podium-gui" ]; then
+            # Production: Use installed GUI
+            exec /usr/local/share/podium-gui/podium-gui "$@"
+        elif [ -f "$SCRIPT_DIR/../gui/package.json" ]; then
+            # Development: Use source GUI
+            echo-cyan "🚀 Starting Podium GUI (development mode)..."
+            cd "$SCRIPT_DIR/../gui"
+            npm run dev
+        else
+            echo-red "Podium GUI is not available!"
+            echo-white "Install Podium via .deb package to get the GUI, or run from development environment."
+            exit 1
+        fi
+        ;;
+    
+    # Configuration
+    "config")
+        case "$2" in
+            "projects")
+                if [ -z "$3" ]; then
+                    echo-cyan "Current projects directory: $(get_projects_dir)"
+                    echo-white "To change: podium config projects /path/to/projects"
+                else
+                    # Update docker-stack/.env (preferred method)
+                    if [ -f "$SCRIPT_DIR/docker-stack/.env" ]; then
+                        # Update existing PROJECTS_DIR line or add it
+                        if grep -q "^PROJECTS_DIR=" "$SCRIPT_DIR/docker-stack/.env"; then
+                            podium-sed "s|^PROJECTS_DIR=.*|PROJECTS_DIR=$3|" "$SCRIPT_DIR/docker-stack/.env"
+                        else
+                            echo "PROJECTS_DIR=$3" >> "$SCRIPT_DIR/docker-stack/.env"
+                        fi
+                    fi
+                    
+                    # Also update legacy config for backward compatibility
+                    mkdir -p ~/.podium
+                    echo "PROJECTS_DIR=$3" > ~/.podium/config
+                    
+                    echo-green "Projects directory set to: $3"
+                    init_projects_dir
+                fi
+                ;;
+            *)
+                echo-red "Usage: podium config projects <path>"
+                exit 1
+                ;;
+        esac
+        ;;
+    
+    # Help and default
+    "help"|"-h"|"--help"|"")
+        show_help
+        ;;
+    *)
+        echo-red "Unknown command: $1"
+        echo
+        show_help
+        exit 1
+        ;;
+esac

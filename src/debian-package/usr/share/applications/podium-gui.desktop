@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Podium GUI
+Comment=PHP Development Platform - Graphical Interface
+GenericName=Development Environment GUI
+Exec=/usr/local/share/podium-gui/start-gui.sh
+Icon=podium-gui
+Terminal=false
+StartupNotify=true
+Categories=Development;IDE;WebDevelopment;
+Keywords=php;laravel;development;docker;gui;podium;
+MimeType=application/x-php;text/x-php;
+StartupWMClass=Podium GUI

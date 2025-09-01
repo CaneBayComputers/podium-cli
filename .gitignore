@@ -1,0 +1,18 @@
+# Build artifacts
+packaging/podium-cli_*.deb
+packaging/podium-cli_*_all/
+packaging/debian-package/usr/
+
+# Release artifacts (but allow homebrew formula)
+releases/linux/
+!releases/homebrew/
+!releases/homebrew/*.rb
+!releases/*.md
+
+# GUI Dependencies
+gui/node_modules/
+gui/dist/
+
+# Backup Files
+backups/
+

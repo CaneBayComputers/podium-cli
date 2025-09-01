@@ -1,0 +1,20 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.log": true,
+    "**/backups": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.log": true,
+    "**/backups": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/*.log": true,
+    "**/backups/**": true
+  }
+}

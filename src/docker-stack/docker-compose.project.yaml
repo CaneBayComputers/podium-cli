@@ -1,0 +1,21 @@
+services:
+  server:
+    image: canebaycomputers/cbc:nginx-phpPHP_VERSION
+    container_name: CONTAINER_NAME
+    ports:
+      - "PROJECT_PORT:80"
+    volumes:
+      - .:/usr/share/nginx/htmlPUBLIC
+      - /etc/hosts:/etc/hosts:ro
+    networks:
+      default:
+        ipv4_address: IPV4_ADDRESS
+    x-metadata:
+      emoji: "PROJECT_EMOJI"
+      name: "PROJECT_NAME"
+      description: "PROJECT_DESCRIPTION"
+
+networks:
+  default:
+    external: true
+    name: docker-stack_STACK_ID_vpc
