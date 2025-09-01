@@ -6,9 +6,9 @@
 set -e
 
 # Check for dry-run mode
-DRY_RUN=false
+DRY_RUN=0
 if [[ "$1" == "--dry-run" || "$1" == "--test" ]]; then
-    DRY_RUN=true
+    DRY_RUN=1
     echo "🧪 DRY RUN MODE - No actual installations will be performed"
     echo
 fi
@@ -55,7 +55,7 @@ echo -e "${CYAN}Installing system dependencies...${NC}"
 ###############################
 if ! command -v brew &> /dev/null; then
     echo -e "${BLUE}Installing Homebrew...${NC}"
-    if [[ "$DRY_RUN" == "true" ]]; then
+    if [ "$DRY_RUN" = "1" ]; then
         echo "  [DRY RUN] Would install Homebrew"
     else
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -79,7 +79,7 @@ fi
 # Update Homebrew
 ###############################
 echo -e "${BLUE}Updating Homebrew...${NC}"
-if [[ "$DRY_RUN" == "true" ]]; then
+if [ "$DRY_RUN" = "1" ]; then
     echo "  [DRY RUN] Would update Homebrew"
 else
     brew update

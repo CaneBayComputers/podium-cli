@@ -25,10 +25,20 @@ jobs:
         echo "OS: $((Get-ComputerInfo).WindowsProductName)"
         echo "Version: $((Get-ComputerInfo).WindowsVersion)"
         echo "PowerShell: $($($PSVersionTable.PSVersion))"
-        echo "WSL Status: $(wsl --status 2>$null || echo 'Not configured')"
+        
+        # WSL status check (don't fail on error)
+        try {
+          $wslStatus = wsl --status 2>$null
+          echo "WSL Status: $wslStatus"
+        } catch {
+          echo "WSL Status: Not configured (expected in CI)"
+        }
+        
         echo ""
         echo "Note: GitHub Actions runners have limited WSL2 support"
         echo "This test validates the installation process rather than full functionality"
+        echo ""
+        echo "✓ Windows environment check completed"
         
     - name: Enable WSL2 feature
       run: |
