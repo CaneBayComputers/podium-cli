@@ -22,14 +22,14 @@ jobs:
         # Make installer executable
         chmod +x install-mac.sh
         
-        # Test the installer (dry run mode would be ideal, but let's test what we can)
+        # Test the installer in dry-run mode
         echo "Testing Mac installer..."
         
         # Check if script runs without errors (at least initial checks)
         bash -n install-mac.sh
         
-        # Test that it detects macOS correctly
-        ./install-mac.sh --version || echo "Script started correctly"
+        # Test dry-run mode
+        ./install-mac.sh --dry-run
         
     - name: Check Homebrew installation
       run: |
