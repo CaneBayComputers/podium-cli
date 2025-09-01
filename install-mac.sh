@@ -90,12 +90,16 @@ fi
 ###############################
 if ! command -v docker &> /dev/null; then
     echo -e "${BLUE}Installing Docker Desktop...${NC}"
-    brew install --cask docker
-    
-    echo -e "${GREEN}✓ Docker Desktop installed${NC}"
-    echo -e "${YELLOW}⚠️  Please start Docker Desktop from Applications before continuing${NC}"
-    echo "Press any key once Docker Desktop is running..."
-    read -n 1 -s
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would install Docker Desktop via: brew install --cask docker"
+    else
+        brew install --cask docker
+        
+        echo -e "${GREEN}✓ Docker Desktop installed${NC}"
+        echo -e "${YELLOW}⚠️  Please start Docker Desktop from Applications before continuing${NC}"
+        echo "Press any key once Docker Desktop is running..."
+        read -n 1 -s
+    fi
 else
     echo -e "${GREEN}✓ Docker already installed${NC}"
 fi
@@ -197,7 +201,7 @@ if command -v podium &> /dev/null; then
     echo -e "  5. ${BLUE}podium help${NC}       - Show all available commands"
     echo
     echo -e "${CYAN}📱 Want a GUI?${NC}"
-    echo "   Visit: https://podium.dev for the premium desktop interface"
+    echo "   Contact: Cane Bay Computers for the premium desktop interface"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
     echo "   https://github.com/CaneBayComputers/podium-cli"

@@ -206,7 +206,7 @@ if command -v podium &> /dev/null; then
     echo -e "  4. ${BLUE}podium help${NC}       - Show all available commands"
     echo
     echo -e "${CYAN}📱 Want a GUI?${NC}"
-    echo "   Visit: https://podium.dev for the premium desktop interface"
+    echo "   Contact: Cane Bay Computers for the premium desktop interface"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
     echo "   https://github.com/CaneBayComputers/podium-cli"

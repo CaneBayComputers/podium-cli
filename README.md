@@ -116,7 +116,7 @@ Looking for a visual interface? **Podium GUI** provides a modern desktop applica
 - 🎨 **Modern Interface** - Beautiful retro synthwave design
 - ⚡ **One-Click Operations** - Start/stop services instantly
 
-**Get Podium GUI**: Visit [https://podium.dev](https://podium.dev) for download and licensing information.
+**Get Podium GUI**: Contact Cane Bay Computers for download and licensing information.
 
 ## 📋 Commands Overview
 
