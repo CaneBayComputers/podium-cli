@@ -27,12 +27,15 @@ jobs:
         echo "PowerShell: $($($PSVersionTable.PSVersion))"
         
         # WSL status check (don't fail on error)
-        try {
-          $wslStatus = wsl --status 2>$null
-          echo "WSL Status: $wslStatus"
-        } catch {
-          echo "WSL Status: Not configured (expected in CI)"
+        echo "WSL Status: Checking..."
+        $wslProcess = Start-Process -FilePath "wsl" -ArgumentList "--status" -PassThru -NoNewWindow -RedirectStandardOutput "wsl_output.txt" -RedirectStandardError "wsl_error.txt" -Wait
+        if ($wslProcess.ExitCode -eq 0) {
+          $wslOutput = Get-Content "wsl_output.txt" -Raw
+          echo "WSL Status: $wslOutput"
+        } else {
+          echo "WSL Status: Not properly configured (expected in CI)"
         }
+        Remove-Item -Force "wsl_output.txt", "wsl_error.txt" -ErrorAction SilentlyContinue
         
         echo ""
         echo "Note: GitHub Actions runners have limited WSL2 support"
