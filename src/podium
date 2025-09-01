@@ -72,7 +72,7 @@ show_help() {
     echo "  podium config             - Configure Podium environment"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
-    echo "  podium cleanup            - Remove all Docker containers, images, volumes, networks"
+                    echo "  podium destroy            - Remove all Docker containers, images, volumes, networks (DANGEROUS!)"
     echo "  podium config projects <path> - Set custom projects directory"
     echo "  podium gui                - Launch desktop GUI interface"
     echo
@@ -311,9 +311,9 @@ case "$1" in
     "stop-services")
         "$SCRIPT_DIR/scripts/stop_services.sh"
         ;;
-    "cleanup")
-        "$SCRIPT_DIR/scripts/docker_cleanup.sh"
-        ;;
+                    "destroy")
+                    "$SCRIPT_DIR/scripts/docker_destroy.sh"
+                    ;;
     
     # Testing
     "test-interactive")
