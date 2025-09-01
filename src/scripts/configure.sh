@@ -267,23 +267,7 @@ fi
 ###############################
 echo-return; echo-cyan 'Setting up Git ...'; echo-white
 
-if ! git config --global mergetool.keepBackup > /dev/null 2>&1; then
 
-	git config --global mergetool.keepBackup false
-
-fi
-
-if ! git config --global init.defaultBranch > /dev/null 2>&1; then
-
-	git config --global init.defaultBranch master
-
-fi
-
-if ! git config --global pull.rebase > /dev/null 2>&1; then
-
-	git config --global pull.rebase false
-
-fi
 
 # Configure Git (use GUI-provided values or prompt)
 if [[ "$GUI_MODE" == "true" ]]; then
@@ -336,6 +320,55 @@ fi
 git --version; echo
 
 echo-green "Git configured!"; echo-white; echo
+
+
+
+###############################
+# Set up projects directory
+###############################
+echo-return; echo-cyan 'Setting up projects directory ...'; echo-white
+
+# If not set via GUI mode or CLI argument, ask user
+if [[ "$GUI_MODE" != "true" && -z "$PROJECTS_DIR" ]]; then
+    DEFAULT_PROJECTS_DIR="$HOME/podium-projects"
+    echo-yellow "Where would you like to store your development projects?"
+    echo-white "Default: $DEFAULT_PROJECTS_DIR"
+    echo-yellow -ne 'Enter projects directory (or press Enter for default): '
+    echo-white -ne
+    read USER_PROJECTS_DIR
+    
+    if [[ -z "$USER_PROJECTS_DIR" ]]; then
+        PROJECTS_DIR="$DEFAULT_PROJECTS_DIR"
+    else
+        # Expand ~ to home directory
+        PROJECTS_DIR="${USER_PROJECTS_DIR/#\~/$HOME}"
+    fi
+    echo
+fi
+
+# Set default if still empty
+if [[ -z "$PROJECTS_DIR" ]]; then
+    PROJECTS_DIR="$HOME/podium-projects"
+fi
+
+# Create projects directory if it doesn't exist
+if [[ ! -d "$PROJECTS_DIR" ]]; then
+    echo-cyan "Creating projects directory: $PROJECTS_DIR"
+    mkdir -p "$PROJECTS_DIR"
+fi
+
+# Verify directory exists and is writable
+if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
+    echo-red "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
+    exit 1
+fi
+
+# Update .env file with projects directory
+podium-sed "/^#PROJECTS_DIR=/c\PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+podium-sed "/^PROJECTS_DIR=/c\PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+
+echo-green "Projects directory configured: $PROJECTS_DIR"
+echo-white; echo
 
 
 
