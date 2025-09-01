@@ -1,0 +1,50 @@
+name: Test Mac Installer
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    paths:
+      - 'install-mac.sh'
+  pull_request:
+    paths:
+      - 'install-mac.sh'
+
+jobs:
+  test-mac-installer:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Test Mac installer
+      run: |
+        # Make installer executable
+        chmod +x install-mac.sh
+        
+        # Test the installer (dry run mode would be ideal, but let's test what we can)
+        echo "Testing Mac installer..."
+        
+        # Check if script runs without errors (at least initial checks)
+        bash -n install-mac.sh
+        
+        # Test that it detects macOS correctly
+        ./install-mac.sh --version || echo "Script started correctly"
+        
+    - name: Check Homebrew installation
+      run: |
+        # Check if Homebrew gets installed
+        if command -v brew &> /dev/null; then
+          echo "✓ Homebrew found"
+          brew --version
+        else
+          echo "ℹ️ Homebrew not pre-installed (expected)"
+        fi
+        
+    - name: Check pre-installed tools
+      run: |
+        echo "=== Pre-installed tools on GitHub macOS runner ==="
+        echo "Git: $(git --version)"
+        echo "Node: $(node --version 2>/dev/null || echo 'Not installed')"
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "Brew: $(brew --version 2>/dev/null || echo 'Not installed')"

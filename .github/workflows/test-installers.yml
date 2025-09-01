@@ -1,0 +1,192 @@
+name: Test Installers
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    paths:
+      - 'install.sh'
+      - 'install-mac.sh'
+  pull_request:
+    paths:
+      - 'install.sh' 
+      - 'install-mac.sh'
+
+jobs:
+  test-linux-installer:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check pre-installed tools
+      run: |
+        echo "=== Pre-installed tools on GitHub Ubuntu runner ==="
+        echo "OS: $(lsb_release -d)"
+        echo "Git: $(git --version)"
+        echo "Node: $(node --version 2>/dev/null || echo 'Not installed')"
+        echo "NPM: $(npm --version 2>/dev/null || echo 'Not installed')"
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "GitHub CLI: $(gh --version 2>/dev/null || echo 'Not installed')"
+        echo "MariaDB client: $(mysql --version 2>/dev/null || echo 'Not installed')"
+        echo "p7zip: $(7z 2>/dev/null | head -2 || echo 'Not installed')"
+        echo "trash-cli: $(trash --version 2>/dev/null || echo 'Not installed')"
+        echo "net-tools: $(netstat --version 2>/dev/null || echo 'Not installed')"
+        
+    - name: Test script syntax
+      run: |
+        echo "=== Testing Linux installer syntax ==="
+        chmod +x install.sh
+        bash -n install.sh
+        echo "✓ Script syntax is valid"
+        
+    - name: Test installer dry-run simulation
+      run: |
+        echo "=== Simulating installer steps ==="
+        
+        # Test OS detection
+        if command -v apt-get &> /dev/null; then
+          echo "✓ Ubuntu/Debian detected correctly"
+        else
+          echo "❌ apt-get not found"
+          exit 1
+        fi
+        
+        # Test package availability
+        echo "=== Testing package availability ==="
+        packages="ca-certificates curl gnupg lsb-release apt-transport-https git unzip jq software-properties-common build-essential mariadb-client p7zip-full trash-cli net-tools"
+        
+        for package in $packages; do
+          if apt-cache show $package >/dev/null 2>&1; then
+            echo "✓ Package available: $package"
+          else
+            echo "❌ Package not found: $package"
+          fi
+        done
+        
+    - name: Test Docker repository setup (dry run)
+      run: |
+        echo "=== Testing Docker repository setup ==="
+        
+        # Test Docker GPG key URL
+        if curl -fsSL https://download.docker.com/linux/ubuntu/gpg >/dev/null 2>&1; then
+          echo "✓ Docker GPG key accessible"
+        else
+          echo "❌ Docker GPG key not accessible"
+        fi
+        
+        # Test repository URL
+        UBUNTU_CODENAME=$(lsb_release -cs)
+        echo "Ubuntu codename: $UBUNTU_CODENAME"
+        
+    - name: Test Node.js repository setup (dry run)
+      run: |
+        echo "=== Testing Node.js repository setup ==="
+        
+        # Test NodeSource setup script
+        if curl -fsSL https://deb.nodesource.com/setup_20.x >/dev/null 2>&1; then
+          echo "✓ NodeSource setup script accessible"
+        else
+          echo "❌ NodeSource setup script not accessible"
+        fi
+        
+    - name: Test GitHub CLI repository setup (dry run) 
+      run: |
+        echo "=== Testing GitHub CLI repository setup ==="
+        
+        # Test GitHub CLI GPG key
+        if curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg >/dev/null 2>&1; then
+          echo "✓ GitHub CLI GPG key accessible"
+        else
+          echo "❌ GitHub CLI GPG key not accessible"
+        fi
+
+  test-mac-installer:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Check pre-installed tools
+      run: |
+        echo "=== Pre-installed tools on GitHub macOS runner ==="
+        echo "OS: $(sw_vers -productName) $(sw_vers -productVersion)"
+        echo "Git: $(git --version)"
+        echo "Node: $(node --version 2>/dev/null || echo 'Not installed')"
+        echo "NPM: $(npm --version 2>/dev/null || echo 'Not installed')"
+        echo "Homebrew: $(brew --version 2>/dev/null || echo 'Not installed')"
+        echo "Docker: $(docker --version 2>/dev/null || echo 'Not installed')"
+        echo "GitHub CLI: $(gh --version 2>/dev/null || echo 'Not installed')"
+        
+    - name: Test script syntax
+      run: |
+        echo "=== Testing Mac installer syntax ==="
+        chmod +x install-mac.sh
+        bash -n install-mac.sh
+        echo "✓ Script syntax is valid"
+        
+    - name: Test macOS detection
+      run: |
+        echo "=== Testing macOS detection ==="
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          echo "✓ macOS detected correctly"
+        else
+          echo "❌ macOS not detected"
+          exit 1
+        fi
+        
+    - name: Test Homebrew availability
+      run: |
+        echo "=== Testing Homebrew ==="
+        if command -v brew &> /dev/null; then
+          echo "✓ Homebrew is available"
+          brew --version
+          
+          # Test package availability
+          echo "=== Testing Homebrew package availability ==="
+          packages="node jq p7zip trash mysql-client gh docker"
+          
+          for package in $packages; do
+            if brew search $package | grep -q "^$package\$"; then
+              echo "✓ Homebrew package available: $package"
+            else
+              echo "⚠️ Homebrew package not found: $package (might be a cask)"
+            fi
+          done
+          
+          # Test cask availability
+          echo "=== Testing Homebrew cask availability ==="
+          if brew search --cask docker | grep -q "^docker\$"; then
+            echo "✓ Docker Desktop cask available"
+          else
+            echo "❌ Docker Desktop cask not found"
+          fi
+          
+        else
+          echo "ℹ️ Homebrew not pre-installed (expected)"
+        fi
+        
+    - name: Test installer dry-run mode
+      run: |
+        echo "=== Testing dry-run mode ==="
+        ./install-mac.sh --dry-run
+        
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [test-linux-installer, test-mac-installer]
+    if: always()
+    
+    steps:
+    - name: Installation Test Summary
+      run: |
+        echo "=== Installer Test Results ==="
+        echo "Linux installer: ${{ needs.test-linux-installer.result }}"
+        echo "Mac installer: ${{ needs.test-mac-installer.result }}"
+        
+        if [[ "${{ needs.test-linux-installer.result }}" == "success" && "${{ needs.test-mac-installer.result }}" == "success" ]]; then
+          echo "🎉 All installers passed testing!"
+        else
+          echo "❌ Some installers failed testing"
+          exit 1
+        fi

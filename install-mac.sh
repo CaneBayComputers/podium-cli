@@ -5,6 +5,14 @@
 
 set -e
 
+# Check for dry-run mode
+DRY_RUN=false
+if [[ "$1" == "--dry-run" || "$1" == "--test" ]]; then
+    DRY_RUN=true
+    echo "🧪 DRY RUN MODE - No actual installations will be performed"
+    echo
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -47,7 +55,11 @@ echo -e "${CYAN}Installing system dependencies...${NC}"
 ###############################
 if ! command -v brew &> /dev/null; then
     echo -e "${BLUE}Installing Homebrew...${NC}"
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo "  [DRY RUN] Would install Homebrew"
+    else
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
     
     # Add Homebrew to PATH for this session
     if [[ -f "/opt/homebrew/bin/brew" ]]; then
@@ -67,7 +79,11 @@ fi
 # Update Homebrew
 ###############################
 echo -e "${BLUE}Updating Homebrew...${NC}"
-brew update
+if [[ "$DRY_RUN" == "true" ]]; then
+    echo "  [DRY RUN] Would update Homebrew"
+else
+    brew update
+fi
 
 ###############################
 # Install Docker Desktop
