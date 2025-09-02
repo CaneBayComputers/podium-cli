@@ -159,9 +159,13 @@ sudo git clone "$REPO_URL" "$INSTALL_DIR"
 
 # Set proper permissions
 echo -e "${BLUE}Setting permissions...${NC}"
-sudo chown -R root:root "$INSTALL_DIR"
+# Keep most files accessible to users, only set execute permissions for scripts
 sudo chmod +x "$INSTALL_DIR/src/podium"
 sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
+# Make sure current user can read/write config files
+sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
+# Only the main binary needs special permissions
+sudo chown root:root "$INSTALL_DIR/src/podium"
 
 # Create symlink
 echo -e "${BLUE}Creating command symlink...${NC}"

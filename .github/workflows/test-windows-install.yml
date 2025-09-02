@@ -247,6 +247,16 @@ jobs:
         # Test version command
         podium --version > /dev/null && echo "✅ podium --version works"
         
+        # Test file permissions (critical test)
+        echo "Testing file permissions..."
+        if [ -r "/usr/local/share/podium-cli/src/docker-stack/env.example" ]; then
+            echo "✅ User can read config files"
+        else
+            echo "❌ User cannot read config files - permission issue!"
+            ls -la /usr/local/share/podium-cli/src/docker-stack/
+            exit 1
+        fi
+        
         # Test if podium config would work (dry run)
         echo "Testing podium config requirements..."
         
