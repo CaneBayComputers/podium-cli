@@ -157,10 +157,15 @@ if [[ "$GUI_MODE" != "true" ]]; then
 		fi
 	elif [[ "$PLATFORM" == "mac" ]]; then
 		# Mac users typically have sudo access, just verify
+		echo-cyan "Verifying administrator privileges..."
+		echo-white "You'll be prompted for your password to authorize system changes"
+		echo
 		if ! sudo -v; then
 			echo-return; echo-red "Administrator privileges required for installation!"; echo
 			exit 1;
 		fi
+		echo-green "✓ Administrator privileges confirmed"
+		echo
 	fi
 else
 	echo-cyan "Running in GUI mode - skipping permission checks"
