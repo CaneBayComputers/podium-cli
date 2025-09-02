@@ -92,7 +92,14 @@ RUNNING_INTERNAL=""
 
 RUNNING_EXTERNAL=""
 
-LAN_IP=$(hostname -I | awk '{print $1}')
+# Get LAN IP (cross-platform)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS - use route to find default interface IP
+    LAN_IP=$(route get default | grep interface | awk '{print $2}' | xargs ifconfig | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -1)
+else
+    # Linux - use hostname -I
+    LAN_IP=$(hostname -I | awk '{print $1}')
+fi
 
 # Docker handles port mapping automatically
 
