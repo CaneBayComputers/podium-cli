@@ -30,6 +30,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="/usr/local/share/podium-cli"
+CONFIG_DIR="/etc/podium-cli"
 BIN_DIR="/usr/local/bin"
 REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
 
@@ -166,6 +167,23 @@ if [[ -d "$INSTALL_DIR" ]]; then
     fi
     
     echo -e "${YELLOW}Updating existing installation...${NC}"
+    
+    # Backup existing configuration before removing installation
+    if [[ -d "$INSTALL_DIR/src/docker-stack" ]]; then
+        echo -e "${CYAN}Backing up existing configuration...${NC}"
+        sudo mkdir -p "$CONFIG_DIR"
+        
+        # Backup .env and docker-compose.yaml if they exist
+        if [[ -f "$INSTALL_DIR/src/docker-stack/.env" ]]; then
+            sudo cp "$INSTALL_DIR/src/docker-stack/.env" "$CONFIG_DIR/.env.backup"
+        fi
+        if [[ -f "$INSTALL_DIR/src/docker-stack/docker-compose.yaml" ]]; then
+            sudo cp "$INSTALL_DIR/src/docker-stack/docker-compose.yaml" "$CONFIG_DIR/docker-compose.yaml.backup"
+        fi
+        
+        echo -e "${GREEN}✓ Configuration backed up to $CONFIG_DIR${NC}"
+    fi
+    
     sudo rm -rf "$INSTALL_DIR"
 fi
 
@@ -206,6 +224,14 @@ echo "=========================="
 # Verify installation
 if command -v podium &> /dev/null; then
     echo -e "${GREEN}✓ Podium CLI installed successfully${NC}"
+    
+    # Restore backed up configuration if it exists
+    if [[ -f "$CONFIG_DIR/.env.backup" ]]; then
+        echo -e "${CYAN}Restoring previous configuration...${NC}"
+        sudo cp "$CONFIG_DIR/.env.backup" "$INSTALL_DIR/src/docker-stack/.env"
+        sudo cp "$CONFIG_DIR/docker-compose.yaml.backup" "$INSTALL_DIR/src/docker-stack/docker-compose.yaml" 2>/dev/null || true
+        echo -e "${GREEN}✓ Previous configuration restored${NC}"
+    fi
     
     # Check Docker status
     if ! docker info &>/dev/null; then
