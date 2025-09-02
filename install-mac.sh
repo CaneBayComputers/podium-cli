@@ -5,6 +5,13 @@
 
 set -e
 
+# Clear screen and suppress script echoing
+clear 2>/dev/null || true
+
+# Immediate feedback to user (prevents showing script content)
+echo "🚀 Starting Podium CLI installation..."
+sleep 1
+
 # Check for dry-run mode
 DRY_RUN=0
 if [[ "$1" == "--dry-run" || "$1" == "--test" ]]; then
@@ -126,13 +133,13 @@ if ! command -v git &> /dev/null; then
 fi
 
 # Install other useful tools
-brew install jq p7zip trash mysql-client
+echo -e "Installing: jq, p7zip, trash, mysql-client..."
+brew install jq p7zip trash mysql-client >/dev/null 2>&1 && echo -e "${GREEN}✓ Additional tools installed${NC}" || echo -e "${YELLOW}⚠️ Some tools may have failed to install${NC}"
 
 # Install GitHub CLI (optional but recommended)
 if ! command -v gh &> /dev/null; then
-    echo -e "${BLUE}Installing GitHub CLI...${NC}"
-    brew install gh
-    echo -e "${GREEN}✓ GitHub CLI installed${NC}"
+    echo -e "Installing GitHub CLI..."
+    brew install gh >/dev/null 2>&1 && echo -e "${GREEN}✓ GitHub CLI installed${NC}" || echo -e "${YELLOW}⚠️ GitHub CLI installation failed${NC}"
 else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
@@ -193,6 +200,9 @@ if command -v podium &> /dev/null; then
     fi
     
     echo
+    echo -e "${CYAN}ℹ️  Note: Any 'Outdated Formulae' warnings above are normal${NC}"
+    echo -e "   Your installation is complete and working. You can upgrade later with 'brew upgrade'"
+    echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
     echo -e "  1. Make sure Docker Desktop is running"
     echo -e "  2. ${BLUE}podium config${NC}     - Configure your development environment"
@@ -201,10 +211,10 @@ if command -v podium &> /dev/null; then
     echo -e "  5. ${BLUE}podium help${NC}       - Show all available commands"
     echo
     echo -e "${CYAN}📱 Want a GUI?${NC}"
-    echo "   Contact: Cane Bay Computers for the premium desktop interface"
+    echo "   Contact: canebaycomputers@gmail.com for the premium desktop interface"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
-    echo "   https://github.com/CaneBayComputers/podium-cli"
+    echo "   https://podiumdev.io"
     echo
 else
     echo -e "${RED}✗ Installation failed${NC}"
