@@ -76,8 +76,14 @@ else
 fi
 
 
-# Generate stack id
-STACK_ID=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+# Generate stack id (macOS-compatible)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS: Use LC_ALL=C to handle binary data
+    STACK_ID=$(head -c 32 /dev/urandom | LC_ALL=C tr -dc A-Za-z0-9 | head -c 8)
+else
+    # Linux: Original method works fine
+    STACK_ID=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)
+fi
 
 
 # Check for and set up environment variables

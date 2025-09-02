@@ -219,8 +219,12 @@ if [ -z "$PROJECT_NAME" ]; then
 fi
 
 
-# Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters
-PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+# Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters (macOS-compatible)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr ' ' '-' | LC_ALL=C tr -cd 'a-z0-9-_')
+else
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+fi
 
 # Check for duplicate project names
 while [ -d "$PROJECTS_DIR/$PROJECT_NAME" ]; do
@@ -234,8 +238,12 @@ while [ -d "$PROJECTS_DIR/$PROJECT_NAME" ]; do
             echo-red "Project name cannot be empty!"
             exit 1
         fi
-        # Cleanse the new name
-        PROJECT_NAME=$(echo "$NEW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+        # Cleanse the new name (macOS-compatible)
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            PROJECT_NAME=$(echo "$NEW_PROJECT_NAME" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr ' ' '-' | LC_ALL=C tr -cd 'a-z0-9-_')
+        else
+            PROJECT_NAME=$(echo "$NEW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+        fi
     fi
 done
 

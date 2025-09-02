@@ -108,8 +108,12 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo "Project Name: $PROJECT_NAME"
 fi
 
-# Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters
-PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+# Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters (macOS-compatible)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr ' ' '-' | LC_ALL=C tr -cd 'a-z0-9-_')
+else
+    PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
+fi
 
 # Navigate to the configured projects directory
 PROJECTS_DIR=$(get_projects_dir)
