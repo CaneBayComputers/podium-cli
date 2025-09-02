@@ -53,6 +53,23 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 
 Podium CLI runs on Windows through **WSL2** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
 
+**Automated Install (Recommended):**
+```powershell
+# Download and run the Windows installer (PowerShell as Administrator)
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
+PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
+```
+
+**What the automated installer does:**
+- Installs WSL2 (Windows Subsystem for Linux)
+- Installs Ubuntu distribution
+- Downloads and installs Docker Desktop
+- Configures Docker for WSL2 integration
+- Installs Podium CLI inside WSL2
+- Tests the complete installation
+
+**Manual Installation:**
+
 **Step 1: Install WSL2**
 ```powershell
 # Run in PowerShell as Administrator
