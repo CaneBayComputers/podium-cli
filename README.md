@@ -21,7 +21,6 @@ Built for modern PHP development, Podium CLI eliminates the complexity of managi
 
 ### 🐧 Linux (Ubuntu/Debian)
 
-**Quick Install (Recommended):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash
 ```
@@ -35,7 +34,6 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 
 ### 🍎 macOS
 
-**Quick Install (Recommended):**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
 ```
@@ -53,14 +51,13 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 
 Podium CLI runs on Windows through **WSL2** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
 
-**Automated Install (Recommended):**
 ```powershell
 # Download and run the Windows installer (PowerShell as Administrator)
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
 PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
 
-**What the automated installer does:**
+**What the installer does:**
 - Installs WSL2 (Windows Subsystem for Linux)
 - Installs Ubuntu distribution
 - Downloads and installs Docker Desktop
@@ -68,44 +65,14 @@ PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 - Installs Podium CLI inside WSL2
 - Tests the complete installation
 
-**Manual Installation:**
-
-**Step 1: Install WSL2**
+**After installation, open WSL2 to use Podium:**
 ```powershell
-# Run in PowerShell as Administrator
-wsl --install
-```
+# Open WSL2 terminal
+wsl
 
-**Step 2: Install Ubuntu**
-```powershell
-wsl --install -d Ubuntu
-```
-
-**Step 3: Install Docker Desktop**
-- Download from [docker.com](https://www.docker.com/products/docker-desktop/)
-- Enable WSL2 integration during installation
-- In Docker Desktop settings, enable integration with your Ubuntu distribution
-
-**Step 4: Install Podium CLI in WSL2**
-```bash
-# Inside your WSL2 Ubuntu terminal
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash
-```
-
-**Resources:**
-- [WSL2 Installation Guide](https://docs.microsoft.com/en-us/windows/wsl/install)
-- [Docker Desktop WSL2 Backend](https://docs.docker.com/desktop/wsl/)
-
-### 📦 Manual Installation (Any Platform)
-
-```bash
-# Clone the repository
-git clone https://github.com/CaneBayComputers/podium-cli.git
-cd podium-cli
-
-# Run the appropriate installer
-./install.sh        # Linux
-./install-mac.sh    # macOS
+# Now you can run Podium commands
+podium configure
+podium new myproject
 ```
 
 ## 🚀 Quick Start
