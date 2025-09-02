@@ -117,6 +117,7 @@ if ! [ -f docker-stack/docker-compose.yaml ]; then
 	
 	echo-cyan "All database services (MariaDB, PostgreSQL, MongoDB) will be available"
 	echo-white "Database selection happens per-project during project creation"
+	echo
 
 fi
 
@@ -204,6 +205,11 @@ else
 fi
 
 if [[ "$INSTALL_GLOBAL" == "y" ]]; then
+	echo
+	echo-cyan "Installing podium command globally..."
+	echo-white "You'll be prompted for your password to install to /usr/local/bin"
+	echo
+	
 	# Remove existing symlink if it exists
 	sudo rm -f /usr/local/bin/podium 2>/dev/null || true
 	
@@ -211,11 +217,6 @@ if [[ "$INSTALL_GLOBAL" == "y" ]]; then
 	sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
 	
 	echo-green "Podium command installed globally!"
-	echo-white
-	echo-cyan "You can now use these commands from anywhere:"
-	echo-white "  • podium composer install     (run Composer in container)"
-	echo-white "  • podium art migrate          (run Laravel Artisan)"
-	echo-white "  • podium wp plugin list       (run WP-CLI)"
 	echo-white "  • podium up myproject         (start project)"
 	echo-white "  • podium new                  (create new project)"
 	echo-white "  • podium help                 (see all commands)"
@@ -379,7 +380,15 @@ echo-return; echo-cyan 'Setting up Github authentication ...'; echo-white
 
 if ! gh auth status > /dev/null 2>&1; then
 
-	echo-yellow 'Choose SSH for protocol, id_rsa.pub for SSH public key and paste an authentication token:'; echo-white
+	echo
+	echo-cyan "GitHub CLI needs to be authenticated for repository operations."
+	echo-white "You'll be prompted to:"
+	echo-white "  1. Choose authentication method (recommended: SSH)"
+	echo-white "  2. Select SSH key (usually: id_rsa.pub)"  
+	echo-white "  3. Provide GitHub personal access token"
+	echo
+	echo-yellow "Starting GitHub authentication process..."
+	echo
 
 	gh auth login --hostname github.com
 
