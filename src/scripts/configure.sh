@@ -91,9 +91,9 @@ if ! [ -f docker-stack/.env ]; then
 
 	VPC_SUBNET="10.$B_CLASS.$C_CLASS"
 
-	# Cross-platform sed
-	podium-sed "/^#VPC_SUBNET=/c\VPC_SUBNET=$VPC_SUBNET" docker-stack/.env
-	podium-sed "/^#STACK_ID=/c\STACK_ID=$STACK_ID" docker-stack/.env
+	# Cross-platform sed with proper c\ command handling
+	podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" docker-stack/.env
+	podium-sed-change "/^#STACK_ID=/" "STACK_ID=$STACK_ID" docker-stack/.env
 
 else
 
@@ -109,7 +109,7 @@ if ! [ -f docker-stack/docker-compose.yaml ]; then
 
 	# Set projects directory if specified
 	if [ -n "$PROJECTS_DIR" ]; then
-		podium-sed "/^#PROJECTS_DIR=/c\PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+		podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
 	fi
 	
 	# Cross-platform sed for docker-compose.yaml
@@ -364,8 +364,8 @@ if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
 fi
 
 # Update .env file with projects directory
-podium-sed "/^#PROJECTS_DIR=/c\PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
-podium-sed "/^PROJECTS_DIR=/c\PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
 
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo

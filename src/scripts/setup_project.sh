@@ -420,52 +420,52 @@ if [ -f ".env.example" ]; then
 
     APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
 
-    podium-sed "/^#*\s*APP_NAME=/c\APP_NAME=$PROJECT_NAME" .env
-    podium-sed "/^#*\s*APP_KEY=/c\APP_KEY=$APP_KEY" .env
-    podium-sed "/^#*\s*APP_URL=/c\APP_URL=http:\/\/$PROJECT_NAME" .env
+    podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
+    podium-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
+    podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
     # Configure database connection based on selected engine
     case $DATABASE_ENGINE in
         "postgresql")
-            podium-sed "/^#*\s*DB_CONNECTION=/c\DB_CONNECTION=pgsql" .env
-            podium-sed "/^#*\s*DB_HOST=/c\DB_HOST=postgres" .env
-            podium-sed "/^#*\s*DB_PORT=/c\DB_PORT=5432" .env
-            podium-sed "/^#*\s*DB_DATABASE=/c\DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed "/^#*\s*DB_USERNAME=/c\DB_USERNAME=postgres" .env
-            podium-sed "/^#*\s*DB_PASSWORD=/c\DB_PASSWORD=postgres" .env
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=postgres" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=postgres" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=postgres" .env
             ;;
         "mongodb")
-            podium-sed "/^#*\s*DB_CONNECTION=/c\DB_CONNECTION=mongodb" .env
-            podium-sed "/^#*\s*DB_HOST=/c\DB_HOST=mongo" .env
-            podium-sed "/^#*\s*DB_PORT=/c\DB_PORT=27017" .env
-            podium-sed "/^#*\s*DB_DATABASE=/c\DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed "/^#*\s*DB_USERNAME=/c\DB_USERNAME=root" .env
-            podium-sed "/^#*\s*DB_PASSWORD=/c\DB_PASSWORD=root" .env
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=mongo" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=root" .env
             ;;
         *)
-            podium-sed "/^#*\s*DB_CONNECTION=/c\DB_CONNECTION=mysql" .env
-            podium-sed "/^#*\s*DB_HOST=/c\DB_HOST=mariadb" .env
-            podium-sed "/^#*\s*DB_PORT=/c\DB_PORT=3306" .env
-            podium-sed "/^#*\s*DB_DATABASE=/c\DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed "/^#*\s*DB_USERNAME=/c\DB_USERNAME=root" .env
-            podium-sed "/^#*\s*DB_PASSWORD=/c\DB_PASSWORD=" .env
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=mariadb" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
             ;;
     esac
-    podium-sed "/^#*\s*CACHE_DRIVER=/c\CACHE_DRIVER=redis" .env
-    podium-sed "/^#*\s*SESSION_DRIVER=/c\SESSION_DRIVER=redis" .env
-    podium-sed "/^#*\s*QUEUE_CONNECTION=/c\QUEUE_CONNECTION=redis" .env
-    podium-sed "/^#*\s*CACHE_STORE=/c\CACHE_STORE=redis" .env
-    podium-sed "/^#*\s*CACHE_PREFIX=/c\CACHE_PREFIX=$PROJECT_NAME" .env
-    podium-sed "/^#*\s*MEMCACHED_HOST=/c\MEMCACHED_HOST=memcached" .env
-    podium-sed "/^#*\s*REDIS_HOST=/c\REDIS_HOST=redis" .env
+    podium-sed-change "/^#*\s*CACHE_DRIVER=/" "CACHE_DRIVER=redis" .env
+    podium-sed-change "/^#*\s*SESSION_DRIVER=/" "SESSION_DRIVER=redis" .env
+    podium-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
+    podium-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
+    podium-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
+    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=memcached" .env
+    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=redis" .env
     # Configure MailHog for development email testing
-    podium-sed "/^#*\s*MAIL_MAILER=/c\MAIL_MAILER=smtp" .env
-    podium-sed "/^#*\s*MAIL_HOST=/c\MAIL_HOST=mailhog" .env
-    podium-sed "/^#*\s*MAIL_PORT=/c\MAIL_PORT=1025" .env
-    podium-sed "/^#*\s*MAIL_USERNAME=/c\MAIL_USERNAME=null" .env
-    podium-sed "/^#*\s*MAIL_PASSWORD=/c\MAIL_PASSWORD=null" .env
-    podium-sed "/^#*\s*MAIL_ENCRYPTION=/c\MAIL_ENCRYPTION=null" .env
-    podium-sed "/^#*\s*MAIL_FROM_ADDRESS=/c\MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
-    podium-sed "/^#*\s*MAIL_FROM_NAME=/c\MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
+    podium-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
+    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=mailhog" .env
+    podium-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
+    podium-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
+    podium-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
+    podium-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
+    podium-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
+    podium-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
     echo "" >> .env
     echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
 

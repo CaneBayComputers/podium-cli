@@ -152,6 +152,22 @@ podium-sed() {
     fi
 }
 
+# Cross-platform sed change function (handles c\ command differences)
+podium-sed-change() {
+    local pattern="$1"
+    local replacement="$2"
+    local file="$3"
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS BSD sed requires newline after c\
+        sed -i '' "$pattern c\\
+$replacement" "$file"
+    else
+        # Linux GNU sed can do it on one line
+        sed -i "$pattern c\\$replacement" "$file"
+    fi
+}
+
 # Cross-platform sudo sed function
 sudo-podium-sed() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
