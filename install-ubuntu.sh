@@ -134,12 +134,22 @@ sudo apt-get autoremove -y -q
 # Check if already installed
 if [[ -d "$INSTALL_DIR" ]]; then
     echo -e "${YELLOW}Podium CLI is already installed.${NC}"
-    read -p "Do you want to update it? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled."
-        exit 0
+    
+    # Check if we're running in a pipe (curl | bash) or interactive terminal
+    if [ -t 0 ]; then
+        # Interactive terminal - ask user
+        read -p "Do you want to update it? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled."
+            exit 0
+        fi
+    else
+        # Running via pipe (curl | bash) - auto-update
+        echo -e "${CYAN}Running via curl | bash - automatically updating...${NC}"
+        sleep 2
     fi
+    
     echo -e "${YELLOW}Updating existing installation...${NC}"
     sudo rm -rf "$INSTALL_DIR"
 fi
