@@ -32,6 +32,20 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - MariaDB client, p7zip, trash-cli, net-tools
 - All system dependencies
 
+**Quick Start:**
+```bash
+# Install and configure Podium
+podium config
+
+# Create a new project
+podium new my-project
+
+# Check status
+podium status
+```
+
+---
+
 ### 🍎 macOS
 
 ```bash
@@ -46,6 +60,20 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - Additional tools: jq, p7zip, trash, mysql-client
 
 **Note:** You'll need to start Docker Desktop manually after installation.
+
+**Quick Start:**
+```bash
+# Install and configure Podium
+podium config
+
+# Create a new project
+podium new my-project
+
+# Check status
+podium status
+```
+
+---
 
 ### 🪟 Windows
 
@@ -65,19 +93,11 @@ PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 - Installs Podium CLI inside WSL2
 - Tests the complete installation
 
-**After installation, open WSL2 to use Podium:**
+**Quick Start:**
 ```powershell
 # Open WSL2 terminal
 wsl
 
-# Now you can run Podium commands
-podium configure
-podium new myproject
-```
-
-## 🚀 Quick Start
-
-```bash
 # Install and configure Podium
 podium config
 
@@ -86,9 +106,6 @@ podium new my-project
 
 # Check status
 podium status
-
-# Launch the GUI (optional - requires separate installation)
-podium gui
 ```
 
 ## 🎨 Podium GUI
