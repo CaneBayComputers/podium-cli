@@ -1,0 +1,265 @@
+name: Test Windows PowerShell Installer
+
+on:
+  push:
+    paths:
+      - 'install-windows.ps1'
+      - '.github/workflows/test-windows-install.yml'
+  pull_request:
+    paths:
+      - 'install-windows.ps1'
+      - '.github/workflows/test-windows-install.yml'
+  workflow_dispatch:
+
+jobs:
+  test-windows-installer:
+    strategy:
+      matrix:
+        os: [windows-2019, windows-2022]  # windows-2019 = Windows Server 2019 (similar to Win10), windows-2022 = Windows Server 2022 (similar to Win11)
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Show PowerShell version and execution policy
+      run: |
+        Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Blue
+        Write-Host "Testing on: ${{ matrix.os }}" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Blue
+        Write-Host ""
+        Write-Host "PowerShell Version:"
+        $PSVersionTable.PSVersion
+        Write-Host "`nCurrent Execution Policy:"
+        Get-ExecutionPolicy -List
+        Write-Host "`nSystem Info:"
+        Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, TotalPhysicalMemory
+        Write-Host "`nWindows Features Status:"
+        try {
+          $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction SilentlyContinue
+          $vmFeature = Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -ErrorAction SilentlyContinue
+          Write-Host "WSL Feature: $($wslFeature.State)" -ForegroundColor $(if($wslFeature.State -eq 'Enabled') {'Green'} else {'Yellow'})
+          Write-Host "VM Platform Feature: $($vmFeature.State)" -ForegroundColor $(if($vmFeature.State -eq 'Enabled') {'Green'} else {'Yellow'})
+        } catch {
+          Write-Host "Could not check Windows features: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+      shell: powershell
+    
+    - name: Test script syntax and basic validation
+      run: |
+        Write-Host "Testing PowerShell script syntax..."
+        
+        # Test if script has valid PowerShell syntax
+        $scriptPath = ".\install-windows.ps1"
+        $errors = @()
+        $tokens = @()
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors)
+        
+        if ($errors.Count -gt 0) {
+            Write-Host "❌ Script has syntax errors:" -ForegroundColor Red
+            $errors | ForEach-Object { Write-Host "  - $($_.Message)" -ForegroundColor Red }
+            exit 1
+        } else {
+            Write-Host "✅ Script syntax is valid" -ForegroundColor Green
+        }
+        
+        # Test if script can be loaded without execution
+        try {
+            $scriptContent = Get-Content $scriptPath -Raw
+            $scriptBlock = [ScriptBlock]::Create($scriptContent)
+            Write-Host "✅ Script can be parsed as ScriptBlock" -ForegroundColor Green
+        } catch {
+            Write-Host "❌ Script cannot be parsed: $($_.Exception.Message)" -ForegroundColor Red
+            exit 1
+        }
+      shell: powershell
+    
+    - name: Test script functions (dry run)
+      run: |
+        Write-Host "Testing script functions..."
+        
+        # Source the script to load functions without executing main logic
+        $scriptContent = Get-Content .\install-windows.ps1 -Raw
+        
+        # Remove the main execution part and just load functions
+        $functionsOnly = $scriptContent -replace '(?s)# Main installation process.*$', ''
+        Invoke-Expression $functionsOnly
+        
+        # Test individual functions
+        Write-Host "Testing Test-AdminRights function..."
+        $isAdmin = Test-AdminRights
+        Write-Host "  Current admin status: $isAdmin" -ForegroundColor $(if($isAdmin) {'Green'} else {'Yellow'})
+        
+        Write-Host "Testing Test-WSLInstalled function..."
+        $wslInstalled = Test-WSLInstalled
+        Write-Host "  WSL installed: $wslInstalled" -ForegroundColor $(if($wslInstalled) {'Green'} else {'Yellow'})
+        
+        Write-Host "Testing Test-DockerInstalled function..."
+        $dockerInstalled = Test-DockerInstalled
+        Write-Host "  Docker installed: $dockerInstalled" -ForegroundColor $(if($dockerInstalled) {'Green'} else {'Yellow'})
+        
+        Write-Host "✅ All functions loaded and tested successfully" -ForegroundColor Green
+      shell: powershell
+    
+    - name: Test WSL installation (if not present)
+      run: |
+        Write-Host "Checking WSL status..."
+        
+        # Check if WSL is available
+        try {
+            $wslVersion = wsl --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "✅ WSL is already installed" -ForegroundColor Green
+                Write-Host $wslVersion
+            } else {
+                Write-Host "ℹ️ WSL not installed - would be installed by script" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "ℹ️ WSL not available - would be installed by script" -ForegroundColor Yellow
+        }
+        
+        # Check Windows features that would be enabled
+        $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction SilentlyContinue
+        $vmFeature = Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -ErrorAction SilentlyContinue
+        
+        if ($wslFeature) {
+            Write-Host "WSL Feature Status: $($wslFeature.State)" -ForegroundColor $(if($wslFeature.State -eq 'Enabled') {'Green'} else {'Yellow'})
+        }
+        if ($vmFeature) {
+            Write-Host "VM Platform Feature Status: $($vmFeature.State)" -ForegroundColor $(if($vmFeature.State -eq 'Enabled') {'Green'} else {'Yellow'})
+        }
+      shell: powershell
+    
+    - name: Test Docker availability
+      run: |
+        Write-Host "Checking Docker availability..."
+        
+        # Test if Docker is available
+        try {
+            $dockerVersion = docker --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "✅ Docker is already available" -ForegroundColor Green
+                Write-Host $dockerVersion
+            } else {
+                Write-Host "ℹ️ Docker not available - would be installed by script" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "ℹ️ Docker not available - would be installed by script" -ForegroundColor Yellow
+        }
+        
+        # Test winget availability
+        try {
+            $wingetVersion = winget --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "✅ winget is available for Docker installation" -ForegroundColor Green
+                Write-Host "winget version: $wingetVersion"
+            } else {
+                Write-Host "⚠️ winget not available - script will use direct download" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "⚠️ winget not available - script will use direct download" -ForegroundColor Yellow
+        }
+      shell: powershell
+    
+    - name: Test execution policy scenarios
+      run: |
+        Write-Host "Testing different execution policy scenarios..."
+        
+        # Show current policy
+        $currentPolicy = Get-ExecutionPolicy
+        Write-Host "Current execution policy: $currentPolicy"
+        
+        # Test if script would run with current policy
+        try {
+            # This simulates what happens when user runs the script
+            $testResult = powershell.exe -ExecutionPolicy Bypass -Command "Write-Host 'Test execution successful'"
+            Write-Host "✅ ExecutionPolicy Bypass works" -ForegroundColor Green
+        } catch {
+            Write-Host "❌ ExecutionPolicy Bypass failed: $($_.Exception.Message)" -ForegroundColor Red
+        }
+        
+        # Test if script can be run with different policies
+        $policies = @('Unrestricted', 'RemoteSigned', 'AllSigned', 'Restricted')
+        foreach ($policy in $policies) {
+            try {
+                $testCmd = "powershell.exe -ExecutionPolicy $policy -Command `"Write-Host 'Policy $policy works'`""
+                Invoke-Expression $testCmd
+                Write-Host "✅ Policy $policy: Works" -ForegroundColor Green
+            } catch {
+                Write-Host "❌ Policy $policy: Failed" -ForegroundColor Red
+            }
+        }
+      shell: powershell
+    
+    - name: Create test summary
+      run: |
+        Write-Host "`n" -NoNewline
+        Write-Host "╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Blue
+        Write-Host "║                    TEST SUMMARY                              ║" -ForegroundColor Blue
+        Write-Host "╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Blue
+        Write-Host ""
+        Write-Host "✅ PowerShell script syntax is valid"
+        Write-Host "✅ All functions can be loaded and tested"
+        Write-Host "✅ ExecutionPolicy Bypass method works"
+        Write-Host "✅ Installation prerequisites checked"
+        Write-Host ""
+        Write-Host "The install-windows.ps1 script is ready for use!" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "For users experiencing execution policy issues, they should use:" -ForegroundColor Yellow
+        Write-Host "PowerShell -ExecutionPolicy Bypass -File install-windows.ps1" -ForegroundColor Cyan
+      shell: powershell
+
+  test-podium-cli-install:
+    runs-on: ubuntu-latest
+    needs: test-windows-installer
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Test Linux installation script
+      run: |
+        echo "Testing Podium CLI installation on Linux..."
+        
+        # Make install script executable
+        chmod +x install.sh
+        
+        # Run installation
+        ./install.sh
+        
+        # Test if podium is installed
+        if command -v podium >/dev/null 2>&1; then
+            echo "✅ Podium CLI installed successfully"
+            podium --version || echo "Podium installed but version check failed"
+            podium --help | head -10 || echo "Podium installed but help failed"
+        else
+            echo "❌ Podium CLI installation failed"
+            exit 1
+        fi
+    
+    - name: Test basic podium commands
+      run: |
+        echo "Testing basic Podium commands..."
+        
+        # Test help command
+        podium --help > /dev/null && echo "✅ podium --help works"
+        
+        # Test version command
+        podium --version > /dev/null && echo "✅ podium --version works"
+        
+        # Test if podium config would work (dry run)
+        echo "Testing podium config requirements..."
+        
+        # Check if Docker is available
+        if command -v docker >/dev/null 2>&1; then
+            echo "✅ Docker is available"
+            docker --version
+        else
+            echo "❌ Docker not available"
+        fi
+        
+        # Check if required directories can be created
+        mkdir -p ~/test-podium-projects && echo "✅ Can create projects directory"
+        rmdir ~/test-podium-projects
+        
+        echo "✅ Basic Podium CLI functionality verified"

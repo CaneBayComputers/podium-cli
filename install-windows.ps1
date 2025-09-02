@@ -159,6 +159,27 @@ function Test-Installation {
     }
 }
 
+# Check execution policy first
+$executionPolicy = Get-ExecutionPolicy
+if ($executionPolicy -eq 'Restricted') {
+    Write-ColorOutput @"
+╔══════════════════════════════════════════════════════════════╗
+║                    EXECUTION POLICY ERROR                    ║
+║                                                              ║
+║  Your PowerShell execution policy is set to 'Restricted'    ║
+║  which prevents this script from running.                   ║
+║                                                              ║
+║  Please run this command instead:                           ║
+║  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 ║
+║                                                              ║
+║  Or temporarily change your execution policy:               ║
+║  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+"@ $RED
+    exit 1
+}
+
 # Main installation process
 Write-ColorOutput @"
 ╔══════════════════════════════════════════════════════════════╗
@@ -169,13 +190,29 @@ Write-ColorOutput @"
 ║  • Docker Desktop                                          ║
 ║  • Podium CLI                                              ║
 ║                                                              ║
+║  Execution Policy: $executionPolicy                                ║
 ╚══════════════════════════════════════════════════════════════╝
 "@ $BLUE
 
 # Check for admin rights
 if (-not (Test-AdminRights)) {
-    Write-ColorOutput "This script requires Administrator privileges." $RED
-    Write-ColorOutput "Please run PowerShell as Administrator and try again." $RED
+    Write-ColorOutput @"
+╔══════════════════════════════════════════════════════════════╗
+║                    ADMINISTRATOR REQUIRED                    ║
+║                                                              ║
+║  This script requires Administrator privileges to:          ║
+║  • Install WSL2 Windows features                           ║
+║  • Install Docker Desktop                                  ║
+║  • Modify system settings                                  ║
+║                                                              ║
+║  Please:                                                    ║
+║  1. Right-click PowerShell and select "Run as Administrator" ║
+║  2. Run this command:                                       ║
+║     PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+"@ $RED
+    Read-Host "Press Enter to exit"
     exit 1
 }
 

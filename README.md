@@ -85,6 +85,12 @@ Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podiu
 PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
 
+**If you get execution policy errors, use this one-liner instead:**
+```powershell
+# One-liner that handles execution policy automatically
+powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1' -OutFile 'install-windows.ps1'; PowerShell -ExecutionPolicy Bypass -File install-windows.ps1"
+```
+
 **What the installer does:**
 - Installs WSL2 (Windows Subsystem for Linux)
 - Installs Ubuntu distribution
