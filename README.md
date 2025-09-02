@@ -22,7 +22,7 @@ Built for modern PHP development, Podium CLI eliminates the complexity of managi
 ### 🐧 Linux (Ubuntu/Debian)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
 **What it installs:**

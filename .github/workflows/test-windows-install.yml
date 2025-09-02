@@ -222,10 +222,10 @@ jobs:
         echo "Testing Podium CLI installation on Linux..."
         
         # Make install script executable
-        chmod +x install.sh
+        chmod +x install-ubuntu.sh
         
         # Run installation
-        ./install.sh
+        ./install-ubuntu.sh
         
         # Test if podium is installed
         if command -v podium >/dev/null 2>&1; then
