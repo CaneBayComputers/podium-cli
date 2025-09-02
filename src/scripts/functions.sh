@@ -158,16 +158,13 @@ podium-sed-change() {
     local replacement="$2"
     local file="$3"
     
-    # Use a more straightforward substitution approach
-    # Convert pattern to simple substitution
-    local search_pattern="${pattern//\//\\/}"  # Escape any forward slashes
-    
+    # Go back to the working c\ approach but fix it properly
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS BSD sed - use simple substitution
-        sed -i '' "s/${search_pattern#/}.*/${replacement}/" "$file"
+        # macOS BSD sed - use printf to handle the newline properly
+        printf '%s\n' "$pattern c\\" "$replacement" | sed -i '' -f - "$file"
     else
-        # Linux GNU sed
-        sed -i "s/${search_pattern#/}.*/${replacement}/" "$file"
+        # Linux GNU sed can do it on one line
+        sed -i "$pattern c\\$replacement" "$file"
     fi
 }
 
