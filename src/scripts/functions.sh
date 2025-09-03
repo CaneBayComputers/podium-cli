@@ -204,3 +204,24 @@ podium-sudo() {
         "$@"
     fi
 }
+
+# JSON error output function
+json_error() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    echo "{\"status\": \"error\", \"message\": \"$message\"}"
+    exit "$exit_code"
+}
+
+# Universal error function - handles both interactive and JSON output modes
+error() {
+    local message="$1"
+    local exit_code="${2:-1}"
+    
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        json_error "$message" "$exit_code"
+    else
+        echo-red "$message"
+        exit "$exit_code"
+    fi
+}

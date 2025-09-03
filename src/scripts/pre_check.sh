@@ -22,23 +22,13 @@ source scripts/functions.sh
 
 # Do not run as root
 if [[ "$(whoami)" == "root" ]]; then
-
-  echo-red "Do NOT run with sudo!"; echo-white; echo
-
-  exit 1
-
+  error "Do NOT run with sudo!"
 fi
 
 
 # Check if this environment is configured
 if ! [ -f /etc/podium-cli/.env ]; then
-
-  echo; echo-red 'Development environment has not been configured!'; echo-white
-
-  echo 'Run: podium config'
-
-  exit 0
-
+  error "Development environment has not been configured! Run: podium configure" 0
 fi
 
 cd "$ORIG_DIR"

@@ -21,11 +21,12 @@ AWS_SECRET_KEY=""
 AWS_REGION="us-east-1"
 SKIP_AWS=false
 PROJECTS_DIR=""
-SKIP_PACKAGES=false
-
 while [[ $# -gt 0 ]]; do
     case $1 in
-
+        --json-output)
+            export JSON_OUTPUT=1
+            shift
+            ;;
         --git-name)
             GIT_NAME="$2"
             shift 2
@@ -54,10 +55,7 @@ while [[ $# -gt 0 ]]; do
             PROJECTS_DIR="$2"
             shift 2
             ;;
-        --skip-packages)
-            SKIP_PACKAGES=true
-            shift
-            ;;
+
         *)
             shift
             ;;
@@ -113,14 +111,12 @@ fi
 
 
 # Permission checks (skip in JSON output mode)
+# Check and fix root perms
+if [[ "$(whoami)" == "root" ]]; then
+	error "Do NOT run with sudo or as root! Please run as regular user (you may be prompted for sudo password when needed)."
+fi
+
 if [[ "$JSON_OUTPUT" != "1" ]]; then
-	# Check and fix root perms
-	if [[ "$(whoami)" == "root" ]]; then
-		echo-return; echo-red "Do NOT run with sudo or as root!"
-		echo-return; echo-white "Please run as regular user (you may be prompted for sudo password when needed)."
-		echo-return
-		exit 1
-	fi
 
 	echo-return; echo-return
 	echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
@@ -129,12 +125,10 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
 	echo-return; echo-return
 
 	if ! sudo -v; then
-		echo-return; echo-red "No sudo privileges. Root access required!"
-		echo-return
-		exit 1
+		error "No sudo privileges. Root access required!"
 	fi
 else
-	echo-cyan "Running in GUI mode - skipping permission checks"
+	echo-cyan "Running in JSON output mode - skipping permission checks"
 	echo
 fi
 
