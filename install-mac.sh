@@ -10,6 +10,13 @@ clear 2>/dev/null || true
 
 # Immediate feedback to user (prevents showing script content)
 echo "🚀 Starting Podium CLI installation..."
+
+# Ensure we're in a valid directory (fix for "Unable to read current working directory" error)
+if ! pwd &>/dev/null; then
+    echo "⚠️  Current directory is invalid, changing to home directory..."
+    cd "$HOME" || cd /tmp
+fi
+
 sleep 1
 
 # Check for dry-run mode

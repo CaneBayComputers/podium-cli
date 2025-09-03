@@ -21,6 +21,13 @@ REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
 
 echo -e "${BLUE}Podium CLI Complete Installer${NC}"
 echo "=============================="
+
+# Ensure we're in a valid directory (fix for "Unable to read current working directory" error)
+if ! pwd &>/dev/null; then
+    echo "⚠️  Current directory is invalid, changing to home directory..."
+    cd "$HOME" || cd /tmp
+fi
+
 echo
 
 # Check if running as root
