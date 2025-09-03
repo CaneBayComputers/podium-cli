@@ -54,7 +54,7 @@ usage() {
 }
 
 # Env vars
-source docker-stack/.env
+source /etc/podium-cli/.env
 
 # Store project name first
 PROJECT_NAME="$1"

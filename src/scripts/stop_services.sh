@@ -72,7 +72,7 @@ if check-mariadb; then
     echo-cyan "Stopping services ..."; echo-white
   fi
 
-  cd docker-stack
+  cd /etc/podium-cli
 
   dockerdown
 

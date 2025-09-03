@@ -19,10 +19,13 @@ echo
 
 # Load configuration to get STACK_ID
 CONFIG_FILE=""
+COMPOSE_FILE=""
 if [ -f "/etc/podium-cli/.env" ]; then
     CONFIG_FILE="/etc/podium-cli/.env"
+    COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
 elif [ -f "$SCRIPT_DIR/../docker-stack/.env" ]; then
     CONFIG_FILE="$SCRIPT_DIR/../docker-stack/.env"
+    COMPOSE_FILE="$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml"
 fi
 
 if [ -n "$CONFIG_FILE" ]; then
@@ -37,13 +40,20 @@ echo
 # 1. Stop and remove containers first
 echo-white "🛑 Stopping Podium containers..."
 
-# Get all containers with podium labels or docker-stack names
-CONTAINERS=$(docker ps -a --filter "name=mariadb" --filter "name=phpmyadmin" --filter "name=redis" --filter "name=memcached" --filter "name=mongo" --filter "name=postgres" --filter "name=mailhog" --filter "name=ollama" --format "{{.Names}}" 2>/dev/null || true)
+# Get container names from docker-compose file
+CONTAINERS=""
+if [ -f "$COMPOSE_FILE" ]; then
+    CONTAINERS=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:\s*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+fi
 
 if [ -n "$CONTAINERS" ]; then
-    echo "Found containers: $CONTAINERS"
-    echo "$CONTAINERS" | xargs -r docker stop 2>/dev/null || true
-    echo "$CONTAINERS" | xargs -r docker rm 2>/dev/null || true
+    echo "Found containers from compose: $CONTAINERS"
+    for container in $CONTAINERS; do
+        if docker ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
+            docker stop "$container" 2>/dev/null || true
+            docker rm "$container" 2>/dev/null || true
+        fi
+    done
     echo-green "✅ Containers removed"
 else
     echo "No Podium containers found"
@@ -54,27 +64,23 @@ echo
 # 2. Remove specific images by name
 echo-white "🗑️ Removing Podium images..."
 
-# List of images from docker-compose (strip :latest if present)
-IMAGES=(
-    "mariadb"
-    "phpmyadmin" 
-    "redis"
-    "memcached"
-    "mongo"
-    "postgres"
-    "mailhog/mailhog"
-    "ollama/ollama"
-)
+# Get image names from docker-compose file
+IMAGES=""
+if [ -f "$COMPOSE_FILE" ]; then
+    IMAGES=$(grep -E "^\s*image:" "$COMPOSE_FILE" | sed 's/.*image:\s*\([^[:space:]]*\).*/\1/' | sort | uniq)
+fi
 
 REMOVED_IMAGES=0
-for image in "${IMAGES[@]}"; do
-    # Check if image exists (with or without :latest tag)
-    if docker image inspect "$image" >/dev/null 2>&1 || docker image inspect "$image:latest" >/dev/null 2>&1; then
-        echo "Removing image: $image"
-        docker rmi "$image" 2>/dev/null || docker rmi "$image:latest" 2>/dev/null || true
-        ((REMOVED_IMAGES++))
-    fi
-done
+if [ -n "$IMAGES" ]; then
+    for image in $IMAGES; do
+        # Check if image exists (with or without :latest tag)
+        if docker image inspect "$image" >/dev/null 2>&1 || docker image inspect "$image:latest" >/dev/null 2>&1; then
+            echo "Removing image: $image"
+            docker rmi "$image" 2>/dev/null || docker rmi "$image:latest" 2>/dev/null || true
+            ((REMOVED_IMAGES++))
+        fi
+    done
+fi
 
 if [ $REMOVED_IMAGES -gt 0 ]; then
     echo-green "✅ Removed $REMOVED_IMAGES images"
@@ -84,17 +90,19 @@ fi
 
 echo
 
-# 3. Remove volumes with docker-stack prefix
+# 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
 
 if [ -n "$STACK_ID" ]; then
-    # Remove volumes with specific STACK_ID
-    VOLUMES=$(docker volume ls --filter "name=${STACK_ID}_" --format "{{.Name}}" 2>/dev/null || true)
+    VOLUME_PATTERN="docker-stack_${STACK_ID}"
+    NETWORK_PATTERN="docker-stack_${STACK_ID}"
 else
-    # Remove any volumes starting with docker-stack_
-    VOLUMES=$(docker volume ls --filter "name=docker-stack_" --format "{{.Name}}" 2>/dev/null || true)
+    VOLUME_PATTERN="docker-stack_"
+    NETWORK_PATTERN="docker-stack_"
 fi
 
+# Remove volumes
+VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
 if [ -n "$VOLUMES" ]; then
     echo "Found volumes: $VOLUMES"
     echo "$VOLUMES" | xargs -r docker volume rm 2>/dev/null || true
@@ -105,17 +113,10 @@ fi
 
 echo
 
-# 4. Remove networks with docker-stack prefix  
+# 4. Remove networks
 echo-white "🌐 Removing Podium networks..."
 
-if [ -n "$STACK_ID" ]; then
-    # Remove networks with specific STACK_ID
-    NETWORKS=$(docker network ls --filter "name=${STACK_ID}_" --format "{{.Name}}" 2>/dev/null || true)
-else
-    # Remove any networks starting with docker-stack_
-    NETWORKS=$(docker network ls --filter "name=docker-stack_" --format "{{.Name}}" 2>/dev/null || true)
-fi
-
+NETWORKS=$(docker network ls --filter "name=${NETWORK_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
 if [ -n "$NETWORKS" ]; then
     echo "Found networks: $NETWORKS"
     echo "$NETWORKS" | xargs -r docker network rm 2>/dev/null || true
@@ -126,7 +127,38 @@ fi
 
 echo
 
-# 5. Clean up any orphaned resources
+# 5. Remove hosts file entries
+echo-white "📝 Removing hosts file entries..."
+
+HOSTS_FILE="/etc/hosts"
+REMOVED_HOSTS=0
+
+if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
+    # Get container names from docker-compose file
+    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:\s*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+    
+    if [ -n "$CONTAINER_NAMES" ]; then
+        for container_name in $CONTAINER_NAMES; do
+            # Check if container name exists in hosts file
+            if grep -q "[[:space:]]${container_name}[[:space:]]*$" "$HOSTS_FILE"; then
+                echo "Removing hosts entry: $container_name"
+                # Remove the line containing the container name
+                sudo sed -i "/[[:space:]]${container_name}[[:space:]]*$/d" "$HOSTS_FILE"
+                ((REMOVED_HOSTS++))
+            fi
+        done
+    fi
+fi
+
+if [ $REMOVED_HOSTS -gt 0 ]; then
+    echo-green "✅ Removed $REMOVED_HOSTS hosts file entries"
+else
+    echo "No Podium hosts entries found"
+fi
+
+echo
+
+# 6. Clean up any orphaned resources
 echo-white "🧽 Cleaning up orphaned resources..."
 docker system prune -f >/dev/null 2>&1 || true
 echo-green "✅ Orphaned resources cleaned"
@@ -137,6 +169,7 @@ echo
 echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
+echo "  • Hosts file entries for Podium services"
 if [ -n "$STACK_ID" ]; then
     echo "  • Volumes with prefix: ${STACK_ID}_*"
     echo "  • Networks with prefix: ${STACK_ID}_*"

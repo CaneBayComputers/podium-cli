@@ -83,11 +83,11 @@ if ! check-mariadb; then
     echo-cyan "Starting services ..."; echo-white
   fi
 
-  cd docker-stack
+  cd /etc/podium-cli
 
   dockerup
 
-  cd ..
+  cd "$DEV_DIR"
 
   sleep 5
 

@@ -31,7 +31,7 @@ fi
 
 
 # Check if this environment is configured
-if ! [ -f docker-stack/.env ]; then
+if ! [ -f /etc/podium-cli/.env ]; then
 
   echo; echo-red 'Development environment has not been configured!'; echo-white
 

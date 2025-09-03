@@ -18,7 +18,7 @@ DEV_DIR=$(pwd)
 source scripts/functions.sh
 
 # Env vars
-source docker-stack/.env
+source /etc/podium-cli/.env
 
 # Return to projects directory for project operations
 cd "$PROJECTS_DIR"

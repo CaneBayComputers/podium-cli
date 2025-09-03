@@ -309,7 +309,7 @@ fi
 
 # Check if this environment is installed (only for non-JSON output)
 if [[ "$JSON_OUTPUT" != "1" ]]; then
-    if ! [ -f docker-stack/.env ]; then
+    if ! [ -f /etc/podium-cli/.env ]; then
         echo-return; echo-red 'Development environment has not been configured!'; echo-white
         echo 'Run: podium config'
         exit 1
@@ -328,8 +328,8 @@ fi
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Get VPC subnet from .env file
     VPC_SUBNET=""
-    if [ -f "docker-stack/.env" ]; then
-        VPC_SUBNET=$(grep "^VPC_SUBNET=" docker-stack/.env | cut -d'=' -f2)
+    if [ -f "/etc/podium-cli/.env" ]; then
+        VPC_SUBNET=$(grep "^VPC_SUBNET=" /etc/podium-cli/.env | cut -d'=' -f2)
     fi
     
     # Initialize JSON structure
