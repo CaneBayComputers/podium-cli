@@ -264,8 +264,8 @@ podium exec-root bash
 podium start-services
 podium stop-services
 
-# Configure projects directory
-podium config projects /path/to/projects
+# Configure Podium environment
+podium configure
 ```
 
 ### Get Help Anytime

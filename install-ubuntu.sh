@@ -220,7 +220,7 @@ if command -v podium &> /dev/null; then
     
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "  1. ${BLUE}podium config${NC}     - Configure your development environment"
+    echo -e "  1. ${BLUE}podium configure${NC} - Configure your development environment"
     echo -e "  2. ${BLUE}podium new my-project${NC} - Create your first project"  
     echo -e "  3. ${BLUE}podium status${NC}     - Check system status"
     echo -e "  4. ${BLUE}podium help${NC}       - Show all available commands"

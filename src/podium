@@ -69,11 +69,10 @@ show_help() {
     echo "  podium remove <project> [options] - Remove project"
     echo
     echo-white "SYSTEM MANAGEMENT:"
-    echo "  podium config             - Configure Podium environment"
+    echo "  podium configure          - Configure Podium environment"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
     echo "  podium uninstall          - Remove Podium Docker resources"
-    echo "  podium config projects <path> - Set custom projects directory"
     echo "  podium gui                - Launch desktop GUI interface"
     echo
     echo-white "TESTING:"
@@ -302,7 +301,7 @@ case "$1" in
         ;;
     
     # System management
-    "config")
+    "configure")
         "$SCRIPT_DIR/scripts/configure.sh" "${@:2}"
         ;;
     "start-services")
@@ -347,38 +346,6 @@ case "$1" in
         fi
         ;;
     
-    # Configuration
-    "config")
-        case "$2" in
-            "projects")
-                if [ -z "$3" ]; then
-                    echo-cyan "Current projects directory: $(get_projects_dir)"
-                    echo-white "To change: podium config projects /path/to/projects"
-                else
-                    # Update docker-stack/.env (preferred method)
-                    if [ -f "$SCRIPT_DIR/docker-stack/.env" ]; then
-                        # Update existing PROJECTS_DIR line or add it
-                        if grep -q "^PROJECTS_DIR=" "$SCRIPT_DIR/docker-stack/.env"; then
-                            podium-sed "s|^PROJECTS_DIR=.*|PROJECTS_DIR=$3|" "$SCRIPT_DIR/docker-stack/.env"
-                        else
-                            echo "PROJECTS_DIR=$3" >> "$SCRIPT_DIR/docker-stack/.env"
-                        fi
-                    fi
-                    
-                    # Also update legacy config for backward compatibility
-                    mkdir -p ~/.podium
-                    echo "PROJECTS_DIR=$3" > ~/.podium/config
-                    
-                    echo-green "Projects directory set to: $3"
-                    init_projects_dir
-                fi
-                ;;
-            *)
-                echo-red "Usage: podium config projects <path>"
-                exit 1
-                ;;
-        esac
-        ;;
     
     # Help and default
     "help"|"-h"|"--help"|"")

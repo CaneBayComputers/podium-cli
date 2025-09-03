@@ -35,7 +35,7 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 **Quick Start:**
 ```bash
 # Install and configure Podium
-podium config
+podium configure
 
 # Create a new project
 podium new my-project
@@ -64,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 **Quick Start:**
 ```bash
 # Install and configure Podium
-podium config
+podium configure
 
 # Create a new project
 podium new my-project
@@ -105,7 +105,7 @@ powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw
 wsl
 
 # Install and configure Podium
-podium config
+podium configure
 
 # Create a new project
 podium new my-project
@@ -186,10 +186,10 @@ Looking for a visual interface? **Podium GUI** provides a modern desktop applica
 
 | Command | Description |
 |---------|-------------|
-| `podium config` | Configure Podium environment |
+| `podium configure` | Configure Podium environment |
 | `podium start-services` | Start shared services |
 | `podium stop-services` | Stop shared services |
-| `podium config projects <path>` | Set custom projects directory |
+
 | `podium gui` | Launch desktop GUI interface |
 
 ### 🧪 Testing
@@ -386,10 +386,7 @@ The GUI provides:
 
 ```bash
 # Run the configuration wizard
-podium config
-
-# Set custom projects directory
-podium config projects /path/to/projects
+podium configure
 ```
 
 ### Environment Variables
