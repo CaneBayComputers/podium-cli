@@ -20,7 +20,7 @@ echo "🔍 Extracting container names from compose file:"
 echo "Container name lines found:"
 grep -E "^\s*container_name:" "$COMPOSE_FILE" || echo "  None found"
 
-CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:\s*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
 
 echo
 echo "Extracted container names: '$CONTAINER_NAMES'"

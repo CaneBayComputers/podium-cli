@@ -153,7 +153,7 @@ REMOVED_HOSTS=0
 
 if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
     # Get container names from docker-compose file
-    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:\s*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
     
     if [ -n "$CONTAINER_NAMES" ]; then
         for container_name in $CONTAINER_NAMES; do
