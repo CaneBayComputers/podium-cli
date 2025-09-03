@@ -31,8 +31,11 @@ fi
 if [ -n "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
     echo-white "Using STACK_ID: $STACK_ID"
+    echo-white "Config file: $CONFIG_FILE"
+    echo-white "Compose file: $COMPOSE_FILE"
 else
     echo-yellow "Warning: No configuration found, will clean up any docker-stack_* resources"
+    echo-yellow "Checked: /etc/podium-cli/.env and $SCRIPT_DIR/../docker-stack/.env"
 fi
 
 echo
@@ -50,13 +53,32 @@ if [ -n "$CONTAINERS" ]; then
     echo "Found containers from compose: $CONTAINERS"
     for container in $CONTAINERS; do
         if docker ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
+            echo "  Stopping and removing: $container"
             docker stop "$container" 2>/dev/null || true
             docker rm "$container" 2>/dev/null || true
+        else
+            echo "  Container not found in Docker: $container"
         fi
     done
-    echo-green "✅ Containers removed"
+    echo-green "✅ Containers processed"
 else
-    echo "No Podium containers found"
+    echo "No containers found in compose file"
+    echo "Searching for Podium containers by name pattern..."
+    
+    # Fallback: find containers by common Podium names
+    FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(mariadb|redis|postgres|mongo|memcached|phpmyadmin|mailhog|ollama)" 2>/dev/null || true)
+    
+    if [ -n "$FALLBACK_CONTAINERS" ]; then
+        echo "Found containers by pattern: $FALLBACK_CONTAINERS"
+        for container in $FALLBACK_CONTAINERS; do
+            echo "  Stopping and removing: $container"
+            docker stop "$container" 2>/dev/null || true
+            docker rm "$container" 2>/dev/null || true
+        done
+        echo-green "✅ Fallback containers processed"
+    else
+        echo "  No Podium containers found"
+    fi
 fi
 
 echo
@@ -93,13 +115,9 @@ echo
 # 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
 
-if [ -n "$STACK_ID" ]; then
-    VOLUME_PATTERN="docker-stack_${STACK_ID}"
-    NETWORK_PATTERN="docker-stack_${STACK_ID}"
-else
-    VOLUME_PATTERN="docker-stack_"
-    NETWORK_PATTERN="docker-stack_"
-fi
+# Always use docker-stack_ prefix to catch all Podium resources regardless of STACK_ID changes
+VOLUME_PATTERN="docker-stack_"
+NETWORK_PATTERN="docker-stack_"
 
 # Remove volumes
 VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
@@ -139,11 +157,17 @@ if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
     
     if [ -n "$CONTAINER_NAMES" ]; then
         for container_name in $CONTAINER_NAMES; do
-            # Check if container name exists in hosts file
-            if grep -q "[[:space:]]${container_name}[[:space:]]*$" "$HOSTS_FILE"; then
+            # Check if container name exists in hosts file (more flexible matching)
+            if grep -q "${container_name}" "$HOSTS_FILE"; then
                 echo "Removing hosts entry: $container_name"
-                # Remove the line containing the container name
-                sudo sed -i "/[[:space:]]${container_name}[[:space:]]*$/d" "$HOSTS_FILE"
+                # Remove the line containing the container name (macOS compatible)
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS sed requires backup extension
+                    sudo sed -i '' "/${container_name}/d" "$HOSTS_FILE"
+                else
+                    # Linux sed
+                    sudo sed -i "/${container_name}/d" "$HOSTS_FILE"
+                fi
                 ((REMOVED_HOSTS++))
             fi
         done
