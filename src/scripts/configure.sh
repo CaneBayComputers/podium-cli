@@ -68,12 +68,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Detect platform
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    PLATFORM="mac"
-else
-    PLATFORM="linux"
-fi
+# Platform detection removed - if system can run this script, it should work
 
 
 # Generate stack id (cross-platform)
@@ -123,50 +118,26 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 fi
 
 
-# Platform-specific permission checks (skip in GUI mode)
+# Permission checks (skip in GUI mode)
 if [[ "$GUI_MODE" != "true" ]]; then
-	if [[ "$PLATFORM" == "linux" ]]; then
-		# Check and fix root perms (Linux only)
-		if [[ "$(whoami)" == "root" ]]; then
-
-			ORIG_USER=$SUDO_USER
-
-				echo-return; echo-red "Do NOT run with sudo or as root!";
-
-		echo-return; echo-white "Please run as regular user (you may be prompted for sudo password when needed)."; echo
-
+	# Check and fix root perms
+	if [[ "$(whoami)" == "root" ]]; then
+		echo-return; echo-red "Do NOT run with sudo or as root!"
+		echo-return; echo-white "Please run as regular user (you may be prompted for sudo password when needed)."
+		echo-return
 		exit 1
+	fi
 
-		fi
+	echo-return; echo-return
+	echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
+	echo-return; echo-white 'Running with sudo would configure Git and AWS for the root user instead of your user account.'
+	echo-white 'The script will prompt for sudo password only when needed for system-level operations.'
+	echo-return; echo-return
 
-		echo-return; echo-return
-
-		echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
-
-		echo-return; echo-white 'Running with sudo would configure Git and AWS for the root user instead of your user account.'
-
-		echo-white 'The script will prompt for sudo password only when needed for system-level operations.'
-
-		echo-return; echo-return
-
-		if ! sudo -v; then
-
-			echo-return; echo-red "No sudo privileges. Root access required!"; echo
-
-			exit 1;
-
-		fi
-	elif [[ "$PLATFORM" == "mac" ]]; then
-		# Mac users typically have sudo access, just verify
-		echo-cyan "Verifying administrator privileges..."
-		echo-white "You'll be prompted for your password to authorize system changes"
-		echo
-		if ! sudo -v; then
-			echo-return; echo-red "Administrator privileges required for installation!"; echo
-			exit 1;
-		fi
-		echo-green "✓ Administrator privileges confirmed"
-		echo
+	if ! sudo -v; then
+		echo-return; echo-red "No sudo privileges. Root access required!"
+		echo-return
+		exit 1
 	fi
 else
 	echo-cyan "Running in GUI mode - skipping permission checks"
@@ -176,26 +147,7 @@ fi
 clear
 
 
-# Platform-specific checks
-if [[ "$PLATFORM" == "linux" ]]; then
-	# Check for WSL2
-	if grep -qEi "(Microsoft|WSL)" /proc/version 2>/dev/null; then
-		echo-cyan "Detected Windows WSL2 - Linux compatibility mode"
-		echo-white "Note: Make sure Docker Desktop is running on Windows with WSL2 integration enabled"
-		echo-white
-	fi
-	
-	# Check for Ubuntu distribution
-	if ! uname -a | grep Ubuntu > /dev/null; then
-		if ! uname -a | grep pop-os > /dev/null; then
-			echo-red "This script is for an Ubuntu based distribution!"
-			exit 1
-		fi
-	fi
-elif [[ "$PLATFORM" == "mac" ]]; then
-	echo-cyan "Detected macOS - using Homebrew for package management"
-	echo-white
-fi
+# Platform checks removed - if system can run Bash and has sudo, it should work
 
 
 # Install Podium command globally
