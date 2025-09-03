@@ -72,7 +72,7 @@ show_help() {
     echo "  podium config             - Configure Podium environment"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
-                    echo "  podium destroy            - Remove all Docker containers, images, volumes, networks (DANGEROUS!)"
+    echo "  podium destroy            - Remove all Docker containers, images, volumes, networks (DANGEROUS!)"
     echo "  podium config projects <path> - Set custom projects directory"
     echo "  podium gui                - Launch desktop GUI interface"
     echo
