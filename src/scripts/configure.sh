@@ -238,13 +238,7 @@ clear
 echo-return; echo-return
 
 
-# Welcome screen
-echo "
-          WELCOME TO PODIUM DEVELOPMENT ENVIRONMENT !
-
-Setting up your $PLATFORM development environment for PHP projects...
-Leave answers blank if you do not know the info. You can re-run the
-installer to enter in new info when you have it."
+# Welcome screen removed - was too fast to read
 
 
 
@@ -382,25 +376,43 @@ echo-white; echo
 ###############################
 # Set up Github authentication
 ###############################
-echo-return; echo-cyan 'Setting up Github authentication ...'; echo-white
-
-if ! gh auth status > /dev/null 2>&1; then
-
+if [[ "$GUI_MODE" == "true" ]]; then
+	echo-cyan 'Skipping GitHub authentication in GUI mode'
+	echo-white 'GitHub setup can be done later if needed for repository operations'
 	echo
-	echo-cyan "GitHub CLI needs to be authenticated for repository operations."
-	echo-white "You'll be prompted to:"
-	echo-white "  1. Choose authentication method (recommended: SSH)"
-	echo-white "  2. Select SSH key (usually: id_rsa.pub)"  
-	echo-white "  3. Provide GitHub personal access token"
-	echo
-	echo-yellow "Starting GitHub authentication process..."
-	echo
-
-	gh auth login --hostname github.com
-
+else
+	echo-return; echo-cyan 'GitHub Authentication Setup'; echo-white
+	
+	if ! gh auth status > /dev/null 2>&1; then
+		echo
+		echo-cyan "GitHub CLI can be set up for repository operations."
+		echo-white "This process requires:"
+		echo-white "  1. A GitHub account"
+		echo-white "  2. Choosing authentication method (SSH recommended)"
+		echo-white "  3. Selecting your SSH key (usually: id_rsa.pub)"  
+		echo-white "  4. Creating/providing a GitHub personal access token"
+		echo-white "  5. Following the web browser authentication flow"
+		echo
+		echo-yellow "This is optional - you can skip and set up later if needed."
+		echo
+		read -p "Do you want to set up GitHub authentication now? [N/y]: " -n 1 -r SETUP_GITHUB
+		echo
+		
+		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
+			echo
+			echo-yellow "Starting GitHub authentication process..."
+			echo
+			gh auth login --hostname github.com
+			echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
+		else
+			echo-cyan "Skipping GitHub authentication"
+			echo-white "You can set it up later with: gh auth login"
+			echo
+		fi
+	else
+		echo-green "GitHub authentication already configured!"; echo-white; echo
+	fi
 fi
-
-echo-return; echo-green "Github authentication complete!"; echo-white; echo
 
 
 
@@ -413,22 +425,22 @@ if [[ "$SKIP_AWS" == "true" ]]; then
 	echo-cyan 'Skipping AWS setup (user choice)'
 	echo
 elif [[ "$GUI_MODE" == "true" ]]; then
-	echo-cyan 'Configuring AWS with GUI-provided settings...'
-
-	mkdir -p ~/s3
-
-	# Install AWS CLI if not present
-	if ! aws --version > /dev/null 2>&1; then
-		curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" > awscli-bundle.zip
-		7z x awscli-bundle.zip
-		rm -f awscli-bundle.zip
-		sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-		sudo chmod -R o+rx /usr/local/aws-cli/v2/current/dist
-		rm -fR aws
-	fi
-
-	# Configure AWS with GUI values
 	if [[ -n "$AWS_ACCESS_KEY" && -n "$AWS_SECRET_KEY" ]]; then
+		echo-cyan 'Configuring AWS with GUI-provided settings...'
+
+		mkdir -p ~/s3
+
+		# Install AWS CLI if not present
+		if ! aws --version > /dev/null 2>&1; then
+			curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" > awscli-bundle.zip
+			7z x awscli-bundle.zip
+			rm -f awscli-bundle.zip
+			sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+			sudo chmod -R o+rx /usr/local/aws-cli/v2/current/dist
+			rm -fR aws
+		fi
+
+		# Configure AWS with GUI values
 		aws configure set aws_access_key_id "$AWS_ACCESS_KEY"
 		aws configure set aws_secret_access_key "$AWS_SECRET_KEY"
 		aws configure set default.region "$AWS_REGION"
@@ -439,13 +451,37 @@ elif [[ "$GUI_MODE" == "true" ]]; then
 		chmod 600 ~/.passwd-s3fs
 		
 		echo-cyan "AWS configured with region: $AWS_REGION"
+		echo
+	else
+		echo-cyan 'Skipping AWS setup in GUI mode (no credentials provided)'
+		echo
 	fi
 else
-	echo-cyan 'Installing AWS ...'
+	echo-return; echo-cyan 'AWS Setup'; echo-white
+	
+	echo-cyan "AWS CLI can be configured for cloud storage and services."
+	echo-white "To set up AWS, you will need:"
+	echo-white "  1. An AWS account (aws.amazon.com)"
+	echo-white "  2. Your AWS Access Key ID"
+	echo-white "  3. Your AWS Secret Access Key"
+	echo-white "  4. Your preferred AWS region (e.g., us-east-1)"
+	echo
+	echo-white "To get your AWS credentials:"
+	echo-white "  • Log into AWS Console → IAM → Users → Your User → Security Credentials"
+	echo-white "  • Create Access Key → Command Line Interface (CLI)"
+	echo-white "  • Download or copy the Access Key ID and Secret Access Key"
+	echo
+	echo-yellow "This is optional - you can skip and set up later if needed."
+	echo
+	read -p "Do you want to set up AWS now? [N/y]: " -n 1 -r SETUP_AWS
+	echo
+	
+	if [[ $SETUP_AWS =~ ^[Yy]$ ]]; then
+		echo-cyan 'Setting up AWS...'
 
-	mkdir -p ~/s3
+		mkdir -p ~/s3
 
-	echo-white
+		echo-white
 
 	if ! aws --version > /dev/null 2>&1; then
 
@@ -495,19 +531,26 @@ else
 		fi
 
 	fi
+	else
+		echo-cyan "Skipping AWS setup"
+		echo-white "You can set it up later with: aws configure"
+		echo
+	fi
+
 fi
 
 echo
 
 if [[ "$GUI_MODE" != "true" ]]; then
-	aws --version
+	if command -v aws >/dev/null 2>&1; then
+		aws --version
+		echo-green "AWS setup completed!"
+	else
+		echo-cyan "AWS setup skipped"
+	fi
 else
-	echo-cyan 'AWS setup skipped in GUI mode'
+	echo-cyan 'AWS setup completed in GUI mode'
 fi
-
-echo
-
-echo-green "AWS installed!"
 
 echo-white
 
@@ -524,23 +567,33 @@ echo-cyan 'Writing domain names to hosts file ...'
 
 echo-white
 
-# Add service entries to /etc/hosts
-HOSTS_ENTRIES=(
-    ".2        mariadb"
-    ".3        phpmyadmin" 
-    ".4        mongo"
-    ".5        redis"
-    ".6        postgres"
-    ".7        memcached"
-    ".8        mailhog"
-    ".9        ollama"
-)
+# Dynamically get container names from docker-compose.yaml
+COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
 
-for HOST in "${HOSTS_ENTRIES[@]}"; do
-    if ! cat /etc/hosts | grep "$HOST" > /dev/null 2>&1; then
-        echo "$VPC_SUBNET$HOST" | sudo tee -a /etc/hosts > /dev/null
+if [ -f "$COMPOSE_FILE" ]; then
+    # Extract container names from docker-compose file
+    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+    
+    if [ -n "$CONTAINER_NAMES" ]; then
+        # Get the IP suffix mapping from the compose file
+        declare -A IP_MAP
+        IP_COUNTER=2
+        
+        for container_name in $CONTAINER_NAMES; do
+            # Check if entry already exists in hosts file
+            if ! grep -q "[[:space:]]${container_name}[[:space:]]*$" /etc/hosts 2>/dev/null; then
+                echo-white "Adding hosts entry: $VPC_SUBNET.$IP_COUNTER -> $container_name"
+                echo "$VPC_SUBNET.$IP_COUNTER        $container_name" | sudo tee -a /etc/hosts > /dev/null
+            fi
+            ((IP_COUNTER++))
+        done
+        echo-green "Hosts file updated with container entries"
+    else
+        echo-yellow "No container names found in docker-compose file"
     fi
-done
+else
+    echo-yellow "Docker compose file not found: $COMPOSE_FILE"
+fi
 
 echo
 
