@@ -200,38 +200,25 @@ fi
 
 # Install Podium command globally
 echo-return; echo-cyan "Installing Podium command globally..."
-echo-white "This creates a 'podium' command accessible from anywhere on your system."
-echo-white
+echo-white "Creating 'podium' command accessible from anywhere on your system."
 
-if [[ "$GUI_MODE" == "true" ]]; then
-	INSTALL_GLOBAL="y"
-	echo-cyan "Auto-installing podium command in GUI mode..."
-else
-	read -p "Install podium command globally? (strongly recommended) (y/n): " INSTALL_GLOBAL
-fi
-
-if [[ "$INSTALL_GLOBAL" == "y" ]]; then
-	echo
-	echo-cyan "Installing podium command globally..."
+if [[ "$GUI_MODE" != "true" ]]; then
 	echo-white "You'll be prompted for your password to install to /usr/local/bin"
-	echo
-	
-	# Remove existing symlink if it exists
-	sudo rm -f /usr/local/bin/podium 2>/dev/null || true
-	
-	# Create symlink to podium script
-	sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
-	
-	echo-green "Podium command installed globally!"
-	echo-white "  • podium up myproject         (start project)"
-	echo-white "  • podium new                  (create new project)"
-	echo-white "  • podium help                 (see all commands)"
-	echo-white
-else
-	echo-yellow "Global installation skipped - you'll need to use full paths:"
-	echo-white "  $DEV_DIR/podium composer install"
-	echo-white "  $DEV_DIR/podium art migrate"
 fi
+
+echo-return
+
+# Remove existing symlink if it exists
+sudo rm -f /usr/local/bin/podium 2>/dev/null || true
+
+# Create symlink to podium script
+sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
+
+echo-green "Podium command installed globally!"
+echo-white "  • podium up myproject         (start project)"
+echo-white "  • podium new                  (create new project)"
+echo-white "  • podium help                 (see all commands)"
+echo-white
 
 clear
 
@@ -539,7 +526,7 @@ else
 
 fi
 
-echo
+echo-return
 
 if [[ "$GUI_MODE" != "true" ]]; then
 	if command -v aws >/dev/null 2>&1; then
@@ -595,7 +582,7 @@ else
     echo-yellow "Docker compose file not found: $COMPOSE_FILE"
 fi
 
-echo
+echo-return
 
 
 
