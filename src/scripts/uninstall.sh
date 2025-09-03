@@ -160,17 +160,12 @@ if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
             # Check if container name exists in hosts file (more flexible matching)
             if grep -q "${container_name}" "$HOSTS_FILE"; then
                 echo "Removing hosts entry: $container_name"
-                # Remove the line containing the container name (robust cross-platform approach)
+                # Remove the line containing the container name
                 if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS: Use temp file approach (more reliable than sed -i)
-                    sudo grep -v "${container_name}" "$HOSTS_FILE" > /tmp/podium_hosts_tmp 2>/dev/null || true
-                    if [ -f /tmp/podium_hosts_tmp ]; then
-                        sudo mv /tmp/podium_hosts_tmp "$HOSTS_FILE"
-                        sudo chmod 644 "$HOSTS_FILE"
-                        sudo chown root:wheel "$HOSTS_FILE" 2>/dev/null || sudo chown root:admin "$HOSTS_FILE" 2>/dev/null || true
-                    fi
+                    # macOS: BSD sed requires backup extension
+                    sudo sed -i '' "/${container_name}/d" "$HOSTS_FILE"
                 else
-                    # Linux: Use sed -i (works reliably)
+                    # Linux: GNU sed
                     sudo sed -i "/${container_name}/d" "$HOSTS_FILE"
                 fi
                 ((REMOVED_HOSTS++))
