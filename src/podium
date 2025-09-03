@@ -72,6 +72,7 @@ show_help() {
     echo "  podium config             - Configure Podium environment"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
+    echo "  podium uninstall          - Selectively remove Podium Docker resources (recommended)"
     echo "  podium destroy            - Remove all Docker containers, images, volumes, networks (DANGEROUS!)"
     echo "  podium config projects <path> - Set custom projects directory"
     echo "  podium gui                - Launch desktop GUI interface"
@@ -313,6 +314,9 @@ case "$1" in
         ;;
                     "destroy")
                     "$SCRIPT_DIR/scripts/docker_destroy.sh"
+                    ;;
+                    "uninstall")
+                    "$SCRIPT_DIR/scripts/uninstall.sh"
                     ;;
     
     # Testing
