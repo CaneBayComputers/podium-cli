@@ -8,8 +8,11 @@ get_projects_dir() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local podium_root="$(dirname "$script_dir")"
     
-    # First check docker-stack/.env file (preferred method)
-    if [ -f "$podium_root/docker-stack/.env" ]; then
+    # First check /etc/podium-cli/.env file (primary config location)
+    if [ -f "/etc/podium-cli/.env" ]; then
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2)
+    # Fallback to old location for backward compatibility
+    elif [ -f "$podium_root/docker-stack/.env" ]; then
         PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2)
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
@@ -174,6 +177,22 @@ sudo-podium-sed() {
         sudo sed -i '' "$@"
     else
         sudo sed -i "$@"
+    fi
+}
+
+# Cross-platform sudo sed change function
+sudo-podium-sed-change() {
+    local pattern="$1"
+    local replacement="$2"
+    local file="$3"
+    
+    # Go back to the working c\ approach but fix it properly with sudo
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS BSD sed - use printf to handle the newline properly
+        printf '%s\n' "$pattern c\\" "$replacement" | sudo sed -i '' -f - "$file"
+    else
+        # Linux GNU sed can do it on one line
+        sudo sed -i "$pattern c\\$replacement" "$file"
     fi
 }
 

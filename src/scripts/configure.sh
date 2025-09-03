@@ -81,9 +81,12 @@ STACK_ID=$(openssl rand -hex 4 | cut -c1-8)
 
 
 # Check for and set up environment variables
-if ! [ -f docker-stack/.env ]; then
+# Use /etc/podium-cli/ as primary config location
+sudo mkdir -p /etc/podium-cli
 
-	cp docker-stack/env.example docker-stack/.env
+if ! [ -f /etc/podium-cli/.env ]; then
+
+	sudo cp docker-stack/env.example /etc/podium-cli/.env
 
 	# Generate random numbers for B and C classes
 	B_CLASS=$((RANDOM % 255 + 1))
@@ -92,28 +95,28 @@ if ! [ -f docker-stack/.env ]; then
 	VPC_SUBNET="10.$B_CLASS.$C_CLASS"
 
 	# Cross-platform sed with proper c\ command handling
-	podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" docker-stack/.env
-	podium-sed-change "/^#STACK_ID=/" "STACK_ID=$STACK_ID" docker-stack/.env
+	sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+	sudo-podium-sed-change "/^#STACK_ID=/" "STACK_ID=$STACK_ID" /etc/podium-cli/.env
 
 else
 
-	source docker-stack/.env
+	source /etc/podium-cli/.env
 
 fi
 
 
 # Check for and set up docker compose yaml
-if ! [ -f docker-stack/docker-compose.yaml ]; then
+if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 
-	 cp docker-stack/docker-compose.services.yaml docker-stack/docker-compose.yaml
+	sudo cp docker-stack/docker-compose.services.yaml /etc/podium-cli/docker-compose.yaml
 
 	# Set projects directory if specified
 	if [ -n "$PROJECTS_DIR" ]; then
-		podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+		sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 	fi
 	
 	# Cross-platform sed for docker-compose.yaml
-	podium-sed "s/STACK_ID/${STACK_ID}/g" docker-stack/docker-compose.yaml
+	sudo podium-sed "s/STACK_ID/${STACK_ID}/g" /etc/podium-cli/docker-compose.yaml
 	
 	echo-cyan "All database services (MariaDB, PostgreSQL, MongoDB) will be available"
 	echo-white "Database selection happens per-project during project creation"
@@ -370,8 +373,8 @@ if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
 fi
 
 # Update .env file with projects directory
-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" docker-stack/.env
+sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
+sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo
