@@ -118,8 +118,6 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 	# Cross-platform sed for docker-compose.yaml
 	sudo-podium-sed "s/STACK_ID/${STACK_ID}/g" /etc/podium-cli/docker-compose.yaml
 	
-	echo-cyan "All database services (MariaDB, PostgreSQL, MongoDB) will be available"
-	echo-white "Database selection happens per-project during project creation"
 	echo
 
 fi
