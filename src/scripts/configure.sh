@@ -13,8 +13,7 @@ DEV_DIR=$(pwd)
 
 source scripts/functions.sh
 
-# Check for GUI mode flag and parse arguments
-GUI_MODE=false
+# Parse arguments
 GIT_NAME=""
 GIT_EMAIL=""
 AWS_ACCESS_KEY=""
@@ -26,10 +25,7 @@ SKIP_PACKAGES=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --gui-mode)
-            GUI_MODE=true
-            shift
-            ;;
+
         --git-name)
             GIT_NAME="$2"
             shift 2
@@ -67,8 +63,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-# Platform detection removed - if system can run this script, it should work
 
 
 # Generate stack id (cross-platform)
@@ -118,8 +112,8 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 fi
 
 
-# Permission checks (skip in GUI mode)
-if [[ "$GUI_MODE" != "true" ]]; then
+# Permission checks (skip in JSON output mode)
+if [[ "$JSON_OUTPUT" != "1" ]]; then
 	# Check and fix root perms
 	if [[ "$(whoami)" == "root" ]]; then
 		echo-return; echo-red "Do NOT run with sudo or as root!"
@@ -144,17 +138,12 @@ else
 	echo
 fi
 
-clear
-
-
-# Platform checks removed - if system can run Bash and has sudo, it should work
-
 
 # Install Podium command globally
 echo-return; echo-cyan "Installing Podium command globally..."
 echo-white "Creating 'podium' command accessible from anywhere on your system."
 
-if [[ "$GUI_MODE" != "true" ]]; then
+if [[ "$JSON_OUTPUT" != "1" ]]; then
 	echo-white "You'll be prompted for your password to install to /usr/local/bin"
 fi
 
@@ -165,29 +154,6 @@ sudo rm -f /usr/local/bin/podium 2>/dev/null || true
 
 # Create symlink to podium script
 sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
-
-echo-green "Podium command installed globally!"
-echo-white "  • podium up myproject         (start project)"
-echo-white "  • podium new                  (create new project)"
-echo-white "  • podium help                 (see all commands)"
-echo-white
-
-clear
-
-echo-return; echo-return
-
-
-# Welcome screen removed - was too fast to read
-
-
-
-###############################
-# Platform-specific package installation
-###############################
-
-# Package installation is now handled by package managers (.deb dependencies or Homebrew)
-echo-cyan "Package installation handled by package manager (.deb dependencies or Homebrew)"
-echo-white
 
 
 
@@ -210,7 +176,7 @@ echo-return; echo-cyan 'Setting up Git ...'; echo-white
 
 
 # Configure Git (use GUI-provided values or prompt)
-if [[ "$GUI_MODE" == "true" ]]; then
+if [[ "$JSON_OUTPUT" == "1" ]]; then
 	if [[ -n "$GIT_NAME" ]]; then
 		git config --global user.name "$GIT_NAME"
 		echo-cyan "Git name set to: $GIT_NAME"
@@ -268,8 +234,8 @@ echo-green "Git configured!"; echo-white; echo
 ###############################
 echo-return; echo-cyan 'Setting up projects directory ...'; echo-white
 
-# If not set via GUI mode or CLI argument, ask user
-if [[ "$GUI_MODE" != "true" && -z "$PROJECTS_DIR" ]]; then
+# If not set via JSON mode or CLI argument, ask user
+if [[ "$JSON_OUTPUT" != "1" && -z "$PROJECTS_DIR" ]]; then
     DEFAULT_PROJECTS_DIR="$HOME/podium-projects"
     echo-yellow "Where would you like to store your development projects?"
     echo-white "Default: $DEFAULT_PROJECTS_DIR"
@@ -315,7 +281,7 @@ echo-white; echo
 ###############################
 # Set up Github authentication
 ###############################
-if [[ "$GUI_MODE" == "true" ]]; then
+if [[ "$JSON_OUTPUT" == "1" ]]; then
 	echo-cyan 'Skipping GitHub authentication in GUI mode'
 	echo-white 'GitHub setup can be done later if needed for repository operations'
 	echo
@@ -363,7 +329,7 @@ fi
 if [[ "$SKIP_AWS" == "true" ]]; then
 	echo-cyan 'Skipping AWS setup (user choice)'
 	echo
-elif [[ "$GUI_MODE" == "true" ]]; then
+elif [[ "$JSON_OUTPUT" == "1" ]]; then
 	if [[ -n "$AWS_ACCESS_KEY" && -n "$AWS_SECRET_KEY" ]]; then
 		echo-cyan 'Configuring AWS with GUI-provided settings...'
 
@@ -480,7 +446,7 @@ fi
 
 echo-return
 
-if [[ "$GUI_MODE" != "true" ]]; then
+if [[ "$JSON_OUTPUT" != "1" ]]; then
 	if command -v aws >/dev/null 2>&1; then
 		aws --version
 		echo-green "AWS setup completed!"
@@ -551,7 +517,7 @@ echo-return
 ###############################
 
 # Start services
-if [[ "$GUI_MODE" == "true" ]]; then
+if [[ "$JSON_OUTPUT" == "1" ]]; then
 	echo-cyan 'Setting up docker group permissions...'
 	# Add user to docker group if not already there
 	sudo usermod -aG docker $USER
