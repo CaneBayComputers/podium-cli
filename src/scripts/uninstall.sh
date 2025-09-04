@@ -113,38 +113,22 @@ echo-return
 # 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
 
-# Search for volumes and networks using multiple patterns to catch all Podium resources
-# Handle both old patterns and new patterns, including literal STACK_ID issues
-if [ -n "$STACK_ID" ]; then
-    VOLUME_PATTERNS=("${STACK_ID}_" "docker-stack_${STACK_ID}_" "podium-cli_${STACK_ID}_" "podium-cli_STACK_ID_")
-    NETWORK_PATTERNS=("${STACK_ID}_" "docker-stack_${STACK_ID}_" "podium-cli_${STACK_ID}_" "podium-cli_STACK_ID_")
-else
-    VOLUME_PATTERNS=("docker-stack_" "podium-cli_STACK_ID_")
-    NETWORK_PATTERNS=("docker-stack_" "podium-cli_STACK_ID_")
-fi
+# Always use docker-stack_ prefix to catch all Podium resources
+VOLUME_PATTERN="docker-stack_"
+NETWORK_PATTERN="docker-stack_"
 
-# Remove volumes using multiple patterns
-ALL_VOLUMES=""
-for pattern in "${VOLUME_PATTERNS[@]}"; do
-    PATTERN_VOLUMES=$(docker volume ls --filter "name=${pattern}" --format "{{.Name}}" 2>/dev/null || true)
-    if [ -n "$PATTERN_VOLUMES" ]; then
-        ALL_VOLUMES="$ALL_VOLUMES $PATTERN_VOLUMES"
-    fi
-done
-
-# Remove duplicates and trim
-ALL_VOLUMES=$(echo "$ALL_VOLUMES" | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-if [ -n "$ALL_VOLUMES" ]; then
-    echo "Found volumes: $ALL_VOLUMES"
+# Remove volumes
+VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
+if [ -n "$VOLUMES" ]; then
+    echo "Found volumes: $VOLUMES"
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # Mac: xargs doesn't have -r flag, use different approach
-        echo "$ALL_VOLUMES" | tr ' ' '\n' | while read -r volume; do
+        echo "$VOLUMES" | tr ' ' '\n' | while read -r volume; do
             [ -n "$volume" ] && docker volume rm "$volume" 2>/dev/null || true
         done
     else
         # Linux: use xargs -r
-        echo "$ALL_VOLUMES" | xargs -r docker volume rm 2>/dev/null || true
+        echo "$VOLUMES" | xargs -r docker volume rm 2>/dev/null || true
     fi
     echo-green "✅ Volumes removed"
 else
@@ -156,28 +140,17 @@ echo-return
 # 4. Remove networks
 echo-white "🌐 Removing Podium networks..."
 
-# Remove networks using multiple patterns
-ALL_NETWORKS=""
-for pattern in "${NETWORK_PATTERNS[@]}"; do
-    PATTERN_NETWORKS=$(docker network ls --filter "name=${pattern}" --format "{{.Name}}" 2>/dev/null || true)
-    if [ -n "$PATTERN_NETWORKS" ]; then
-        ALL_NETWORKS="$ALL_NETWORKS $PATTERN_NETWORKS"
-    fi
-done
-
-# Remove duplicates and trim
-ALL_NETWORKS=$(echo "$ALL_NETWORKS" | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
-
-if [ -n "$ALL_NETWORKS" ]; then
-    echo "Found networks: $ALL_NETWORKS"
+NETWORKS=$(docker network ls --filter "name=${NETWORK_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
+if [ -n "$NETWORKS" ]; then
+    echo "Found networks: $NETWORKS"
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # Mac: xargs doesn't have -r flag, use different approach
-        echo "$ALL_NETWORKS" | tr ' ' '\n' | while read -r network; do
+        echo "$NETWORKS" | tr ' ' '\n' | while read -r network; do
             [ -n "$network" ] && docker network rm "$network" 2>/dev/null || true
         done
     else
         # Linux: use xargs -r
-        echo "$ALL_NETWORKS" | xargs -r docker network rm 2>/dev/null || true
+        echo "$NETWORKS" | xargs -r docker network rm 2>/dev/null || true
     fi
     echo-green "✅ Networks removed"
 else
