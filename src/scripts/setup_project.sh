@@ -309,10 +309,10 @@ PROJECT_EMOJI_SAFE="${PROJECT_EMOJI:-🚀}"
 DISPLAY_NAME_SAFE="${DISPLAY_NAME:-$PROJECT_NAME}"
 PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION:-}"
 
-# Use sed with proper delimiter to avoid issues with special characters
-sed -i "s|PROJECT_EMOJI|$PROJECT_EMOJI_SAFE|g" docker-compose.yaml
-sed -i "s|PROJECT_NAME|$DISPLAY_NAME_SAFE|g" docker-compose.yaml  
-sed -i "s|PROJECT_DESCRIPTION|$PROJECT_DESCRIPTION_SAFE|g" docker-compose.yaml
+# Use podium-sed with proper delimiter to avoid issues with special characters (Mac/Linux compatible)
+podium-sed "s|PROJECT_EMOJI|$PROJECT_EMOJI_SAFE|g" docker-compose.yaml
+podium-sed "s|PROJECT_NAME|$DISPLAY_NAME_SAFE|g" docker-compose.yaml  
+podium-sed "s|PROJECT_DESCRIPTION|$PROJECT_DESCRIPTION_SAFE|g" docker-compose.yaml
 
 if [ -d "public" ]; then
 
