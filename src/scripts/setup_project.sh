@@ -107,8 +107,6 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --php-version requires a version number"
-                    usage
-                fi
             fi
             ;;
         --help)
@@ -116,13 +114,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         -*)
             error "Unknown option: $1"
-                usage
-            fi
             ;;
         *)
             error "Unexpected argument: $1"
-                usage
-            fi
             ;;
     esac
 done
@@ -130,8 +124,6 @@ done
 # Check if repository argument is provided
 if [ -z "$PROJECT_NAME" ]; then
     error "Error: Project name is required."
-        usage
-    fi
 fi
 
 # Use the configured projects directory
