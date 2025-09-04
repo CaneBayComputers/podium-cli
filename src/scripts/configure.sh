@@ -450,14 +450,6 @@ echo-return
 
 
 
-###############################
-# Docker perms
-###############################
-echo-cyan 'Setting up docker group permissions...'
-# Add user to docker group if not already there
-sudo usermod -aG docker $USER
-echo-green 'Docker group configured!'
-echo-white
 
 
 
