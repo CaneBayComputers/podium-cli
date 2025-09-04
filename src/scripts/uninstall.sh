@@ -24,7 +24,7 @@ elif [ -f "$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml" ]; then
     COMPOSE_FILE="$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml"
     echo-white "Using compose file: $COMPOSE_FILE"
 else
-    echo-yellow "Warning: No docker-compose.yaml found, will clean up any podium_docker_stack* resources"
+    echo-yellow "Warning: No docker-compose.yaml found, will clean up any podium-cli* resources"
 fi
 
 echo-return
@@ -104,9 +104,9 @@ echo-return
 # 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
 
-# Always use podium_docker_stack prefix to catch all Podium resources
-VOLUME_PATTERN="podium_docker_stack"
-NETWORK_PATTERN="podium_docker_stack"
+# Always use podium-cli prefix to catch all Podium resources
+VOLUME_PATTERN="podium-cli"
+NETWORK_PATTERN="podium-cli"
 
 # Remove volumes
 VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
@@ -199,8 +199,8 @@ echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
 echo "  • Hosts file entries for Podium services"
-echo "  • Volumes with prefix: podium_docker_stack_*"
-echo "  • Networks with prefix: podium_docker_stack_*"
+echo "  • Volumes with prefix: podium-cli_*"
+echo "  • Networks with prefix: podium-cli_*"
 echo-return
 echo-white "What was preserved:"
 echo "  • Your project files and code"

@@ -5,12 +5,12 @@ services:
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
     volumes:
-      - podium_docker_stack_mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     restart: always
     expose:
       - "3306"
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.2"
 
   phpmyadmin:
@@ -22,7 +22,7 @@ services:
       PMA_USER: root
       UPLOAD_LIMIT: 256M
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.3"
 
   redis:
@@ -32,9 +32,9 @@ services:
     expose:
       - "6379"
     volumes:
-      - podium_docker_stack_redis_data:/data
+      - redis_data:/data
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.5"
 
   memcached:
@@ -44,7 +44,7 @@ services:
     expose:
       - "11211"
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.7"
 
   mongo:
@@ -57,9 +57,9 @@ services:
     expose:
       - "27017"
     volumes:
-      - podium_docker_stack_mongo_data:/data/db
+      - mongo_data:/data/db
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.4"
 
   postgres:
@@ -73,9 +73,9 @@ services:
     expose:
       - "5432"
     volumes:
-      - podium_docker_stack_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.6"
 
   mailhog:
@@ -87,7 +87,7 @@ services:
     expose:
       - "1025"
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.8"
 
   ollama:
@@ -97,20 +97,20 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - podium_docker_stack_ollama_data:/root/.ollama
+      - ollama_data:/root/.ollama
     networks:
-      podium_docker_stack_vpc:
+      vpc:
         ipv4_address: "${VPC_SUBNET}.9"
 
 volumes:
-  podium_docker_stack_redis_data:
-  podium_docker_stack_mysql_data:
-  podium_docker_stack_mongo_data:
-  podium_docker_stack_postgres_data:
-  podium_docker_stack_ollama_data:
+  redis_data:
+  mysql_data:
+  mongo_data:
+  postgres_data:
+  ollama_data:
 
 networks:
-  podium_docker_stack_vpc:
+  vpc:
     driver: bridge
     ipam:
       config:
