@@ -295,6 +295,10 @@ if ! [ -f /etc/podium-cli/.env ]; then
     error "Development environment has not been configured! Run: podium configure"
 fi
 
+if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
+    error "Development environment has not been configured! Run: podium configure"
+fi
+
 # Check if services are running
 if ! check-mariadb; then
     error "Development environment is not started! Run: podium start-services"
