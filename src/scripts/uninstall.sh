@@ -9,9 +9,7 @@ source "$SCRIPT_DIR/functions.sh"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
-    echo-red "Docker is not running or not accessible"
-    echo "Please start Docker and try again"
-    exit 1
+    error "Docker is not running or not accessible. Please start Docker and try again"
 fi
 
 echo-cyan "🧹 Podium Uninstall - Selective Docker Cleanup"

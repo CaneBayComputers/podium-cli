@@ -28,7 +28,7 @@ usage() {
     echo "  $0 my-project --force-trash-project"
     echo "  $0 my-project --force-db-delete"
     echo "  $0 my-project --force"
-    exit 1
+    error "usage" 1
 }
 
 # Initialize variables

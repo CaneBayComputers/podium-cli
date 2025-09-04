@@ -35,10 +35,7 @@ usage() {
     echo "  $0 my-project         # Show specific project"
     echo "  $0 --json-output      # JSON output for all projects"
     
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"status\", \"status\": \"error\", \"error\": \"usage\"}"
-    fi
-    exit 1
+    error "usage" 1
 }
 
 # Initialize variables
@@ -61,25 +58,13 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         -*)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"status\", \"status\": \"error\", \"error\": \"unknown_option\", \"option\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unknown option: $1"
-                usage
-            fi
+            error "Unknown option: $1"
             ;;
         *)
             if [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
             else
-                if [[ "$JSON_OUTPUT" == "1" ]]; then
-                    echo "{\"action\": \"status\", \"status\": \"error\", \"error\": \"too_many_arguments\"}"
-                    exit 1
-                else
-                    echo-red "Too many arguments"
-                    usage
-                fi
+                error "Too many arguments"
             fi
             shift
             ;;
@@ -300,9 +285,7 @@ project_status() {
 # Do not run as root
 if [[ "$(whoami)" == "root" ]]; then
 
-  echo-red "Do NOT run with sudo!"; echo-white; echo
-
-  exit 1
+  error "Do NOT run with sudo!"
 
 fi
 
@@ -310,16 +293,12 @@ fi
 # Check if this environment is installed (only for non-JSON output)
 if [[ "$JSON_OUTPUT" != "1" ]]; then
     if ! [ -f /etc/podium-cli/.env ]; then
-        echo-return; echo-red 'Development environment has not been configured!'; echo-white
-        echo 'Run: podium config'
-        exit 1
+        error "Development environment has not been configured! Run: podium configure"
     fi
 
     # Start CBC stack (only for non-JSON output)
     if ! check-mariadb; then
-        echo-return; echo-red 'Development environment is not started!'; echo-white
-        echo 'Run startup.sh'
-        exit 1
+        error "Development environment is not started! Run startup.sh"
     fi
 fi
 

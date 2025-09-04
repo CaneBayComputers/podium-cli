@@ -73,7 +73,7 @@ usage() {
     echo "Examples:"
     echo "  $0 my-app --framework laravel --display-name \"My App\" --database postgres --github"
     echo "  $0 my-blog --framework wordpress --display-name \"My Blog\" --github-org myorg"
-    exit 1
+    error "usage" 1
 }
 
 # Initialize variables
@@ -210,8 +210,7 @@ if [ -z "$PROJECT_NAME" ]; then
     read PROJECT_NAME
     
     if [ -z "$PROJECT_NAME" ]; then
-        echo-red "Project name cannot be empty!"
-        exit 1
+        error "Project name cannot be empty!"
     fi
     
     echo-white -n "Enter organization name (optional): "
@@ -235,8 +234,7 @@ while [ -d "$PROJECTS_DIR/$PROJECT_NAME" ]; do
         echo-yellow -n "Enter a different project name: "
         read NEW_PROJECT_NAME
         if [ -z "$NEW_PROJECT_NAME" ]; then
-            echo-red "Project name cannot be empty!"
-            exit 1
+            error "Project name cannot be empty!"
         fi
         # Cleanse the new name (macOS-compatible)
         if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -269,8 +267,7 @@ if [ -z "$FRAMEWORK" ]; then
             FRAMEWORK="php"
             ;;
         *)
-            echo-red "Invalid choice. Exiting..."
-            exit 1
+            error "Invalid choice. Exiting..."
             ;;
     esac
 fi
@@ -373,8 +370,7 @@ case $FRAMEWORK in
         echo-green "PHP project will be created with basic structure"
         ;;
     *)
-        echo-red "Unknown framework '$FRAMEWORK'. Exiting..."
-        exit 1
+        error "Unknown framework '$FRAMEWORK'. Exiting..."
         ;;
 esac
 
@@ -450,9 +446,7 @@ cd "$PROJECTS_DIR"
 
 if [ -d "$PROJECT_NAME" ]; then
 
-	echo-red "Error: Project name already exists"; echo-white
-
-	exit 1
+	    error "Error: Project name already exists"
 
 fi
 

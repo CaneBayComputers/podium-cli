@@ -46,24 +46,10 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -*)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"start_services\", \"status\": \"error\", \"error\": \"unknown_option\", \"option\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unknown option: $1"
-                echo "Use --help for usage information"
-                exit 1
-            fi
+            error "Unknown option: $1. Use --help for usage information"
             ;;
         *)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"start_services\", \"status\": \"error\", \"error\": \"unexpected_argument\", \"argument\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unexpected argument: $1"
-                echo "Use --help for usage information"
-                exit 1
-            fi
+            error "Unexpected argument: $1. Use --help for usage information"
             ;;
     esac
 done

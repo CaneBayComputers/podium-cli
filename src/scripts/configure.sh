@@ -259,8 +259,7 @@ fi
 
 # Verify directory exists and is writable
 if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
-    echo-red "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
-    exit 1
+    error "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
 fi
 
 # Update .env file with projects directory

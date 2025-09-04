@@ -57,26 +57,13 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -*)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"shutdown\", \"status\": \"error\", \"error\": \"unknown_option\", \"option\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unknown option: $1"
-                echo "Use --help for usage information"
-                exit 1
-            fi
+            error "Unknown option: $1. Use --help for usage information"
             ;;
         *)
             if [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
             else
-                if [[ "$JSON_OUTPUT" == "1" ]]; then
-                    echo "{\"action\": \"shutdown\", \"status\": \"error\", \"error\": \"too_many_arguments\"}"
-                    exit 1
-                else
-                    echo-red "Too many arguments"
-                    exit 1
-                fi
+                error "Too many arguments"
             fi
             shift
             ;;

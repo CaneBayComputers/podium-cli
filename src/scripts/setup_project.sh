@@ -47,10 +47,7 @@ usage() {
     echo "  $0 my-project mysql"
     echo "  $0 my-project postgres --json-output"
     
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"setup_project\", \"status\": \"error\", \"error\": \"usage\"}"
-    fi
-    exit 1
+    error "usage" 1
 }
 
 # Env vars
@@ -109,11 +106,7 @@ while [[ $# -gt 0 ]]; do
                 FORCED_PHP_VERSION="$2"
                 shift 2
             else
-                if [[ "$JSON_OUTPUT" == "1" ]]; then
-                    echo "{\"action\": \"setup_project\", \"status\": \"error\", \"error\": \"php_version_missing\"}"
-                    exit 1
-                else
-                    echo-red "Error: --php-version requires a version number"
+                error "Error: --php-version requires a version number"
                     usage
                 fi
             fi
@@ -122,20 +115,12 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         -*)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"setup_project\", \"status\": \"error\", \"error\": \"unknown_option\", \"option\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unknown option: $1"
+            error "Unknown option: $1"
                 usage
             fi
             ;;
         *)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"setup_project\", \"status\": \"error\", \"error\": \"unexpected_argument\", \"argument\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unexpected argument: $1"
+            error "Unexpected argument: $1"
                 usage
             fi
             ;;
@@ -144,11 +129,7 @@ done
 
 # Check if repository argument is provided
 if [ -z "$PROJECT_NAME" ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"setup_project\", \"status\": \"error\", \"error\": \"project_name_required\"}"
-        exit 1
-    else
-        echo "Error: Project name is required."
+    error "Error: Project name is required."
         usage
     fi
 fi
@@ -160,13 +141,7 @@ PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
 # Check for project folder existence
 if ! [ -d "$PROJECT_DIR" ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"error\", \"error\": \"project_folder_not_found\"}"
-        exit 1
-    else
-        echo-red "Project folder does not exist!"; echo-white
-        exit 1
-    fi
+    error "Project folder does not exist!"
 fi
 
 
@@ -199,13 +174,7 @@ detect_php_version() {
             echo "$FORCED_PHP_VERSION"
             return 0
         else
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"error\", \"error\": \"invalid_php_version\", \"version\": \"$FORCED_PHP_VERSION\"}"
-                exit 1
-            else
-                echo-red "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
-                exit 1
-            fi
+            error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
         fi
     fi
     
@@ -320,15 +289,13 @@ unalias cp 2>/dev/null || true
 if [ -f "docker-compose.yaml" ]; then
     if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
         if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"error\", \"error\": \"docker_compose_exists\"}"
-            exit 1
+            error "docker-compose.yaml already exists in this project."
         else
             echo-yellow "docker-compose.yaml already exists in this project."
             echo-yellow -n "Do you want to overwrite it? (y/N): "
             read OVERWRITE_RESPONSE
             if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
-                echo-red "Setup cancelled. Use --overwrite-docker-compose to force overwrite."
-                exit 1
+                error "Setup cancelled. Use --overwrite-docker-compose to force overwrite."
             fi
         fi
     fi
@@ -375,14 +342,7 @@ fi
 echo-return; echo-cyan "Starting up $PROJECT_NAME ..."; echo-white
 
 if ! [ -f docker-compose.yaml ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"error\", \"error\": \"docker_compose_not_found\"}"
-        exit 1
-    else
-        echo-red 'No docker-compose.yaml file found!'
-        echo-white 'Project setup incomplete. Exiting.'
-        exit 1
-    fi
+    error "No docker-compose.yaml file found! Project setup incomplete."
 fi
 
 # Start the container
