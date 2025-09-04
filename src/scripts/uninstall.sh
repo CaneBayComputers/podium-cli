@@ -13,7 +13,7 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 echo-cyan "🧹 Podium Uninstall - Selective Docker Cleanup"
-echo
+echo-return
 
 # Load configuration to get STACK_ID
 CONFIG_FILE=""
@@ -36,7 +36,7 @@ else
     echo-yellow "Checked: /etc/podium-cli/.env and $SCRIPT_DIR/../docker-stack/.env"
 fi
 
-echo
+echo-return
 
 # 1. Stop and remove containers first
 echo-white "🛑 Stopping Podium containers..."
@@ -79,7 +79,7 @@ else
     fi
 fi
 
-echo
+echo-return
 
 # 2. Remove specific images by name
 echo-white "🗑️ Removing Podium images..."
@@ -108,7 +108,7 @@ else
     echo "No Podium images found to remove"
 fi
 
-echo
+echo-return
 
 # 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
@@ -127,7 +127,7 @@ else
     echo "No Podium volumes found"
 fi
 
-echo
+echo-return
 
 # 4. Remove networks
 echo-white "🌐 Removing Podium networks..."
@@ -141,7 +141,7 @@ else
     echo "No Podium networks found"
 fi
 
-echo
+echo-return
 
 # 5. Remove hosts file entries
 echo-white "📝 Removing hosts file entries..."
@@ -178,16 +178,16 @@ else
     echo "No Podium hosts entries found"
 fi
 
-echo
+echo-return
 
 # 6. Clean up any orphaned resources
 echo-white "🧽 Cleaning up orphaned resources..."
 docker system prune -f >/dev/null 2>&1 || true
 echo-green "✅ Orphaned resources cleaned"
 
-echo
+echo-return
 echo-green "🎉 Podium Docker resources have been selectively removed!"
-echo
+echo-return
 echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
@@ -199,12 +199,12 @@ else
     echo "  • Volumes with prefix: docker-stack_*"
     echo "  • Networks with prefix: docker-stack_*"
 fi
-echo
+echo-return
 echo-white "What was preserved:"
 echo "  • Your project files and code"
 echo "  • Other Docker images and containers"
 echo "  • Docker itself"
-echo
+echo-return
 echo-cyan "To reinstall Podium:"
 echo "  podium config"
-echo
+echo-return

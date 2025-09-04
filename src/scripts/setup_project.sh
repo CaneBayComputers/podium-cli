@@ -275,7 +275,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         echo "$IP_ADDRESS      $PROJECT_NAME" | sudo tee -a /etc/hosts
     fi
 
-echo
+echo-return
 
 
 # Set up Docker compose file

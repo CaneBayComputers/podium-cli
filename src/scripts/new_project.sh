@@ -205,7 +205,7 @@ fi
 # Interactive mode if no project name provided
 if [ -z "$PROJECT_NAME" ]; then
     echo-return; echo-cyan "🚀 Create a New Podium Project"
-    echo
+echo-return
     echo-white -n "Enter project name: "
     read PROJECT_NAME
     

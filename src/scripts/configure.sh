@@ -105,7 +105,7 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 	# Cross-platform sed for docker-compose.yaml
 	sudo-podium-sed "s/STACK_ID/${STACK_ID}/g" /etc/podium-cli/docker-compose.yaml
 	
-	echo
+	echo-return
 
 fi
 
@@ -184,7 +184,7 @@ else
 
 		fi
 
-		echo
+	echo-return
 
 	fi
 
@@ -202,7 +202,7 @@ else
 
 		fi
 
-		echo
+	echo-return
 
 	fi
 fi
@@ -233,7 +233,7 @@ if [[ "$JSON_OUTPUT" != "1" && -z "$PROJECTS_DIR" ]]; then
         # Expand ~ to home directory
         PROJECTS_DIR="${USER_PROJECTS_DIR/#\~/$HOME}"
     fi
-    echo
+	echo-return
 fi
 
 # Set default if still empty
@@ -267,12 +267,12 @@ echo-white; echo
 if [[ "$JSON_OUTPUT" == "1" ]]; then
 	echo-cyan 'Skipping GitHub authentication in GUI mode'
 	echo-white 'GitHub setup can be done later if needed for repository operations'
-	echo
+	echo-return
 else
 	echo-return; echo-cyan 'GitHub Authentication Setup'; echo-white
 	
 	if ! gh auth status > /dev/null 2>&1; then
-		echo
+	echo-return
 		echo-cyan "GitHub CLI can be set up for repository operations."
 		echo-white "This process requires:"
 		echo-white "  1. A GitHub account"
@@ -280,22 +280,22 @@ else
 		echo-white "  3. Selecting your SSH key (usually: id_rsa.pub)"  
 		echo-white "  4. Creating/providing a GitHub personal access token"
 		echo-white "  5. Following the web browser authentication flow"
-		echo
+	echo-return
 		echo-yellow "This is optional - you can skip and set up later if needed."
-		echo
+	echo-return
 		read -p "Do you want to set up GitHub authentication now? [N/y]: " -n 1 -r SETUP_GITHUB
-		echo
+	echo-return
 		
 		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
-			echo
+	echo-return
 			echo-yellow "Starting GitHub authentication process..."
-			echo
+	echo-return
 			gh auth login --hostname github.com
 			echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
 		else
 			echo-cyan "Skipping GitHub authentication"
 			echo-white "You can set it up later with: gh auth login"
-			echo
+	echo-return
 		fi
 	else
 		echo-green "GitHub authentication already configured!"; echo-white; echo
@@ -311,7 +311,7 @@ fi
 # AWS Configuration
 if [[ "$SKIP_AWS" == "true" ]]; then
 	echo-cyan 'Skipping AWS setup (user choice)'
-	echo
+	echo-return
 elif [[ "$JSON_OUTPUT" == "1" ]]; then
 	if [[ -n "$AWS_ACCESS_KEY" && -n "$AWS_SECRET_KEY" ]]; then
 		echo-cyan 'Configuring AWS with GUI-provided settings...'
@@ -339,10 +339,10 @@ elif [[ "$JSON_OUTPUT" == "1" ]]; then
 		chmod 600 ~/.passwd-s3fs
 		
 		echo-cyan "AWS configured with region: $AWS_REGION"
-		echo
+	echo-return
 	else
 		echo-cyan 'Skipping AWS setup in GUI mode (no credentials provided)'
-		echo
+	echo-return
 	fi
 else
 	echo-return; echo-cyan 'AWS Setup'; echo-white
@@ -353,16 +353,16 @@ else
 	echo-white "  2. Your AWS Access Key ID"
 	echo-white "  3. Your AWS Secret Access Key"
 	echo-white "  4. Your preferred AWS region (e.g., us-east-1)"
-	echo
+	echo-return
 	echo-white "To get your AWS credentials:"
 	echo-white "  • Log into AWS Console → IAM → Users → Your User → Security Credentials"
 	echo-white "  • Create Access Key → Command Line Interface (CLI)"
 	echo-white "  • Download or copy the Access Key ID and Secret Access Key"
-	echo
+	echo-return
 	echo-yellow "This is optional - you can skip and set up later if needed."
-	echo
+	echo-return
 	read -p "Do you want to set up AWS now? [N/y]: " -n 1 -r SETUP_AWS
-	echo
+	echo-return
 	
 	if [[ $SETUP_AWS =~ ^[Yy]$ ]]; then
 		echo-cyan 'Setting up AWS...'
@@ -422,7 +422,7 @@ else
 	else
 		echo-cyan "Skipping AWS setup"
 		echo-white "You can set it up later with: aws configure"
-		echo
+	echo-return
 	fi
 
 fi

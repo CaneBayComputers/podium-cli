@@ -361,7 +361,7 @@ fi
 
 # Traditional text output
 echo-cyan "SHARED SERVICES STATUS:"
-echo
+echo-return
 
 # Check MariaDB
 echo-white -n "MariaDB: "
@@ -447,13 +447,13 @@ else
     
     if [ $PROJECT_COUNT -eq 0 ]; then
         echo-cyan "PROJECTS STATUS:"
-        echo
+echo-return
         echo-yellow "No projects found in $(pwd)"
         echo-white "Create your first project with: podium new"
         divider
     else
         echo-cyan "PROJECTS STATUS:"
-        echo
+echo-return
         for PROJECT_NAME in *; do
             if [ -d "$PROJECT_NAME" ] && [ "$PROJECT_NAME" != "." ] && [ "$PROJECT_NAME" != ".." ]; then
                 if project_status $PROJECT_NAME; then true; fi

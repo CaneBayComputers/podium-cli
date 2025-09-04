@@ -27,7 +27,7 @@ TEST_RESET='\033[0m'
 
 # Function to wait for user input
 wait_for_user() {
-    echo
+echo-return
     echo -e "${TEST_YELLOW}Press ENTER to continue...${TEST_RESET}"
     read -r
 }
@@ -38,26 +38,26 @@ run_test_step() {
     local command="$2"
     local description="$3"
     
-    echo
+echo-return
     echo -e "${TEST_CYAN}========================================${TEST_RESET}"
     echo -e "${TEST_CYAN}TEST: $test_name${TEST_RESET}"
     echo -e "${TEST_CYAN}========================================${TEST_RESET}"
-    echo
+echo-return
     echo -e "${TEST_GREEN}Description:${TEST_RESET} $description"
-    echo
+echo-return
     echo -e "${TEST_GREEN}Command to run:${TEST_RESET} $command"
-    echo
+echo-return
     
     wait_for_user
     
     echo -e "${TEST_YELLOW}Running: $command${TEST_RESET}"
-    echo
+echo-return
     
     # Execute the command
     eval "$command"
     local exit_code=$?
     
-    echo
+echo-return
     if [ $exit_code -eq 0 ]; then
         echo -e "${TEST_GREEN}✓ Test '$test_name' completed successfully${TEST_RESET}"
     else
@@ -69,13 +69,13 @@ run_test_step() {
 
 # Function to cleanup test project
 cleanup_test_project() {
-    echo
+echo-return
     echo -e "${TEST_CYAN}========================================${TEST_RESET}"
     echo -e "${TEST_CYAN}CLEANUP${TEST_RESET}"
     echo -e "${TEST_CYAN}========================================${TEST_RESET}"
-    echo
+echo-return
     echo -e "${TEST_YELLOW}Cleaning up test project: $TEST_PROJECT${TEST_RESET}"
-    echo
+echo-return
     
     if [ -d "$(get_projects_dir)/$TEST_PROJECT" ]; then
         echo "Removing test project..."
@@ -91,21 +91,21 @@ cleanup_test_project() {
 echo -e "${TEST_CYAN}========================================${TEST_RESET}"
 echo -e "${TEST_CYAN}PODIUM INTERACTIVE TEST SUITE${TEST_RESET}"
 echo -e "${TEST_CYAN}========================================${TEST_RESET}"
-echo
+echo-return
 echo -e "${TEST_GREEN}This test suite will run through all major Podium commands${TEST_RESET}"
 echo -e "${TEST_GREEN}in interactive mode (no --json-output).${TEST_RESET}"
-echo
+echo-return
 echo -e "${TEST_YELLOW}Test Project: $TEST_PROJECT${TEST_RESET}"
 echo -e "${TEST_YELLOW}Test Repository: $TEST_REPO${TEST_RESET}"
-echo
+echo-return
 echo -e "${TEST_RED}Note: This will create and remove a test project.${TEST_RESET}"
 
 wait_for_user
 
 # Pre-check
-echo
+echo-return
 echo -e "${TEST_CYAN}Running pre-check to ensure Podium is configured...${TEST_RESET}"
-echo
+echo-return
 podium pre-check
 
 # Test 1: Start Services
@@ -179,13 +179,13 @@ run_test_step "Final Status Check" \
     "Final status check to verify everything is stopped"
 
 # Test completion
-echo
+echo-return
 echo -e "${TEST_CYAN}========================================${TEST_RESET}"
 echo -e "${TEST_CYAN}INTERACTIVE TEST SUITE COMPLETED${TEST_RESET}"
 echo -e "${TEST_CYAN}========================================${TEST_RESET}"
-echo
+echo-return
 echo -e "${TEST_GREEN}All tests have been executed!${TEST_RESET}"
-echo
+echo-return
 echo -e "${TEST_YELLOW}Review the output above to verify all tests passed.${TEST_RESET}"
 echo -e "${TEST_YELLOW}If any tests failed, investigate the specific commands.${TEST_RESET}"
-echo
+echo-return

@@ -108,7 +108,7 @@ else
 fi
 
 # 1. Run shutdown.sh to stop the project and remove iptables rules
-echo
+echo-return
 echo-cyan "Shutting down project '$PROJECT_NAME'..."
 echo-white
 "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME"
