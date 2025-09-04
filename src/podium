@@ -51,7 +51,7 @@ show_help() {
     echo "  podium db-refresh         - Fresh migration + seed"
     echo "  podium cache-refresh      - Clear all Laravel caches"
     echo
-    echo-white "SERVICE MANAGEMENT: (Run from project directory)"
+    echo-white "SERVICE MANAGEMENT:"
     echo "  podium redis <cmd>        - Run Redis CLI commands"
     echo "  podium redis-flush        - Flush all Redis data"
     echo "  podium memcache <cmd>     - Run Memcached commands via telnet"
@@ -113,7 +113,8 @@ show_help() {
     echo "  podium supervisor restart all              # Restart all supervised processes"
     echo
     echo-white "NOTES:"
-    echo "  • Development tools (composer, art, wp, php, exec, supervisor) require being in project directory"
+    echo "  • Project-specific tools (composer, art, wp, php, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
+    echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (GUI, scripts, automation)"
     echo "  • Non-interactive mode uses sensible defaults for automated deployment"
 }
