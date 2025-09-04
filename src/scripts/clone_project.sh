@@ -18,6 +18,8 @@ JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 REPOSITORY=""
 PROJECT_NAME=""
+OVERWRITE_DOCKER_COMPOSE=""
+PHP_VERSION=""
 
 # Function to display usage
 usage() {
@@ -29,9 +31,11 @@ usage() {
     echo-white "  project_name      Optional: Local project name (defaults to repo name)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --json-output     Output results in JSON format"
-    echo-white "  --no-colors       Disable colored output"
-    echo-white "  --help            Show this help message"
+    echo-white "  --json-output                Output results in JSON format"
+    echo-white "  --no-colors                  Disable colored output"
+    echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
+    echo-white "  --php-version VERSION        Force specific PHP version (7 or 8)"
+    echo-white "  --help                       Show this help message"
     
     error "usage" 1
 }
@@ -46,6 +50,18 @@ while [[ $# -gt 0 ]]; do
         --no-colors)
             NO_COLOR=1
             shift
+            ;;
+        --overwrite-docker-compose)
+            OVERWRITE_DOCKER_COMPOSE=1
+            shift
+            ;;
+        --php-version)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                PHP_VERSION="$2"
+                shift 2
+            else
+                error "Error: --php-version requires a version number"
+            fi
             ;;
         --help)
             usage
@@ -111,6 +127,25 @@ fi
 
 echo-return
 
+# Check if cloned project has existing docker-compose.yaml with Podium metadata
+# If so, replace hardcoded ipv4_address with IPV4_ADDRESS placeholder
+if [ -f "$PROJECTS_DIR/$PROJECT_NAME/docker-compose.yaml" ]; then
+    cd "$PROJECTS_DIR/$PROJECT_NAME"
+    
+    # Check if this is a Podium project by looking for x-metadata
+    if grep -q "type: \"podium-project\"" docker-compose.yaml 2>/dev/null; then
+        echo-white "Detected existing Podium project, updating IP address configuration..."
+        
+        # Replace any hardcoded ipv4_address with IPV4_ADDRESS placeholder
+        # This allows setup_project.sh to assign a new IP that works with current installation
+        podium-sed 's/ipv4_address: [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+/ipv4_address: IPV4_ADDRESS/g' docker-compose.yaml
+        
+        echo-white "IP address configuration updated for current environment"
+    fi
+    
+    cd ..
+fi
+
 cd ..
 
 # Build setup options to pass along
@@ -120,6 +155,12 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 fi
 if [[ "$NO_COLOR" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --no-colors"
+fi
+if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-docker-compose"
+fi
+if [[ -n "$PHP_VERSION" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --php-version $PHP_VERSION"
 fi
 
 # Setup project
