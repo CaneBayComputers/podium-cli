@@ -128,7 +128,8 @@ fi
 
 
 # Install Podium command globally
-echo-return; echo-cyan "Installing Podium command globally..."
+echo-return
+echo-cyan "Installing Podium command globally..."
 echo-white "Creating 'podium' command accessible from anywhere on your system."
 echo-white "You'll be prompted for your password to install to /usr/local/bin"
 echo-return
@@ -184,7 +185,7 @@ else
 
 		fi
 
-	echo-return
+		echo-return
 
 	fi
 
@@ -202,7 +203,7 @@ else
 
 		fi
 
-	echo-return
+		echo-return
 
 	fi
 fi
@@ -272,7 +273,7 @@ else
 	echo-return; echo-cyan 'GitHub Authentication Setup'; echo-white
 	
 	if ! gh auth status > /dev/null 2>&1; then
-	echo-return
+		echo-return
 		echo-cyan "GitHub CLI can be set up for repository operations."
 		echo-white "This process requires:"
 		echo-white "  1. A GitHub account"
@@ -280,22 +281,22 @@ else
 		echo-white "  3. Selecting your SSH key (usually: id_rsa.pub)"  
 		echo-white "  4. Creating/providing a GitHub personal access token"
 		echo-white "  5. Following the web browser authentication flow"
-	echo-return
+		echo-return
 		echo-yellow "This is optional - you can skip and set up later if needed."
-	echo-return
+		echo-return
 		read -p "Do you want to set up GitHub authentication now? [N/y]: " -n 1 -r SETUP_GITHUB
-	echo-return
+		echo-return
 		
 		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
-	echo-return
+			echo-return
 			echo-yellow "Starting GitHub authentication process..."
-	echo-return
+			echo-return
 			gh auth login --hostname github.com
 			echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
 		else
 			echo-cyan "Skipping GitHub authentication"
 			echo-white "You can set it up later with: gh auth login"
-	echo-return
+			echo-return
 		fi
 	else
 		echo-green "GitHub authentication already configured!"; echo-white; echo
@@ -339,10 +340,10 @@ elif [[ "$JSON_OUTPUT" == "1" ]]; then
 		chmod 600 ~/.passwd-s3fs
 		
 		echo-cyan "AWS configured with region: $AWS_REGION"
-	echo-return
+		echo-return
 	else
 		echo-cyan 'Skipping AWS setup in GUI mode (no credentials provided)'
-	echo-return
+		echo-return
 	fi
 else
 	echo-return; echo-cyan 'AWS Setup'; echo-white
@@ -422,7 +423,7 @@ else
 	else
 		echo-cyan "Skipping AWS setup"
 		echo-white "You can set it up later with: aws configure"
-	echo-return
+		echo-return
 	fi
 
 fi
@@ -488,42 +489,31 @@ echo-return
 
 
 ###############################
-# Yay all done
+# Docker perms
 ###############################
-
-# Configuration complete - docker-stack/.env exists
+echo-cyan 'Setting up docker group permissions...'
+# Add user to docker group if not already there
+sudo usermod -aG docker $USER
+echo-green 'Docker group configured!'
+echo-white
 
 
 
 ###############################
 # Start services
 ###############################
-
-# Start services
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-	echo-cyan 'Setting up docker group permissions...'
-	# Add user to docker group if not already there
-	sudo usermod -aG docker $USER
-	echo-green 'Docker group configured!'
-	echo-white
-	echo-yellow 'Note: Services can be started from the dashboard after installation'
-	echo-white
-	echo-green 'GUI installation completed successfully!'
-	echo-white
+    # Capture start_services JSON output
+    SUPPRESS_INTERMEDIATE_JSON=1 source "$DEV_DIR/scripts/start_services.sh"
+    START_SERVICES_RESULT=$?
+    
+    if [ $START_SERVICES_RESULT -eq 0 ]; then
+        echo "{\"action\": \"configure\", \"services_started\": true, \"status\": \"success\"}"
+    else
+        echo "{\"action\": \"configure\", \"services_started\": false, \"status\": \"success\", \"warning\": \"Services failed to start but configuration completed\"}"
+    fi
 else
-	source "$DEV_DIR/scripts/start_services.sh"
-fi
-
-
-
-###############################
-# Yay all done
-###############################
-
-# JSON output for configuration
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-    echo "{\"action\": \"configure\", \"status\": \"success\"}"
-else
+    source "$DEV_DIR/scripts/start_services.sh"
     echo-green "Configuration completed successfully!"; echo-white
 fi
 
