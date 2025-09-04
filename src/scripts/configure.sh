@@ -13,6 +13,9 @@ DEV_DIR=$(pwd)
 
 source scripts/functions.sh
 
+# Define SCRIPT_DIR for file operations
+SCRIPT_DIR="$DEV_DIR/scripts"
+
 # Parse arguments
 GIT_NAME=""
 GIT_EMAIL=""
