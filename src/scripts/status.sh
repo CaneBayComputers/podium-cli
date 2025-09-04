@@ -315,13 +315,15 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     JSON_DATA='{"shared_services": {}, "projects": []}'
     
     # Parse docker-compose.yaml to get all services dynamically
-    COMPOSE_FILE="docker-stack/docker-compose.yaml"
+    COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
+    if [ ! -f "$COMPOSE_FILE" ]; then
+        # Try fallback location
+        COMPOSE_FILE="$DEV_DIR/docker-stack/docker-compose.services.yaml"
+    fi
+    
     if [ -f "$COMPOSE_FILE" ]; then
         SERVICES_JSON=$(parse_docker_compose_services "$COMPOSE_FILE" "$VPC_SUBNET")
         JSON_DATA=$(echo "$JSON_DATA" | jq --argjson services "$SERVICES_JSON" '.shared_services = $services')
-    else
-        # Fallback if compose file not found
-        echo-white "Warning: docker-compose.yaml not found" >&2
     fi
     
     # Get projects directory and iterate through projects
@@ -463,20 +465,8 @@ echo-return
     fi
 fi
 
-# Output JSON if in JSON mode
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-    if [ -n "$PROJECT_NAME" ]; then
-        # Check if specific project is running
-        if docker ps --format "table {{.Names}}" | grep -q "$PROJECT_NAME"; then
-            echo "{\"action\": \"status\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"running\"}"
-        else
-            echo "{\"action\": \"status\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"stopped\"}"
-        fi
-    else
-        # General status check completed
-        echo "{\"action\": \"status\", \"status\": \"success\"}"
-    fi
-else
+# Only add spacing for non-JSON output
+if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-return; echo-return
 fi
 
