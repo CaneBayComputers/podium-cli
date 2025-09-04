@@ -105,6 +105,68 @@ fi
 
 echo-return
 
+# 1b. Stop and remove project containers
+echo-white "🛑 Stopping project containers..."
+
+# Load the get_projects_dir function
+source "$SCRIPT_DIR/functions.sh"
+
+PROJECT_CONTAINERS_REMOVED=0
+PROJECTS_DIR=""
+
+# Try to get projects directory
+if [ -f "/etc/podium-cli/.env" ]; then
+    PROJECTS_DIR=$(get_projects_dir 2>/dev/null || true)
+fi
+
+if [ -n "$PROJECTS_DIR" ] && [ -d "$PROJECTS_DIR" ]; then
+    echo "Checking projects directory for containers: $PROJECTS_DIR"
+    
+    # Iterate through project folders
+    for project_dir in "$PROJECTS_DIR"/*; do
+        if [ -d "$project_dir" ]; then
+            PROJECT_NAME=$(basename "$project_dir")
+            
+            # Check if project container exists and remove it
+            if docker ps -a --format "{{.Names}}" | grep -q "^${PROJECT_NAME}$"; then
+                echo "  Stopping and removing project container: $PROJECT_NAME"
+                docker stop "$PROJECT_NAME" 2>/dev/null || true
+                docker rm "$PROJECT_NAME" 2>/dev/null || true
+                ((PROJECT_CONTAINERS_REMOVED++))
+            fi
+        fi
+    done
+else
+    echo "Projects directory not found - checking for any project-like containers"
+    
+    # Fallback: find containers that aren't service containers
+    ALL_CONTAINERS=$(docker ps -a --format "{{.Names}}")
+    SERVICE_CONTAINERS="mariadb redis postgres mongo memcached phpmyadmin mailhog ollama"
+    
+    for container in $ALL_CONTAINERS; do
+        # Skip if it's a known service container
+        if echo "$SERVICE_CONTAINERS" | grep -q "\b$container\b"; then
+            continue
+        fi
+        
+        # Check if it looks like a Podium project (has podium-project metadata)
+        if docker inspect "$container" --format '{{json .Config.Labels}}' 2>/dev/null | grep -q "podium-project" 2>/dev/null; then
+            echo "  Stopping and removing project container: $container"
+            docker stop "$container" 2>/dev/null || true
+            docker rm "$container" 2>/dev/null || true
+            ((PROJECT_CONTAINERS_REMOVED++))
+        fi
+    done
+fi
+
+if [ $PROJECT_CONTAINERS_REMOVED -gt 0 ]; then
+    echo-green "✅ Removed $PROJECT_CONTAINERS_REMOVED project containers"
+else
+    echo "No project containers found"
+fi
+
+echo-return
+
 # Interactive prompt for image deletion (only in interactive mode)
 if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$DELETE_IMAGES" ]; then
     echo-cyan "Would you like to remove Docker images as well?"
@@ -160,7 +222,7 @@ fi
 
 echo-return
 
-# 3. Remove volumes and networks with docker-stack prefix
+# 3. Remove volumes and networks with podium-cli prefix
 echo-white "📦 Removing Podium volumes..."
 
 # Always use podium-cli prefix to catch all Podium resources
@@ -209,7 +271,7 @@ fi
 
 echo-return
 
-# 5. Remove hosts file entries
+# 5. Remove service hosts file entries
 echo-white "📝 Removing hosts file entries..."
 
 HOSTS_FILE="/etc/hosts"
@@ -347,6 +409,7 @@ echo-green "🎉 Podium Docker resources have been selectively removed!"
 echo-return
 echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
+echo "  • Individual project containers"
 if [ "$DELETE_IMAGES" = "yes" ]; then
     echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
 fi
