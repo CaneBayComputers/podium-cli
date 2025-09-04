@@ -152,11 +152,9 @@ source "$DEV_DIR/scripts/start_services.sh"
 # Only shutdown project if docker-compose.yaml already exists (existing project reconfiguration)
 # For new projects, there's no need to shut down containers that don't exist yet
 if [ -f "$PROJECT_DIR/docker-compose.yaml" ]; then
-    if [[ "$JSON_OUTPUT" != "1" ]]; then
-        echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
-    fi
+    echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
     source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME
-elif [[ "$JSON_OUTPUT" != "1" ]]; then
+else
     echo-green "New project detected. Skipping container shutdown."
 fi
 
@@ -232,9 +230,7 @@ detect_php_version() {
 
 PHP_VERSION=$(detect_php_version)
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-green "Using PHP version: $PHP_VERSION"
-fi
+echo-green "Using PHP version: $PHP_VERSION"
 
 
 # Convert dashes to underscores
@@ -448,9 +444,7 @@ elif [ -f "wp-config-sample.php" ]; then
     
     # WordPress only supports MySQL/MariaDB - force to mariadb if anything else is specified
     if [[ "$DATABASE_ENGINE" != "mysql" && "$DATABASE_ENGINE" != "mariadb" ]]; then
-        if [[ "$JSON_OUTPUT" != "1" ]]; then
-            echo-yellow "Warning: WordPress only supports MySQL/MariaDB. Switching to MariaDB."
-        fi
+        echo-yellow "Warning: WordPress only supports MySQL/MariaDB. Switching to MariaDB."
         DATABASE_ENGINE="mariadb"
     fi
     
@@ -658,9 +652,7 @@ EOF
             echo "" >> .gitignore
             echo "# Docker infrastructure" >> .gitignore
             echo "docker-compose.yaml" >> .gitignore
-            if [[ "$JSON_OUTPUT" != "1" ]]; then
-                echo-green "Added docker-compose.yaml to existing .gitignore"
-            fi
+            echo-green "Added docker-compose.yaml to existing .gitignore"
         fi
     fi
 }

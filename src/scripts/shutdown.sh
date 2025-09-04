@@ -22,9 +22,7 @@ source scripts/functions.sh
 # Return to projects directory
 cd "$PROJECTS_DIR"
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return; echo-return
-fi
+echo-return; echo-return
 
 
 # Initialize variables
@@ -84,25 +82,19 @@ shutdown_container() {
 
   	if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
 
-	  	if [[ "$JSON_OUTPUT" != "1" ]]; then
-	  	    echo-return; echo-cyan "Shutting down $CONTAINER_NAME ..."; echo-white; echo
-	  	fi
+	  	echo-return; echo-cyan "Shutting down $CONTAINER_NAME ..."; echo-white; echo
 
 	  	cd "$REPO_DIR"
 
 	  	dockerdown
 
-	  	if [[ "$JSON_OUTPUT" != "1" ]]; then
-	  	    echo-green "Successfully shut down $CONTAINER_NAME!"; echo-white; echo
-	  	fi
+	  	echo-green "Successfully shut down $CONTAINER_NAME!"; echo-white; echo
 
 	  	cd ../..
 
 	  else
 
-	  	if [[ "$JSON_OUTPUT" != "1" ]]; then
-	  	    echo-return; echo-yellow "Container $CONTAINER_NAME is not running!"; echo-white; echo
-	  	fi
+	  	echo-return; echo-yellow "Container $CONTAINER_NAME is not running!"; echo-white; echo
 
 	  fi
 
@@ -142,17 +134,13 @@ if [ -z "$PROJECT_NAME" ]; then
 
 	        if check-mariadb; then
 
-                if [[ "$JSON_OUTPUT" != "1" ]]; then
-                    echo-return; echo-cyan "Shutting down services ..."; echo-white; echo
-                fi
+                echo-return; echo-cyan "Shutting down services ..."; echo-white; echo
 
                 cd "$DEV_DIR/docker-stack"
 
           dockerdown
 
-          if [[ "$JSON_OUTPUT" != "1" ]]; then
-              echo-green "Successfully shut down services!"; echo-white; echo
-          fi
+          echo-green "Successfully shut down services!"; echo-white; echo
 
           cd "$PROJECTS_DIR"
 

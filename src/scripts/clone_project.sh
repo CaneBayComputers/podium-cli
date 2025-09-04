@@ -81,11 +81,9 @@ fi
 
 
 # Display the provided arguments
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return
-    echo "Repository: $REPOSITORY"
-    echo "Project Name: $PROJECT_NAME"
-fi
+echo-return
+echo "Repository: $REPOSITORY"
+echo "Project Name: $PROJECT_NAME"
 
 # Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters (macOS-compatible)
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -102,9 +100,7 @@ if [ -d "$PROJECT_NAME" ]; then
     error "Error: Project name already exists."
 fi
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return
-fi
+echo-return
 
 # Clone repository
 if [[ "$JSON_OUTPUT" == "1" ]]; then
@@ -113,9 +109,7 @@ else
     git clone "$REPOSITORY" "$PROJECT_NAME"
 fi
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return
-fi
+echo-return
 
 cd ..
 
