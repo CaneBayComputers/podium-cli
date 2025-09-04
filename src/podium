@@ -127,38 +127,28 @@ get_project_name() {
 
 # Validate that we're in a Podium project directory and it's running
 validate_project_context() {
-    local command_name="$1"
-    
     # Check if docker-compose.yaml exists
     if [ ! -f "docker-compose.yaml" ]; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"$command_name\", \"status\": \"error\", \"error\": \"not_in_project_directory\", \"message\": \"No docker-compose.yaml found in current directory\"}"
-        else
-            echo-red "❌ Not in a Podium project directory!"
-            echo-white "Current directory: $(pwd)"
-            echo-white "Expected: docker-compose.yaml file"
-            echo-return
-            echo-cyan "💡 Solutions:"
-            echo "  • Navigate to a project directory: cd \$(podium projects-dir)/your-project"
-            echo "  • Create a new project: podium new"
-            echo "  • List existing projects: ls \$(podium projects-dir)"
-        fi
+        echo-red "❌ Not in a Podium project directory!"
+        echo-white "Current directory: $(pwd)"
+        echo-white "Expected: docker-compose.yaml file"
+        echo-return
+        echo-cyan "💡 Solutions:"
+        echo "  • Navigate to a project directory: cd \$(podium projects-dir)/your-project"
+        echo "  • Create a new project: podium new"
+        echo "  • List existing projects: ls \$(podium projects-dir)"
         return 1
     fi
     
     # Check if it's actually a Podium project by looking for x-metadata type
     if ! grep -q "type.*podium-project" docker-compose.yaml 2>/dev/null; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"$command_name\", \"status\": \"error\", \"error\": \"not_podium_project\", \"message\": \"docker-compose.yaml exists but is not a Podium project\"}"
-        else
-            echo-red "❌ Not a Podium project!"
-            echo-white "Found docker-compose.yaml but it's not a Podium project."
-            echo-white "Current directory: $(pwd)"
-            echo-return
-            echo-cyan "💡 Solutions:"
-            echo "  • Navigate to a Podium project directory"
-            echo "  • Convert this to a Podium project: podium setup $(basename \"$(pwd)\")"
-        fi
+        echo-red "❌ Not a Podium project!"
+        echo-white "Found docker-compose.yaml but it's not a Podium project."
+        echo-white "Current directory: $(pwd)"
+        echo-return
+        echo-cyan "💡 Solutions:"
+        echo "  • Navigate to a Podium project directory"
+        echo "  • Convert this to a Podium project: podium setup $(basename \"$(pwd)\")"
         return 1
     fi
     
@@ -166,30 +156,22 @@ validate_project_context() {
     local container_name=$(grep "container_name:" docker-compose.yaml | head -1 | sed 's/.*container_name: *\(.*\)/\1/')
     
     if [ -z "$container_name" ]; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"$command_name\", \"status\": \"error\", \"error\": \"invalid_compose_file\", \"message\": \"Could not find container_name in docker-compose.yaml\"}"
-        else
-            echo-red "❌ Invalid docker-compose.yaml!"
-            echo-white "Could not find container_name in docker-compose.yaml"
-        fi
+        echo-red "❌ Invalid docker-compose.yaml!"
+        echo-white "Could not find container_name in docker-compose.yaml"
         return 1
     fi
     
     # Check if container is running
     if ! docker ps --format "{{.Names}}" | grep -q "^${container_name}$"; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"$command_name\", \"status\": \"error\", \"error\": \"project_not_running\", \"message\": \"Project container '$container_name' is not running\", \"container_name\": \"$container_name\"}"
-        else
-            echo-red "❌ Project not running!"
-            echo-white "Project: $(basename \"$(pwd)\")"
-            echo-white "Container: $container_name"
-            echo-white "Status: Stopped"
-            echo-return
-            echo-cyan "💡 Solutions:"
-            echo "  • Start the project: podium up"
-            echo "  • Check project status: podium status"
-            echo "  • View all projects: podium status"
-        fi
+        echo-red "❌ Project not running!"
+        echo-white "Project: $(basename \"$(pwd)\")"
+        echo-white "Container: $container_name"
+        echo-white "Status: Stopped"
+        echo-return
+        echo-cyan "💡 Solutions:"
+        echo "  • Start the project: podium up"
+        echo "  • Check project status: podium status"
+        echo "  • View all projects: podium status"
         return 1
     fi
     
@@ -214,48 +196,48 @@ docker_exec() {
 case "$1" in
     # Containerized development tools
     "composer")
-        validate_project_context "composer" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec developer composer -d /usr/share/nginx/html "$@"
         ;;
     "art"|"artisan")
-        validate_project_context "artisan" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec developer php /usr/share/nginx/html/artisan "$@"
         ;;
     "wp")
-        validate_project_context "wp" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec developer wp "$@"
         ;;
     "php")
-        validate_project_context "php" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec developer php "$@"
         ;;
     
     # Container execution
     "exec")
-        validate_project_context "exec" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec developer "$@"
         ;;
     "exec-root")
-        validate_project_context "exec-root" || exit 1
+        validate_project_context || exit 1
         shift
         docker_exec root "$@"
         ;;
     
     # Enhanced Laravel commands
     "db-refresh")
-        validate_project_context "db-refresh" || exit 1
+        validate_project_context || exit 1
         echo-yellow "Refreshing database..."
         docker_exec developer php /usr/share/nginx/html/artisan migrate:fresh
         docker_exec developer php /usr/share/nginx/html/artisan db:seed
         echo-green "Database refreshed!"
         ;;
     "cache-refresh")
-        validate_project_context "cache-refresh" || exit 1
+        validate_project_context || exit 1
         echo-yellow "Clearing Laravel caches..."
         docker_exec developer php /usr/share/nginx/html/artisan cache:clear
         docker_exec developer php /usr/share/nginx/html/artisan route:clear
@@ -297,7 +279,7 @@ case "$1" in
         echo "stats" | docker container exec -i memcached nc localhost 11211
         ;;
     "supervisor")
-        validate_project_context "supervisor" || exit 1
+        validate_project_context || exit 1
         shift
         local project_name="$(get_project_name)"
         if [ $# -eq 0 ]; then
@@ -316,7 +298,7 @@ case "$1" in
         fi
         ;;
     "supervisor-status")
-        validate_project_context "supervisor-status" || exit 1
+        validate_project_context || exit 1
         local project_name="$(get_project_name)"
         echo-cyan "Supervisor status in container: $project_name"
         docker container exec -it "$project_name" supervisorctl status
