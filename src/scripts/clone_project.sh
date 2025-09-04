@@ -33,10 +33,7 @@ usage() {
     echo "  --no-colors       Disable colored output"
     echo "  --help            Show this help message"
     
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"clone_project\", \"status\": \"error\", \"error\": \"usage\"}"
-    fi
-    exit 1
+    error "usage" 1
 }
 
 # Parse command line arguments
@@ -54,13 +51,7 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         -*)
-            if [[ "$JSON_OUTPUT" == "1" ]]; then
-                echo "{\"action\": \"clone_project\", \"status\": \"error\", \"error\": \"unknown_option\", \"option\": \"$1\"}"
-                exit 1
-            else
-                echo-red "Unknown option: $1"
-                usage
-            fi
+            error "Unknown option: $1"
             ;;
         *)
             if [ -z "$REPOSITORY" ]; then
@@ -68,13 +59,7 @@ while [[ $# -gt 0 ]]; do
             elif [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
             else
-                if [[ "$JSON_OUTPUT" == "1" ]]; then
-                    echo "{\"action\": \"clone_project\", \"status\": \"error\", \"error\": \"too_many_arguments\"}"
-                    exit 1
-                else
-                    echo-red "Too many arguments"
-                    usage
-                fi
+                error "Too many arguments"
             fi
             shift
             ;;
@@ -83,13 +68,7 @@ done
 
 # Check if repository argument is provided
 if [ -z "$REPOSITORY" ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"clone_project\", \"status\": \"error\", \"error\": \"repository_required\"}"
-        exit 1
-    else
-        echo-red "Error: Repository is required."
-        usage
-    fi
+    error "Error: Repository is required."
 fi
 
 
@@ -103,7 +82,7 @@ fi
 
 # Display the provided arguments
 if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo
+    echo-return
     echo "Repository: $REPOSITORY"
     echo "Project Name: $PROJECT_NAME"
 fi
@@ -120,17 +99,11 @@ PROJECTS_DIR=$(get_projects_dir)
 cd "$PROJECTS_DIR"
 
 if [ -d "$PROJECT_NAME" ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"clone_project\", \"status\": \"error\", \"error\": \"project_exists\", \"project_name\": \"$PROJECT_NAME\"}"
-        exit 1
-    else
-        echo-red "Error: Project name already exists."; echo-white
-        exit 1
-    fi
+    error "Error: Project name already exists."
 fi
 
 if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo
+    echo-return
 fi
 
 # Clone repository
@@ -141,7 +114,7 @@ else
 fi
 
 if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo
+    echo-return
 fi
 
 cd ..
