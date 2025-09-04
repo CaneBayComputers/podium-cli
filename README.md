@@ -402,8 +402,9 @@ podium uninstall --no-delete-images
 # 1. Clean up Docker resources first
 podium uninstall
 
-# 2. Remove the CLI (if installed via .deb package)
-sudo apt remove podium-cli
+# 2. Remove the CLI files
+sudo rm -f /usr/local/bin/podium
+sudo rm -rf /usr/local/share/podium-cli
 
 # 3. Remove configuration directory (optional)
 sudo rm -rf /etc/podium-cli

@@ -257,7 +257,8 @@ if command -v podium &> /dev/null; then
     echo
     echo -e "${CYAN}🗑️  To Uninstall Later:${NC}"
     echo -e "  ${BLUE}podium uninstall${NC}     - Remove all Docker resources"
-    echo -e "  ${BLUE}sudo apt remove podium-cli${NC} - Remove CLI (if installed via .deb)"
+    echo -e "  ${BLUE}sudo rm -f /usr/local/bin/podium${NC} - Remove CLI binary"
+    echo -e "  ${BLUE}sudo rm -rf /usr/local/share/podium-cli${NC} - Remove CLI files"
     echo -e "  ${BLUE}sudo rm -rf /etc/podium-cli${NC} - Remove config directory"
     echo
     echo -e "${CYAN}📱 Want a GUI?${NC}"
