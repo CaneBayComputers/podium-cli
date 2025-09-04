@@ -303,17 +303,16 @@ podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
 
 podium-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
 
-# Replace metadata fields - use perl for better handling of special characters including emojis
+# Replace metadata fields - use sed with proper UTF-8 handling
 # Ensure variables have default values to avoid issues with empty strings
 PROJECT_EMOJI_SAFE="${PROJECT_EMOJI:-🚀}"
 DISPLAY_NAME_SAFE="${DISPLAY_NAME:-$PROJECT_NAME}"
 PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION:-}"
 
-perl -i -pe "s/PROJECT_EMOJI/\Q$PROJECT_EMOJI_SAFE\E/g" docker-compose.yaml
-
-perl -i -pe "s/PROJECT_NAME/\Q$DISPLAY_NAME_SAFE\E/g" docker-compose.yaml
-
-perl -i -pe "s/PROJECT_DESCRIPTION/\Q$PROJECT_DESCRIPTION_SAFE\E/g" docker-compose.yaml
+# Use sed with proper delimiter to avoid issues with special characters
+sed -i "s|PROJECT_EMOJI|$PROJECT_EMOJI_SAFE|g" docker-compose.yaml
+sed -i "s|PROJECT_NAME|$DISPLAY_NAME_SAFE|g" docker-compose.yaml  
+sed -i "s|PROJECT_DESCRIPTION|$PROJECT_DESCRIPTION_SAFE|g" docker-compose.yaml
 
 if [ -d "public" ]; then
 
