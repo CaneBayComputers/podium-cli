@@ -297,7 +297,7 @@ podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
 
-podium-sed "s/STACK_ID/$STACK_ID/g" docker-compose.yaml
+# STACK_ID has been removed - network name is now fixed as podium_docker_stack_vpc
 
 podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
 
