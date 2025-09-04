@@ -107,23 +107,10 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 
 fi
 
-
-# Permission checks (skip in JSON output mode)
-# Check and fix root perms
+# Check if running as root
 if [[ "$(whoami)" == "root" ]]; then
 	error "Do NOT run with sudo or as root! Please run as regular user (you may be prompted for sudo password when needed)."
 fi
-
-echo-return; echo-return
-echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
-echo-return; echo-white 'Running with sudo would configure Git and AWS for the root user instead of your user account.'
-echo-white 'The script will prompt for sudo password only when needed for system-level operations.'
-echo-return; echo-return
-
-if ! sudo -v; then
-	error "No sudo privileges. Root access required!"
-fi
-
 
 # Install Podium command globally
 echo-return
@@ -131,6 +118,10 @@ echo-cyan "Installing Podium command globally..."
 echo-white "Creating 'podium' command accessible from anywhere on your system."
 echo-white "You'll be prompted for your password to install to /usr/local/bin"
 echo-return
+
+if ! sudo -v; then
+	error "No sudo privileges. Root access required!"
+fi
 
 # Remove existing symlink if it exists
 sudo rm -f /usr/local/bin/podium 2>/dev/null || true
@@ -436,8 +427,7 @@ if [ -f "$COMPOSE_FILE" ]; then
     CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
     
     if [ -n "$CONTAINER_NAMES" ]; then
-        # Get the IP suffix mapping from the compose file
-        declare -A IP_MAP
+        # Start IP counter for hosts file entries
         IP_COUNTER=2
         
         for container_name in $CONTAINER_NAMES; do
