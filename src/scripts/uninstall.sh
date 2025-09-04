@@ -7,6 +7,39 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/functions.sh"
 
+# Initialize variables
+DELETE_IMAGES=""
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --json-output)
+            JSON_OUTPUT=1
+            shift
+            ;;
+        --delete-images)
+            DELETE_IMAGES="yes"
+            shift
+            ;;
+        --help)
+            echo-white "Usage: $0 [options]"
+            echo-white "Selectively removes Podium-related Docker resources"
+            echo-white ""
+            echo-white "Options:"
+            echo-white "  --json-output      Output JSON responses (for programmatic use)"
+            echo-white "  --delete-images    Also remove Docker images (default: keep images)"
+            echo-white "  --help            Show this help message"
+            exit 0
+            ;;
+        -*)
+            error "Unknown option: $1. Use --help for usage information"
+            ;;
+        *)
+            error "Unexpected argument: $1. Use --help for usage information"
+            ;;
+    esac
+done
+
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then
     error "Docker is not running or not accessible. Please start Docker and try again"
@@ -72,31 +105,57 @@ fi
 
 echo-return
 
-# 2. Remove specific images by name
-echo-white "🗑️ Removing Podium images..."
-
-# Get image names from docker-compose file
-IMAGES=""
-if [ -f "$COMPOSE_FILE" ]; then
-    IMAGES=$(grep -E "^\s*image:" "$COMPOSE_FILE" | sed 's/.*image:\s*\([^[:space:]]*\).*/\1/' | sort | uniq)
+# Interactive prompt for image deletion (only in interactive mode)
+if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$DELETE_IMAGES" ]; then
+    echo-cyan "Would you like to remove Docker images as well?"
+    echo-white "This will remove images like mariadb, redis, postgres, etc."
+    echo-white "Images can be large and take time to re-download if you reinstall."
+    echo-return
+    echo-yellow -n "Remove Docker images? (y/N): "
+    read REMOVE_IMAGES_RESPONSE
+    if [[ "$REMOVE_IMAGES_RESPONSE" =~ ^[Yy]$ ]]; then
+        DELETE_IMAGES="yes"
+    else
+        DELETE_IMAGES="no"
+    fi
+    echo-return
 fi
 
-REMOVED_IMAGES=0
-if [ -n "$IMAGES" ]; then
-    for image in $IMAGES; do
-        # Check if image exists (with or without :latest tag)
-        if docker image inspect "$image" >/dev/null 2>&1 || docker image inspect "$image:latest" >/dev/null 2>&1; then
-            echo "Removing image: $image"
-            docker rmi "$image" 2>/dev/null || docker rmi "$image:latest" 2>/dev/null || true
-            ((REMOVED_IMAGES++))
-        fi
-    done
+# Default to "no" if not specified
+if [ -z "$DELETE_IMAGES" ]; then
+    DELETE_IMAGES="no"
 fi
 
-if [ $REMOVED_IMAGES -gt 0 ]; then
-    echo-green "✅ Removed $REMOVED_IMAGES images"
+# 2. Remove specific images by name (if requested)
+if [ "$DELETE_IMAGES" = "yes" ]; then
+    echo-white "🗑️ Removing Podium images..."
+
+    # Get image names from docker-compose file
+    IMAGES=""
+    if [ -f "$COMPOSE_FILE" ]; then
+        IMAGES=$(grep -E "^\s*image:" "$COMPOSE_FILE" | sed 's/.*image:\s*\([^[:space:]]*\).*/\1/' | sort | uniq)
+    fi
+
+    REMOVED_IMAGES=0
+    if [ -n "$IMAGES" ]; then
+        for image in $IMAGES; do
+            # Check if image exists (with or without :latest tag)
+            if docker image inspect "$image" >/dev/null 2>&1 || docker image inspect "$image:latest" >/dev/null 2>&1; then
+                echo "Removing image: $image"
+                docker rmi "$image" 2>/dev/null || docker rmi "$image:latest" 2>/dev/null || true
+                ((REMOVED_IMAGES++))
+            fi
+        done
+    fi
+
+    if [ $REMOVED_IMAGES -gt 0 ]; then
+        echo-green "✅ Removed $REMOVED_IMAGES images"
+    else
+        echo "No Podium images found to remove"
+    fi
 else
-    echo "No Podium images found to remove"
+    echo-white "🗑️ Skipping image removal (keeping Docker images)"
+    echo-green "✅ Docker images preserved"
 fi
 
 echo-return
@@ -288,7 +347,9 @@ echo-green "🎉 Podium Docker resources have been selectively removed!"
 echo-return
 echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
-echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
+if [ "$DELETE_IMAGES" = "yes" ]; then
+    echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
+fi
 echo "  • Hosts file entries for Podium services"
 echo "  • Hosts file entries for individual projects"
 echo "  • Volumes with prefix: podium-cli_*"
@@ -300,6 +361,9 @@ echo "    (These won't work without Podium services - restore after reinstall)"
 echo-return
 echo-white "What was preserved:"
 echo "  • Your project files and code"
+if [ "$DELETE_IMAGES" = "no" ]; then
+    echo "  • Podium Docker images (can be reused on reinstall)"
+fi
 echo "  • Other Docker images and containers"
 echo "  • Docker itself"
 echo-return
