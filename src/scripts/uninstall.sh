@@ -180,14 +180,63 @@ if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
 fi
 
 if [ $REMOVED_HOSTS -gt 0 ]; then
-    echo-green "✅ Removed $REMOVED_HOSTS hosts file entries"
+    echo-green "✅ Removed $REMOVED_HOSTS service hosts file entries"
 else
-    echo "No Podium hosts entries found"
+    echo "No Podium service hosts entries found"
 fi
 
 echo-return
 
-# 6. Clean up any orphaned resources
+# 6. Remove project hosts file entries
+echo-white "📝 Removing project hosts file entries..."
+
+# Load the get_projects_dir function
+source "$SCRIPT_DIR/functions.sh"
+
+PROJECT_HOSTS_REMOVED=0
+PROJECTS_DIR=""
+
+# Try to get projects directory
+if [ -f "/etc/podium-cli/.env" ]; then
+    PROJECTS_DIR=$(get_projects_dir 2>/dev/null || true)
+fi
+
+if [ -n "$PROJECTS_DIR" ] && [ -d "$PROJECTS_DIR" ]; then
+    echo "Checking projects directory: $PROJECTS_DIR"
+    
+    # Iterate through project folders
+    for project_dir in "$PROJECTS_DIR"/*; do
+        if [ -d "$project_dir" ]; then
+            PROJECT_NAME=$(basename "$project_dir")
+            
+            # Check if project name exists in hosts file
+            if grep -q "[[:space:]]${PROJECT_NAME}[[:space:]]*$" "$HOSTS_FILE" 2>/dev/null; then
+                echo "Removing project hosts entry: $PROJECT_NAME"
+                # Remove the line containing the project name
+                if [[ "$OSTYPE" == "darwin"* ]]; then
+                    # macOS: BSD sed requires backup extension
+                    sudo sed -i '' "/[[:space:]]${PROJECT_NAME}[[:space:]]*$/d" "$HOSTS_FILE"
+                else
+                    # Linux: GNU sed
+                    sudo sed -i "/[[:space:]]${PROJECT_NAME}[[:space:]]*$/d" "$HOSTS_FILE"
+                fi
+                ((PROJECT_HOSTS_REMOVED++))
+            fi
+        fi
+    done
+else
+    echo "Projects directory not found or not accessible"
+fi
+
+if [ $PROJECT_HOSTS_REMOVED -gt 0 ]; then
+    echo-green "✅ Removed $PROJECT_HOSTS_REMOVED project hosts file entries"
+else
+    echo "No project hosts entries found"
+fi
+
+echo-return
+
+# 7. Clean up any orphaned resources
 echo-white "🧽 Cleaning up orphaned resources..."
 docker system prune -f >/dev/null 2>&1 || true
 echo-green "✅ Orphaned resources cleaned"
@@ -199,6 +248,7 @@ echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
 echo "  • Hosts file entries for Podium services"
+echo "  • Hosts file entries for individual projects"
 echo "  • Volumes with prefix: podium-cli_*"
 echo "  • Networks with prefix: podium-cli_*"
 echo-return
