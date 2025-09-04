@@ -251,9 +251,14 @@ if command -v podium &> /dev/null; then
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
     echo -e "  1. ${BLUE}podium configure${NC} - Configure your development environment"
-    echo -e "  2. ${BLUE}podium new my-project${NC} - Create your first project"  
+    echo -e "  2. ${BLUE}podium new my-project${NC} - Create your first project"
     echo -e "  3. ${BLUE}podium status${NC}     - Check system status"
     echo -e "  4. ${BLUE}podium help${NC}       - Show all available commands"
+    echo
+    echo -e "${CYAN}🗑️  To Uninstall Later:${NC}"
+    echo -e "  ${BLUE}podium uninstall${NC}     - Remove all Docker resources"
+    echo -e "  ${BLUE}sudo apt remove podium-cli${NC} - Remove CLI (if installed via .deb)"
+    echo -e "  ${BLUE}sudo rm -rf /etc/podium-cli${NC} - Remove config directory"
     echo
     echo -e "${CYAN}📱 Want a GUI?${NC}"
     echo "   Contact: Cane Bay Computers for the premium desktop interface"

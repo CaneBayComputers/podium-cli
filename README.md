@@ -189,7 +189,8 @@ Looking for a visual interface? **Podium GUI** provides a modern desktop applica
 | `podium configure` | Configure Podium environment |
 | `podium start-services` | Start shared services |
 | `podium stop-services` | Stop shared services |
-
+| `podium uninstall` | Remove all Podium Docker resources |
+| `podium projects-dir` | Show projects directory path |
 | `podium gui` | Launch desktop GUI interface |
 
 ### 🧪 Testing
@@ -379,6 +380,82 @@ The GUI provides:
 - Service status monitoring
 - Real-time logs and output
 - Dark theme with modern UI
+
+## 🗑️ Uninstallation
+
+### Complete Removal
+
+To completely remove Podium and all Docker resources:
+
+```bash
+# Remove all Docker containers, images, volumes, networks, and hosts entries
+podium uninstall
+
+# Optional: Remove only containers/networks but keep images for faster reinstall
+podium uninstall --no-delete-images
+```
+
+### Platform-Specific Uninstall
+
+#### 🐧 Linux (Ubuntu/Debian)
+```bash
+# 1. Clean up Docker resources first
+podium uninstall
+
+# 2. Remove the CLI (if installed via .deb package)
+sudo apt remove podium-cli
+
+# 3. Remove configuration directory (optional)
+sudo rm -rf /etc/podium-cli
+```
+
+#### 🍎 macOS (Homebrew)
+```bash
+# Automatic cleanup - runs 'podium uninstall' then removes CLI
+brew uninstall podium-cli
+
+# Manual method (if needed)
+podium uninstall
+rm -rf /usr/local/bin/podium
+sudo rm -rf /etc/podium-cli
+```
+
+#### 🪟 Windows (WSL2)
+```bash
+# Inside WSL2 terminal
+podium uninstall
+
+# Remove CLI files
+sudo rm -rf /usr/local/bin/podium
+sudo rm -rf /etc/podium-cli
+
+# Optional: Remove WSL2 distribution entirely
+# (Run in Windows PowerShell as Administrator)
+# wsl --unregister Ubuntu
+```
+
+### What Gets Removed
+
+**`podium uninstall` removes:**
+- ✅ All Podium service containers (mariadb, redis, postgres, etc.)
+- ✅ All individual project containers
+- ✅ Docker images (optional with `--delete-images`)
+- ✅ Docker volumes and networks
+- ✅ Hosts file entries for services and projects
+- ✅ Backs up project docker-compose.yaml files as .backup
+
+**What's preserved:**
+- ✅ Your project source code and files
+- ✅ Other non-Podium Docker containers and images
+- ✅ Docker Desktop/Engine itself
+
+### Uninstall Options
+
+| Option | Description |
+|--------|-------------|
+| `--delete-images` | Also remove Docker images (default: keep for faster reinstall) |
+| `--json-output` | Output JSON responses for automation |
+| `--help` | Show uninstall help and options |
 
 ## 🔧 Configuration
 
