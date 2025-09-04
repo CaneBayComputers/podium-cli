@@ -116,31 +116,21 @@ if [[ "$(whoami)" == "root" ]]; then
 	error "Do NOT run with sudo or as root! Please run as regular user (you may be prompted for sudo password when needed)."
 fi
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
+echo-return; echo-return
+echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
+echo-return; echo-white 'Running with sudo would configure Git and AWS for the root user instead of your user account.'
+echo-white 'The script will prompt for sudo password only when needed for system-level operations.'
+echo-return; echo-return
 
-	echo-return; echo-return
-	echo-cyan 'IMPORTANT: This script must NOT be run with sudo!'
-	echo-return; echo-white 'Running with sudo would configure Git and AWS for the root user instead of your user account.'
-	echo-white 'The script will prompt for sudo password only when needed for system-level operations.'
-	echo-return; echo-return
-
-	if ! sudo -v; then
-		error "No sudo privileges. Root access required!"
-	fi
-else
-	echo-cyan "Running in JSON output mode - skipping permission checks"
-	echo
+if ! sudo -v; then
+	error "No sudo privileges. Root access required!"
 fi
 
 
 # Install Podium command globally
 echo-return; echo-cyan "Installing Podium command globally..."
 echo-white "Creating 'podium' command accessible from anywhere on your system."
-
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-	echo-white "You'll be prompted for your password to install to /usr/local/bin"
-fi
-
+echo-white "You'll be prompted for your password to install to /usr/local/bin"
 echo-return
 
 # Remove existing symlink if it exists
