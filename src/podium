@@ -66,6 +66,7 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium clone <repo>       - Clone existing project"
+    echo "  podium setup <project>    - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
     echo
     echo-white "SYSTEM MANAGEMENT:"
@@ -344,6 +345,14 @@ case "$1" in
             exit 1
         fi
         "$SCRIPT_DIR/scripts/clone_project.sh" "${@:2}"
+        ;;
+    "setup")
+        if [ -z "$2" ]; then
+            echo-red "Usage: podium setup <project-name> [database-engine] [display-name] [description] [emoji] [options]"
+            echo-white "Sets up an existing project directory as a Podium project"
+            exit 1
+        fi
+        "$SCRIPT_DIR/scripts/setup_project.sh" "${@:2}"
         ;;
     "remove")
         if [ -z "$2" ]; then
