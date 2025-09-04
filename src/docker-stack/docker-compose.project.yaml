@@ -11,6 +11,8 @@ services:
       default:
         ipv4_address: IPV4_ADDRESS
     x-metadata:
+      type: "podium-project"
+      version: "1.0.0"
       emoji: "PROJECT_EMOJI"
       name: "PROJECT_NAME"
       description: "PROJECT_DESCRIPTION"
