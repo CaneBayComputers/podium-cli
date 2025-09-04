@@ -152,6 +152,14 @@ else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
 
+# Install AWS CLI (optional but recommended)
+if ! command -v aws &> /dev/null; then
+    echo -e "Installing AWS CLI..."
+    brew install awscli >/dev/null 2>&1 && echo -e "${GREEN}✓ AWS CLI installed${NC}" || echo -e "${YELLOW}⚠️ AWS CLI installation failed${NC}"
+else
+    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
+fi
+
 ###############################
 # Check if already installed
 ###############################

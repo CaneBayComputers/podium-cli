@@ -319,16 +319,6 @@ elif [[ "$JSON_OUTPUT" == "1" ]]; then
 
 		mkdir -p ~/s3
 
-		# Install AWS CLI if not present
-		if ! aws --version > /dev/null 2>&1; then
-			curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" > awscli-bundle.zip
-			7z x awscli-bundle.zip
-			rm -f awscli-bundle.zip
-			sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-			sudo chmod -R o+rx /usr/local/aws-cli/v2/current/dist
-			rm -fR aws
-		fi
-
 		# Configure AWS with GUI values
 		aws configure set aws_access_key_id "$AWS_ACCESS_KEY"
 		aws configure set aws_secret_access_key "$AWS_SECRET_KEY"
@@ -372,22 +362,6 @@ else
 
 		echo-white
 
-	if ! aws --version > /dev/null 2>&1; then
-
-		curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" > awscli-bundle.zip
-
-		7z x awscli-bundle.zip
-
-		rm -f awscli-bundle.zip
-
-		sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-
-		# Bug fix
-		sudo chmod -R o+rx /usr/local/aws-cli/v2/current/dist
-
-		rm -fR aws
-
-	fi
 
 	if ! aws configure get default.region > /dev/null; then
 
