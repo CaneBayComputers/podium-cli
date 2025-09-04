@@ -236,7 +236,49 @@ fi
 
 echo-return
 
-# 7. Clean up any orphaned resources
+# 7. Backup project docker-compose.yaml files
+echo-white "💾 Backing up project docker-compose.yaml files..."
+
+PROJECT_COMPOSE_BACKED_UP=0
+
+if [ -n "$PROJECTS_DIR" ] && [ -d "$PROJECTS_DIR" ]; then
+    echo "Checking projects directory for docker-compose.yaml files: $PROJECTS_DIR"
+    
+    # Iterate through project folders
+    for project_dir in "$PROJECTS_DIR"/*; do
+        if [ -d "$project_dir" ]; then
+            PROJECT_NAME=$(basename "$project_dir")
+            COMPOSE_FILE_PATH="$project_dir/docker-compose.yaml"
+            
+            # Check if docker-compose.yaml exists in this project
+            if [ -f "$COMPOSE_FILE_PATH" ]; then
+                BACKUP_PATH="$project_dir/docker-compose.yaml.backup"
+                echo "Backing up: $PROJECT_NAME/docker-compose.yaml → docker-compose.yaml.backup"
+                
+                # Remove existing backup if it exists
+                [ -f "$BACKUP_PATH" ] && rm -f "$BACKUP_PATH"
+                
+                # Rename the file
+                mv "$COMPOSE_FILE_PATH" "$BACKUP_PATH"
+                ((PROJECT_COMPOSE_BACKED_UP++))
+            fi
+        fi
+    done
+else
+    echo "Projects directory not found - skipping docker-compose.yaml backup"
+fi
+
+if [ $PROJECT_COMPOSE_BACKED_UP -gt 0 ]; then
+    echo-green "✅ Backed up $PROJECT_COMPOSE_BACKED_UP project docker-compose.yaml files"
+    echo-yellow "⚠️  Project docker-compose.yaml files have been renamed to .backup"
+    echo-yellow "   These files will not work without Podium services running"
+else
+    echo "No project docker-compose.yaml files found"
+fi
+
+echo-return
+
+# 8. Clean up any orphaned resources
 echo-white "🧽 Cleaning up orphaned resources..."
 docker system prune -f >/dev/null 2>&1 || true
 echo-green "✅ Orphaned resources cleaned"
@@ -251,6 +293,10 @@ echo "  • Hosts file entries for Podium services"
 echo "  • Hosts file entries for individual projects"
 echo "  • Volumes with prefix: podium-cli_*"
 echo "  • Networks with prefix: podium-cli_*"
+echo-return
+echo-white "What was backed up:"
+echo "  • Project docker-compose.yaml files → docker-compose.yaml.backup"
+echo "    (These won't work without Podium services - restore after reinstall)"
 echo-return
 echo-white "What was preserved:"
 echo "  • Your project files and code"
