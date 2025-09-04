@@ -249,7 +249,7 @@ project_status() {
   echo-white -n HOST ENTRY: 
   if ! HOST_ENTRY=$(printf "%s\n" "$HOSTS" | grep " $PROJ_NAME$"); then
     echo-red " NOT FOUND"
-    echo-white -n SUGGESTION:; echo-yellow " Run: setup_project.sh $PROJ_NAME"
+    echo-white -n SUGGESTION:; echo-yellow " Check spelling or run: podium new $PROJ_NAME"
     return 1
   else
     echo-green " FOUND"
@@ -258,7 +258,7 @@ project_status() {
   echo-white -n DOCKER STATUS:
   if ! [ "$(docker ps -q -f name=$PROJ_NAME)" ]; then
     echo-red " NOT RUNNING"
-    echo-white -n SUGGESTION:; echo-yellow " Run startup.sh script"
+    echo-white -n SUGGESTION:; echo-yellow " Run: podium up"
     return 1
   else
     echo-green " RUNNING"
@@ -269,7 +269,7 @@ project_status() {
   # Check if Docker container has port mapping
   if ! docker port "$PROJ_NAME" 80/tcp > /dev/null 2>&1; then
     echo-red " NOT MAPPED"
-    echo-white -n SUGGESTION:; echo-yellow " Run shutdown.sh then startup.sh script"
+    echo-white -n SUGGESTION:; echo-yellow " Run: podium down then podium up"
     return 1
   else
     echo-green " MAPPED"
@@ -290,16 +290,14 @@ if [[ "$(whoami)" == "root" ]]; then
 fi
 
 
-# Check if this environment is installed (only for non-JSON output)
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    if ! [ -f /etc/podium-cli/.env ]; then
-        error "Development environment has not been configured! Run: podium configure"
-    fi
+# Check if this environment is installed
+if ! [ -f /etc/podium-cli/.env ]; then
+    error "Development environment has not been configured! Run: podium configure"
+fi
 
-    # Start CBC stack (only for non-JSON output)
-    if ! check-mariadb; then
-        error "Development environment is not started! Run startup.sh"
-    fi
+# Check if services are running
+if ! check-mariadb; then
+    error "Development environment is not started! Run: podium start-services"
 fi
 
 
