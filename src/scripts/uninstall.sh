@@ -255,16 +255,30 @@ echo-white "🌐 Removing Podium networks..."
 NETWORKS=$(docker network ls --filter "name=${NETWORK_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
 if [ -n "$NETWORKS" ]; then
     echo "Found networks: $NETWORKS"
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Mac: xargs doesn't have -r flag, use different approach
-        echo "$NETWORKS" | tr ' ' '\n' | while read -r network; do
-            [ -n "$network" ] && docker network rm "$network" 2>/dev/null || true
-        done
-    else
-        # Linux: use xargs -r
-        echo "$NETWORKS" | xargs -r docker network rm 2>/dev/null || true
-    fi
-    echo-green "✅ Networks removed"
+    
+    # Process each network individually to handle disconnection if needed
+    for network in $NETWORKS; do
+        echo "Processing network: $network"
+        
+        # Check if network has connected containers
+        CONNECTED_CONTAINERS=$(docker network inspect "$network" --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null || true)
+        
+        if [ -n "$CONNECTED_CONTAINERS" ]; then
+            echo "  Disconnecting containers from $network: $CONNECTED_CONTAINERS"
+            for container in $CONNECTED_CONTAINERS; do
+                docker network disconnect "$network" "$container" 2>/dev/null || true
+            done
+        fi
+        
+        # Now remove the network
+        echo "  Removing network: $network"
+        if docker network rm "$network" 2>/dev/null; then
+            echo "  ✅ Successfully removed network: $network"
+        else
+            echo "  ⚠️  Failed to remove network: $network (may still be in use)"
+        fi
+    done
+    echo-green "✅ Network removal completed"
 else
     echo "No Podium networks found"
 fi
