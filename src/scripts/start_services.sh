@@ -54,9 +54,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return; echo-return
-fi
+echo-return; echo-return
 
 # Main
 source "$DEV_DIR/scripts/pre_check.sh"
@@ -65,17 +63,15 @@ source "$DEV_DIR/scripts/pre_check.sh"
 # Start CBC stack
 if ! check-mariadb; then
 
-  if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-cyan "Starting services ..."; echo-white
-  fi
 
-  cd /etc/podium-cli
+    cd /etc/podium-cli
 
-  dockerup
+    dockerup
 
-  cd "$DEV_DIR"
+    cd "$DEV_DIR"
 
-  sleep 5
+    sleep 5
 
 fi
 

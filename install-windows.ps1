@@ -109,7 +109,7 @@ function Install-PodiumCLI {
     
     # Install Podium CLI
     $installCommand = @"
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/main/install-ubuntu.sh | bash
 "@
     
     try {
