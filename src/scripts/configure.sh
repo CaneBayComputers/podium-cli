@@ -63,8 +63,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 
-# Generate stack id (cross-platform)
-STACK_ID=$(openssl rand -hex 4 | cut -c1-8)
 
 
 # Check for and set up environment variables
@@ -73,7 +71,7 @@ sudo mkdir -p /etc/podium-cli
 
 if ! [ -f /etc/podium-cli/.env ]; then
 
-	sudo cp docker-stack/env.example /etc/podium-cli/.env
+	sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/podium-cli/.env
 
 	# Generate random numbers for B and C classes
 	B_CLASS=$((RANDOM % 255 + 1))
@@ -83,7 +81,6 @@ if ! [ -f /etc/podium-cli/.env ]; then
 
 	# Cross-platform sed with proper c\ command handling
 	sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
-	sudo-podium-sed-change "/^#STACK_ID=/" "STACK_ID=$STACK_ID" /etc/podium-cli/.env
 
 else
 
@@ -102,8 +99,6 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
 		sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 	fi
 	
-	# Cross-platform sed for docker-compose.yaml
-	sudo-podium-sed "s/STACK_ID/${STACK_ID}/g" /etc/podium-cli/docker-compose.yaml
 	
 	echo-return
 

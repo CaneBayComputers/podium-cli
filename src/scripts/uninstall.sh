@@ -15,25 +15,16 @@ fi
 echo-cyan "🧹 Podium Uninstall - Selective Docker Cleanup"
 echo-return
 
-# Load configuration to get STACK_ID
-CONFIG_FILE=""
+# Load configuration to find compose file
 COMPOSE_FILE=""
-if [ -f "/etc/podium-cli/.env" ]; then
-    CONFIG_FILE="/etc/podium-cli/.env"
+if [ -f "/etc/podium-cli/docker-compose.yaml" ]; then
     COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
-elif [ -f "$SCRIPT_DIR/../docker-stack/.env" ]; then
-    CONFIG_FILE="$SCRIPT_DIR/../docker-stack/.env"
+    echo-white "Using compose file: $COMPOSE_FILE"
+elif [ -f "$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml" ]; then
     COMPOSE_FILE="$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml"
-fi
-
-if [ -n "$CONFIG_FILE" ]; then
-    source "$CONFIG_FILE"
-    echo-white "Using STACK_ID: $STACK_ID"
-    echo-white "Config file: $CONFIG_FILE"
-    echo-white "Compose file: $COMPOSE_FILE"
+    echo-white "Using compose file: $COMPOSE_FILE"
 else
-    echo-yellow "Warning: No configuration found, will clean up any docker-stack_* resources"
-    echo-yellow "Checked: /etc/podium-cli/.env and $SCRIPT_DIR/../docker-stack/.env"
+    echo-yellow "Warning: No docker-compose.yaml found, will clean up any podium_docker_stack* resources"
 fi
 
 echo-return
@@ -113,9 +104,9 @@ echo-return
 # 3. Remove volumes and networks with docker-stack prefix
 echo-white "📦 Removing Podium volumes..."
 
-# Always use docker-stack_ prefix to catch all Podium resources
-VOLUME_PATTERN="docker-stack_"
-NETWORK_PATTERN="docker-stack_"
+# Always use podium_docker_stack prefix to catch all Podium resources
+VOLUME_PATTERN="podium_docker_stack"
+NETWORK_PATTERN="podium_docker_stack"
 
 # Remove volumes
 VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
@@ -208,13 +199,8 @@ echo-white "What was removed:"
 echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
 echo "  • Hosts file entries for Podium services"
-if [ -n "$STACK_ID" ]; then
-    echo "  • Volumes with prefix: ${STACK_ID}_*"
-    echo "  • Networks with prefix: ${STACK_ID}_*"
-else
-    echo "  • Volumes with prefix: docker-stack_*"
-    echo "  • Networks with prefix: docker-stack_*"
-fi
+echo "  • Volumes with prefix: podium_docker_stack_*"
+echo "  • Networks with prefix: podium_docker_stack_*"
 echo-return
 echo-white "What was preserved:"
 echo "  • Your project files and code"
