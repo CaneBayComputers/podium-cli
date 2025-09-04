@@ -36,13 +36,13 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: $0 [OPTIONS]"
-            echo "Start Podium shared services"
-            echo ""
-            echo "Options:"
-            echo "  --json-output     Output results in JSON format"
-            echo "  --no-colors       Disable colored output"
-            echo "  --help            Show this help message"
+            echo-white "Usage: $0 [OPTIONS]"
+            echo-white "Start Podium shared services"
+            echo-white ""
+            echo-white "Options:"
+            echo-white "  --json-output     Output results in JSON format"
+            echo-white "  --no-colors       Disable colored output"
+            echo-white "  --help            Show this help message"
             exit 0
             ;;
         -*)

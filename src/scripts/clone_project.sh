@@ -21,17 +21,17 @@ PROJECT_NAME=""
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [OPTIONS] <repository> [project_name]"
-    echo "Clone a Git repository and set up as Podium project"
-    echo ""
-    echo "Arguments:"
-    echo "  repository        Git repository URL to clone"
-    echo "  project_name      Optional: Local project name (defaults to repo name)"
-    echo ""
-    echo "Options:"
-    echo "  --json-output     Output results in JSON format"
-    echo "  --no-colors       Disable colored output"
-    echo "  --help            Show this help message"
+    echo-white "Usage: $0 [OPTIONS] <repository> [project_name]"
+    echo-white "Clone a Git repository and set up as Podium project"
+    echo-white ""
+    echo-white "Arguments:"
+    echo-white "  repository        Git repository URL to clone"
+    echo-white "  project_name      Optional: Local project name (defaults to repo name)"
+    echo-white ""
+    echo-white "Options:"
+    echo-white "  --json-output     Output results in JSON format"
+    echo-white "  --no-colors       Disable colored output"
+    echo-white "  --help            Show this help message"
     
     error "usage" 1
 }
@@ -82,8 +82,8 @@ fi
 
 # Display the provided arguments
 echo-return
-echo "Repository: $REPOSITORY"
-echo "Project Name: $PROJECT_NAME"
+echo-white "Repository: $REPOSITORY"
+echo-white "Project Name: $PROJECT_NAME"
 
 # Convert to lowercase, replace spaces with dashes, and remove non-alphanumeric characters (macOS-compatible)
 if [[ "$OSTYPE" == "darwin"* ]]; then

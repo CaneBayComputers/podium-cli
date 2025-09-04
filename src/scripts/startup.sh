@@ -46,17 +46,17 @@ while [[ "$#" -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: $0 [OPTIONS] [project_name]"
-            echo "Start project containers or all projects"
-            echo ""
-            echo "Arguments:"
-            echo "  project_name      Optional: Specific project to start"
-            echo ""
-            echo "Options:"
-            echo "  --no-status       Skip status display after startup"
-            echo "  --json-output     Output results in JSON format"
-            echo "  --no-colors       Disable colored output"
-            echo "  --help            Show this help message"
+            echo-white "Usage: $0 [OPTIONS] [project_name]"
+            echo-white "Start project containers or all projects"
+            echo-white ""
+            echo-white "Arguments:"
+            echo-white "  project_name      Optional: Specific project to start"
+            echo-white ""
+            echo-white "Options:"
+            echo-white "  --no-status       Skip status display after startup"
+            echo-white "  --json-output     Output results in JSON format"
+            echo-white "  --no-colors       Disable colored output"
+            echo-white "  --help            Show this help message"
             exit 0
             ;;
         -*) 

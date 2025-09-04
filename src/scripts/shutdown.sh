@@ -42,16 +42,16 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: $0 [OPTIONS] [project_name]"
-            echo "Shutdown project containers or all projects"
-            echo ""
-            echo "Arguments:"
-            echo "  project_name      Optional: Specific project to shutdown"
-            echo ""
-            echo "Options:"
-            echo "  --json-output     Output results in JSON format"
-            echo "  --no-colors       Disable colored output"
-            echo "  --help            Show this help message"
+            echo-white "Usage: $0 [OPTIONS] [project_name]"
+            echo-white "Shutdown project containers or all projects"
+            echo-white ""
+            echo-white "Arguments:"
+            echo-white "  project_name      Optional: Specific project to shutdown"
+            echo-white ""
+            echo-white "Options:"
+            echo-white "  --json-output     Output results in JSON format"
+            echo-white "  --no-colors       Disable colored output"
+            echo-white "  --help            Show this help message"
             exit 0
             ;;
         -*)

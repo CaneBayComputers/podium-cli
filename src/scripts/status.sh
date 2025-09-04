@@ -19,21 +19,21 @@ source scripts/functions.sh
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [project_name] [options]"
-    echo "Shows status of running Docker projects"
-    echo ""
-    echo "Arguments:"
-    echo "  project_name     Name of specific project to check (optional)"
-    echo ""
-    echo "Options:"
-    echo "  --json-output    Output JSON responses (for programmatic use)"
-    echo "  --no-colors      Disable colored output"
-    echo "  --help           Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0                    # Show all projects"
-    echo "  $0 my-project         # Show specific project"
-    echo "  $0 --json-output      # JSON output for all projects"
+    echo-white "Usage: $0 [project_name] [options]"
+    echo-white "Shows status of running Docker projects"
+    echo-white ""
+    echo-white "Arguments:"
+    echo-white "  project_name     Name of specific project to check (optional)"
+    echo-white ""
+    echo-white "Options:"
+    echo-white "  --json-output    Output JSON responses (for programmatic use)"
+    echo-white "  --no-colors      Disable colored output"
+    echo-white "  --help           Show this help message"
+    echo-white ""
+    echo-white "Examples:"
+    echo-white "  $0                    # Show all projects"
+    echo-white "  $0 my-project         # Show specific project"
+    echo-white "  $0 --json-output      # JSON output for all projects"
     
     error "usage" 1
 }
@@ -321,7 +321,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         JSON_DATA=$(echo "$JSON_DATA" | jq --argjson services "$SERVICES_JSON" '.shared_services = $services')
     else
         # Fallback if compose file not found
-        echo "Warning: docker-compose.yaml not found" >&2
+        echo-white "Warning: docker-compose.yaml not found" >&2
     fi
     
     # Get projects directory and iterate through projects

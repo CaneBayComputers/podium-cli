@@ -13,21 +13,21 @@ echo-return; echo-return
 
 # Usage function to explain the script
 usage() {
-    echo "Usage: $0 <project_name> [options]"
-    echo "Removes a project and associated settings"
-    echo ""
-    echo "Options:"
-    echo "  --force-trash-project    Skip confirmation for project directory removal"
-    echo "  --force-db-delete        Skip confirmation for database deletion"
-    echo "  --preserve-database      Skip database deletion entirely (preserve database)"
-    echo "  --force                  Skip all confirmations (combines both flags above)"
-    echo "  --json-output            Output results in JSON format"
-    echo "  --no-colors              Disable colored output"
-    echo ""
-    echo "Examples:"
-    echo "  $0 my-project --force-trash-project"
-    echo "  $0 my-project --force-db-delete"
-    echo "  $0 my-project --force"
+    echo-white "Usage: $0 <project_name> [options]"
+    echo-white "Removes a project and associated settings"
+    echo-white ""
+    echo-white "Options:"
+    echo-white "  --force-trash-project    Skip confirmation for project directory removal"
+    echo-white "  --force-db-delete        Skip confirmation for database deletion"
+    echo-white "  --preserve-database      Skip database deletion entirely (preserve database)"
+    echo-white "  --force                  Skip all confirmations (combines both flags above)"
+    echo-white "  --json-output            Output results in JSON format"
+    echo-white "  --no-colors              Disable colored output"
+    echo-white ""
+    echo-white "Examples:"
+    echo-white "  $0 my-project --force-trash-project"
+    echo-white "  $0 my-project --force-db-delete"
+    echo-white "  $0 my-project --force"
     error "usage" 1
 }
 
@@ -100,7 +100,7 @@ if [ "$FORCE_TRASH_PROJECT" = false ] || [ "$FORCE_DB_DELETE" = false ]; then
     echo-white
     read -p "Are you sure? (y/n): " CONFIRM
     if [[ "$CONFIRM" != "y" ]]; then
-        echo "Operation cancelled."
+        echo-white "Operation cancelled."
         exit 0
     fi
 else
