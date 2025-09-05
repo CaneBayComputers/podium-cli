@@ -155,7 +155,17 @@ if [[ "$NO_COLOR" == "1" ]]; then
     START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --no-colors"
 fi
 
-source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
+# Capture JSON output from start_services.sh if in JSON mode
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS 2>&1)
+    START_SERVICES_EXIT_CODE=$?
+    if [ $START_SERVICES_EXIT_CODE -ne 0 ]; then
+        echo "$START_SERVICES_OUTPUT"
+        exit $START_SERVICES_EXIT_CODE
+    fi
+else
+    source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
+fi
 
 # Ensure we're back in the projects directory after sourcing other scripts
 cd "$(get_projects_dir)"
