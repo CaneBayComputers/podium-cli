@@ -61,8 +61,8 @@ show_help() {
     echo "  podium supervisor-status  - Show all supervised processes (Run from project directory)"
     echo
     echo-white "PROJECT MANAGEMENT:"
-    echo "  podium up [project]       - Start project containers"
-    echo "  podium down [project]     - Stop project containers"
+    echo "  podium up [project]       - Start everything (or specific project)"
+    echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium clone <repo> [options] - Clone existing project"
@@ -133,6 +133,8 @@ show_help() {
     echo "  podium supervisor restart all              # Restart all supervised processes"
     echo
     echo-white "NOTES:"
+    echo "  • 'podium up' without project name starts EVERYTHING - services + all projects (perfect for daily startup)"
+    echo "  • 'podium down' without project name stops EVERYTHING - all projects + services (perfect for shutdown)"
     echo "  • Project-specific tools (composer, art, wp, php, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (GUI, scripts, automation)"

@@ -91,20 +91,39 @@ start_project() {
 
   cd "$PROJECT_FOLDER_NAME"
 
-  if ! [ -f docker-compose.yaml ]; then
-
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"no_docker_compose\"}"
-        cd ..
-        return 1
-    else
-        echo-red 'No docker-compose.yaml file found!'
-        echo-white 'Possibly not installed. Skipping ...'
-        cd ..
-        return 1
-    fi
-
-  fi
+  # Check docker-compose.yaml and handle intelligently
+  local compose_type=$(check_docker_compose_type "docker-compose.yaml")
+  
+  case "$compose_type" in
+      "none")
+          if [[ "$JSON_OUTPUT" == "1" ]]; then
+              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"no_docker_compose\"}"
+              cd ..
+              return 1
+          else
+              echo-red 'No docker-compose.yaml file found!'
+              echo-white 'Possibly not installed. Skipping ...'
+              cd ..
+              return 1
+          fi
+          ;;
+      "non-podium")
+          if [[ "$JSON_OUTPUT" == "1" ]]; then
+              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"non_podium_docker_compose\"}"
+              cd ..
+              return 1
+          else
+              echo-yellow "⚠️  Found non-Podium docker-compose.yaml in $PROJECT_FOLDER_NAME"
+              echo-white "Run 'podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Podium"
+              echo-white "Skipping this project for now..."
+              cd ..
+              return 1
+          fi
+          ;;
+      "podium-project")
+          # Good to go - continue with startup
+          ;;
+  esac
 
   dockerup
 

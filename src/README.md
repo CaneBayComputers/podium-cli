@@ -203,28 +203,46 @@ Safely removes a project by:
 
 ### Service Management
 
-#### Starting Projects
+#### Starting Everything
 ```bash
-# Start all projects
+# Turn everything on - the magic command!
 podium up
+```
+**What it does:**
+- Starts all shared services (MariaDB, Redis, PostgreSQL, etc.)
+- Starts ALL project containers automatically
+- Configures networking and port mapping
+- Makes all projects accessible via browser
+- Perfect "turn on my computer and get to work" command
 
-# Start specific project
+#### Starting Specific Projects
+```bash
+# Start just one project (services start automatically if needed)
 podium up <project_name>
 ```
-- Starts Docker containers for projects
-- Configures networking and port mapping
-- Makes projects accessible via browser
+- Starts shared services if not already running
+- Starts the specific project container
+- Configures networking for that project only
 
-#### Stopping Projects
+#### Stopping Everything
 ```bash
-# Stop all projects
+# Turn everything off - the magic shutdown command!
 podium down
+```
+**What it does:**
+- Stops ALL running project containers
+- Stops all shared services (MariaDB, Redis, etc.)
+- Cleans up all networking configurations
+- Preserves all project data and configurations
+- Perfect "end of day shutdown" command
 
-# Stop specific project  
+#### Stopping Specific Projects
+```bash
+# Stop just one project (leaves services and other projects running)
 podium down <project_name>
 ```
-- Gracefully stops Docker containers
-- Cleans up networking configurations
+- Stops only the specified project container
+- Leaves shared services running for other projects
 - Preserves project data and configurations
 
 #### Checking Project Status
