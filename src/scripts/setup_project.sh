@@ -273,21 +273,8 @@ echo-return
 # Set up Docker compose file
 unalias cp 2>/dev/null || true
 
-# Check if docker-compose.yaml already exists and handle overwrite
-if [ -f "docker-compose.yaml" ]; then
-    if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            error "docker-compose.yaml already exists in this project."
-        else
-            echo-yellow "docker-compose.yaml already exists in this project."
-            echo-yellow -n "Do you want to overwrite it? (y/N): "
-            read OVERWRITE_RESPONSE
-            if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
-                error "Setup cancelled. Use --overwrite-docker-compose to force overwrite."
-            fi
-        fi
-    fi
-fi
+# Check if docker-compose.yaml already exists and handle overwrite using reusable function
+handle_docker_compose_conflict "docker-compose.yaml" "setup"
 
 # Use absolute path to docker-stack directory
 PODIUM_DIR="$DEV_DIR"

@@ -130,33 +130,11 @@ if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
     if git clone --depth 1 "$REPOSITORY" temp_check > /dev/null 2>&1; then
         cd temp_check
         
-        if [ -f "docker-compose.yaml" ]; then
-            # Check if this is a Podium project
-            if grep -q "type: \"podium-project\"" docker-compose.yaml 2>/dev/null; then
-                echo-white "✅ Detected existing Podium project - will be automatically reconfigured"
-                OVERWRITE_DOCKER_COMPOSE=1
-            else
-                # Non-Podium docker-compose.yaml exists
-                if [[ "$JSON_OUTPUT" == "1" ]]; then
-                    # In JSON mode, we can't prompt - fail with error
-                    cd "$PROJECTS_DIR"
-                    rm -rf "$TEMP_CHECK_DIR"
-                    error "Repository contains non-Podium docker-compose.yaml file. Use --overwrite-docker-compose to force overwrite."
-                else
-                    echo-yellow "⚠️  Repository contains a docker-compose.yaml file that is not from Podium."
-                    echo-yellow "This file will be overwritten during setup to work with Podium."
-                    echo-yellow -n "Do you want to continue? (y/N): "
-                    read OVERWRITE_RESPONSE
-                    if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
-                        cd "$PROJECTS_DIR"
-                        rm -rf "$TEMP_CHECK_DIR"
-                        error "Clone cancelled. The existing docker-compose.yaml file prevents Podium setup."
-                    fi
-                    OVERWRITE_DOCKER_COMPOSE=1
-                fi
-            fi
-        else
-            echo-white "✅ No existing Docker configuration found - will create new setup"
+        # Use the new reusable function to handle docker-compose conflicts
+        if ! handle_docker_compose_conflict "docker-compose.yaml" "clone"; then
+            cd "$PROJECTS_DIR"
+            rm -rf "$TEMP_CHECK_DIR"
+            error "Clone cancelled due to Docker configuration conflict."
         fi
     else
         echo-yellow "⚠️  Could not check repository contents (private repo or network issue)"

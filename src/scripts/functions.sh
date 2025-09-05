@@ -225,3 +225,65 @@ error() {
         exit "$exit_code"
     fi
 }
+
+# Output spacing function that respects JSON_OUTPUT
+echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
+
+# Docker Compose checking functions
+check_docker_compose_type() {
+    local compose_file="$1"
+    
+    if [ ! -f "$compose_file" ]; then
+        echo "none"
+        return 0
+    fi
+    
+    # Check if this is a Podium project
+    if grep -q "type: \"podium-project\"" "$compose_file" 2>/dev/null; then
+        echo "podium-project"
+        return 0
+    fi
+    
+    # Has docker-compose but not a Podium project
+    echo "non-podium"
+    return 0
+}
+
+handle_docker_compose_conflict() {
+    local compose_file="$1"
+    local operation_name="${2:-setup}"
+    
+    # If overwrite is already set, no conflict handling needed
+    if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
+        return 0
+    fi
+    
+    local compose_type=$(check_docker_compose_type "$compose_file")
+    
+    case "$compose_type" in
+        "none")
+            echo-white "✅ No existing Docker configuration found - will create new setup"
+            return 0
+            ;;
+        "podium-project")
+            echo-white "✅ Detected existing Podium project - will be automatically reconfigured"
+            OVERWRITE_DOCKER_COMPOSE=1
+            return 0
+            ;;
+        "non-podium")
+            if [[ "$JSON_OUTPUT" == "1" ]]; then
+                error "docker-compose.yaml already exists and is not a Podium project. Use --overwrite-docker-compose to force overwrite."
+            else
+                echo-yellow "⚠️  Found a docker-compose.yaml file that is not from Podium."
+                echo-yellow "This file will be overwritten during $operation_name to work with Podium."
+                echo-yellow -n "Do you want to continue? (y/N): "
+                read OVERWRITE_RESPONSE
+                if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
+                    error "$operation_name cancelled. Use --overwrite-docker-compose to force overwrite."
+                fi
+                OVERWRITE_DOCKER_COMPOSE=1
+            fi
+            return 0
+            ;;
+    esac
+}
