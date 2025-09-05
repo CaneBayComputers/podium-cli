@@ -25,7 +25,6 @@ cd "$PROJECTS_DIR"
 
 
 # Initialize variables
-NO_STATUS=false
 PROJECT_NAME=""
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
@@ -33,10 +32,6 @@ NO_COLOR="${NO_COLOR:-}"
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --no-status) 
-            NO_STATUS=true 
-            shift
-            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -53,7 +48,6 @@ while [[ "$#" -gt 0 ]]; do
             echo-white "  project_name      Optional: Specific project to start"
             echo-white ""
             echo-white "Options:"
-            echo-white "  --no-status       Skip status display after startup"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
@@ -202,17 +196,9 @@ if [[ "$NO_COLOR" == "1" ]]; then
     STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
 fi
 
-if ! $NO_STATUS; then
-  if [ -n "$PROJECT_NAME" ]; then
-      source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
-  else
-      source "$DEV_DIR/scripts/status.sh" $STATUS_OPTIONS
-  fi
-elif [[ "$JSON_OUTPUT" == "1" ]]; then
-  # For JSON output, we still need to call status.sh to get the data
-  if [ -n "$PROJECT_NAME" ]; then
-      source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
-  else
-      source "$DEV_DIR/scripts/status.sh" $STATUS_OPTIONS
-  fi
+# Show status to confirm successful startup
+if [ -n "$PROJECT_NAME" ]; then
+    source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
+else
+    source "$DEV_DIR/scripts/status.sh" $STATUS_OPTIONS
 fi
