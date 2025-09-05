@@ -141,7 +141,7 @@ start_project() {
 
   cd ..
 
-  echo-green "Project $PROJECT_FOLDER_NAME started successfully!"
+  echo-green "Project $PROJECT_FOLDER_NAME started successfully!"; echo-return
 }
 
 

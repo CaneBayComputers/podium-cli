@@ -138,7 +138,16 @@ fi
 
 
 # Start micro services
-source "$DEV_DIR/scripts/start_services.sh"
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" 2>&1)
+    START_SERVICES_EXIT_CODE=$?
+    if [ $START_SERVICES_EXIT_CODE -ne 0 ]; then
+        echo "$START_SERVICES_OUTPUT"
+        exit $START_SERVICES_EXIT_CODE
+    fi
+else
+    source "$DEV_DIR/scripts/start_services.sh"
+fi
 
 
 # Only shutdown project if docker-compose.yaml already exists (existing project reconfiguration)
@@ -306,22 +315,6 @@ else
     podium-sed "s/PUBLIC/\/public/g" docker-compose.yaml
 
 fi
-
-# Stay in project directory for Docker operations
-# Start Docker instance
-echo-return; echo-cyan "Starting up $PROJECT_NAME ..."; echo-white
-
-if ! [ -f docker-compose.yaml ]; then
-    error "No docker-compose.yaml file found! Project setup incomplete."
-fi
-
-# Start the container
-dockerup
-
-sleep 5
-
-echo-green "Project $PROJECT_NAME started successfully!"
-
 
 # Install Composer libraries
 cd "$PROJECT_DIR"
@@ -634,13 +627,17 @@ EOF
 # Setup gitignore
 setup_gitignore
 
-# Show status of running Docker project
+# Setup completed
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    # In JSON mode, capture status JSON output and include it in our response
-    STATUS_OUTPUT=$(SUPPRESS_INTERMEDIATE_JSON=1 source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME --json-output)
-    echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"php_version\": \"$PHP_VERSION\", \"status_info\": $STATUS_OUTPUT, \"status\": \"success\"}"
+    echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"php_version\": \"$PHP_VERSION\", \"status\": \"success\"}"
 else
-    source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME
+    echo-return; echo-return
+    echo-green "Setup completed for project: $PROJECT_NAME"
+    echo-white "Database: $DATABASE_ENGINE"
+    echo-white "PHP Version: $PHP_VERSION"
+    echo-return
+    echo-cyan "To start the project, run: podium up $PROJECT_NAME"
+    echo-return
 fi
 
 # Return to original directory
