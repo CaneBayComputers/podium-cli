@@ -79,9 +79,7 @@ start_project() {
 
   PROJECT_FOLDER_NAME=$1
 
-  if [[ "$JSON_OUTPUT" != "1" ]]; then
-      echo; echo-cyan "Starting up $PROJECT_FOLDER_NAME ..."; echo-white
-  fi
+  echo; echo-cyan "Starting up $PROJECT_FOLDER_NAME ..."; echo-white
 
   if ! [ -d "$PROJECT_FOLDER_NAME" ]; then
 
@@ -94,11 +92,7 @@ start_project() {
   # Check docker-compose.yaml and handle intelligently - run setup if needed
   if ! handle_docker_compose_conflict "docker-compose.yaml" "startup"; then
       # If conflict handling failed (user said no), skip this project
-      if [[ "$JSON_OUTPUT" == "1" ]]; then
-          echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"docker_compose_conflict\"}"
-      else
-          echo-white "Skipping $PROJECT_FOLDER_NAME due to Docker configuration conflict"
-      fi
+      echo-white "Skipping $PROJECT_FOLDER_NAME due to Docker configuration conflict"
       cd ..
       return 1
   fi
@@ -106,11 +100,7 @@ start_project() {
   # If no docker-compose.yaml exists or user agreed to overwrite, run setup
   local compose_type=$(check_docker_compose_type "docker-compose.yaml")
   if [[ "$compose_type" == "none" ]] || [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" && "$compose_type" == "non-podium" ]]; then
-      if [[ "$JSON_OUTPUT" == "1" ]]; then
-          echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"info\", \"message\": \"running_setup\"}"
-      else
-          echo-cyan "Setting up $PROJECT_FOLDER_NAME for Podium..."
-      fi
+      echo-cyan "Setting up $PROJECT_FOLDER_NAME for Podium..."
       
       # Build setup options
       SETUP_OPTIONS="$PROJECT_FOLDER_NAME"
@@ -124,21 +114,25 @@ start_project() {
           SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-docker-compose"
       fi
       
-      # Run setup from the project directory
+      # Run setup from the project directory and capture any JSON output
       cd ..
-      if ! source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS; then
-          if [[ "$JSON_OUTPUT" == "1" ]]; then
-              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"setup_failed\"}"
-          else
-              echo-red "Setup failed for $PROJECT_FOLDER_NAME"
+      if [[ "$JSON_OUTPUT" == "1" ]]; then
+          SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS 2>&1)
+          SETUP_EXIT_CODE=$?
+          if [ $SETUP_EXIT_CODE -ne 0 ]; then
+              cd "$PROJECT_FOLDER_NAME"
+              return 1
           fi
-          return 1
+      else
+          if ! source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS; then
+              echo-red "Setup failed for $PROJECT_FOLDER_NAME"
+              cd "$PROJECT_FOLDER_NAME"
+              return 1
+          fi
       fi
       cd "$PROJECT_FOLDER_NAME"
       
-      if [[ "$JSON_OUTPUT" != "1" ]]; then
-          echo-green "Setup completed for $PROJECT_FOLDER_NAME, now starting..."
-      fi
+      echo-green "Setup completed for $PROJECT_FOLDER_NAME, now starting..."
   fi
 
   dockerup
@@ -147,9 +141,7 @@ start_project() {
 
   cd ..
 
-  if [[ "$JSON_OUTPUT" != "1" ]]; then
-      echo-green "Project $PROJECT_FOLDER_NAME started successfully!"
-  fi
+  echo-green "Project $PROJECT_FOLDER_NAME started successfully!"
 }
 
 
