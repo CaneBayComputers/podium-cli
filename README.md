@@ -287,14 +287,16 @@ podium down
 podium clone https://github.com/user/my-laravel-app
 
 # Clone with custom name and options
-podium clone https://github.com/user/project my-local-name --php-version 8
+podium clone https://github.com/user/company-project my-local-name --php-version 8
 
 # Manual Git clone, then setup
-git clone https://github.com/user/project
-podium setup project
+git clone https://github.com/user/company-project
+podium setup company-project
+podium up company-project
 
-# Downloaded ZIP file - extract to ~/podium-projects/project/
-podium setup project
+# Downloaded ZIP file - extract to ~/podium-projects/company-project/
+podium setup company-project
+podium up company-project
 
 # Copied project folder
 cp -r existing-project ~/podium-projects/new-project
@@ -305,7 +307,7 @@ podium setup new-project --overwrite-docker-compose
 
 ```bash
 # Create a WordPress project with PostgreSQL
-podium new wp-site --framework wordpress --version latest --database postgres --no-github
+podium new wp-site --framework wordpress --version latest --no-github
 
 # Install and activate plugins
 podium wp plugin install woocommerce --activate
@@ -364,20 +366,6 @@ podium composer install        # Uses container's PHP 7.4
 podium php old-script.php     # Runs with PHP 7.4 environment
 ```
 
-#### Project Creation Options
-
-```bash
-# Interactive project creation (recommended)
-podium new
-
-# Non-interactive with specific name
-podium new my-app
-
-# The interactive mode lets you choose:
-# - Framework: Laravel, WordPress, or Basic PHP
-# - Database: MySQL, PostgreSQL, or MongoDB  
-# - PHP Version: Automatically detected or manual selection
-```
 
 ## 🔌 JSON API Integration
 
