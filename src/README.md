@@ -110,31 +110,83 @@ Creates a new Laravel or WordPress project with:
 
 #### Cloning Existing Projects
 ```bash
-podium clone <repository> [project_name]
+podium clone <repository> [project_name] [options]
 ```
 - **`<repository>`**: The URL of the repository to clone (required)
 - **`[project_name]`**: Optional custom name for the cloned project
 
+**Options:**
+- **`--overwrite-docker-compose`**: Overwrite existing docker-compose.yaml without prompting
+- **`--php-version VERSION`**: Force specific PHP version (7 or 8)
+- **`--json-output`**: Output results in JSON format
+- **`--no-colors`**: Disable colored output
+
 Clones an existing project and automatically:
 - Downloads the repository
+- Intelligently detects existing Docker configurations
+- Handles Podium projects seamlessly (auto-reconfigures)
+- Prompts for non-Podium docker-compose.yaml conflicts
 - Detects project type (Laravel/WordPress/PHP)
 - Configures environment files
 - Sets up database connections
 - Starts the development environment
 
+**Examples:**
+```bash
+# Basic clone
+podium clone https://github.com/user/my-laravel-app
+
+# Clone with custom name and PHP version
+podium clone https://github.com/user/project my-local-name --php-version 8
+
+# Force overwrite any existing Docker config
+podium clone https://github.com/user/project --overwrite-docker-compose
+```
+
 #### Setting Up Downloaded Projects
 ```bash
-podium setup <project_name>
+podium setup <project_name> [database_engine] [display_name] [description] [emoji] [options]
 ```
 - **`<project_name>`**: The name of the project directory (required)
+- **`[database_engine]`**: Database type: mysql, postgres, mongo (default: mysql)
+- **`[display_name]`**: Display name for project (optional)
+- **`[description]`**: Project description (optional)
+- **`[emoji]`**: Project emoji (default: 🚀)
+
+**Options:**
+- **`--overwrite-docker-compose`**: Overwrite existing docker-compose.yaml without prompting
+- **`--php-version VERSION`**: Force specific PHP version (7 or 8)
+- **`--json-output`**: Output results in JSON format
+- **`--no-colors`**: Disable colored output
 
 Configures an already downloaded project by:
+- Intelligently detecting existing Docker configurations
+- Handling Podium projects seamlessly (auto-reconfigures)
+- Prompting for non-Podium docker-compose.yaml conflicts
 - Detecting PHP version requirements from composer.json
 - Creating Docker Compose configuration
 - Setting up environment files (.env for Laravel, wp-config.php for WordPress)
 - Creating and configuring project database
 - Running migrations and setup commands
 - Starting the project container
+
+**Use Cases:**
+- Manual Git clones: `git clone repo && podium setup project`
+- Downloaded ZIP files: Extract and `podium setup project`
+- Copied project folders: `podium setup copied-project`
+- Re-configuring existing Podium projects
+
+**Examples:**
+```bash
+# Basic setup
+podium setup my-downloaded-project
+
+# Setup with specific database and PHP version
+podium setup my-project postgres "My Project" "A cool project" 🚀 --php-version 8
+
+# Force overwrite existing Docker config
+podium setup existing-project --overwrite-docker-compose
+```
 
 #### Removing Projects Safely
 ```bash
