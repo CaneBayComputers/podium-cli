@@ -40,8 +40,6 @@ podium configure
 # Create a new project
 podium new my-project
 
-# Check status
-podium status
 ```
 
 ---
@@ -69,8 +67,6 @@ podium configure
 # Create a new project
 podium new my-project
 
-# Check status
-podium status
 ```
 
 ---
@@ -110,8 +106,6 @@ podium configure
 # Create a new project
 podium new my-project
 
-# Check status
-podium status
 ```
 
 ## 🎨 Podium GUI
@@ -286,24 +280,25 @@ podium down
 
 ## 💡 Usage Examples
 
-### Basic Development Workflow
+### Cloning and Setting Up Projects
 
 ```bash
-# Create a new Laravel project with MySQL
-podium new blog-app --framework laravel --database mysql --no-github
+# Clone a Git repository and set it up automatically
+podium clone https://github.com/user/my-laravel-app
 
-# Navigate to project and install dependencies
-cd ~/podium-projects/blog-app
-podium composer install
+# Clone with custom name and options
+podium clone https://github.com/user/project my-local-name --php-version 8
 
-# Run migrations and seeders
-podium art migrate --seed
+# Manual Git clone, then setup
+git clone https://github.com/user/project
+podium setup project
 
-# Start the project
-podium up blog-app
+# Downloaded ZIP file - extract to ~/podium-projects/project/
+podium setup project
 
-# Check project status
-podium status blog-app
+# Copied project folder
+cp -r existing-project ~/podium-projects/new-project
+podium setup new-project --overwrite-docker-compose
 ```
 
 ### WordPress Development
@@ -352,16 +347,36 @@ podium supervisor restart all
 
 ### Advanced Usage
 
+#### Containerized Development Commands
+
+**All `podium composer`, `podium art`, and `podium php` commands run inside your project's container** with the correct PHP environment:
+
 ```bash
-# Create Laravel project with GitHub integration
-podium new enterprise-app --framework laravel --version 11.x --database postgres --github --non-interactive
+# These commands run inside the container with project-specific PHP/extensions
+cd ~/podium-projects/my-laravel-app
+podium composer install        # Uses container's PHP 8.2
+podium art migrate            # Runs with container's Laravel setup
+podium php script.php         # Executes with project's PHP configuration
 
-# Execute custom commands in container
-podium exec "php -v"
-podium exec-root "apt update && apt install -y vim"
+# Switch to different project with different PHP version
+cd ~/podium-projects/legacy-app  
+podium composer install        # Uses container's PHP 7.4
+podium php old-script.php     # Runs with PHP 7.4 environment
+```
 
-# Remove project but preserve database
-podium remove old-project --force --preserve-database
+#### Project Creation Options
+
+```bash
+# Interactive project creation (recommended)
+podium new
+
+# Non-interactive with specific name
+podium new my-app
+
+# The interactive mode lets you choose:
+# - Framework: Laravel, WordPress, or Basic PHP
+# - Database: MySQL, PostgreSQL, or MongoDB  
+# - PHP Version: Automatically detected or manual selection
 ```
 
 ## 🔌 JSON API Integration
