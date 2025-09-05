@@ -270,11 +270,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 echo-return
 
 
-# Set up Docker compose file
-unalias cp 2>/dev/null || true
-
 # Check if docker-compose.yaml already exists and handle overwrite using reusable function
 handle_docker_compose_conflict "docker-compose.yaml" "setup"
+
 
 # Use absolute path to docker-stack directory
 PODIUM_DIR="$DEV_DIR"
@@ -283,8 +281,6 @@ cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
 podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
-
-# STACK_ID has been removed - network name is now fixed as podium_docker_stack_vpc
 
 podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
 
