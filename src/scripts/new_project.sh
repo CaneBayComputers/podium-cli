@@ -574,28 +574,33 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     SETUP_OUTPUT=$(timeout 1800 bash -c "source '$DEV_DIR/scripts/setup_project.sh' $PROJECT_NAME $DATABASE_TYPE '$DISPLAY_NAME' '$PROJECT_DESCRIPTION' '$PROJECT_EMOJI' $SETUP_OPTIONS" 2>&1)
     SETUP_EXIT_CODE=$?
     
-    if [ $SETUP_EXIT_CODE -eq 0 ]; then
-        # Parse the setup JSON output and enhance it with new_project information
-        if echo "$SETUP_OUTPUT" | grep -q '"status": "success"'; then
-            # Extract setup info and combine with new_project info
-            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup\": $SETUP_OUTPUT, \"status\": \"success\"}"
+    if [ $SETUP_EXIT_CODE -ne 0 ]; then
+        if [ $SETUP_EXIT_CODE -eq 124 ]; then
+            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"status\": \"error\", \"error\": \"timeout\"}"
         else
-            # Setup returned JSON error
+            # Setup failed - output the error and exit
             echo "$SETUP_OUTPUT"
         fi
-    elif [ $SETUP_EXIT_CODE -eq 124 ]; then
-        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"status\": \"error\", \"error\": \"timeout\"}"
+        exit $SETUP_EXIT_CODE
+    fi
+    
+    # Start the project
+    STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME --json-output 2>&1)
+    STARTUP_EXIT_CODE=$?
+    
+    if [ $STARTUP_EXIT_CODE -eq 0 ]; then
+        # Combine setup and startup results
+        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup\": $SETUP_OUTPUT, \"startup\": $STARTUP_OUTPUT, \"status\": \"success\"}"
     else
-        # If setup failed but didn't return JSON, provide our own error
-        if echo "$SETUP_OUTPUT" | grep -q '"status": "error"'; then
-            echo "$SETUP_OUTPUT"
-        else
-            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"status\": \"error\", \"error\": \"setup_failed\"}"
-        fi
+        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup\": $SETUP_OUTPUT, \"startup_error\": $STARTUP_OUTPUT, \"status\": \"error\", \"error\": \"startup_failed\"}"
     fi
 else
     # In normal mode, run setup with full output
     source "$DEV_DIR/scripts/setup_project.sh" $PROJECT_NAME $DATABASE_TYPE "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
+    
+    # Start the project
+    echo-cyan "Starting $PROJECT_NAME..."
+    source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME
 fi
 
 cd "$ORIG_DIR"

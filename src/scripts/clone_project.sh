@@ -20,6 +20,10 @@ REPOSITORY=""
 PROJECT_NAME=""
 OVERWRITE_DOCKER_COMPOSE=""
 PHP_VERSION=""
+DATABASE_ENGINE=""
+DISPLAY_NAME=""
+PROJECT_DESCRIPTION=""
+PROJECT_EMOJI=""
 
 # Function to display usage
 usage() {
@@ -35,6 +39,10 @@ usage() {
     echo-white "  --no-colors                  Disable colored output"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION        Force specific PHP version (7 or 8)"
+    echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --display-name NAME          Display name for project (optional)"
+    echo-white "  --description TEXT           Project description (optional)"
+    echo-white "  --emoji EMOJI                Project emoji (default: 🚀)"
     echo-white "  --help                       Show this help message"
     
     error "usage" 1
@@ -61,6 +69,38 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --php-version requires a version number"
+            fi
+            ;;
+        --database)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                DATABASE_ENGINE="$2"
+                shift 2
+            else
+                error "Error: --database requires a database type"
+            fi
+            ;;
+        --display-name)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                DISPLAY_NAME="$2"
+                shift 2
+            else
+                error "Error: --display-name requires a name"
+            fi
+            ;;
+        --description)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                PROJECT_DESCRIPTION="$2"
+                shift 2
+            else
+                error "Error: --description requires a description text"
+            fi
+            ;;
+        --emoji)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                PROJECT_EMOJI="$2"
+                shift 2
+            else
+                error "Error: --emoji requires an emoji"
             fi
             ;;
         --help)
@@ -162,7 +202,22 @@ echo-return
 cd ..
 
 # Build setup options to pass along
-SETUP_OPTIONS=""
+SETUP_OPTIONS="$PROJECT_NAME"
+if [[ -n "$DATABASE_ENGINE" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS $DATABASE_ENGINE"
+else
+    SETUP_OPTIONS="$SETUP_OPTIONS mysql"  # default
+fi
+if [[ -n "$DISPLAY_NAME" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS \"$DISPLAY_NAME\""
+fi
+if [[ -n "$PROJECT_DESCRIPTION" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS \"$PROJECT_DESCRIPTION\""
+fi
+if [[ -n "$PROJECT_EMOJI" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS \"$PROJECT_EMOJI\""
+fi
+# Add flags
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --json-output"
 fi
@@ -178,26 +233,32 @@ fi
 
 # Setup project
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" $PROJECT_NAME $SETUP_OPTIONS 2>&1)
+    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS 2>&1)
     SETUP_EXIT_CODE=$?
     
-    if [ $SETUP_EXIT_CODE -eq 0 ]; then
-        # Parse setup JSON and combine with clone info
-        if echo "$SETUP_OUTPUT" | grep -q '"status": "success"'; then
-            echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup\": $SETUP_OUTPUT, \"status\": \"success\"}"
-        else
-            echo "$SETUP_OUTPUT"
-        fi
-    else
-        # Setup failed
-        if echo "$SETUP_OUTPUT" | grep -q '"status": "error"'; then
-            echo "$SETUP_OUTPUT"
-        else
-            echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"status\": \"error\", \"error\": \"setup_failed\"}"
-        fi
+    if [ $SETUP_EXIT_CODE -ne 0 ]; then
+        # Setup failed - output the error and exit
+        echo "$SETUP_OUTPUT"
+        exit $SETUP_EXIT_CODE
     fi
 else
-    source "$DEV_DIR/scripts/setup_project.sh" $PROJECT_NAME $SETUP_OPTIONS
+    source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS
+fi
+
+# Start the project
+echo-cyan "Starting $PROJECT_NAME..."
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME --json-output 2>&1)
+    STARTUP_EXIT_CODE=$?
+    
+    if [ $STARTUP_EXIT_CODE -eq 0 ]; then
+        # Combine setup and startup results
+        echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup\": $SETUP_OUTPUT, \"startup\": $STARTUP_OUTPUT, \"status\": \"success\"}"
+    else
+        echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup\": $SETUP_OUTPUT, \"startup_error\": $STARTUP_OUTPUT, \"status\": \"error\", \"error\": \"startup_failed\"}"
+    fi
+else
+    source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME
 fi
 
 cd "$ORIG_DIR"
