@@ -90,14 +90,12 @@ start_project() {
       "none")
           echo-red "No docker-compose.yaml file found in $PROJECT_FOLDER_NAME!"
           echo-white "Run 'podium setup $PROJECT_FOLDER_NAME' to configure this project for Podium."
-          cd ..
-          return 1
+          error "$PROJECT_FOLDER_NAME is not configured for Podium. Run: podium setup $PROJECT_FOLDER_NAME"
           ;;
       "non-podium")
           echo-red "Found non-Podium docker-compose.yaml in $PROJECT_FOLDER_NAME!"
           echo-white "Run 'podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Podium."
-          cd ..
-          return 1
+          error "$PROJECT_FOLDER_NAME has non-Podium docker-compose.yaml. Run: podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose"
           ;;
       "podium-project")
           # Good to go - continue with startup
