@@ -118,6 +118,56 @@ fi
 
 echo-return
 
+# Check repository for existing docker-compose.yaml before cloning
+echo-white "Checking repository for existing Docker configuration..."
+
+# Create a temporary directory to check the repo
+TEMP_CHECK_DIR=$(mktemp -d)
+cd "$TEMP_CHECK_DIR"
+
+# Clone just the top level to check for docker-compose.yaml (shallow clone)
+if git clone --depth 1 "$REPOSITORY" temp_check > /dev/null 2>&1; then
+    cd temp_check
+    
+    if [ -f "docker-compose.yaml" ]; then
+        # Check if this is a Podium project
+        if grep -q "type: \"podium-project\"" docker-compose.yaml 2>/dev/null; then
+            echo-white "✅ Detected existing Podium project - will be automatically reconfigured"
+            OVERWRITE_DOCKER_COMPOSE=1
+        else
+            # Non-Podium docker-compose.yaml exists
+            if [[ "$JSON_OUTPUT" == "1" ]]; then
+                # In JSON mode, we can't prompt - fail with error
+                cd "$PROJECTS_DIR"
+                rm -rf "$TEMP_CHECK_DIR"
+                error "Repository contains non-Podium docker-compose.yaml file. Use --overwrite-docker-compose to force overwrite."
+            else
+                echo-yellow "⚠️  Repository contains a docker-compose.yaml file that is not from Podium."
+                echo-yellow "This file will be overwritten during setup to work with Podium."
+                echo-yellow -n "Do you want to continue? (y/N): "
+                read OVERWRITE_RESPONSE
+                if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
+                    cd "$PROJECTS_DIR"
+                    rm -rf "$TEMP_CHECK_DIR"
+                    error "Clone cancelled. The existing docker-compose.yaml file prevents Podium setup."
+                fi
+                OVERWRITE_DOCKER_COMPOSE=1
+            fi
+        fi
+    else
+        echo-white "✅ No existing Docker configuration found - will create new setup"
+    fi
+else
+    echo-yellow "⚠️  Could not check repository contents (private repo or network issue)"
+    echo-white "Proceeding with clone - will handle conflicts during setup if needed"
+fi
+
+# Clean up temp directory
+cd "$PROJECTS_DIR"
+rm -rf "$TEMP_CHECK_DIR"
+
+echo-return
+
 # Clone repository
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     git clone "$REPOSITORY" "$PROJECT_NAME" > /dev/null 2>&1
@@ -126,25 +176,6 @@ else
 fi
 
 echo-return
-
-# Check if cloned project has existing docker-compose.yaml with Podium metadata
-# If so, replace hardcoded ipv4_address with IPV4_ADDRESS placeholder
-if [ -f "$PROJECTS_DIR/$PROJECT_NAME/docker-compose.yaml" ]; then
-    cd "$PROJECTS_DIR/$PROJECT_NAME"
-    
-    # Check if this is a Podium project by looking for x-metadata
-    if grep -q "type: \"podium-project\"" docker-compose.yaml 2>/dev/null; then
-        echo-white "Detected existing Podium project, updating IP address configuration..."
-        
-        # Replace any hardcoded ipv4_address with IPV4_ADDRESS placeholder
-        # This allows setup_project.sh to assign a new IP that works with current installation
-        podium-sed 's/ipv4_address: [0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+/ipv4_address: IPV4_ADDRESS/g' docker-compose.yaml
-        
-        echo-white "IP address configuration updated for current environment"
-    fi
-    
-    cd ..
-fi
 
 cd ..
 
