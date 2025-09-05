@@ -91,39 +91,55 @@ start_project() {
 
   cd "$PROJECT_FOLDER_NAME"
 
-  # Check docker-compose.yaml and handle intelligently
-  local compose_type=$(check_docker_compose_type "docker-compose.yaml")
+  # Check docker-compose.yaml and handle intelligently - run setup if needed
+  if ! handle_docker_compose_conflict "docker-compose.yaml" "startup"; then
+      # If conflict handling failed (user said no), skip this project
+      if [[ "$JSON_OUTPUT" == "1" ]]; then
+          echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"docker_compose_conflict\"}"
+      else
+          echo-white "Skipping $PROJECT_FOLDER_NAME due to Docker configuration conflict"
+      fi
+      cd ..
+      return 1
+  fi
   
-  case "$compose_type" in
-      "none")
+  # If no docker-compose.yaml exists or user agreed to overwrite, run setup
+  local compose_type=$(check_docker_compose_type "docker-compose.yaml")
+  if [[ "$compose_type" == "none" ]] || [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" && "$compose_type" == "non-podium" ]]; then
+      if [[ "$JSON_OUTPUT" == "1" ]]; then
+          echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"info\", \"message\": \"running_setup\"}"
+      else
+          echo-cyan "Setting up $PROJECT_FOLDER_NAME for Podium..."
+      fi
+      
+      # Build setup options
+      SETUP_OPTIONS="$PROJECT_FOLDER_NAME"
+      if [[ "$JSON_OUTPUT" == "1" ]]; then
+          SETUP_OPTIONS="$SETUP_OPTIONS --json-output"
+      fi
+      if [[ "$NO_COLOR" == "1" ]]; then
+          SETUP_OPTIONS="$SETUP_OPTIONS --no-colors"
+      fi
+      if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
+          SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-docker-compose"
+      fi
+      
+      # Run setup from the project directory
+      cd ..
+      if ! source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS; then
           if [[ "$JSON_OUTPUT" == "1" ]]; then
-              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"no_docker_compose\"}"
-              cd ..
-              return 1
+              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"setup_failed\"}"
           else
-              echo-red 'No docker-compose.yaml file found!'
-              echo-white 'Possibly not installed. Skipping ...'
-              cd ..
-              return 1
+              echo-red "Setup failed for $PROJECT_FOLDER_NAME"
           fi
-          ;;
-      "non-podium")
-          if [[ "$JSON_OUTPUT" == "1" ]]; then
-              echo "{\"action\": \"startup\", \"project_name\": \"$PROJECT_FOLDER_NAME\", \"status\": \"error\", \"error\": \"non_podium_docker_compose\"}"
-              cd ..
-              return 1
-          else
-              echo-yellow "⚠️  Found non-Podium docker-compose.yaml in $PROJECT_FOLDER_NAME"
-              echo-white "Run 'podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Podium"
-              echo-white "Skipping this project for now..."
-              cd ..
-              return 1
-          fi
-          ;;
-      "podium-project")
-          # Good to go - continue with startup
-          ;;
-  esac
+          return 1
+      fi
+      cd "$PROJECT_FOLDER_NAME"
+      
+      if [[ "$JSON_OUTPUT" != "1" ]]; then
+          echo-green "Setup completed for $PROJECT_FOLDER_NAME, now starting..."
+      fi
+  fi
 
   dockerup
 
