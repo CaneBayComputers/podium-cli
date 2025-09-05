@@ -70,25 +70,39 @@ chmod +x Podium.AppImage
 # Windows/macOS: Download from releases page
 ```
 
-### Create Your First Project
+## 💻 Basic Development Workflow
+
+### 1. Create Your First Project
 ```bash
 # Log out and back in first (for docker group), then:
-podium new
+podium new my-awesome-app
 ```
+**What happens:**
+- Interactive framework selection (Laravel/WordPress/PHP)
+- Automatic database setup and connection
+- Environment files configured
+- Project starts automatically
+- **Ready to code immediately!**
 
-### Start Coding! 
+### 2. Start Coding!
 ```bash
 # Your project is ready at:
-http://your-project-name
+http://my-awesome-app
 ```
 
-**You now have a fully configured development environment with:**
-- ✅ Running Laravel/WordPress application
-- ✅ Database configured and connected
-- ✅ Redis caching ready
-- ✅ phpMyAdmin for database management
-- ✅ Professional development tools
-- ✅ **No manual configuration needed!**
+### 3. Daily Workflow
+```bash
+# Morning: Start everything
+podium up
+
+# Work on your projects...
+# All projects accessible at http://project-name
+
+# Evening: Clean shutdown (optional)
+podium down
+```
+
+**That's it!** You now have a professional development environment with zero manual configuration.
 
 ## 🛠️ Core Commands
 
@@ -96,97 +110,78 @@ http://your-project-name
 
 #### Creating New Projects
 ```bash
-podium new [project_name] [organization]
+podium new [project_name]
 ```
-- **`[project_name]`**: Optional name for your new project
-- **`[organization]`**: Optional GitHub organization for repository creation
 
 Creates a new Laravel or WordPress project with:
-- Interactive framework selection (Laravel/WordPress)
-- Version selection (Laravel 11.x, 10.x or WordPress latest/6.x)
-- Automatic GitHub repository creation
+- Interactive framework selection (Laravel/WordPress/PHP)
+- Automatic database setup and connection
 - Complete environment configuration
-- Database setup and connection
+- Project starts automatically
+
+**Examples:**
+```bash
+# Interactive creation
+podium new
+
+# Create with specific name
+podium new my-awesome-app
+```
 
 #### Cloning Existing Projects
 ```bash
 podium clone <repository> [project_name] [options]
 ```
-- **`<repository>`**: The URL of the repository to clone (required)
-- **`[project_name]`**: Optional custom name for the cloned project
 
-**Options:**
-- **`--overwrite-docker-compose`**: Overwrite existing docker-compose.yaml without prompting
-- **`--php-version VERSION`**: Force specific PHP version (7 or 8)
-- **`--json-output`**: Output results in JSON format
-- **`--no-colors`**: Disable colored output
-
-Clones an existing project and automatically:
-- Downloads the repository
-- Intelligently detects existing Docker configurations
-- Handles Podium projects seamlessly (auto-reconfigures)
-- Prompts for non-Podium docker-compose.yaml conflicts
-- Detects project type (Laravel/WordPress/PHP)
-- Configures environment files
-- Sets up database connections
-- Starts the development environment
+Clones a Git repository and automatically sets it up as a Podium project:
 
 **Examples:**
 ```bash
 # Basic clone
 podium clone https://github.com/user/my-laravel-app
 
-# Clone with custom name and PHP version
-podium clone https://github.com/user/project my-local-name --php-version 8
+# Clone with custom name
+podium clone https://github.com/user/project my-local-name
 
-# Force overwrite any existing Docker config
-podium clone https://github.com/user/project --overwrite-docker-compose
+# Clone with specific options
+podium clone https://github.com/user/project --php-version 8 --overwrite-docker-compose
 ```
-
-#### Setting Up Downloaded Projects
-```bash
-podium setup <project_name> [database_engine] [display_name] [description] [emoji] [options]
-```
-- **`<project_name>`**: The name of the project directory (required)
-- **`[database_engine]`**: Database type: mysql, postgres, mongo (default: mysql)
-- **`[display_name]`**: Display name for project (optional)
-- **`[description]`**: Project description (optional)
-- **`[emoji]`**: Project emoji (default: 🚀)
 
 **Options:**
-- **`--overwrite-docker-compose`**: Overwrite existing docker-compose.yaml without prompting
-- **`--php-version VERSION`**: Force specific PHP version (7 or 8)
-- **`--json-output`**: Output results in JSON format
-- **`--no-colors`**: Disable colored output
+- `--overwrite-docker-compose`: Force overwrite existing Docker configs
+- `--php-version VERSION`: Force PHP version (7 or 8)
+- `--database ENGINE`: Database type (mysql, postgres, mongo)
+- `--display-name NAME`: Custom display name
+- `--description TEXT`: Project description
+- `--emoji EMOJI`: Project emoji
 
-Configures an already downloaded project by:
-- Intelligently detecting existing Docker configurations
-- Handling Podium projects seamlessly (auto-reconfigures)
-- Prompting for non-Podium docker-compose.yaml conflicts
-- Detecting PHP version requirements from composer.json
-- Creating Docker Compose configuration
-- Setting up environment files (.env for Laravel, wp-config.php for WordPress)
-- Creating and configuring project database
-- Running migrations and setup commands
-- Starting the project container
+#### Setting Up Downloaded/Copied Projects
+```bash
+podium setup <project_name> [options]
+```
+
+Configures manually downloaded or copied projects for Podium:
 
 **Use Cases:**
-- Manual Git clones: `git clone repo && podium setup project`
-- Downloaded ZIP files: Extract and `podium setup project`
-- Copied project folders: `podium setup copied-project`
-- Re-configuring existing Podium projects
-
-**Examples:**
 ```bash
-# Basic setup
-podium setup my-downloaded-project
+# Manual Git clone
+git clone https://github.com/user/project
+podium setup project
 
-# Setup with specific database and PHP version
-podium setup my-project postgres "My Project" "A cool project" 🚀 --php-version 8
+# Downloaded ZIP file
+# Extract to ~/podium-projects/project/
+podium setup project
 
-# Force overwrite existing Docker config
-podium setup existing-project --overwrite-docker-compose
+# Copied project folder
+cp -r existing-project ~/podium-projects/new-project
+podium setup new-project
 ```
+
+**Smart Detection:**
+- Automatically detects Laravel/WordPress/PHP projects
+- Handles existing Docker configurations intelligently
+- Prompts before overwriting non-Podium Docker files
+- Configures databases, environments, and networking
 
 #### Removing Projects Safely
 ```bash
@@ -259,59 +254,38 @@ podium down
 
 ### Service Management
 
-#### Starting Everything
+#### Redis Commands (Run from anywhere)
 ```bash
-# Turn everything on - the magic command!
-podium up
+podium redis KEYS "*"          # Run Redis CLI commands
+podium redis-flush             # Flush all Redis data
 ```
-**What it does:**
-- Starts all shared services (MariaDB, Redis, PostgreSQL, etc.)
-- Starts ALL project containers automatically
-- Configures networking and port mapping
-- Makes all projects accessible via browser
-- Perfect "turn on my computer and get to work" command
 
-#### Starting Specific Projects
+#### Memcached Commands (Run from anywhere)
 ```bash
-# Start just one project (services start automatically if needed)
-podium up <project_name>
+podium memcache stats          # Show Memcached statistics
+podium memcache-flush          # Flush all Memcached data
+podium memcache-stats          # Detailed Memcached stats
 ```
-- Starts shared services if not already running
-- Starts the specific project container
-- Configures networking for that project only
 
-#### Stopping Everything
+#### Database Commands (Run from anywhere)
 ```bash
-# Turn everything off - the magic shutdown command!
-podium down
+podium db-refresh              # Fresh migration + seed (Laravel)
+podium cache-refresh           # Clear all Laravel caches
 ```
-**What it does:**
-- Stops ALL running project containers
-- Stops all shared services (MariaDB, Redis, etc.)
-- Cleans up all networking configurations
-- Preserves all project data and configurations
-- Perfect "end of day shutdown" command
 
-#### Stopping Specific Projects
+#### Supervisor Commands (Run from project directory)
 ```bash
-# Stop just one project (leaves services and other projects running)
-podium down <project_name>
+# Must be run from within a project directory
+cd ~/podium-projects/my-project
+podium supervisor status       # Show all supervised processes
+podium supervisor restart all  # Restart all processes
 ```
-- Stops only the specified project container
-- Leaves shared services running for other projects
-- Preserves project data and configurations
 
-#### Checking Project Status
+#### System Status
 ```bash
-# Check all projects
-podium status
-
-# Check specific project
-podium status <project_name>
+podium status                  # Check all projects and services
+podium status <project_name>   # Check specific project
 ```
-- Displays project status and health
-- Shows access URLs (local and LAN)
-- Provides troubleshooting suggestions if issues detected
 
 ## 🔧 Essential Development Tools
 
@@ -341,53 +315,54 @@ Podium uses **containerized development tools** that run inside Docker container
 - **Portable environments** - same setup works on any developer's machine
 - **Production parity** - development matches server environment
 
-### Core Development Commands
+### Containerized Development Commands
+
+**All these commands run inside your project's container with the correct PHP environment:**
+
+#### Composer (Run from project directory)
 ```bash
-# Composer (runs inside container with correct PHP environment)
+cd ~/podium-projects/my-project
 podium composer install
 podium composer require laravel/sanctum
 podium composer update
+```
 
-# Laravel Artisan (runs inside container)
+#### Laravel Artisan (Run from project directory)
+```bash
+cd ~/podium-projects/my-project
 podium art migrate
 podium art make:controller UserController
 podium art tinker
 podium art queue:work
+```
 
-# WordPress CLI (runs inside container)  
+#### WordPress CLI (Run from project directory)
+```bash
+cd ~/podium-projects/my-project
 podium wp plugin list
 podium wp user create john john@example.com --role=administrator
 podium wp db export backup.sql
-
-# PHP (runs inside container)
-podium php -v
-podium php script.php
 ```
 
-### Enhanced Laravel Workflows
+#### PHP Commands (Run from project directory)
 ```bash
-# Database refresh with seeding
-podium db-refresh
-
-# Clear all Laravel caches
-podium cache-refresh
+cd ~/podium-projects/my-project
+podium php -v                  # Check PHP version
+podium php script.php          # Run PHP scripts
 ```
 
-### Service Management
+#### Container Access (Run from project directory)
 ```bash
-# Redis CLI access
-podium redis KEYS "*"
-podium redis-flush
-
-# Direct container access
-podium exec bash
-podium exec-root bash
+cd ~/podium-projects/my-project
+podium exec bash               # Access container as web user
+podium exec-root bash          # Access container as root
 ```
+
+**Why Containerized?** These commands run with your project's exact PHP version, extensions, and environment - ensuring consistency across team members and preventing "works on my machine" issues.
 
 ### System Management
 ```bash
-# Manage shared services
-podium start-services
+# Stop all services only (keeps projects running)
 podium stop-services
 
 # Configure Podium environment
@@ -400,14 +375,50 @@ podium configure
 podium help
 ```
 
-## 🖥️ GUI Management Interface
+## 🤖 JSON Automation & Scripting
 
-### Features
-- **Visual Project Dashboard** - See all projects at a glance
-- **Real-time Status Updates** - Live monitoring of project health
-- **One-click Operations** - Start, stop, remove projects with buttons
-- **Service Health Monitoring** - Track MySQL, Redis, phpMyAdmin status
-- **Cross-platform Desktop App** - Native experience on all platforms
+Podium supports JSON output for automation and scripting:
+
+### JSON Output Mode
+```bash
+# Get JSON output for any command
+podium status --json-output
+podium new my-app --json-output
+podium clone https://github.com/user/repo --json-output
+```
+
+### Automation Examples
+```bash
+# Check if services are running in a script
+if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep -q "RUNNING"; then
+    echo "Database is ready"
+fi
+
+# Automated project creation
+podium new api-service --json-output | jq -r '.project_name'
+
+# Batch project operations
+for project in $(podium status --json-output | jq -r '.projects[].name'); do
+    podium up $project --json-output
+done
+
+# CI/CD Integration
+podium clone $REPO_URL $PROJECT_NAME --json-output --php-version 8
+```
+
+### GUI Integration
+```bash
+# The GUI uses JSON mode internally
+podium gui                     # Launch visual interface
+```
+
+**GUI Features:**
+- Visual project dashboard with real-time status
+- One-click project operations (create, start, stop, remove)
+- Service health monitoring
+- Cross-platform desktop app (Linux, Windows, macOS)
+
+## 🖥️ GUI Management Interface
 
 ### Installation
 ```bash
@@ -419,13 +430,6 @@ chmod +x Podium.AppImage
 # Or download from releases page for Windows/macOS
 # https://github.com/CaneBayComputers/podium-gui/releases
 ```
-
-### GUI Features
-- **Project Creation Wizard** - Visual project setup
-- **Status Dashboard** - Real-time system monitoring
-- **Service Controls** - Start/stop services with buttons
-- **Project Management** - Visual project operations
-- **System Health** - Monitor Docker and services
 
 ## 🌐 Multi-Project Development
 
@@ -565,31 +569,68 @@ cbc-development/
 - **Professional presentation** capabilities
 - **Easy stakeholder access** from any device
 
-## 🚀 Advanced Features
+## 🚀 Advanced Usage
 
-### Automatic Project Setup
-- **Smart PHP version detection** from composer.json
-- **Database creation** and configuration
-- **Environment file generation** (.env for Laravel, wp-config.php for WordPress)
-- **Hosts file management** for local domains
-- **Port assignment** and networking
+### Containerized Development Tools
 
-### Development Optimization
-- **Redis caching** configured automatically
-- **File permissions** handled correctly
-- **Cross-platform compatibility** built-in
+**All `podium composer`, `podium art`, and `podium php` commands run inside your project's container.** This ensures:
 
-### Safety Features
-- **Trash integration** (projects moved to trash, not deleted)
-- **Confirmation prompts** for destructive operations
-- **Non-invasive installation** (minimal system changes)
-- **Isolated environments** (no conflicts between projects)
+- **Consistent PHP environment** across all team members
+- **Proper dependency resolution** with correct PHP version
+- **No host system conflicts** or version mismatches
+- **Production parity** - development matches server environment
 
-### GUI Enhancements
-- **Real-time monitoring** of all services and projects
-- **Visual project management** with intuitive interface
-- **System health dashboard** showing resource usage
-- **Automated installation** through GUI installer
+```bash
+# These commands run inside the container with project-specific PHP/extensions
+cd ~/podium-projects/my-laravel-app
+podium composer install        # Uses container's PHP 8.2
+podium art migrate            # Runs with container's Laravel setup
+podium php script.php         # Executes with project's PHP configuration
+
+# Switch to different project with different PHP version
+cd ~/podium-projects/legacy-app  
+podium composer install        # Uses container's PHP 7.4
+podium php old-script.php     # Runs with PHP 7.4 environment
+```
+
+### Project Creation Options
+
+```bash
+# Interactive project creation (recommended)
+podium new
+
+# Non-interactive with defaults
+podium new my-app
+
+# The interactive mode lets you choose:
+# - Framework: Laravel, WordPress, or Basic PHP
+# - Database: MySQL, PostgreSQL, or MongoDB  
+# - PHP Version: Automatically detected or manual selection
+# - Project metadata: Display name, description, emoji
+```
+
+### Advanced Project Setup
+
+```bash
+# Manual project setup with all options
+podium setup my-project postgres "My Project" "Cool description" 🚀 --php-version 8
+
+# Clone with full customization
+podium clone https://github.com/user/repo my-local-name \
+  --database postgres \
+  --display-name "Local Development" \
+  --description "Development version" \
+  --emoji 🛠️ \
+  --php-version 8
+```
+
+### Safety & Automation Features
+
+- **Smart conflict detection** - Handles existing Docker configurations intelligently
+- **Trash integration** - Projects moved to system trash (recoverable), never permanently deleted
+- **Automatic backups** - `docker-compose.yaml` files backed up during setup
+- **Non-destructive operations** - Confirmation prompts for dangerous actions
+- **JSON automation support** - Perfect for CI/CD and scripting
 
 ## 💡 Why Use Podium?
 
