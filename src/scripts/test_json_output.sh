@@ -31,6 +31,9 @@ run_json_test() {
     echo "🧪 Running test: $test_name"
     echo "   Command: $command"
     
+    # Set up custom debug log path for this test
+    local test_log_path="$DEV_DIR/logs/test_${test_name}.log"
+    
     # Clear any previous debug session for clean test isolation
     unset DEBUG_STARTED
     
@@ -38,22 +41,30 @@ run_json_test() {
     local output
     local exit_code
     
-    # Use timeout to prevent hanging (5 minutes max per test)
-    if output=$(timeout 300 bash -c "$command" 2>&1); then
+    # Use timeout to prevent hanging (2 minutes max per test) with custom debug log
+    if output=$(timeout 120 bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
         exit_code=0
     else
         exit_code=$?
         # Check if it was a timeout
         if [ $exit_code -eq 124 ]; then
-            output="TEST TIMEOUT: Command exceeded 5 minute limit"
-            echo "   ⏰ TIMEOUT after 5 minutes"
+            output="TEST TIMEOUT: Command exceeded 2 minute limit"
+            echo "   ⏰ TIMEOUT after 2 minutes"
         fi
     fi
     
     # CRITICAL: Capture debug log IMMEDIATELY after test completes, before anything else
     local debug_log_content=""
-    if [[ -f "/tmp/podium-cli-debug.log" ]]; then
-        debug_log_content=$(tail -20 /tmp/podium-cli-debug.log 2>/dev/null || echo "Debug log not readable")
+    if [[ -f "$test_log_path" ]]; then
+        debug_log_content=$(tail -20 "$test_log_path" 2>/dev/null || echo "Debug log not readable")
+        
+        # Append JSON output to the test's debug log file
+        if [[ -n "$output" ]]; then
+            echo "" >> "$test_log_path"
+            echo "=== JSON RESULT [$(date '+%Y-%m-%d %H:%M:%S')] ===" >> "$test_log_path"
+            echo "$output" >> "$test_log_path"
+            echo "=== END JSON RESULT ===" >> "$test_log_path"
+        fi
     fi
     
     # Determine test result based on expectation

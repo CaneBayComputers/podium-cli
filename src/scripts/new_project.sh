@@ -663,7 +663,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     fi
     
     # Setup handles startup internally, so we just output the setup results
-    echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
+    local success_json="{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
+    echo "$success_json"
+    debug_append_json "$success_json"
 else
     # In normal mode, run setup with full output (setup handles startup internally)
     source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS

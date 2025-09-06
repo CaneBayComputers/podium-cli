@@ -423,12 +423,33 @@ debug() {
         local script_name=$(basename "${BASH_SOURCE[1]}")
         local line_number="${BASH_LINENO[0]}"
         
+        # Use custom debug log path if set, otherwise default to /tmp
+        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
+        
         # Initialize debug log file on first use
         if [[ -z "$DEBUG_STARTED" ]]; then
-            echo "=== PODIUM CLI DEBUG SESSION STARTED ===" > /tmp/podium-cli-debug.log
+            # Create directory if it doesn't exist (for custom paths)
+            local debug_dir=$(dirname "$debug_log_file")
+            mkdir -p "$debug_dir" 2>/dev/null || true
+            
+            echo "=== PODIUM CLI DEBUG SESSION STARTED ===" > "$debug_log_file"
+            echo "[$timestamp] [debug] Debug log path: $debug_log_file" >> "$debug_log_file"
             export DEBUG_STARTED=1
         fi
         
-        echo "[$timestamp] [$script_name:$line_number] $1" >> /tmp/podium-cli-debug.log
+        echo "[$timestamp] [$script_name:$line_number] $1" >> "$debug_log_file"
+    fi
+}
+
+# Helper function to append JSON results to debug log
+debug_append_json() {
+    if [[ "$DEBUG" == "1" && -n "$1" ]]; then
+        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        
+        echo "" >> "$debug_log_file"
+        echo "=== JSON RESULT [$timestamp] ===" >> "$debug_log_file"
+        echo "$1" >> "$debug_log_file"
+        echo "=== END JSON RESULT ===" >> "$debug_log_file"
     fi
 }
