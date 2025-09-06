@@ -42,11 +42,7 @@ run_json_test() {
     local exit_code
     
     # Use timeout to prevent hanging with custom debug log
-    # Longer timeout for tests involving project creation/composer operations
-    local timeout_seconds=120
-    if [[ "$command" =~ (podium\ new|podium\ clone|podium\ setup.*--framework) ]]; then
-        timeout_seconds=300  # 5 minutes for project creation tests
-    fi
+    local timeout_seconds=90  # 1.5 minutes for all tests
     
     if output=$(timeout $timeout_seconds bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
         exit_code=0
@@ -54,9 +50,8 @@ run_json_test() {
         exit_code=$?
         # Check if it was a timeout
         if [ $exit_code -eq 124 ]; then
-            local timeout_minutes=$((timeout_seconds / 60))
-            output="TEST TIMEOUT: Command exceeded $timeout_minutes minute limit"
-            echo "   ⏰ TIMEOUT after $timeout_minutes minutes"
+            output="TEST TIMEOUT: Command exceeded 1.5 minute limit"
+            echo "   ⏰ TIMEOUT after 1.5 minutes"
         fi
     fi
     
