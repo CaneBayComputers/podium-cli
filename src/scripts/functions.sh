@@ -96,16 +96,21 @@ json-mysql() {
 json-composer() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         if [[ "$DEBUG" == "1" ]]; then
-            # In debug mode, capture output to log but suppress from stdout
-            debug "Running composer-docker $* (debug mode - output captured to log)"
-            local composer_output
-            composer_output=$(composer-docker "$@" 2>&1)
-            local exit_code=$?
+            # In debug mode, run composer and stream output to debug log
+            debug "Running composer-docker $* (debug mode - streaming to log)"
+            debug "Starting composer process..."
+            
+            # Run composer and capture exit code, but don't capture all output at once
+            composer-docker "$@" 2>&1 | while read -r line; do
+                debug "composer: $line"
+            done
+            local exit_code=${PIPESTATUS[0]}
+            
             debug "composer-docker completed with exit code: $exit_code"
-            debug "composer-docker output: $composer_output"
             return $exit_code
         else
-            # Run composer without timeout to prevent hanging issues
+            # Run composer silently in non-debug JSON mode
+            debug "Running composer-docker $* (non-debug JSON mode)"
             composer-docker "$@" > /dev/null 2>&1
         fi
     else

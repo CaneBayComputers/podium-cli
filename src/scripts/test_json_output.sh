@@ -42,7 +42,12 @@ run_json_test() {
     local exit_code
     
     # Use timeout to prevent hanging with custom debug log
-    local timeout_seconds=90  # 1.5 minutes for all tests
+    local timeout_seconds=45  # Default timeout
+    
+    # Longer timeout for tests involving composer operations (Laravel projects)
+    if [[ "$command" =~ (podium\ new.*laravel|podium\ clone|podium\ setup.*--framework.*laravel) ]]; then
+        timeout_seconds=180  # 3 minutes for Laravel/composer operations
+    fi
     
     if output=$(timeout $timeout_seconds bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
         exit_code=0
@@ -50,8 +55,9 @@ run_json_test() {
         exit_code=$?
         # Check if it was a timeout
         if [ $exit_code -eq 124 ]; then
-            output="TEST TIMEOUT: Command exceeded 1.5 minute limit"
-            echo "   ⏰ TIMEOUT after 1.5 minutes"
+            local timeout_minutes=$((timeout_seconds / 60))
+            output="TEST TIMEOUT: Command exceeded $timeout_minutes minute limit"
+            echo "   ⏰ TIMEOUT after $timeout_minutes minutes"
         fi
     fi
     
