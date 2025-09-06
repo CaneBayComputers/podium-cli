@@ -40,6 +40,7 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php)"
     echo-white ""
     echo-white "Examples:"
     echo-white "  $0 my-project mysql"
@@ -82,6 +83,14 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --php-version requires a version number"
+            fi
+            ;;
+        --framework)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                FORCED_FRAMEWORK="$2"
+                shift 2
+            else
+                error "Error: --framework requires a framework type (laravel, wordpress, php)"
             fi
             ;;
         --debug)
