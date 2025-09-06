@@ -372,12 +372,12 @@ run_json_test "configure" \
 
 # Test 22: Remove Project (create then remove)
 run_json_test "remove_project" \
-    "podium new temp-remove-test --framework laravel --json-output --debug && podium remove temp-remove-test --json-output --debug" \
+    "podium new temp-remove-test --framework laravel --json-output --debug >/dev/null && podium remove temp-remove-test --json-output --debug" \
     "Create and then remove a test project"
 
 # Test 23: Shutdown Specific Project (create then shutdown)
 run_json_test "shutdown_project" \
-    "podium new temp-shutdown-test --framework php --json-output --debug && podium down temp-shutdown-test --json-output --debug" \
+    "podium new temp-shutdown-test --framework php --json-output --debug >/dev/null && podium down temp-shutdown-test --json-output --debug" \
     "Create and then shutdown a specific project"
 
 # Test 24: Final Status Check
