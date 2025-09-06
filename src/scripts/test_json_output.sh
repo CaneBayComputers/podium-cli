@@ -331,7 +331,17 @@ run_json_test "configure" \
     "podium configure --json-output --debug" \
     "Run configure command with JSON output"
 
-# Test 22: Final Status Check
+# Test 22: Remove Project
+run_json_test "remove_project" \
+    "podium remove php7-test --json-output --debug" \
+    "Remove a test project (PHP 7 project)"
+
+# Test 23: Shutdown Specific Project
+run_json_test "shutdown_project" \
+    "podium down wordpress-test --json-output --debug" \
+    "Shutdown a specific project (WordPress test)"
+
+# Test 24: Final Status Check
 run_json_test "final_status_check" \
     "podium status --json-output --debug" \
     "Final status check of all projects and services"
