@@ -257,65 +257,80 @@ run_json_test "new_wordpress" \
     "podium new wordpress-test --framework wordpress --json-output --debug" \
     "Create new WordPress project"
 
-# Test 8: New Project - PHP 8
+# Test 8: New Project - WordPress 6.4 (older version)
+run_json_test "new_wordpress_64" \
+    "podium new wordpress-64-test --framework wordpress --version 6.4 --json-output --debug" \
+    "Create WordPress project with specific older version 6.4"
+
+# Test 9: New Project - Laravel with all GUI options
+run_json_test "new_laravel_full_options" \
+    "podium new laravel-full-gui-test --framework laravel --version 11.0.0 --emoji 🌟 --description 'Full Laravel GUI Test Project' --json-output --debug" \
+    "Create Laravel project with all options preset (GUI simulation)"
+
+# Test 10: New Project - WordPress with all GUI options  
+run_json_test "new_wordpress_full_options" \
+    "podium new wordpress-full-gui-test --framework wordpress --version 6.5 --emoji 📝 --description 'Full WordPress GUI Test Project' --json-output --debug" \
+    "Create WordPress project with all options preset (GUI simulation)"
+
+# Test 11: New Project - PHP 8
 run_json_test "new_php8" \
     "podium new php8-test --framework php --version 8 --json-output --debug" \
     "Create new PHP 8 project"
 
-# Test 9: New Project - PHP 7
+# Test 12: New Project - PHP 7
 run_json_test "new_php7" \
     "podium new php7-test --framework php --version 7 --json-output --debug" \
     "Create new PHP 7 project"
 
-# Test 10: New Project - Funky Name and Description
+# Test 13: New Project - Funky Name and Description
 run_json_test "new_funky_name" \
     "podium new 'funky-name-test' --framework laravel --display-name 'My Super Awesome Project' --description 'This has special characters' --emoji '🦄' --json-output --debug" \
     "Create project with special characters in name and description"
 
-# Test 11: Setup Blank Folder (should work)
+# Test 14: Setup Blank Folder (should work)
 run_json_test "setup_blank_folder" \
     "podium setup blank-folder-test --framework laravel --json-output --debug" \
     "Setup a blank folder as Laravel project"
 
-# Test 12: Setup Non-Podium Docker Compose (should handle gracefully)
+# Test 15: Setup Non-Podium Docker Compose (should handle gracefully)
 run_json_test "setup_non_podium" \
     "podium setup non-podium-test --framework laravel --overwrite-docker-compose --json-output --debug" \
     "Setup folder with non-Podium docker-compose.yaml"
 
-# Test 13: Invalid Laravel Version (should fail)
+# Test 16: Invalid Laravel Version (should fail)
 run_json_test "invalid_laravel_version" \
     "podium new invalid-version-test --framework laravel --version 99.99.99 --json-output --debug" \
     "Try to create Laravel project with invalid version" \
     "true"
 
-# Test 14: Invalid Framework (should fail)
+# Test 17: Invalid Framework (should fail)
 run_json_test "invalid_framework" \
     "podium new invalid-framework-test --framework react --json-output --debug" \
     "Try to create project with invalid framework" \
     "true"
 
-# Test 15: Duplicate Project Name (should fail)
+# Test 18: Duplicate Project Name (should fail)
 run_json_test "duplicate_project_name" \
     "podium new laravel-latest-test --framework laravel --json-output --debug" \
     "Try to create project with duplicate name" \
     "true"
 
-# Test 16: Status Check (all projects)
+# Test 19: Status Check (all projects)
 run_json_test "status_all_projects" \
     "podium status --json-output --debug" \
     "Check status of all projects"
 
-# Test 17: Status Check (specific project)
+# Test 20: Status Check (specific project)
 run_json_test "status_specific_project" \
     "podium status laravel-latest-test --json-output --debug" \
     "Check status of specific project"
 
-# Test 18: Configure (should work even if already configured)
+# Test 21: Configure (should work even if already configured)
 run_json_test "configure" \
     "podium configure --json-output --debug" \
     "Run configure command with JSON output"
 
-# Test 19: Final Status Check
+# Test 22: Final Status Check
 run_json_test "final_status_check" \
     "podium status --json-output --debug" \
     "Final status check of all projects and services"
