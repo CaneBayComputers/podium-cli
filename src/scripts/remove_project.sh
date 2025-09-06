@@ -7,7 +7,7 @@ ORIG_DIR=$(pwd)
 cd "$(dirname "$(realpath "$0")")"
 cd ..
 DEV_DIR=$(pwd)
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 echo-return; echo-return
 
@@ -90,7 +90,7 @@ done
 if [ -z "$PROJECT_NAME" ]; then
     usage
 fi
-PROJECT_DIR="$(get_projects_dir)/$PROJECT_NAME"
+PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
 HOSTS_FILE="/etc/hosts"
 
 # Confirm with the user before proceeding

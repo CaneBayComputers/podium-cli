@@ -18,10 +18,7 @@ cd "$SCRIPT_DIR/.."
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
-
-
-# Pre check to make sure development is installed
+# Pre check to make sure development is installed (also sources functions.sh and .env)
 source "$DEV_DIR/scripts/pre_check.sh"
 
 
@@ -50,43 +47,20 @@ usage() {
     error "usage" 1
 }
 
-# Env vars
-source /etc/podium-cli/.env
-
-# Store project name first
-PROJECT_NAME="$1"
 
 # Initialize variables
+PROJECT_NAME=""
 DATABASE_ENGINE="mariadb"
 DISPLAY_NAME=""
 PROJECT_DESCRIPTION=""
 PROJECT_EMOJI="🚀"
 OVERWRITE_DOCKER_COMPOSE=""
 FORCED_PHP_VERSION=""
+JSON_OUTPUT="${JSON_OUTPUT:-}"
+NO_COLOR="${NO_COLOR:-}"
 
-# Parse all arguments
-ARG_INDEX=2
-while [[ $ARG_INDEX -le $# ]]; do
-    ARG="${!ARG_INDEX}"
-    if [[ "$ARG" =~ ^-- ]]; then
-        break
-    fi
-    case $ARG_INDEX in
-        2) DATABASE_ENGINE="$ARG" ;;
-        3) DISPLAY_NAME="$ARG" ;;
-        4) PROJECT_DESCRIPTION="$ARG" ;;
-        5) PROJECT_EMOJI="$ARG" ;;
-    esac
-    ((ARG_INDEX++))
-done
-
-# Set default display name if not provided
-if [ -z "$DISPLAY_NAME" ]; then
-    DISPLAY_NAME="$PROJECT_NAME"
-fi
-
-# Parse command line options starting from where positional args ended
-shift $((ARG_INDEX - 1))
+# Parse command line arguments
+POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
     case $1 in
         --json-output)
@@ -113,21 +87,96 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         -*)
-            error "Unknown option: $1"
+            error "Unknown option: $1. Use --help for usage information"
             ;;
         *)
-            error "Unexpected argument: $1"
+            # Collect positional arguments
+            POSITIONAL_ARGS+=("$1")
+            shift
             ;;
     esac
 done
 
-# Check if repository argument is provided
-if [ -z "$PROJECT_NAME" ]; then
+# Assign positional arguments
+if [ ${#POSITIONAL_ARGS[@]} -lt 1 ]; then
     error "Error: Project name is required."
 fi
 
+PROJECT_NAME="${POSITIONAL_ARGS[0]}"
+if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
+    DATABASE_ENGINE="${POSITIONAL_ARGS[1]}"
+fi
+if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
+    DISPLAY_NAME="${POSITIONAL_ARGS[2]}"
+fi
+if [ ${#POSITIONAL_ARGS[@]} -gt 3 ]; then
+    PROJECT_DESCRIPTION="${POSITIONAL_ARGS[3]}"
+fi
+if [ ${#POSITIONAL_ARGS[@]} -gt 4 ]; then
+    PROJECT_EMOJI="${POSITIONAL_ARGS[4]}"
+fi
+
+# Interactive prompts for metadata (only in interactive mode)
+if [[ "$JSON_OUTPUT" != "1" ]]; then
+    # Prompt for display name if not provided
+    if [ -z "$DISPLAY_NAME" ]; then
+        echo-yellow -n "Enter project display name [$PROJECT_NAME]: "
+        read USER_DISPLAY_NAME
+        if [ -n "$USER_DISPLAY_NAME" ]; then
+            DISPLAY_NAME="$USER_DISPLAY_NAME"
+        else
+            DISPLAY_NAME="$PROJECT_NAME"
+        fi
+    fi
+    
+    # Prompt for description if not provided
+    if [ -z "$PROJECT_DESCRIPTION" ]; then
+        echo-yellow -n "Enter project description (optional): "
+        read USER_DESCRIPTION
+        PROJECT_DESCRIPTION="$USER_DESCRIPTION"
+    fi
+    
+    # Prompt for emoji if not provided
+    if [ -z "$PROJECT_EMOJI" ] || [ "$PROJECT_EMOJI" = "🚀" ]; then
+        echo-yellow "Choose project emoji:"
+        echo-white "1)  🚀 Rocket     2)  💻 Computer   3)  🌟 Star       4)  🔥 Fire"
+        echo-white "5)  ⚡ Lightning   6)  🎯 Target     7)  🏆 Trophy     8)  💎 Diamond"
+        echo-white "9)  🎨 Art        10) 🔧 Wrench     11) 📱 Mobile     12) 🌐 Globe"
+        echo-white "13) 🎮 Game       14) 📊 Chart      15) 🛡️ Shield"
+        echo-yellow -n "Select emoji (1-15) [1]: "
+        read USER_EMOJI_CHOICE
+        
+        case "${USER_EMOJI_CHOICE:-1}" in
+            1) PROJECT_EMOJI="🚀" ;;
+            2) PROJECT_EMOJI="💻" ;;
+            3) PROJECT_EMOJI="🌟" ;;
+            4) PROJECT_EMOJI="🔥" ;;
+            5) PROJECT_EMOJI="⚡" ;;
+            6) PROJECT_EMOJI="🎯" ;;
+            7) PROJECT_EMOJI="🏆" ;;
+            8) PROJECT_EMOJI="💎" ;;
+            9) PROJECT_EMOJI="🎨" ;;
+            10) PROJECT_EMOJI="🔧" ;;
+            11) PROJECT_EMOJI="📱" ;;
+            12) PROJECT_EMOJI="🌐" ;;
+            13) PROJECT_EMOJI="🎮" ;;
+            14) PROJECT_EMOJI="📊" ;;
+            15) PROJECT_EMOJI="🛡️" ;;
+            *) 
+                echo-yellow "Invalid choice. Defaulting to 🚀 Rocket."
+                PROJECT_EMOJI="🚀" 
+                ;;
+        esac
+    fi
+else
+    # Set default display name if not provided (JSON mode)
+    if [ -z "$DISPLAY_NAME" ]; then
+        DISPLAY_NAME="$PROJECT_NAME"
+    fi
+fi
+
 # Use the configured projects directory
-PROJECTS_DIR=$(get_projects_dir)
+PROJECTS_DIR="$PROJECTS_DIR_PATH"
 PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
 
@@ -154,7 +203,11 @@ fi
 # For new projects, there's no need to shut down containers that don't exist yet
 if [ -f "$PROJECT_DIR/docker-compose.yaml" ]; then
     echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
-    source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1) || true
+    else
+        source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME || true
+    fi
 else
     echo-green "New project detected. Skipping container shutdown."
 fi
@@ -165,71 +218,72 @@ cd "$PROJECT_DIR"
 
 echo-return "$(pwd)"; echo-return
 
-# Function to detect PHP version
-detect_php_version() {
-    # Use forced version if provided
-    if [ -n "$FORCED_PHP_VERSION" ]; then
-        if [[ "$FORCED_PHP_VERSION" == "7" || "$FORCED_PHP_VERSION" == "8" ]]; then
-            echo "$FORCED_PHP_VERSION"
-            return 0
-        else
-            error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
-        fi
+# Determine PHP version
+PHP_VERSION=""
+
+# Use forced version if provided
+if [ -n "$FORCED_PHP_VERSION" ]; then
+    if [[ "$FORCED_PHP_VERSION" == "7" || "$FORCED_PHP_VERSION" == "8" ]]; then
+        PHP_VERSION="$FORCED_PHP_VERSION"
+    else
+        error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
     fi
-    
+fi
+
+# If not forced, try to detect from existing files
+if [ -z "$PHP_VERSION" ]; then
     # Check composer.json first
     if [ -f "composer.json" ]; then
         if grep -q '"php":\s*"^7' composer.json; then
-            echo "7"
-            return 0
+            PHP_VERSION="7"
         elif grep -q '"php":\s*"^8' composer.json; then
-            echo "8"
-            return 0
+            PHP_VERSION="8"
         fi
     fi
     
-    # Check for WordPress readme.html
-    if [ -f "readme.html" ]; then
+    # Check for WordPress readme.html if still not determined
+    if [ -z "$PHP_VERSION" ] && [ -f "readme.html" ]; then
         if grep -q '<strong>8\.[0-9]\+</strong>' readme.html; then
-            echo "8"
-            return 0
+            PHP_VERSION="8"
         elif grep -q '<strong>7\.[0-9]\+</strong>' readme.html; then
-            echo "7"
-            return 0
+            PHP_VERSION="7"
         fi
     fi
     
-    # Interactive mode - ask user only if this appears to be an existing project
-    # For new projects (no composer.json, no readme.html), default to PHP 8
-    if [[ "$JSON_OUTPUT" != "1" ]]; then
-        # Check if this looks like a new project (minimal files)
-        FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
-        if [ "$FILE_COUNT" -le 3 ]; then  # Likely just index.php, maybe .gitignore, etc.
-            echo-green "New project detected. Defaulting to PHP 8."
-            echo "8"
-            return 0
-        fi
-        
-        # For existing projects with many files, ask the user
-        echo-yellow "Could not determine PHP version automatically."
-        echo-yellow -n "Which PHP version would you like to use? (7/8) [8]: "
-        read USER_PHP_VERSION
-        if [ -z "$USER_PHP_VERSION" ]; then
-            echo "8"
-        elif [[ "$USER_PHP_VERSION" == "7" || "$USER_PHP_VERSION" == "8" ]]; then
-            echo "$USER_PHP_VERSION"
+    # If still not determined, handle based on mode and project type
+    if [ -z "$PHP_VERSION" ]; then
+        if [[ "$JSON_OUTPUT" != "1" ]]; then
+            # Check if this looks like a new project (minimal files)
+            FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
+            if [ "$FILE_COUNT" -le 3 ]; then  # Likely just index.php, maybe .gitignore, etc.
+                PHP_VERSION="8"
+            else
+                # For existing projects with many files, ask the user
+                echo-yellow "Could not determine PHP version automatically."
+                echo-yellow -n "Which PHP version would you like to use? (7/8) [8]: "
+                read USER_PHP_VERSION
+                if [ -z "$USER_PHP_VERSION" ]; then
+                    PHP_VERSION="8"
+                elif [[ "$USER_PHP_VERSION" == "7" || "$USER_PHP_VERSION" == "8" ]]; then
+                    PHP_VERSION="$USER_PHP_VERSION"
+                else
+                    echo-red "Invalid PHP version. Defaulting to 8."
+                    PHP_VERSION="8"
+                fi
+            fi
         else
-            echo-red "Invalid PHP version. Defaulting to 8."
-            echo "8"
+            # JSON mode - default to 8
+            PHP_VERSION="8"
         fi
-        return 0
     fi
-    
-    # JSON mode - default to 8
-    echo "8"
-}
+fi
 
-PHP_VERSION=$(detect_php_version)
+
+# Display appropriate message based on how PHP version was determined
+FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
+if [[ "$JSON_OUTPUT" != "1" ]] && [ "$FILE_COUNT" -le 3 ] && [ -z "$FORCED_PHP_VERSION" ]; then
+    echo-green "New project detected. Defaulting to PHP $PHP_VERSION."
+fi
 
 echo-green "Using PHP version: $PHP_VERSION"
 
@@ -301,10 +355,10 @@ PROJECT_EMOJI_SAFE="${PROJECT_EMOJI:-🚀}"
 DISPLAY_NAME_SAFE="${DISPLAY_NAME:-$PROJECT_NAME}"
 PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION:-}"
 
-# Use podium-sed with proper delimiter to avoid issues with special characters (Mac/Linux compatible)
-podium-sed "s|PROJECT_EMOJI|$PROJECT_EMOJI_SAFE|g" docker-compose.yaml
-podium-sed "s|PROJECT_NAME|$DISPLAY_NAME_SAFE|g" docker-compose.yaml  
-podium-sed "s|PROJECT_DESCRIPTION|$PROJECT_DESCRIPTION_SAFE|g" docker-compose.yaml
+# Use a delimiter that's very unlikely to appear in the replacement text
+podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
+podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml  
+podium-sed "s#PROJECT_DESCRIPTION#$PROJECT_DESCRIPTION_SAFE#g" docker-compose.yaml
 
 if [ -d "public" ]; then
 
@@ -316,11 +370,27 @@ else
 
 fi
 
-# Install Composer libraries
+# Start the project container before composer installation
 cd "$PROJECT_DIR"
 
 echo-cyan "Current directory: $(pwd)"
 
+echo-cyan "Starting project container for composer installation..."
+
+# Start the project and capture output if in JSON mode
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" "$PROJECT_NAME" 2>&1)
+    STARTUP_EXIT_CODE=$?
+else
+    source "$DEV_DIR/scripts/startup.sh" "$PROJECT_NAME"
+    STARTUP_EXIT_CODE=$?
+fi
+
+if [ $STARTUP_EXIT_CODE -ne 0 ]; then
+    error "Failed to start project container"
+fi
+
+# Install Composer libraries
 if [ -f "composer.json" ]; then
 
     echo-cyan "Installing vendor libs with composer ..."; echo-white
@@ -629,7 +699,21 @@ setup_gitignore
 
 # Setup completed
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    echo "{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"php_version\": \"$PHP_VERSION\", \"status\": \"success\"}"
+    # Build JSON response with optional fields
+    JSON_RESPONSE="{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"php_version\": \"$PHP_VERSION\", \"status\": \"success\""
+    
+    # Add shutdown result if captured
+    if [ -n "$SHUTDOWN_OUTPUT" ]; then
+        JSON_RESPONSE="$JSON_RESPONSE, \"shutdown_result\": $SHUTDOWN_OUTPUT"
+    fi
+    
+    # Add startup result if captured
+    if [ -n "$STARTUP_OUTPUT" ]; then
+        JSON_RESPONSE="$JSON_RESPONSE, \"startup_result\": $STARTUP_OUTPUT"
+    fi
+    
+    JSON_RESPONSE="$JSON_RESPONSE}"
+    echo "$JSON_RESPONSE"
 else
     echo-return; echo-return
     echo-green "Setup completed for project: $PROJECT_NAME"

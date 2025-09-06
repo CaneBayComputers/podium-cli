@@ -15,7 +15,7 @@ cd "$SCRIPT_DIR/.."
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 # Function to display usage
 usage() {
@@ -328,10 +328,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         JSON_DATA=$(echo "$JSON_DATA" | jq --argjson services "$SERVICES_JSON" '.shared_services = $services')
     fi
     
-    # Get projects directory and iterate through projects
-    PROJECTS_DIR=$(get_projects_dir)
-    if [ -d "$PROJECTS_DIR" ]; then
-        cd "$PROJECTS_DIR"
+    # Use projects directory from pre_check
+    if [ -d "$PROJECTS_DIR_PATH" ]; then
+        cd "$PROJECTS_DIR_PATH"
         
         if ! [ -z "$PROJECT_NAME" ]; then
             # Single project requested
@@ -350,10 +349,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         fi
     fi
     
-    # ALWAYS output JSON (unless suppressed for intermediate calls)
-    if [[ "$SUPPRESS_INTERMEDIATE_JSON" != "1" ]]; then
-        echo "$JSON_DATA"
-    fi
+    echo "$JSON_DATA"
     
     # Use return if sourced, exit if called directly
     if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
@@ -433,9 +429,8 @@ fi
 
 divider
 
-# Iterate through projects folder using get_projects_dir function
-PROJECTS_DIR=$(get_projects_dir)
-cd "$PROJECTS_DIR"
+# Iterate through projects folder (from pre_check)
+cd "$PROJECTS_DIR_PATH"
 
 if ! [ -z "$PROJECT_NAME" ]; then
     if project_status $PROJECT_NAME; then true; fi
@@ -451,13 +446,13 @@ else
     
     if [ $PROJECT_COUNT -eq 0 ]; then
         echo-cyan "PROJECTS STATUS:"
-echo-return
+        echo-return
         echo-yellow "No projects found in $(pwd)"
         echo-white "Create your first project with: podium new"
         divider
     else
         echo-cyan "PROJECTS STATUS:"
-echo-return
+        echo-return
         for PROJECT_NAME in *; do
             if [ -d "$PROJECT_NAME" ] && [ "$PROJECT_NAME" != "." ] && [ "$PROJECT_NAME" != ".." ]; then
                 if project_status $PROJECT_NAME; then true; fi
@@ -466,9 +461,3 @@ echo-return
         done
     fi
 fi
-
-# Only add spacing for non-JSON output
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return; echo-return
-fi
-

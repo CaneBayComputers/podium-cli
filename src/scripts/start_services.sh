@@ -18,7 +18,7 @@ cd "$SCRIPT_DIR/.."
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 # Initialize variables
 JSON_OUTPUT="${JSON_OUTPUT:-}"
@@ -76,9 +76,9 @@ if ! check-mariadb; then
 fi
 
 # JSON output for service start
-if [[ "$JSON_OUTPUT" == "1" && "$SUPPRESS_INTERMEDIATE_JSON" != "1" ]]; then
+if [[ "$JSON_OUTPUT" == "1" ]]; then
     echo "{\"action\": \"start_services\", \"status\": \"success\"}"
-elif [[ "$JSON_OUTPUT" != "1" ]]; then
+else
     echo-green "Services are running!"; echo-white
 fi
 

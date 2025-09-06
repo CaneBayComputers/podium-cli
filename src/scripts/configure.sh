@@ -448,7 +448,7 @@ fi
 
 echo-return
 
-
+echo-green "Configuration completed successfully!"; echo-white
 
 
 
@@ -458,17 +458,17 @@ echo-return
 ###############################
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Capture start_services JSON output
-    SUPPRESS_INTERMEDIATE_JSON=1 source "$DEV_DIR/scripts/start_services.sh"
+    START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" 2>&1)
     START_SERVICES_RESULT=$?
     
     if [ $START_SERVICES_RESULT -eq 0 ]; then
-        echo "{\"action\": \"configure\", \"services_started\": true, \"status\": \"success\"}"
+        # Merge the start_services JSON output with configure result
+        echo "{\"action\": \"configure\", \"status\": \"success\", \"services_result\": $START_SERVICES_OUTPUT}"
     else
-        echo "{\"action\": \"configure\", \"services_started\": false, \"status\": \"success\", \"warning\": \"Services failed to start but configuration completed\"}"
+        echo "{\"action\": \"configure\", \"status\": \"success\", \"warning\": \"Services failed to start but configuration completed\", \"services_result\": null}"
     fi
 else
     source "$DEV_DIR/scripts/start_services.sh"
-    echo-green "Configuration completed successfully!"; echo-white
 fi
 
 cd "$ORIG_DIR"

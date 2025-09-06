@@ -15,10 +15,7 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
-
-# Env vars
-source /etc/podium-cli/.env
+source scripts/pre_check.sh
 
 # Return to projects directory for project operations
 cd "$PROJECTS_DIR"
@@ -73,7 +70,7 @@ start_project() {
 
   PROJECT_FOLDER_NAME=$1
 
-  echo; echo-cyan "Starting up $PROJECT_FOLDER_NAME ..."; echo-white
+  echo-return; echo-cyan "Starting up $PROJECT_FOLDER_NAME ...";
 
   if ! [ -d "$PROJECT_FOLDER_NAME" ]; then
 
@@ -88,14 +85,16 @@ start_project() {
   
   case "$compose_type" in
       "none")
-          echo-red "No docker-compose.yaml file found in $PROJECT_FOLDER_NAME!"
           echo-white "Run 'podium setup $PROJECT_FOLDER_NAME' to configure this project for Podium."
-          error "$PROJECT_FOLDER_NAME is not configured for Podium. Run: podium setup $PROJECT_FOLDER_NAME"
+          echo-yellow "$PROJECT_FOLDER_NAME is not configured for Podium. Run: podium setup $PROJECT_FOLDER_NAME"
+          cd ..
+          return 1
           ;;
       "non-podium")
-          echo-red "Found non-Podium docker-compose.yaml in $PROJECT_FOLDER_NAME!"
           echo-white "Run 'podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Podium."
-          error "$PROJECT_FOLDER_NAME has non-Podium docker-compose.yaml. Run: podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose"
+          echo-yellow "$PROJECT_FOLDER_NAME has non-Podium docker-compose.yaml. Run: podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose"
+          cd ..
+          return 1
           ;;
       "podium-project")
           # Good to go - continue with startup
@@ -135,7 +134,7 @@ else
 fi
 
 # Ensure we're back in the projects directory after sourcing other scripts
-cd "$(get_projects_dir)"
+cd "$PROJECTS_DIR_PATH"
 
 # Start projects either just one by name or all in the projects directory
 # Note: We're in the projects directory
@@ -147,7 +146,7 @@ if ! [ -z "$PROJECT_NAME" ]; then
 else
 
   # Ensure we're in the projects directory before iterating
-  cd "$(get_projects_dir)"
+  cd "$PROJECTS_DIR_PATH"
   
   for PROJECT_FOLDER_NAME in *; do
 

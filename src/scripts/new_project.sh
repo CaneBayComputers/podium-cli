@@ -11,13 +11,10 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
-# Get projects directory
-PROJECTS_DIR="$(get_projects_dir)"
-
-# Main
-source "$DEV_DIR/scripts/pre_check.sh"
+# Use projects directory from pre_check
+PROJECTS_DIR="$PROJECTS_DIR_PATH"
 
 
 
@@ -64,7 +61,7 @@ usage() {
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --description TEXT      Project description (optional)"
-    echo-white "  --emoji EMOJI           Project emoji (default: 🚀)"
+    echo-white "  --emoji EMOJI           Project emoji (will prompt if not provided)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
@@ -80,7 +77,7 @@ usage() {
 PROJECT_NAME=""
 DISPLAY_NAME=""
 PROJECT_DESCRIPTION=""
-PROJECT_EMOJI="🚀"
+PROJECT_EMOJI=""
 ORGANIZATION=""
 VERSION="latest"
 FRAMEWORK=""
@@ -174,6 +171,30 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         CREATE_GITHUB="no"
     elif [ "$CREATE_GITHUB" = "org" ] && [ -z "$ORGANIZATION" ]; then
         json_error "organization is required when using --github-org"
+    fi
+    
+    # GitHub CLI validation
+    if [ "$CREATE_GITHUB" != "no" ]; then
+        if ! command -v gh >/dev/null 2>&1; then
+            json_error "GitHub CLI (gh) is not installed. Install it first or remove --github option"
+        elif ! gh auth status >/dev/null 2>&1; then
+            json_error "GitHub CLI (gh) is not authenticated. Run 'gh auth login' first or remove --github option"
+        fi
+    fi
+else
+    # Interactive mode - check GitHub CLI availability and warn if not available
+    if [ "$CREATE_GITHUB" != "no" ]; then
+        if ! command -v gh >/dev/null 2>&1; then
+            echo-yellow "Warning: GitHub CLI (gh) is not installed."
+            echo-yellow "GitHub repository creation has been disabled."
+            echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
+            CREATE_GITHUB="no"
+        elif ! gh auth status >/dev/null 2>&1; then
+            echo-yellow "Warning: GitHub CLI (gh) is not authenticated."
+            echo-yellow "GitHub repository creation has been disabled."
+            echo-white "To enable GitHub integration, run 'gh auth login'"
+            CREATE_GITHUB="no"
+        fi
     fi
     
     # Framework validation
@@ -516,25 +537,40 @@ fi
 
 
 # GitHub repository creation
+# Check if gh CLI is available and configured before prompting
+GH_AVAILABLE=false
+if command -v gh >/dev/null 2>&1; then
+    if gh auth status >/dev/null 2>&1; then
+        GH_AVAILABLE=true
+    fi
+fi
+
 if [ -z "$CREATE_GITHUB" ]; then
-    echo-return; echo-cyan "Would you like to create a GitHub repository?"
-    echo-white "1) Yes, create GitHub repository"
-    echo-white "2) No, skip GitHub repository"
-    echo-return; echo-yellow -n "Enter your choice (1-2): "
-    read GITHUB_CHOICE
-    
-    case $GITHUB_CHOICE in
-        1)
-            CREATE_GITHUB="yes"
-            ;;
-        2)
-            CREATE_GITHUB="no"
-            ;;
-        *)
-            echo-yellow "Invalid choice. Skipping GitHub repository creation"
-            CREATE_GITHUB="no"
-            ;;
-    esac
+    if [ "$GH_AVAILABLE" = true ]; then
+        echo-return; echo-cyan "Would you like to create a GitHub repository?"
+        echo-white "1) Yes, create GitHub repository"
+        echo-white "2) No, skip GitHub repository"
+        echo-return; echo-yellow -n "Enter your choice (1-2): "
+        read GITHUB_CHOICE
+        
+        case $GITHUB_CHOICE in
+            1)
+                CREATE_GITHUB="yes"
+                ;;
+            2)
+                CREATE_GITHUB="no"
+                ;;
+            *)
+                echo-yellow "Invalid choice. Skipping GitHub repository creation"
+                CREATE_GITHUB="no"
+                ;;
+        esac
+    else
+        echo-yellow "GitHub CLI (gh) is not installed or not authenticated."
+        echo-yellow "Skipping GitHub repository creation."
+        echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
+        CREATE_GITHUB="no"
+    fi
 fi
 
 if [ "$CREATE_GITHUB" = "yes" ]; then
@@ -584,23 +620,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         exit $SETUP_EXIT_CODE
     fi
     
-    # Start the project
-    STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME --json-output 2>&1)
-    STARTUP_EXIT_CODE=$?
-    
-    if [ $STARTUP_EXIT_CODE -eq 0 ]; then
-        # Combine setup and startup results
-        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup\": $SETUP_OUTPUT, \"startup\": $STARTUP_OUTPUT, \"status\": \"success\"}"
-    else
-        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup\": $SETUP_OUTPUT, \"startup_error\": $STARTUP_OUTPUT, \"status\": \"error\", \"error\": \"startup_failed\"}"
-    fi
+    # Setup handles startup internally, so we just output the setup results
+    echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 else
-    # In normal mode, run setup with full output
+    # In normal mode, run setup with full output (setup handles startup internally)
     source "$DEV_DIR/scripts/setup_project.sh" $PROJECT_NAME $DATABASE_TYPE "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
-    
-    # Start the project
-    echo-cyan "Starting $PROJECT_NAME..."
-    source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME
 fi
 
 cd "$ORIG_DIR"

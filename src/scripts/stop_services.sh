@@ -10,7 +10,7 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 # Initialize variables
 JSON_OUTPUT="${JSON_OUTPUT:-}"
@@ -46,31 +46,25 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return; echo-return
-fi
+
 
 # Main
 # Stop CBC stack services
 if check-mariadb; then
 
-  if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-cyan "Stopping services ..."; echo-white
-  fi
 
-  cd /etc/podium-cli
+    cd /etc/podium-cli
 
-  dockerdown
+    dockerdown
 
-  cd ..
+    cd ..
 
-  sleep 2
+    sleep 2
 
 else
 
-  if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-yellow "Services are already stopped."; echo-white
-  fi
 
 fi
 

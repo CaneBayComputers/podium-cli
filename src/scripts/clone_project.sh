@@ -11,7 +11,7 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 # Initialize variables
 JSON_OUTPUT="${JSON_OUTPUT:-}"
@@ -148,9 +148,8 @@ else
     PROJECT_NAME=$(echo "$PROJECT_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_')
 fi
 
-# Navigate to the configured projects directory
-PROJECTS_DIR=$(get_projects_dir)
-cd "$PROJECTS_DIR"
+# Navigate to the configured projects directory (from pre_check)
+cd "$PROJECTS_DIR_PATH"
 
 if [ -d "$PROJECT_NAME" ]; then
     error "Error: Project name already exists."
@@ -245,20 +244,9 @@ else
     source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS
 fi
 
-# Start the project
-echo-cyan "Starting $PROJECT_NAME..."
+# Setup handles startup internally, so we just output the setup results
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME --json-output 2>&1)
-    STARTUP_EXIT_CODE=$?
-    
-    if [ $STARTUP_EXIT_CODE -eq 0 ]; then
-        # Combine setup and startup results
-        echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup\": $SETUP_OUTPUT, \"startup\": $STARTUP_OUTPUT, \"status\": \"success\"}"
-    else
-        echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup\": $SETUP_OUTPUT, \"startup_error\": $STARTUP_OUTPUT, \"status\": \"error\", \"error\": \"startup_failed\"}"
-    fi
-else
-    source "$DEV_DIR/scripts/startup.sh" $PROJECT_NAME
+    echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 fi
 
 cd "$ORIG_DIR"

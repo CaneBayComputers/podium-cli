@@ -31,4 +31,16 @@ if ! [ -f /etc/podium-cli/.env ]; then
   error "Development environment has not been configured! Run: podium configure" 0
 fi
 
+# Source the environment file
+source /etc/podium-cli/.env
+
+# Set up projects directory path and validate it exists
+PROJECTS_DIR_PATH=$(get_projects_dir)
+if [ ! -d "$PROJECTS_DIR_PATH" ]; then
+    error "Projects directory does not exist: $PROJECTS_DIR_PATH"
+fi
+
+# Export for use by other scripts
+export PROJECTS_DIR_PATH
+
 cd "$ORIG_DIR"

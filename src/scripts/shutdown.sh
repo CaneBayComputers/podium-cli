@@ -17,7 +17,7 @@ fi
 cd "$SCRIPT_DIR/.."
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+source scripts/pre_check.sh
 
 # Return to projects directory
 cd "$PROJECTS_DIR"
@@ -72,95 +72,110 @@ done
 # Functions
 # Docker handles all networking - no iptables rules needed
 
-shutdown_container() {
-
-        CONTAINER_NAME=$1
-
-        REPO_DIR=$CONTAINER_NAME;
-
-  if [ -d "$REPO_DIR" ]; then
-
-  	if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
-
-	  	echo-return; echo-cyan "Shutting down $CONTAINER_NAME ..."; echo-white; echo
-
-	  	cd "$REPO_DIR"
-
-	  	dockerdown
-
-	  	echo-green "Successfully shut down $CONTAINER_NAME!"; echo-white; echo
-
-	  	cd ../..
-
-	  else
-
-	  	echo-return; echo-yellow "Container $CONTAINER_NAME is not running!"; echo-white; echo
-
-	  fi
-
-  	divider
-
-  fi
+shutdown_project() {
+    local PROJECT_NAME="$1"
+    local PROJECT_FOLDER="$2"
+    
+    # Check if project folder exists
+    if [ ! -d "$PROJECT_FOLDER" ]; then
+        error "Project folder does not exist: $PROJECT_FOLDER"
+    fi
+    
+    # Check for docker-compose.yaml file
+    COMPOSE_FILE="$PROJECT_FOLDER/docker-compose.yaml"
+    
+    if [ ! -f "$COMPOSE_FILE" ]; then
+        echo-return; echo-yellow "No docker-compose.yaml found in project: $PROJECT_NAME"
+        return 1
+    fi
+    
+    # Check if it's a Podium project
+    COMPOSE_TYPE=$(check_docker_compose_type "$COMPOSE_FILE")
+    
+    if [ "$COMPOSE_TYPE" != "podium-project" ]; then
+        echo-return; echo-yellow "Project $PROJECT_NAME is not a Podium project"
+        return 1
+    fi
+    
+    # Check if container is running and shut it down
+    if [ "$(docker ps -q -f name=$PROJECT_NAME)" ]; then
+        echo-return; echo-cyan "Shutting down $PROJECT_NAME ..."; echo-white; echo-return
+        
+        # Save current directory to return to it after dockerdown
+        CURRENT_DIR=$(pwd)
+        cd "$PROJECT_FOLDER"
+        dockerdown
+        cd "$CURRENT_DIR"
+        
+        echo-green "Successfully shut down $PROJECT_NAME!"; echo-white; echo-return
+        
+        divider
+        return 0
+    else
+        echo-return; echo-yellow "Container $PROJECT_NAME is not running!"; echo-white; echo-return
+        return 1
+    fi
 }
+
 
 
 #######################################################
 # Main
 #######################################################
 
-
-# Define the comment to search for
-CUSTOM_COMMENT="cbc-rule"
-
-if [ -n "$PROJECT_NAME" ]; then
-
-	CUSTOM_COMMENT="${CUSTOM_COMMENT}-${PROJECT_NAME}"
-
-fi
-
-
-# Docker handles all networking automatically - no iptables cleanup needed
-
 # Shut down Docker containers
 if [ -z "$PROJECT_NAME" ]; then
 
-	for CONTAINER_ID in $(docker ps -q); do
-
-	    CONTAINER_NAME=$(docker inspect --format='{{.Name}}' $CONTAINER_ID | sed 's/^\/\+//')
-
-	    shutdown_container $CONTAINER_NAME;
-
-	done
-
-	        if check-mariadb; then
-
-                echo-return; echo-cyan "Shutting down services ..."; echo-white; echo
-
-                cd "$DEV_DIR/docker-stack"
-
-          dockerdown
-
-          echo-green "Successfully shut down services!"; echo-white; echo
-
-          cd "$PROJECTS_DIR"
-
+    # Iterate through each folder in the projects directory (PROJECTS_DIR_PATH set by pre_check)
+    for PROJECT_FOLDER in "$PROJECTS_DIR_PATH"/*; do
+        
+        # Skip if not a directory
+        if [ ! -d "$PROJECT_FOLDER" ]; then
+            continue
         fi
+        
+        # Get the project name (folder name)
+        PROJECT_FOLDER_NAME=$(basename "$PROJECT_FOLDER")
+        
+        # Use the reusable shutdown function (but don't exit on errors in loop)
+        shutdown_project "$PROJECT_FOLDER_NAME" "$PROJECT_FOLDER" || true
+    done
+
+    # Stop services using the dedicated script and capture output if needed
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        STOP_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/stop_services.sh" 2>&1)
+    else
+        source "$DEV_DIR/scripts/stop_services.sh"
+    fi
 
 else
-
-        shutdown_container $PROJECT_NAME
+    # Shutdown specific project (PROJECTS_DIR_PATH set by pre_check)
+    PROJECT_FOLDER="$PROJECTS_DIR_PATH/$PROJECT_NAME"
+    
+    # Use the reusable shutdown function
+    shutdown_project "$PROJECT_NAME" "$PROJECT_FOLDER"
 
 fi
 
 # Final output
-if [[ "$JSON_OUTPUT" == "1" && "$SUPPRESS_INTERMEDIATE_JSON" != "1" ]]; then
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+
     # JSON output for shutdown
     if [ -n "$PROJECT_NAME" ]; then
+
         echo "{\"action\": \"shutdown\", \"target\": \"project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"success\"}"
+
     else
-        echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\"}"
+        # Include services output if captured
+        if [ -n "$STOP_SERVICES_OUTPUT" ]; then
+            echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\", \"services_result\": $STOP_SERVICES_OUTPUT}"
+        else
+            echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\"}"
+        fi
+
     fi
-elif [[ "$JSON_OUTPUT" != "1" ]]; then
-    echo-return; echo-green "Docker containers shut down successfully!"; echo-white; echo
+
+else
+    echo-return; echo-green "Docker containers shut down successfully!"; echo-white; echo-return
 fi
 
