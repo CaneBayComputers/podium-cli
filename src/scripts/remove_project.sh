@@ -208,6 +208,9 @@ if [ "$PRESERVE_DATABASE" = true ]; then
 elif [ "$FORCE_DB_DELETE" = true ]; then
     echo-cyan "Force mode: Deleting database '$DB_NAME'..."
     DELETE_DB_CONFIRM="y"
+elif [[ "$JSON_OUTPUT" == "1" ]]; then
+    debug "JSON mode: Preserving database by default"
+    DELETE_DB_CONFIRM="n"
 else
     echo-cyan "Would you like to delete the associated database '$DB_NAME'? This cannot be undone!"
     echo-white

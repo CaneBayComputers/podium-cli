@@ -81,6 +81,29 @@ test_project_url() {
     fi
 }
 
+# Function to handle test dependencies
+ensure_test_dependencies() {
+    local test_name="$1"
+    
+    # Define test dependencies
+    case "$test_name" in
+        "remove_project")
+            echo "🔗 Test dependency: remove_project requires laravel-latest-test"
+            echo "   🚀 Running prerequisite: new_laravel_latest"
+            run_json_test "new_laravel_latest" \
+                "podium new laravel-latest-test --framework laravel --json-output --debug" \
+                "Create Laravel project with latest version (prerequisite for remove test)"
+            ;;
+        "shutdown_project")
+            echo "🔗 Test dependency: shutdown_project requires laravel-latest-test"
+            echo "   🚀 Running prerequisite: new_laravel_latest"
+            run_json_test "new_laravel_latest" \
+                "podium new laravel-latest-test --framework laravel --json-output --debug" \
+                "Create Laravel project with latest version (prerequisite for shutdown test)"
+            ;;
+    esac
+}
+
 # Function to run a test and capture JSON output
 run_json_test() {
     local test_name="$1"
@@ -88,9 +111,26 @@ run_json_test() {
     local description="$3"
     local should_fail="${4:-false}"
     
-    # Skip test if we're running a specific test and this isn't it
+    # Handle test dependencies when running a specific test
+    if [[ -n "$SPECIFIC_TEST" && "$test_name" == "$SPECIFIC_TEST" ]]; then
+        ensure_test_dependencies "$test_name"
+    fi
+    
+    # Skip test if we're running a specific test and this isn't it (unless it's a dependency)
     if [[ -n "$SPECIFIC_TEST" && "$test_name" != "$SPECIFIC_TEST" ]]; then
-        return 0
+        # Allow dependency tests to run even when not specifically requested
+        local is_dependency=false
+        case "$SPECIFIC_TEST" in
+            "remove_project"|"shutdown_project")
+                if [[ "$test_name" == "new_laravel_latest" ]]; then
+                    is_dependency=true
+                fi
+                ;;
+        esac
+        
+        if [[ "$is_dependency" != "true" ]]; then
+            return 0
+        fi
     fi
     
     # Prepend podium_test_ to test name for easy cleanup identification
@@ -389,8 +429,11 @@ run_json_test "final_status_check" \
 generate_test_report() {
     local timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     local total_tests=${#TEST_RESULTS[@]}
-    local passed_tests=$(printf '%s\n' "${TEST_RESULTS[@]}" | grep -c '"status": "success"' || echo "0")
-    local failed_tests=$((total_tests - passed_tests))
+    local passed_tests=$(printf '%s\n' "${TEST_RESULTS[@]}" | grep -c '"status": "success"' 2>/dev/null || echo "0")
+    local failed_tests=0
+    if [ $total_tests -gt 0 ] && [ $passed_tests -ge 0 ]; then
+        failed_tests=$((total_tests - passed_tests))
+    fi
     
     # Build results array
     local results_json="["
