@@ -225,7 +225,9 @@ else
 	fi
 fi
 
-git --version; echo
+if [[ "$JSON_OUTPUT" != "1" ]]; then
+    git --version; echo
+fi
 
 echo-green "Git configured!"; echo-white; echo
 
