@@ -61,7 +61,7 @@ dockerup() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         # Clear the log file first, then pipe Docker output to temp file for JSON mode
         > /tmp/podium-docker-progress.log
-        timeout 300 docker compose up -d "$@" > /tmp/podium-docker-progress.log 2>&1
+        docker compose up -d "$@" > /tmp/podium-docker-progress.log 2>&1
     else
         # Interactive mode - show normal progress
         docker compose up -d "$@"
@@ -89,7 +89,19 @@ json-mysql() {
 
 json-composer() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        timeout 600 composer-docker "$@" > /dev/null 2>&1
+        if [[ "$DEBUG" == "1" ]]; then
+            # In debug mode, capture output to log but suppress from stdout
+            debug "Running composer-docker $* (debug mode - output captured to log)"
+            local composer_output
+            composer_output=$(composer-docker "$@" 2>&1)
+            local exit_code=$?
+            debug "composer-docker completed with exit code: $exit_code"
+            debug "composer-docker output: $composer_output"
+            return $exit_code
+        else
+            # Run composer without timeout to prevent hanging issues
+            composer-docker "$@" > /dev/null 2>&1
+        fi
     else
         composer-docker "$@"
     fi
@@ -97,7 +109,7 @@ json-composer() {
 
 json-artisan() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        timeout 300 art "$@" > /dev/null 2>&1
+        art "$@" > /dev/null 2>&1
     else
         art "$@"
     fi
@@ -401,5 +413,22 @@ prompt_github_creation() {
         echo-yellow "Skipping GitHub repository creation."
         echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
         CREATE_GITHUB="no"
+    fi
+}
+
+# Debug function - writes to log file when DEBUG=1
+debug() {
+    if [[ "$DEBUG" == "1" ]]; then
+        local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+        local script_name=$(basename "${BASH_SOURCE[1]}")
+        local line_number="${BASH_LINENO[0]}"
+        
+        # Initialize debug log file on first use
+        if [[ -z "$DEBUG_STARTED" ]]; then
+            echo "=== PODIUM CLI DEBUG SESSION STARTED ===" > /tmp/podium-cli-debug.log
+            export DEBUG_STARTED=1
+        fi
+        
+        echo "[$timestamp] [$script_name:$line_number] $1" >> /tmp/podium-cli-debug.log
     fi
 }

@@ -35,6 +35,10 @@ while [[ $# -gt 0 ]]; do
             NO_COLOR=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --help)
             echo-white "Usage: $0 [OPTIONS]"
             echo-white "Start Podium shared services"
@@ -42,6 +46,7 @@ while [[ $# -gt 0 ]]; do
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
+            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --help            Show this help message"
             exit 0
             ;;
@@ -55,6 +60,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo-return; echo-return
+
+# Initialize debug logging
+debug "Script started: start_services.sh with args: $*"
 
 # Main
 source "$DEV_DIR/scripts/pre_check.sh"

@@ -17,6 +17,10 @@ while [[ $# -gt 0 ]]; do
             JSON_OUTPUT=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --delete-images)
             DELETE_IMAGES="yes"
             shift
@@ -27,6 +31,7 @@ while [[ $# -gt 0 ]]; do
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output      Output JSON responses (for programmatic use)"
+            echo-white "  --debug            Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --delete-images    Also remove Docker images (default: keep images)"
             echo-white "  --help            Show this help message"
             exit 0
@@ -39,6 +44,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Initialize debug logging
+debug "Script started: uninstall.sh with args: $*"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then

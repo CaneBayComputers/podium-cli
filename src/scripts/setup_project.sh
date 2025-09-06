@@ -37,6 +37,7 @@ usage() {
     echo-white "Options:"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
+    echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
     echo-white ""
@@ -83,6 +84,10 @@ while [[ $# -gt 0 ]]; do
                 error "Error: --php-version requires a version number"
             fi
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --help)
             usage
             ;;
@@ -115,6 +120,9 @@ fi
 if [ ${#POSITIONAL_ARGS[@]} -gt 4 ]; then
     PROJECT_EMOJI="${POSITIONAL_ARGS[4]}"
 fi
+
+# Initialize debug logging
+debug "Script started: setup_project.sh with args: $*"
 
 # Interactive prompts for metadata (only in interactive mode)
 if [[ "$JSON_OUTPUT" != "1" ]]; then
@@ -378,30 +386,50 @@ echo-cyan "Current directory: $(pwd)"
 echo-cyan "Starting project container for composer installation..."
 
 # Start the project and capture output if in JSON mode
+debug "About to start project container via startup.sh"
+debug "Current directory before startup: $(pwd)"
+# startup.sh expects to be run from the projects directory
+cd "$PROJECTS_DIR_PATH"
+debug "Changed to projects directory: $(pwd)"
+
 if [[ "$JSON_OUTPUT" == "1" ]]; then
+    debug "Calling startup.sh in JSON mode"
     STARTUP_OUTPUT=$(source "$DEV_DIR/scripts/startup.sh" "$PROJECT_NAME" 2>&1)
     STARTUP_EXIT_CODE=$?
+    debug "startup.sh completed with exit code: $STARTUP_EXIT_CODE"
 else
+    debug "Calling startup.sh in interactive mode"
     source "$DEV_DIR/scripts/startup.sh" "$PROJECT_NAME"
     STARTUP_EXIT_CODE=$?
+    debug "startup.sh completed with exit code: $STARTUP_EXIT_CODE"
 fi
 
 if [ $STARTUP_EXIT_CODE -ne 0 ]; then
+    debug "startup.sh failed, calling error function"
     error "Failed to start project container"
 fi
+debug "Project container started successfully"
 
 # Return to project directory after startup (startup.sh may have changed working directory)
+debug "Returning to project directory: $PROJECT_DIR"
 cd "$PROJECT_DIR"
+debug "Current directory after returning: $(pwd)"
 
 # Install Composer libraries
+debug "Checking for composer.json file"
 if [ -f "composer.json" ]; then
-
+    debug "Found composer.json, installing dependencies"
     echo-cyan "Installing vendor libs with composer ..."; echo-white
 
+    debug "About to call json-composer install"
     json-composer install
+    COMPOSER_EXIT_CODE=$?
+    debug "json-composer install completed with exit code: $COMPOSER_EXIT_CODE"
 
+    debug "Composer installation completed"
     echo-green "Vendor libs installed!"; echo-white
-
+else
+    debug "No composer.json found"
 fi
 
 

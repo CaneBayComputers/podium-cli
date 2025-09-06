@@ -17,8 +17,13 @@ DEV_DIR=$(pwd)
 
 source scripts/pre_check.sh
 
+# Initialize debug logging
+debug "Script started: startup.sh with args: $*"
+debug "PROJECTS_DIR: $PROJECTS_DIR"
+
 # Return to projects directory for project operations
 cd "$PROJECTS_DIR"
+debug "Changed to projects directory: $(pwd)"
 
 
 # Initialize variables
@@ -37,6 +42,10 @@ while [[ "$#" -gt 0 ]]; do
             NO_COLOR=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --help)
             echo-white "Usage: $0 [OPTIONS] [project_name]"
             echo-white "Start project containers or all projects"
@@ -47,6 +56,7 @@ while [[ "$#" -gt 0 ]]; do
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
+            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --help            Show this help message"
             exit 0
             ;;
@@ -69,19 +79,24 @@ done
 start_project() {
 
   PROJECT_FOLDER_NAME=$1
+  debug "start_project called for: $PROJECT_FOLDER_NAME"
 
   echo-return; echo-cyan "Starting up $PROJECT_FOLDER_NAME ...";
 
   if ! [ -d "$PROJECT_FOLDER_NAME" ]; then
-
+    debug "Project folder not found: $PROJECT_FOLDER_NAME"
     error "Project folder not found!"
 
   fi
 
+  debug "Changing to project directory: $PROJECT_FOLDER_NAME"
   cd "$PROJECT_FOLDER_NAME"
+  debug "Current directory: $(pwd)"
 
   # Check for Podium project docker-compose.yaml
+  debug "Checking docker-compose.yaml type"
   local compose_type=$(check_docker_compose_type "docker-compose.yaml")
+  debug "Docker compose type: $compose_type"
   
   case "$compose_type" in
       "none")
@@ -118,6 +133,9 @@ fi
 if [[ "$NO_COLOR" == "1" ]]; then
     START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --no-colors"
 fi
+if [[ "$DEBUG" == "1" ]]; then
+    START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --debug"
+fi
 
 # Capture JSON output from start_services.sh if in JSON mode
 if [[ "$JSON_OUTPUT" == "1" ]]; then
@@ -138,16 +156,16 @@ cd "$PROJECTS_DIR_PATH"
 # Note: We're in the projects directory
 
 if ! [ -z "$PROJECT_NAME" ]; then
-
+  debug "Starting specific project: $PROJECT_NAME"
   if start_project $PROJECT_NAME; then true; fi
 
 else
-
+  debug "Starting all projects"
   # Ensure we're in the projects directory before iterating
   cd "$PROJECTS_DIR_PATH"
   
   for PROJECT_FOLDER_NAME in *; do
-
+    debug "Attempting to start project: $PROJECT_FOLDER_NAME"
     if start_project $PROJECT_FOLDER_NAME; then true; fi
 
   done

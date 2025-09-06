@@ -29,9 +29,16 @@ validate_laravel_version() {
     if [ "$version" = "latest" ]; then
         return 0
     fi
-    # Check if the version exists by trying to access the GitHub release
-    local status_code=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/laravel/laravel/archive/refs/tags/v${version}.tar.gz")
-    [ "$status_code" = "200" ]
+    
+    # Handle version with or without 'v' prefix
+    local version_with_v="$version"
+    if [[ ! "$version" =~ ^v ]]; then
+        version_with_v="v${version}"
+    fi
+    
+    # Check if the version exists by querying the GitHub API with larger page size
+    local tag_exists=$(curl -s "https://api.github.com/repos/laravel/laravel/tags?per_page=100" | grep -c "\"name\": \"${version_with_v}\"")
+    [ "$tag_exists" -gt 0 ]
 }
 
 # Function to validate WordPress version exists
@@ -66,6 +73,7 @@ usage() {
     echo-white "  --github-org ORG        Create GitHub repository in organization"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
+    echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white ""
     echo-white "Examples:"
     echo-white "  $0 my-app --framework laravel --display-name \"My App\" --database postgres --github"
@@ -128,6 +136,10 @@ while [[ $# -gt 0 ]]; do
             NO_COLOR=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --help)
             usage
             ;;
@@ -151,8 +163,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Initialize debug logging
+debug "Script started: new_project.sh with args: $*"
+
 # Validation for JSON output mode
+debug "Starting validation phase"
 if [[ "$JSON_OUTPUT" == "1" ]]; then
+    debug "JSON output mode enabled"
     # Required options validation
     if [ -z "$PROJECT_NAME" ]; then
         json_error "project name is required when using --json-output"
@@ -320,6 +337,19 @@ case $FRAMEWORK in
             if ! validate_laravel_version "$VERSION"; then
                 json_error "invalid Laravel version: $VERSION"
             fi
+            
+            # Set the version for download in JSON mode
+            if [ "$VERSION" = "latest" ]; then
+                LATEST_VERSION=$(get_latest_laravel_version)
+                CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
+            else
+                # Ensure version has 'v' prefix for download URL
+                if [[ ! "$VERSION" =~ ^v ]]; then
+                    CUR_LARAVEL_BRANCH="v${VERSION}"
+                else
+                    CUR_LARAVEL_BRANCH="$VERSION"
+                fi
+            fi
         else
             # In interactive mode, ask for version first, then validate
             echo-yellow -n "Enter Laravel version [latest]: "
@@ -345,11 +375,17 @@ case $FRAMEWORK in
         
         # Set the version for download
         if [ "$VERSION" = "latest" ]; then
-            CUR_LARAVEL_BRANCH=$(get_latest_laravel_version)
-            echo-green "Using latest Laravel version: $CUR_LARAVEL_BRANCH"
+            LATEST_VERSION=$(get_latest_laravel_version)
+            CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
+            echo-green "Using latest Laravel version: $LATEST_VERSION"
         else
-            CUR_LARAVEL_BRANCH="$VERSION"
-            echo-green "Laravel $CUR_LARAVEL_BRANCH selected!"
+            # Ensure version has 'v' prefix for download URL
+            if [[ ! "$VERSION" =~ ^v ]]; then
+                CUR_LARAVEL_BRANCH="v${VERSION}"
+            else
+                CUR_LARAVEL_BRANCH="$VERSION"
+            fi
+            echo-green "Laravel $VERSION selected!"
         fi
         ;;
     wordpress)
@@ -493,13 +529,22 @@ mkdir "$PROJECT_NAME"
 cd "$PROJECT_NAME"
 
 if [ "$FRAMEWORK" = "laravel" ]; then
+    debug "Starting Laravel download for version: $CUR_LARAVEL_BRANCH"
     echo-return; echo-cyan "Downloading Laravel project..."
     
     # Download Laravel from GitHub releases
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        curl -sL "https://github.com/laravel/laravel/archive/refs/tags/v${CUR_LARAVEL_BRANCH}.tar.gz" | tar -xz --strip-components=1 > /dev/null 2>&1
+        debug "Downloading Laravel in JSON mode"
+        if ! curl -sL "https://github.com/laravel/laravel/archive/refs/tags/${CUR_LARAVEL_BRANCH}.tar.gz" | tar -xz --strip-components=1 > /dev/null 2>&1; then
+            debug "Laravel download failed"
+            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"status\": \"error\", \"error\": \"download_failed\", \"details\": \"Failed to download Laravel ${CUR_LARAVEL_BRANCH}\"}"
+            exit 1
+        fi
+        debug "Laravel download completed successfully"
     else
-        curl -L "https://github.com/laravel/laravel/archive/refs/tags/v${CUR_LARAVEL_BRANCH}.tar.gz" | tar -xz --strip-components=1
+        debug "Downloading Laravel in interactive mode"
+        curl -L "https://github.com/laravel/laravel/archive/refs/tags/${CUR_LARAVEL_BRANCH}.tar.gz" | tar -xz --strip-components=1
+        debug "Laravel download completed"
     fi
     
     # Gitignore setup will be handled by setup_project.sh
@@ -599,30 +644,29 @@ fi
 if [[ "$NO_COLOR" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --no-colors"
 fi
+if [[ "$DEBUG" == "1" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --debug"
+fi
 if [[ "$FRAMEWORK" == "php" && "$VERSION" != "8" && "$VERSION" != "latest" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --php-version $VERSION"
 fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # In JSON mode, capture setup output and combine with new_project info
-    SETUP_OUTPUT=$(timeout 1800 bash -c "source '$DEV_DIR/scripts/setup_project.sh' $PROJECT_NAME $DATABASE_TYPE '$DISPLAY_NAME' '$PROJECT_DESCRIPTION' '$PROJECT_EMOJI' $SETUP_OPTIONS" 2>&1)
+    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS 2>&1)
     SETUP_EXIT_CODE=$?
     
     if [ $SETUP_EXIT_CODE -ne 0 ]; then
-        if [ $SETUP_EXIT_CODE -eq 124 ]; then
-            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"status\": \"error\", \"error\": \"timeout\"}"
-        else
-            # Setup failed - output the error and exit
-            echo "$SETUP_OUTPUT"
-        fi
+        # Setup failed - output error and exit
+        echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE\", \"status\": \"error\", \"error\": \"setup_failed\", \"details\": \"$SETUP_OUTPUT\"}"
         exit $SETUP_EXIT_CODE
     fi
     
     # Setup handles startup internally, so we just output the setup results
-    echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE_TYPE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
+    echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 else
     # In normal mode, run setup with full output (setup handles startup internally)
-    source "$DEV_DIR/scripts/setup_project.sh" $PROJECT_NAME $DATABASE_TYPE "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
+    source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
 fi
 
 cd "$ORIG_DIR"

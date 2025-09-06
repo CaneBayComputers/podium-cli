@@ -23,6 +23,10 @@ while [[ $# -gt 0 ]]; do
             JSON_OUTPUT=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --no-colors)
             NO_COLOR=1
             shift
@@ -33,6 +37,7 @@ while [[ $# -gt 0 ]]; do
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
+            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
             exit 0
@@ -45,6 +50,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Initialize debug logging
+debug "Script started: stop_services.sh with args: $*"
 
 
 

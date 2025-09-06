@@ -39,6 +39,7 @@ usage() {
     echo-white "Options:"
     echo-white "  --json-output                Output results in JSON format"
     echo-white "  --no-colors                  Disable colored output"
+    echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION        Force specific PHP version (7 or 8)"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
@@ -120,6 +121,10 @@ while [[ $# -gt 0 ]]; do
                 error "Error: --github-org requires an organization name"
             fi
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --help)
             usage
             ;;
@@ -138,6 +143,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Initialize debug logging
+debug "Script started: clone_project.sh with args: $*"
 
 # Check if repository argument is provided
 if [ -z "$REPOSITORY" ]; then
@@ -273,6 +281,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 fi
 if [[ "$NO_COLOR" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --no-colors"
+fi
+if [[ "$DEBUG" == "1" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --debug"
 fi
 if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-docker-compose"

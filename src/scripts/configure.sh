@@ -58,7 +58,28 @@ while [[ $# -gt 0 ]]; do
             PROJECTS_DIR="$2"
             shift 2
             ;;
-
+        --debug)
+            DEBUG=1
+            shift
+            ;;
+        --help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Configure Podium development environment"
+            echo ""
+            echo "Options:"
+            echo "  --json-output           Output results in JSON format"
+            echo "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
+            echo "  --git-name NAME         Git user name"
+            echo "  --git-email EMAIL       Git user email"
+            echo "  --aws-access-key KEY    AWS access key"
+            echo "  --aws-secret-key KEY    AWS secret key"
+            echo "  --aws-region REGION     AWS region (default: us-east-1)"
+            echo "  --skip-aws              Skip AWS configuration"
+            echo "  --projects-dir DIR      Custom projects directory"
+            echo "  --help                  Show this help message"
+            exit 0
+            ;;
         *)
             shift
             ;;
@@ -67,6 +88,9 @@ done
 
 
 
+
+# Initialize debug logging
+debug "Script started: configure.sh with args: $*"
 
 # Check for and set up environment variables
 # Use /etc/podium-cli/ as primary config location
@@ -480,9 +504,18 @@ echo-green "Configuration completed successfully!"; echo-white
 ###############################
 # Start services
 ###############################
+# Build start_services options
+START_SERVICES_OPTIONS=""
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --json-output"
+fi
+if [[ "$DEBUG" == "1" ]]; then
+    START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --debug"
+fi
+
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Capture start_services JSON output
-    START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" 2>&1)
+    START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS 2>&1)
     START_SERVICES_RESULT=$?
     
     if [ $START_SERVICES_RESULT -eq 0 ]; then
@@ -492,7 +525,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         echo "{\"action\": \"configure\", \"status\": \"success\", \"warning\": \"Services failed to start but configuration completed\", \"services_result\": null}"
     fi
 else
-    source "$DEV_DIR/scripts/start_services.sh"
+    source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
 fi
 
 cd "$ORIG_DIR"

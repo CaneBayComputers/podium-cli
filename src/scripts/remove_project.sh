@@ -22,6 +22,7 @@ usage() {
     echo-white "  --preserve-database      Skip database deletion entirely (preserve database)"
     echo-white "  --force                  Skip all confirmations (combines both flags above)"
     echo-white "  --json-output            Output results in JSON format"
+    echo-white "  --debug                  Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --no-colors              Disable colored output"
     echo-white ""
     echo-white "Examples:"
@@ -63,6 +64,10 @@ while [[ $# -gt 0 ]]; do
             JSON_OUTPUT=1
             shift
             ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
         --no-colors)
             NO_COLOR=1
             shift
@@ -85,6 +90,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Initialize debug logging
+debug "Script started: remove_project.sh with args: $*"
 
 # Check if project name is provided
 if [ -z "$PROJECT_NAME" ]; then

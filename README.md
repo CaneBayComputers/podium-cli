@@ -575,6 +575,32 @@ docker logs [container-name]
 
 # Check network connectivity
 podium exec "ping mariadb"
+
+# Enable debug logging for any command
+podium new my-project --debug
+podium setup my-project --debug
+podium configure --debug
+
+# View debug log
+cat /tmp/podium-cli-debug.log
+```
+
+### Debug Mode
+
+All Podium commands support a `--debug` flag that creates detailed logs to help troubleshoot issues:
+
+- **Log Location**: `/tmp/podium-cli-debug.log`
+- **Session Tracking**: Each new command creates a fresh debug session
+- **Detailed Output**: Shows script flow, function calls, and exit codes
+- **Cross-Script Tracking**: Debug flag is passed between scripts automatically
+
+**Example:**
+```bash
+# Debug a project creation issue
+podium new test-project --framework laravel --debug
+
+# Check what happened
+tail -f /tmp/podium-cli-debug.log
 ```
 
 ---
