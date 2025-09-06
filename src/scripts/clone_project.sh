@@ -322,9 +322,7 @@ fi
 
 # Setup handles startup internally, so we just output the setup results
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    JSON_RESULT="{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
-    echo "$JSON_RESULT"
-    debug_append_json "$JSON_RESULT"
+    echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 fi
 
 cd "$ORIG_DIR"
