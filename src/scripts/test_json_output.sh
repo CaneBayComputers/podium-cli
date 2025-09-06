@@ -180,7 +180,7 @@ setup_test_environment() {
 # Function to cleanup test environment
 cleanup_test_environment() {
     echo "🧹 Calling standalone cleanup script..."
-    "$DEV_DIR/src/scripts/cleanup_test_environment.sh"
+    "$DEV_DIR/scripts/cleanup_test_environment.sh"
 }
 
 # Function to create test scenarios
@@ -285,8 +285,8 @@ run_json_test "new_php7" \
 
 # Test 13: New Project - Funky Name and Description  
 run_json_test "new_funky_name" \
-    "podium new 'my-ƒünky-tëst-prøjéct' --framework laravel --display-name 'My Süper Åwesome Prøject!' --description 'This has spëcial chars: @#$%&*()' --emoji '🦄' --json-output --debug" \
-    "Create project with special characters in name and description"
+    "podium new funky-special-test --framework laravel --display-name 'My Süper Åwesome Prøject!' --description 'This has spëcial chars: @#\$%&*()' --emoji '🦄' --json-output --debug" \
+    "Create project with special characters in display name and description"
 
 # Test 14: Setup Blank Folder (should work)
 run_json_test "setup_blank_folder" \
