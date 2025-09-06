@@ -8,6 +8,16 @@ echo "=================================="
 # Clean up test containers by pattern
 echo "🐳 Cleaning up test containers..."
 test_containers=$(docker ps -a --filter "name=podium_test_" --format "{{.Names}}")
+
+# Also check for any old test containers that might not have the prefix
+old_test_patterns=("funky-name-test" "laravel-.*-test" "wordpress-.*-test" "php[0-9]-test" "blank-folder-test" "non-podium-test")
+for pattern in "${old_test_patterns[@]}"; do
+    old_containers=$(docker ps -a --format "{{.Names}}" | grep -E "^${pattern}$" || true)
+    if [ -n "$old_containers" ]; then
+        test_containers="$test_containers"$'\n'"$old_containers"
+    fi
+done
+
 if [ -n "$test_containers" ]; then
     echo "$test_containers" | while read container; do
         if [ -n "$container" ]; then
