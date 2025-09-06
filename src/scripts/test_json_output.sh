@@ -129,63 +129,31 @@ setup_test_environment() {
 cleanup_test_environment() {
     echo "🧹 Cleaning up test environment..."
     
-    # Stop and remove any test containers and clean hosts entries
-    if [ -d "$TEST_PROJECTS_DIR" ]; then
-        echo "   🐳 Stopping and removing test containers..."
-        for project_dir in "$TEST_PROJECTS_DIR"/*; do
-            if [ -d "$project_dir" ] && [ -f "$project_dir/docker-compose.yaml" ]; then
-                project_name=$(basename "$project_dir")
-                echo "      🔻 Stopping $project_name..."
-                
-                # Stop containers
-                (cd "$project_dir" && docker-compose down --remove-orphans --volumes >/dev/null 2>&1) || true
-                
-                # Remove any images created for this project (try multiple naming patterns)
-                docker rmi "${project_name}_app" >/dev/null 2>&1 || true
-                docker rmi "${project_name}-app" >/dev/null 2>&1 || true
-                docker rmi "$(echo $project_name | tr '[:upper:]' '[:lower:]')_app" >/dev/null 2>&1 || true
-                
-                # Remove hosts entry for this project
-                if grep -q "^[0-9.]* $project_name$" /etc/hosts; then
-                    echo "      🌐 Removing hosts entry for $project_name"
-                    sudo sed -i "/^[0-9.]* $project_name$/d" /etc/hosts
-                fi
-            fi
-        done
-        
-        # Clean up any remaining test containers by pattern
-        echo "   🧹 Cleaning up any remaining test containers..."
-        docker ps -a --filter "name=podium_test_" --format "{{.Names}}" | while read container; do
-            if [ -n "$container" ]; then
-                echo "      🗑️  Removing container: $container"
-                docker stop "$container" >/dev/null 2>&1 || true
-                docker rm "$container" >/dev/null 2>&1 || true
-            fi
-        done
-        
-        # Clean up any test-related Docker images
-        docker images --filter "reference=*podium_test_*" --format "{{.Repository}}:{{.Tag}}" | while read image; do
-            if [ -n "$image" ]; then
-                echo "      🗑️  Removing image: $image"
-                docker rmi "$image" >/dev/null 2>&1 || true
-            fi
-        done
-        
-        # Clean up any test-related Docker networks
-        docker network ls --filter "name=podium_test_" --format "{{.Name}}" | while read network; do
-            if [ -n "$network" ]; then
-                echo "      🌐 Removing network: $network"
-                docker network rm "$network" >/dev/null 2>&1 || true
-            fi
-        done
-        
-        # Final hosts cleanup - remove any entries with podium_test_ prefix
-        echo "   🌐 Final hosts file cleanup..."
-        if grep -q "podium_test_" /etc/hosts; then
-            echo "      🗑️  Removing all podium_test_ hosts entries"
-            sudo sed -i "/podium_test_/d" /etc/hosts
+    # Clean up test containers by pattern
+    echo "   🧹 Cleaning up test containers..."
+    docker ps -a --filter "name=podium_test_" --format "{{.Names}}" | while read container; do
+        if [ -n "$container" ]; then
+            echo "      🗑️  Removing container: $container"
+            docker stop "$container" >/dev/null 2>&1 || true
+            docker rm "$container" >/dev/null 2>&1 || true
         fi
-    fi
+    done
+    
+    # Clean up any test-related Docker images
+    docker images --filter "reference=*podium_test_*" --format "{{.Repository}}:{{.Tag}}" | while read image; do
+        if [ -n "$image" ]; then
+            echo "      🗑️  Removing image: $image"
+            docker rmi "$image" >/dev/null 2>&1 || true
+        fi
+    done
+    
+    # Clean up any test-related Docker networks
+    docker network ls --filter "name=podium_test_" --format "{{.Name}}" | while read network; do
+        if [ -n "$network" ]; then
+            echo "      🌐 Removing network: $network"
+            docker network rm "$network" >/dev/null 2>&1 || true
+        fi
+    done
     
     # Clean up test project directories
     echo "   📁 Cleaning up test project directories..."
