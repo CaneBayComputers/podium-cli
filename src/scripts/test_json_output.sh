@@ -188,12 +188,12 @@ create_test_scenarios() {
     
     # Create blank folder
     echo "📁 Creating blank folder scenario..."
-    mkdir -p "$projects_dir/blank-folder-test"
+    mkdir -p "$projects_dir/podium_test_blank-folder-test"
     
     # Create non-Podium docker-compose project
     echo "🐳 Creating non-Podium docker-compose scenario..."
-    mkdir -p "$projects_dir/non-podium-test"
-    cat > "$projects_dir/non-podium-test/docker-compose.yaml" << 'EOF'
+    mkdir -p "$projects_dir/podium_test_non-podium-test"
+    cat > "$projects_dir/podium_test_non-podium-test/docker-compose.yaml" << 'EOF'
 version: '3.8'
 services:
   web:
