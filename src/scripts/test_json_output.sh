@@ -83,6 +83,16 @@ run_json_test() {
         test_status=$([ $exit_code -eq 0 ] && echo "success" || echo "failed")
     fi
     
+    # Add test evaluation to debug log
+    if [[ -f "$test_log_path" ]]; then
+        echo "" >> "$test_log_path"
+        echo "=== TEST EVALUATION ===" >> "$test_log_path"
+        echo "Expected: $([ "$should_fail" == "true" ] && echo "FAILURE (exit code != 0)" || echo "SUCCESS (exit code = 0)")" >> "$test_log_path"
+        echo "Actual: $([ $exit_code -eq 0 ] && echo "SUCCESS (exit code = $exit_code)" || echo "FAILURE (exit code = $exit_code)")" >> "$test_log_path"
+        echo "Test Result: $(echo "$test_status" | tr '[:lower:]' '[:upper:]')" >> "$test_log_path"
+        echo "=== END TEST EVALUATION ===" >> "$test_log_path"
+    fi
+    
     # Store result with captured debug log
     local result_json="{\"test_name\": \"$test_name\", \"command\": \"$command\", \"description\": \"$description\", \"exit_code\": $exit_code, \"expected_failure\": $should_fail, \"output\": $(echo "$output" | jq -R -s .), \"debug_log\": $(echo "$debug_log_content" | jq -R -s .), \"status\": \"$test_status\"}"
     
@@ -366,10 +376,11 @@ generate_test_report() {
         for ((i=0; i<${#TEST_RESULTS[@]}; i++)); do
             local result="${TEST_RESULTS[i]}"
             local test_name=$(echo "$result" | jq -r '.test_name')
-            local exit_code=$(echo "$result" | jq -r '.exit_code')
+            local test_status=$(echo "$result" | jq -r '.status')
             local command=$(echo "$result" | jq -r '.command')
+            local exit_code=$(echo "$result" | jq -r '.exit_code')
             
-            if [ "$exit_code" != "0" ]; then
+            if [ "$test_status" == "failed" ]; then
                 echo "   🔴 $test_name"
                 echo "      Command: $command"
                 echo "      Exit Code: $exit_code"
@@ -383,10 +394,16 @@ generate_test_report() {
     for ((i=0; i<${#TEST_RESULTS[@]}; i++)); do
         local result="${TEST_RESULTS[i]}"
         local test_name=$(echo "$result" | jq -r '.test_name')
+        local test_status=$(echo "$result" | jq -r '.status')
+        local expected_failure=$(echo "$result" | jq -r '.expected_failure')
         local exit_code=$(echo "$result" | jq -r '.exit_code')
         
-        if [ "$exit_code" == "0" ]; then
-            echo "   🟢 $test_name"
+        if [ "$test_status" == "success" ]; then
+            if [ "$expected_failure" == "true" ]; then
+                echo "   🟢 $test_name (Expected failure: exit code $exit_code)"
+            else
+                echo "   🟢 $test_name"
+            fi
         fi
     done
     echo
