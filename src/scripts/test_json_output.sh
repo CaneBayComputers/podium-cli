@@ -2,6 +2,39 @@
 
 set -e
 
+# Usage function
+usage() {
+    echo "Usage: $0 [test_name]"
+    echo ""
+    echo "Run Podium CLI JSON output tests"
+    echo ""
+    echo "Arguments:"
+    echo "  test_name    Optional: Run only the specified test (e.g., 'new_laravel_latest')"
+    echo ""
+    echo "Available tests:"
+    echo "  configure, new_laravel_latest, new_laravel_11, new_laravel_10, new_wordpress_latest,"
+    echo "  new_wordpress_6_4, new_php8, new_php7, new_funky_name, new_laravel_gui_options,"
+    echo "  new_wordpress_gui_options, clone_project, setup_blank_folder, setup_non_podium,"
+    echo "  status, startup_all, shutdown_all, shutdown_project, remove_project"
+    echo ""
+    echo "Examples:"
+    echo "  $0                           # Run all tests"
+    echo "  $0 new_laravel_latest        # Run only the Laravel latest test"
+    echo "  $0 remove_project            # Run only the remove project test"
+    exit 1
+}
+
+# Parse arguments
+SPECIFIC_TEST=""
+if [[ $# -gt 0 ]]; then
+    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+        usage
+    fi
+    SPECIFIC_TEST="$1"
+    echo "🎯 Running specific test: $SPECIFIC_TEST"
+    echo ""
+fi
+
 # Store current working directory (should be projects directory)
 PROJECTS_DIR=$(pwd)
 
@@ -54,6 +87,11 @@ run_json_test() {
     local command="$2"
     local description="$3"
     local should_fail="${4:-false}"
+    
+    # Skip test if we're running a specific test and this isn't it
+    if [[ -n "$SPECIFIC_TEST" && "$test_name" != "$SPECIFIC_TEST" ]]; then
+        return 0
+    fi
     
     # Prepend podium_test_ to test name for easy cleanup identification
     test_name="podium_test_${test_name}"
@@ -370,8 +408,14 @@ generate_test_report() {
     local status_text="$([ $failed_tests -eq 0 ] && echo "ALL PASSED" || echo "SOME FAILED")"
     
     echo
-    echo "📊 TEST SUITE RESULTS"
-    echo "===================="
+    if [[ -n "$SPECIFIC_TEST" ]]; then
+        echo "📊 SINGLE TEST RESULTS"
+        echo "======================"
+        echo "🎯 Test: $SPECIFIC_TEST"
+    else
+        echo "📊 TEST SUITE RESULTS"
+        echo "===================="
+    fi
     echo "🏆 Status: $status_emoji $status_text"
     echo "📈 Success Rate: ${success_rate}% ($passed_tests/$total_tests)"
     echo "⏰ Completed: $timestamp"
@@ -423,7 +467,11 @@ generate_test_report() {
 }
 
 echo "============================================="
-echo "🏁 Test Suite Complete!"
+if [[ -n "$SPECIFIC_TEST" ]]; then
+    echo "🏁 Single Test Complete!"
+else
+    echo "🏁 Test Suite Complete!"
+fi
 echo
 
 # Post-cleanup
