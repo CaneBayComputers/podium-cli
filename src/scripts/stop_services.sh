@@ -60,8 +60,6 @@ if check-mariadb; then
 
     cd ..
 
-    sleep 2
-
 else
 
     echo-yellow "Services are already stopped."; echo-white

@@ -24,6 +24,8 @@ DATABASE_ENGINE=""
 DISPLAY_NAME=""
 PROJECT_DESCRIPTION=""
 PROJECT_EMOJI=""
+CREATE_GITHUB=""
+ORGANIZATION=""
 
 # Function to display usage
 usage() {
@@ -43,6 +45,8 @@ usage() {
     echo-white "  --display-name NAME          Display name for project (optional)"
     echo-white "  --description TEXT           Project description (optional)"
     echo-white "  --emoji EMOJI                Project emoji (default: 🚀)"
+    echo-white "  --github                     Create GitHub repository in user account"
+    echo-white "  --github-org ORG             Create GitHub repository in organization"
     echo-white "  --help                       Show this help message"
     
     error "usage" 1
@@ -103,6 +107,19 @@ while [[ $# -gt 0 ]]; do
                 error "Error: --emoji requires an emoji"
             fi
             ;;
+        --github)
+            CREATE_GITHUB="yes"
+            shift
+            ;;
+        --github-org)
+            CREATE_GITHUB="org"
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                ORGANIZATION="$2"
+                shift 2
+            else
+                error "Error: --github-org requires an organization name"
+            fi
+            ;;
         --help)
             usage
             ;;
@@ -125,6 +142,40 @@ done
 # Check if repository argument is provided
 if [ -z "$REPOSITORY" ]; then
     error "Error: Repository is required."
+fi
+
+# Validate GitHub options in JSON mode
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    # GitHub organization validation
+    if [ -z "$CREATE_GITHUB" ]; then
+        CREATE_GITHUB="no"
+    elif [ "$CREATE_GITHUB" = "org" ] && [ -z "$ORGANIZATION" ]; then
+        json_error "organization is required when using --github-org"
+    fi
+    
+    # GitHub CLI validation
+    if [ "$CREATE_GITHUB" != "no" ]; then
+        if ! command -v gh >/dev/null 2>&1; then
+            json_error "GitHub CLI (gh) is not installed. Install it first or remove --github option"
+        elif ! gh auth status >/dev/null 2>&1; then
+            json_error "GitHub CLI (gh) is not authenticated. Run 'gh auth login' first or remove --github option"
+        fi
+    fi
+else
+    # Interactive mode - check GitHub CLI availability and warn if not available
+    if [ "$CREATE_GITHUB" != "no" ]; then
+        if ! command -v gh >/dev/null 2>&1; then
+            echo-yellow "Warning: GitHub CLI (gh) is not installed."
+            echo-yellow "GitHub repository creation has been disabled."
+            echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
+            CREATE_GITHUB="no"
+        elif ! gh auth status >/dev/null 2>&1; then
+            echo-yellow "Warning: GitHub CLI (gh) is not authenticated."
+            echo-yellow "GitHub repository creation has been disabled."
+            echo-white "To enable GitHub integration, run 'gh auth login'"
+            CREATE_GITHUB="no"
+        fi
+    fi
 fi
 
 
@@ -242,6 +293,17 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     fi
 else
     source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS
+fi
+
+# GitHub repository creation (interactive prompts if not specified)
+if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
+    prompt_github_creation
+fi
+
+# Create GitHub repository if requested
+if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
+    cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
+    create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY"
 fi
 
 # Setup handles startup internally, so we just output the setup results

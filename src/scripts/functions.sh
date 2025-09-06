@@ -287,3 +287,119 @@ handle_docker_compose_conflict() {
             ;;
     esac
 }
+
+# GitHub repository creation function
+# Usage: create_github_repo PROJECT_NAME CREATE_GITHUB ORGANIZATION [EXISTING_REPO_URL]
+# Returns 0 on success, 1 on failure
+create_github_repo() {
+    local project_name="$1"
+    local create_github="$2"
+    local organization="$3"
+    local existing_repo_url="$4"
+    
+    # Skip if GitHub creation is disabled
+    if [ "$create_github" = "no" ] || [ -z "$create_github" ]; then
+        echo-yellow "Skipping GitHub repository creation."
+        return 0
+    fi
+    
+    # Validate GitHub CLI is available and authenticated
+    if ! command -v gh >/dev/null 2>&1; then
+        echo-yellow "GitHub CLI (gh) is not installed. Skipping repository creation."
+        return 1
+    fi
+    
+    if ! gh auth status >/dev/null 2>&1; then
+        echo-yellow "GitHub CLI (gh) is not authenticated. Skipping repository creation."
+        return 1
+    fi
+    
+    # Build repository name
+    local repo_name="$project_name"
+    if [ "$create_github" = "org" ] && [ -n "$organization" ]; then
+        repo_name="$organization/$project_name"
+    fi
+    
+    echo-cyan "Creating GitHub repository: $repo_name"
+    
+    # Check if we're trying to create the same repo we just cloned from
+    if [ -n "$existing_repo_url" ]; then
+        local existing_repo_name=""
+        if [[ "$existing_repo_url" =~ github\.com[:/]([^/]+/[^/]+)(\.git)?$ ]]; then
+            existing_repo_name="${BASH_REMATCH[1]}"
+            existing_repo_name="${existing_repo_name%.git}"
+        fi
+        
+        if [ "$repo_name" = "$existing_repo_name" ]; then
+            echo-yellow "Warning: Attempting to create repository '$repo_name' which is the same as the cloned source."
+            echo-yellow "Skipping GitHub repository creation to avoid conflicts."
+            return 0
+        fi
+    fi
+    
+    # Create the repository
+    if gh repo create "$repo_name" --private --source=. --push 2>/dev/null; then
+        echo-green "GitHub repository created successfully: $repo_name"
+        return 0
+    else
+        # Check if repository already exists
+        if gh repo view "$repo_name" >/dev/null 2>&1; then
+            echo-yellow "Repository '$repo_name' already exists. Skipping creation."
+            return 0
+        else
+            echo-yellow "GitHub repository creation failed, but project setup will continue."
+            return 1
+        fi
+    fi
+}
+
+# Prompt for GitHub repository creation in interactive mode
+# Usage: prompt_github_creation
+# Sets CREATE_GITHUB and ORGANIZATION variables
+prompt_github_creation() {
+    # Check GitHub CLI availability
+    local gh_available=false
+    if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+        gh_available=true
+    fi
+    
+    if [ "$gh_available" = true ]; then
+        echo-cyan "Would you like to create a GitHub repository?"
+        echo-white "1) Yes, create GitHub repository"
+        echo-white "2) No, skip GitHub repository"
+        echo-yellow -n "Enter your choice (1-2): "
+        read GITHUB_CHOICE
+        
+        case $GITHUB_CHOICE in
+            1)
+                CREATE_GITHUB="yes"
+                # Prompt for organization
+                echo-cyan "GitHub repository will be created in your personal account."
+                echo-yellow -n "Would you like to create it in an organization instead? (y/N): "
+                read USE_ORG
+                if [[ "$USE_ORG" =~ ^[Yy]$ ]]; then
+                    echo-yellow -n "Enter organization name: "
+                    read ORGANIZATION
+                    if [ -n "$ORGANIZATION" ]; then
+                        CREATE_GITHUB="org"
+                        echo-green "Repository will be created in organization: $ORGANIZATION"
+                    else
+                        echo-yellow "No organization specified. Using personal account."
+                    fi
+                fi
+                ;;
+            2)
+                CREATE_GITHUB="no"
+                ;;
+            *)
+                echo-yellow "Invalid choice. Skipping GitHub repository creation"
+                CREATE_GITHUB="no"
+                ;;
+        esac
+    else
+        echo-yellow "GitHub CLI (gh) is not installed or not authenticated."
+        echo-yellow "Skipping GitHub repository creation."
+        echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
+        CREATE_GITHUB="no"
+    fi
+}

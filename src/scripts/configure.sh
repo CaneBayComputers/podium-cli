@@ -423,25 +423,49 @@ echo-white
 COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
 
 if [ -f "$COMPOSE_FILE" ]; then
-    # Extract container names from docker-compose file
-    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
+    # Extract container names and their IP addresses from docker-compose file
+    # This creates a temporary file with container_name:ip_address pairs
+    TEMP_MAPPING=$(mktemp)
     
-    if [ -n "$CONTAINER_NAMES" ]; then
-        # Start IP counter for hosts file entries
-        IP_COUNTER=2
-        
-        for container_name in $CONTAINER_NAMES; do
+    # Parse the docker-compose file to extract container names and their assigned IP addresses
+    awk -v subnet="$VPC_SUBNET" '
+    /container_name:/ { 
+        container = $2; 
+        gsub(/[[:space:]]/, "", container);
+    }
+    /ipv4_address:/ { 
+        ip = $2; 
+        # Remove quotes and whitespace
+        gsub(/["[:space:]]/, "", ip);
+        # Replace ${VPC_SUBNET} with actual subnet value  
+        gsub(/\$\{VPC_SUBNET\}/, subnet, ip);
+        if (container != "") {
+            print container ":" ip;
+            container = "";
+        }
+    }' "$COMPOSE_FILE" > "$TEMP_MAPPING"
+    
+    if [ -s "$TEMP_MAPPING" ]; then
+        while IFS=':' read -r container_name ip_address; do
             # Check if entry already exists in hosts file
             if ! grep -q "[[:space:]]${container_name}[[:space:]]*$" /etc/hosts 2>/dev/null; then
-                echo-white "Adding hosts entry: $VPC_SUBNET.$IP_COUNTER -> $container_name"
-                echo "$VPC_SUBNET.$IP_COUNTER        $container_name" | sudo tee -a /etc/hosts > /dev/null
+                echo-white "Adding hosts entry: $ip_address -> $container_name"
+                echo "$ip_address        $container_name" | sudo tee -a /etc/hosts > /dev/null
+            else
+                # Update existing entry if IP has changed
+                current_ip=$(grep "[[:space:]]${container_name}[[:space:]]*$" /etc/hosts | awk '{print $1}')
+                if [ "$current_ip" != "$ip_address" ]; then
+                    echo-white "Updating hosts entry: $ip_address -> $container_name (was $current_ip)"
+                    sudo sed -i "s/^[0-9.]*[[:space:]]*${container_name}[[:space:]]*$/${ip_address}        ${container_name}/" /etc/hosts
+                fi
             fi
-            ((IP_COUNTER++))
-        done
+        done < "$TEMP_MAPPING"
         echo-green "Hosts file updated with container entries"
     else
-        echo-yellow "No container names found in docker-compose file"
+        echo-yellow "No container names with IP addresses found in docker-compose file"
     fi
+    
+    rm -f "$TEMP_MAPPING"
 else
     echo-yellow "Docker compose file not found: $COMPOSE_FILE"
 fi

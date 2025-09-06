@@ -71,8 +71,6 @@ if ! check-mariadb; then
 
     cd "$DEV_DIR"
 
-    sleep 5
-
 fi
 
 # JSON output for service start

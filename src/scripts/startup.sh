@@ -103,8 +103,6 @@ start_project() {
 
   dockerup
 
-  sleep 5
-
   cd ..
 
   echo-green "Project $PROJECT_FOLDER_NAME started successfully!"; echo-return

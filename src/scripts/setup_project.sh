@@ -390,6 +390,9 @@ if [ $STARTUP_EXIT_CODE -ne 0 ]; then
     error "Failed to start project container"
 fi
 
+# Return to project directory after startup (startup.sh may have changed working directory)
+cd "$PROJECT_DIR"
+
 # Install Composer libraries
 if [ -f "composer.json" ]; then
 
@@ -607,6 +610,27 @@ setup_gitignore() {
         framework_type="php"
     fi
     
+    # Create index.php if it's a PHP framework project and no entry point exists
+    if [ "$framework_type" = "php" ]; then
+        if [ ! -f "index.php" ] && [ ! -f "public/index.php" ]; then
+            echo-cyan "Creating PHP project entry point..."
+            
+            # Create public directory if it doesn't exist
+            mkdir -p public
+            
+            # Create index.php in public directory
+            cat > public/index.php << 'EOF'
+<?php
+echo "Hello, World! This is your PHP project.";
+?>
+EOF
+            
+            if [[ "$JSON_OUTPUT" != "1" ]]; then
+                echo-green "Created public/index.php entry point!"
+            fi
+        fi
+    fi
+    
     # Only create .gitignore if it doesn't exist
     if [ ! -f ".gitignore" ]; then
         case $framework_type in
@@ -720,8 +744,15 @@ else
     echo-white "Database: $DATABASE_ENGINE"
     echo-white "PHP Version: $PHP_VERSION"
     echo-return
-    echo-cyan "To start the project, run: podium up $PROJECT_NAME"
-    echo-return
+
+    # Build status options
+    STATUS_OPTIONS=""
+    if [[ "$NO_COLOR" == "1" ]]; then
+        STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
+    fi
+
+    # Show status to confirm successful startup
+    source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
 fi
 
 # Return to original directory

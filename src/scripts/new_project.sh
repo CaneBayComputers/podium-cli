@@ -158,13 +158,54 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         json_error "project name is required when using --json-output"
     fi
     
+    # Set defaults for JSON mode
     if [ -z "$FRAMEWORK" ]; then
-        json_error "framework is required when using --json-output"
+        FRAMEWORK="laravel"
     fi
     
     if [ -z "$DISPLAY_NAME" ]; then
-        json_error "display-name is required when using --json-output"
+        DISPLAY_NAME="$PROJECT_NAME"
     fi
+    
+    # Set version defaults based on framework
+    if [ -z "$VERSION" ] || [ "$VERSION" = "latest" ]; then
+        case "$FRAMEWORK" in
+            "laravel"|"wordpress")
+                VERSION="latest"
+                ;;
+            "php")
+                VERSION="8"
+                ;;
+            *)
+                VERSION="latest"
+                ;;
+        esac
+    fi
+    
+    # Set default database
+    if [ -z "$DATABASE" ]; then
+        DATABASE="mysql"
+    fi
+    
+    # Framework validation
+    case "$FRAMEWORK" in
+        "laravel"|"wordpress"|"php")
+            # Valid frameworks
+            ;;
+        *)
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, or php)"
+            ;;
+    esac
+
+    # Database validation
+    case "$DATABASE" in
+        "mysql"|"postgres"|"mongo")
+            # Valid databases
+            ;;
+        *)
+            json_error "invalid database: $DATABASE (must be mysql, postgres, or mongo)"
+            ;;
+    esac
     
     # GitHub organization validation
     if [ -z "$CREATE_GITHUB" ]; then
@@ -196,31 +237,6 @@ else
             CREATE_GITHUB="no"
         fi
     fi
-    
-    # Framework validation
-    case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php")
-            # Valid frameworks
-            ;;
-        *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, or php)"
-            ;;
-    esac
-
-    # Set default database
-    if [ -z "$DATABASE" ]; then
-        DATABASE="mysql"
-    fi
-
-    # Database validation
-    case "$DATABASE" in
-        "mysql"|"postgres"|"mongo")
-            # Valid databases
-            ;;
-        *)
-            json_error "invalid database: $DATABASE (must be mysql, postgres or mongo)"
-            ;;
-    esac
 fi
 
 # Interactive mode if no project name provided
@@ -494,19 +510,37 @@ elif [ "$FRAMEWORK" = "wordpress" ]; then
     echo-return; echo-cyan "Downloading WordPress..."
     
     if [ "$WP_VERSION" = "latest" ]; then
-        curl -O https://wordpress.org/latest.tar.gz
-        tar -xzf latest.tar.gz --strip-components=1
-        rm latest.tar.gz
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            curl -O https://wordpress.org/latest.tar.gz > /dev/null 2>&1
+            tar -xzf latest.tar.gz --strip-components=1 > /dev/null 2>&1
+            rm latest.tar.gz > /dev/null 2>&1
+        else
+            curl -O https://wordpress.org/latest.tar.gz
+            tar -xzf latest.tar.gz --strip-components=1
+            rm latest.tar.gz
+        fi
     else
-        curl -O https://wordpress.org/wordpress-${WP_VERSION}.tar.gz
-        tar -xzf wordpress-${WP_VERSION}.tar.gz --strip-components=1
-        rm wordpress-${WP_VERSION}.tar.gz
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            curl -O https://wordpress.org/wordpress-${WP_VERSION}.tar.gz > /dev/null 2>&1
+            tar -xzf wordpress-${WP_VERSION}.tar.gz --strip-components=1 > /dev/null 2>&1
+            rm wordpress-${WP_VERSION}.tar.gz > /dev/null 2>&1
+        else
+            curl -O https://wordpress.org/wordpress-${WP_VERSION}.tar.gz
+            tar -xzf wordpress-${WP_VERSION}.tar.gz --strip-components=1
+            rm wordpress-${WP_VERSION}.tar.gz
+        fi
     fi
     
     # Initialize git for WordPress
-    git init
-    git add .
-    git commit -m "Initial WordPress setup"
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git init > /dev/null 2>&1
+        git add . > /dev/null 2>&1
+        git commit -m "Initial WordPress setup" > /dev/null 2>&1
+    else
+        git init
+        git add .
+        git commit -m "Initial WordPress setup"
+    fi
     
     # Gitignore setup will be handled by setup_project.sh
     
@@ -526,9 +560,15 @@ echo "Hello, World! This is your PHP project.";
 EOF
     
     # Initialize git
-    git init
-    git add .
-    git commit -m "Initial PHP project setup"
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git init > /dev/null 2>&1
+        git add . > /dev/null 2>&1
+        git commit -m "Initial PHP project setup" > /dev/null 2>&1
+    else
+        git init
+        git add .
+        git commit -m "Initial PHP project setup"
+    fi
     
     # Gitignore setup will be handled by setup_project.sh
     
@@ -537,56 +577,14 @@ fi
 
 
 # GitHub repository creation
-# Check if gh CLI is available and configured before prompting
-GH_AVAILABLE=false
-if command -v gh >/dev/null 2>&1; then
-    if gh auth status >/dev/null 2>&1; then
-        GH_AVAILABLE=true
-    fi
-fi
-
+# GitHub repository creation (interactive prompts if not specified)
 if [ -z "$CREATE_GITHUB" ]; then
-    if [ "$GH_AVAILABLE" = true ]; then
-        echo-return; echo-cyan "Would you like to create a GitHub repository?"
-        echo-white "1) Yes, create GitHub repository"
-        echo-white "2) No, skip GitHub repository"
-        echo-return; echo-yellow -n "Enter your choice (1-2): "
-        read GITHUB_CHOICE
-        
-        case $GITHUB_CHOICE in
-            1)
-                CREATE_GITHUB="yes"
-                ;;
-            2)
-                CREATE_GITHUB="no"
-                ;;
-            *)
-                echo-yellow "Invalid choice. Skipping GitHub repository creation"
-                CREATE_GITHUB="no"
-                ;;
-        esac
-    else
-        echo-yellow "GitHub CLI (gh) is not installed or not authenticated."
-        echo-yellow "Skipping GitHub repository creation."
-        echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
-        CREATE_GITHUB="no"
-    fi
+    prompt_github_creation
 fi
 
-if [ "$CREATE_GITHUB" = "yes" ]; then
-    REPO_NAME=$PROJECT_NAME
-    if ! [ -z "$ORGANIZATION" ]; then 
-        REPO_NAME="$ORGANIZATION/$PROJECT_NAME"
-    fi
-
-    echo-return; echo-cyan "Creating GitHub repository..."
-    if gh repo create $REPO_NAME --private --source=. --push; then
-        echo-green "GitHub repository created successfully!"
-    else
-        echo-yellow "GitHub repository creation failed, but project setup will continue."
-    fi
-else
-    echo-return; echo-yellow "Skipping GitHub repository creation."
+# Create GitHub repository if requested
+if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
+    create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
 fi
 
 cd ../..
