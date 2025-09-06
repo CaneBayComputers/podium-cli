@@ -11,6 +11,12 @@ get_projects_dir() {
     # First check /etc/podium-cli/.env file (primary config location)
     if [ -f "/etc/podium-cli/.env" ]; then
         PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2)
+        if [ -n "$PROJECTS_DIR" ]; then
+            # Expand tilde to home directory
+            PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
+            echo "$PROJECTS_DIR"
+            return
+        fi
     # Fallback to old location for backward compatibility
     elif [ -f "$podium_root/docker-stack/.env" ]; then
         PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2)
