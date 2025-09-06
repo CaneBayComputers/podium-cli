@@ -41,15 +41,22 @@ run_json_test() {
     local output
     local exit_code
     
-    # Use timeout to prevent hanging (2 minutes max per test) with custom debug log
-    if output=$(timeout 120 bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
+    # Use timeout to prevent hanging with custom debug log
+    # Longer timeout for tests involving project creation/composer operations
+    local timeout_seconds=120
+    if [[ "$command" =~ (podium\ new|podium\ clone|podium\ setup.*--framework) ]]; then
+        timeout_seconds=300  # 5 minutes for project creation tests
+    fi
+    
+    if output=$(timeout $timeout_seconds bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
         exit_code=0
     else
         exit_code=$?
         # Check if it was a timeout
         if [ $exit_code -eq 124 ]; then
-            output="TEST TIMEOUT: Command exceeded 2 minute limit"
-            echo "   ⏰ TIMEOUT after 2 minutes"
+            local timeout_minutes=$((timeout_seconds / 60))
+            output="TEST TIMEOUT: Command exceeded $timeout_minutes minute limit"
+            echo "   ⏰ TIMEOUT after $timeout_minutes minutes"
         fi
     fi
     
@@ -97,27 +104,76 @@ run_json_test() {
     echo
 }
 
-# Function to cleanup test projects
-cleanup_test_projects() {
-    local projects=(
-        "$CLONE_PROJECT"
-        "laravel-latest-test"
-        "laravel-11-test"
-        "laravel-10-test"
-        "wordpress-test"
-        "php8-test"
-        "php7-test"
-        "funky-name-test"
-        "blank-folder-test"
-        "non-podium-test"
-    )
+# Function to setup test environment
+setup_test_environment() {
+    echo "🔧 Setting up isolated test environment..."
     
-    for project in "${projects[@]}"; do
-        if [ -d "$(get_projects_dir)/$project" ]; then
-            echo "🧹 Cleaning up $project..."
-            (cd "$(get_projects_dir)" && podium remove "$project" --force --json-output --debug >/dev/null 2>&1) || true
-        fi
-    done
+    # Backup original .env file
+    if [ -f "/etc/podium-cli/.env" ]; then
+        cp "/etc/podium-cli/.env" "/tmp/podium-cli-env-backup"
+        echo "   📋 Backed up /etc/podium-cli/.env"
+    else
+        echo "   ⚠️  No existing /etc/podium-cli/.env found"
+        touch "/tmp/podium-cli-env-backup-empty"
+    fi
+    
+    # Create temporary projects directory
+    export TEST_PROJECTS_DIR="/tmp/podium-test-projects"
+    mkdir -p "$TEST_PROJECTS_DIR"
+    echo "   📁 Created temporary projects directory: $TEST_PROJECTS_DIR"
+    
+    # Modify .env to use temporary directory
+    if [ -f "/etc/podium-cli/.env" ]; then
+        # Update existing .env
+        sudo sed -i "s|^PROJECTS_DIR=.*|PROJECTS_DIR=$TEST_PROJECTS_DIR|" "/etc/podium-cli/.env"
+    else
+        # Create new .env with just the projects dir
+        sudo mkdir -p "/etc/podium-cli"
+        echo "PROJECTS_DIR=$TEST_PROJECTS_DIR" | sudo tee "/etc/podium-cli/.env" >/dev/null
+    fi
+    echo "   ⚙️  Updated PROJECTS_DIR to use temporary location"
+}
+
+# Function to cleanup test environment
+cleanup_test_environment() {
+    echo "🧹 Cleaning up test environment..."
+    
+    # Stop and remove any test containers
+    if [ -d "$TEST_PROJECTS_DIR" ]; then
+        echo "   🐳 Stopping and removing test containers..."
+        for project_dir in "$TEST_PROJECTS_DIR"/*; do
+            if [ -d "$project_dir" ] && [ -f "$project_dir/docker-compose.yaml" ]; then
+                project_name=$(basename "$project_dir")
+                echo "      🔻 Stopping $project_name..."
+                (cd "$project_dir" && docker-compose down --remove-orphans --volumes >/dev/null 2>&1) || true
+                
+                # Remove any images created for this project
+                container_name=$(grep -A5 "services:" "$project_dir/docker-compose.yaml" | grep -E "^\s+[a-zA-Z0-9_-]+:" | head -1 | sed 's/://g' | xargs)
+                if [ -n "$container_name" ]; then
+                    docker rmi "${project_name}_${container_name}" >/dev/null 2>&1 || true
+                fi
+            fi
+        done
+    fi
+    
+    # Remove temporary projects directory
+    if [ -d "$TEST_PROJECTS_DIR" ]; then
+        rm -rf "$TEST_PROJECTS_DIR"
+        echo "   🗑️  Removed temporary projects directory"
+    fi
+    
+    # Restore original .env file
+    if [ -f "/tmp/podium-cli-env-backup" ]; then
+        sudo cp "/tmp/podium-cli-env-backup" "/etc/podium-cli/.env"
+        rm "/tmp/podium-cli-env-backup"
+        echo "   📋 Restored original /etc/podium-cli/.env"
+    elif [ -f "/tmp/podium-cli-env-backup-empty" ]; then
+        sudo rm -f "/etc/podium-cli/.env"
+        rm "/tmp/podium-cli-env-backup-empty"
+        echo "   📋 Removed /etc/podium-cli/.env (was not present before test)"
+    fi
+    
+    echo "   ✅ Test environment cleanup complete"
 }
 
 # Function to create test scenarios
@@ -142,9 +198,11 @@ services:
 EOF
 }
 
-# Pre-cleanup
-echo "🧹 Pre-test cleanup..."
-cleanup_test_projects
+# Setup test environment and ensure cleanup on exit
+setup_test_environment
+
+# Trap to ensure cleanup on script exit/interruption
+trap 'echo ""; echo "🛑 Test interrupted - cleaning up..."; cleanup_test_environment; exit 1' INT TERM
 
 # Create test scenarios
 create_test_scenarios
@@ -302,8 +360,7 @@ echo "🏁 Test Suite Complete!"
 echo
 
 # Post-cleanup
-echo "🧹 Post-test cleanup..."
-cleanup_test_projects
+cleanup_test_environment
 
 # Output final test report
 generate_test_report
