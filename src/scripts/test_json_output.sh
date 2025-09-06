@@ -403,7 +403,10 @@ generate_test_report() {
     results_json+="]"
     
     # Generate visual test report
-    local success_rate=$(echo "scale=1; $passed_tests * 100 / $total_tests" | bc -l 2>/dev/null || echo "0.0")
+    local success_rate="0.0"
+    if [ $total_tests -gt 0 ]; then
+        success_rate=$(echo "scale=1; $passed_tests * 100 / $total_tests" | bc -l 2>/dev/null || echo "0.0")
+    fi
     local status_emoji="$([ $failed_tests -eq 0 ] && echo "✅" || echo "❌")"
     local status_text="$([ $failed_tests -eq 0 ] && echo "ALL PASSED" || echo "SOME FAILED")"
     
