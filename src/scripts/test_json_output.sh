@@ -118,8 +118,8 @@ setup_test_environment() {
         sudo touch "/etc/podium-cli/.env.test-backup-empty"
     fi
     
-    # Create temporary projects directory
-    export TEST_PROJECTS_DIR="/tmp/podium-test-projects"
+    # Create temporary projects directory in home (Docker-friendly)
+    export TEST_PROJECTS_DIR="$HOME/.podium-test-projects"
     mkdir -p "$TEST_PROJECTS_DIR"
     echo "   📁 Created temporary projects directory: $TEST_PROJECTS_DIR"
     
