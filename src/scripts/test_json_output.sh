@@ -81,25 +81,28 @@ test_project_url() {
     fi
 }
 
+# Track which dependency tests have already been run to avoid duplicates
+declare -A DEPENDENCY_TESTS_RUN=()
+
 # Function to handle test dependencies
 ensure_test_dependencies() {
     local test_name="$1"
     
     # Define test dependencies
     case "$test_name" in
-        "remove_project")
-            echo "🔗 Test dependency: remove_project requires laravel-latest-test"
-            echo "   🚀 Running prerequisite: new_laravel_latest"
-            run_json_test "new_laravel_latest" \
-                "podium new laravel-latest-test --framework laravel --json-output --debug" \
-                "Create Laravel project with latest version (prerequisite for remove test)"
-            ;;
-        "shutdown_project")
-            echo "🔗 Test dependency: shutdown_project requires laravel-latest-test"
-            echo "   🚀 Running prerequisite: new_laravel_latest"
-            run_json_test "new_laravel_latest" \
-                "podium new laravel-latest-test --framework laravel --json-output --debug" \
-                "Create Laravel project with latest version (prerequisite for shutdown test)"
+        "remove_project"|"shutdown_project")
+            if [[ -z "${DEPENDENCY_TESTS_RUN[new_laravel_latest]}" ]]; then
+                echo "🔗 Test dependency: $test_name requires laravel-latest-test"
+                echo "   🚀 Running prerequisite: new_laravel_latest"
+                # Temporarily allow this dependency to run by NOT setting the flag yet
+                run_json_test "new_laravel_latest" \
+                    "podium new laravel-latest-test --framework laravel --json-output --debug" \
+                    "Create Laravel project with latest version (prerequisite for remove/shutdown tests)"
+                # Mark dependency as completed after successful run
+                DEPENDENCY_TESTS_RUN[new_laravel_latest]=1
+            else
+                echo "🔗 Test dependency: $test_name requires laravel-latest-test (already created)"
+            fi
             ;;
     esac
 }
@@ -116,21 +119,23 @@ run_json_test() {
         ensure_test_dependencies "$test_name"
     fi
     
-    # Skip test if we're running a specific test and this isn't it (unless it's a dependency)
+    # Skip test if we're running a specific test and this isn't it
     if [[ -n "$SPECIFIC_TEST" && "$test_name" != "$SPECIFIC_TEST" ]]; then
-        # Allow dependency tests to run even when not specifically requested
-        local is_dependency=false
+        # Allow dependency tests to run when called from ensure_test_dependencies
+        # Check if this is a dependency test being run for the specific test
         case "$SPECIFIC_TEST" in
             "remove_project"|"shutdown_project")
-                if [[ "$test_name" == "new_laravel_latest" ]]; then
-                    is_dependency=true
+                if [[ "$test_name" == "new_laravel_latest" && -z "${DEPENDENCY_TESTS_RUN[new_laravel_latest]}" ]]; then
+                    # This is a dependency test that should run
+                    :
+                else
+                    return 0
                 fi
                 ;;
+            *)
+                return 0
+                ;;
         esac
-        
-        if [[ "$is_dependency" != "true" ]]; then
-            return 0
-        fi
     fi
     
     # Prepend podium_test_ to test name for easy cleanup identification
