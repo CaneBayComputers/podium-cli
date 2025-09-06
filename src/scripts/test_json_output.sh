@@ -31,14 +31,23 @@ run_json_test() {
     echo "🧪 Running test: $test_name"
     echo "   Command: $command"
     
-    # Execute command and capture output
+    # Clear any previous debug session for clean test isolation
+    unset DEBUG_STARTED
+    
+    # Execute command and capture output with timeout protection
     local output
     local exit_code
     
-    if output=$(eval "$command" 2>&1); then
+    # Use timeout to prevent hanging (5 minutes max per test)
+    if output=$(timeout 300 bash -c "$command" 2>&1); then
         exit_code=0
     else
         exit_code=$?
+        # Check if it was a timeout
+        if [ $exit_code -eq 124 ]; then
+            output="TEST TIMEOUT: Command exceeded 5 minute limit"
+            echo "   ⏰ TIMEOUT after 5 minutes"
+        fi
     fi
     
     # Determine test result based on expectation
