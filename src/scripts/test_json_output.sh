@@ -32,7 +32,7 @@ run_json_test() {
     echo "   Command: $command"
     
     # Set up custom debug log path for this test
-    local test_log_path="$DEV_DIR/logs/test_${test_name}.log"
+    local test_log_path="$(dirname "$DEV_DIR")/logs/test_${test_name}.log"
     
     # Clear any previous debug session for clean test isolation
     unset DEBUG_STARTED
@@ -115,7 +115,7 @@ cleanup_test_projects() {
     for project in "${projects[@]}"; do
         if [ -d "$(get_projects_dir)/$project" ]; then
             echo "🧹 Cleaning up $project..."
-            cd "$(get_projects_dir)" && podium remove "$project" --force --json-output --debug >/dev/null 2>&1 || true
+            (cd "$(get_projects_dir)" && podium remove "$project" --force --json-output --debug >/dev/null 2>&1) || true
         fi
     done
 }
