@@ -49,7 +49,7 @@ run_json_test() {
         timeout_seconds=180  # 3 minutes for Laravel/composer operations
     fi
     
-    if output=$(timeout $timeout_seconds bash -c "export DEBUG_LOG_PATH='$test_log_path'; $command" 2>&1); then
+    if output=$(timeout $timeout_seconds bash -c "export DEBUG_LOG_PATH='$test_log_path'; cd '$TEST_PROJECTS_DIR' && $command" 2>&1); then
         exit_code=0
     else
         exit_code=$?
@@ -107,32 +107,14 @@ run_json_test() {
 
 # Function to setup test environment
 setup_test_environment() {
-    echo "🔧 Setting up isolated test environment..."
-    
-    # Backup original .env file within /etc
-    if [ -f "/etc/podium-cli/.env" ]; then
-        sudo cp "/etc/podium-cli/.env" "/etc/podium-cli/.env.test-backup"
-        echo "   📋 Backed up /etc/podium-cli/.env"
-    else
-        echo "   ⚠️  No existing /etc/podium-cli/.env found"
-        sudo touch "/etc/podium-cli/.env.test-backup-empty"
-    fi
+    echo "🔧 Setting up test environment..."
     
     # Create temporary projects directory in home (Docker-friendly)
     export TEST_PROJECTS_DIR="$HOME/.podium-test-projects"
     mkdir -p "$TEST_PROJECTS_DIR"
     echo "   📁 Created temporary projects directory: $TEST_PROJECTS_DIR"
     
-    # Modify .env to use temporary directory
-    if [ -f "/etc/podium-cli/.env" ]; then
-        # Update existing .env
-        sudo sed -i "s|^PROJECTS_DIR=.*|PROJECTS_DIR=$TEST_PROJECTS_DIR|" "/etc/podium-cli/.env"
-    else
-        # Create new .env with just the projects dir
-        sudo mkdir -p "/etc/podium-cli"
-        echo "PROJECTS_DIR=$TEST_PROJECTS_DIR" | sudo tee "/etc/podium-cli/.env" >/dev/null
-    fi
-    echo "   ⚙️  Updated PROJECTS_DIR to use temporary location"
+    echo "   ✅ Test environment ready (using existing .env configuration)"
 }
 
 # Function to cleanup test environment
@@ -210,17 +192,6 @@ cleanup_test_environment() {
     if [ -d "$TEST_PROJECTS_DIR" ]; then
         rm -rf "$TEST_PROJECTS_DIR"
         echo "   🗑️  Removed temporary projects directory"
-    fi
-    
-    # Restore original .env file
-    if [ -f "/etc/podium-cli/.env.test-backup" ]; then
-        sudo cp "/etc/podium-cli/.env.test-backup" "/etc/podium-cli/.env"
-        sudo rm "/etc/podium-cli/.env.test-backup"
-        echo "   📋 Restored original /etc/podium-cli/.env"
-    elif [ -f "/etc/podium-cli/.env.test-backup-empty" ]; then
-        sudo rm -f "/etc/podium-cli/.env"
-        sudo rm "/etc/podium-cli/.env.test-backup-empty"
-        echo "   📋 Removed /etc/podium-cli/.env (was not present before test)"
     fi
     
     echo "   ✅ Test environment cleanup complete"
