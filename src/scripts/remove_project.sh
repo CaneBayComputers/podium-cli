@@ -99,32 +99,47 @@ debug "Script started: remove_project.sh with args: $ORIGINAL_ARGS"
 
 # Check if project name is provided
 if [ -z "$PROJECT_NAME" ]; then
+    debug "No project name provided, showing usage"
     usage
 fi
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
 HOSTS_FILE="/etc/hosts"
 
-# Confirm with the user before proceeding
-if [ "$FORCE_TRASH_PROJECT" = false ] || [ "$FORCE_DB_DELETE" = false ]; then
+debug "Project directory: $PROJECT_DIR"
+debug "Force trash project: $FORCE_TRASH_PROJECT"
+debug "Force DB delete: $FORCE_DB_DELETE"
+debug "JSON output mode: $JSON_OUTPUT"
+
+# Confirm with the user before proceeding (skip in JSON mode)
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    debug "JSON mode detected - skipping user confirmation"
+    echo-cyan "JSON mode: Removing project '$PROJECT_NAME' without confirmation..."
+elif [ "$FORCE_TRASH_PROJECT" = false ] || [ "$FORCE_DB_DELETE" = false ]; then
+    debug "Requesting user confirmation"
     echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
     echo-cyan "Project files will be moved to trash (recoverable)."
     echo-white
     read -p "Are you sure? (y/n): " CONFIRM
     if [[ "$CONFIRM" != "y" ]]; then
         echo-white "Operation cancelled."
+        debug "User cancelled operation"
         exit 0
     fi
+    debug "User confirmed removal"
 else
+    debug "Force mode enabled - skipping confirmation"
     echo-cyan "Force mode: Removing project '$PROJECT_NAME' without confirmation..."
 fi
 
 # 1. Run shutdown.sh to stop the project and remove iptables rules
+debug "Starting step 1: Shutting down project"
 echo-return
 echo-cyan "Shutting down project '$PROJECT_NAME'..."
 echo-white
 "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME"
 
-# 2. Move Project Directory to Trash
+# 2. Move Project Directory to Trash  
+debug "Starting step 2: Moving project directory to trash"
 echo-cyan "Moving project directory to trash..."
 echo-white
 if [ -d "$PROJECT_DIR" ]; then
@@ -160,6 +175,7 @@ else
 fi
 
 # 3. Remove Hosts File Entry
+debug "Starting step 3: Removing hosts file entry"
 echo-cyan "Removing hosts file entry for the project..."
 echo-white
 if grep -q " $PROJECT_NAME\$" "$HOSTS_FILE"; then
@@ -172,6 +188,7 @@ else
 fi
 
 # 4. Delete Docker Container
+debug "Starting step 4: Deleting Docker container"
 echo-cyan "Attempting to delete Docker container for '$PROJECT_NAME'..."
 echo-white
 if docker rm "$PROJECT_NAME" --force >/dev/null 2>&1; then

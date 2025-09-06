@@ -285,7 +285,7 @@ run_json_test "new_php7" \
 
 # Test 13: New Project - Funky Name and Description  
 run_json_test "new_funky_name" \
-    'podium new funky-special-test --framework laravel --display-name "My Süper Åwesome Prøject!" --description "This has spëcial chars: @#$%&*()" --emoji "🦄" --json-output --debug' \
+    "podium new funky-special-test --framework laravel --display-name \"My Süper Åwesome Prøject!\" --description \"This has spëcial chars: @#\\\$%&*()\" --emoji \"🦄\" --json-output --debug" \
     "Create project with special characters in display name and description"
 
 # Test 14: Setup Blank Folder (should work)
@@ -333,8 +333,8 @@ run_json_test "configure" \
 
 # Test 22: Remove Project
 run_json_test "remove_project" \
-    "podium remove php7-test --json-output --debug" \
-    "Remove a test project (PHP 7 project)"
+    "podium remove laravel-latest-test --json-output --debug" \
+    "Remove a test project (Laravel latest project)"
 
 # Test 23: Shutdown Specific Project
 run_json_test "shutdown_project" \
