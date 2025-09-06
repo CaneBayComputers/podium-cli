@@ -117,22 +117,10 @@ run_json_test() {
 setup_test_environment() {
     echo "🔧 Setting up test environment..."
     
-    # Backup original .env file
-    if [ -f "/etc/podium-cli/.env" ]; then
-        sudo cp "/etc/podium-cli/.env" "/etc/podium-cli/.env.test-backup"
-        echo "   📋 Backed up /etc/podium-cli/.env"
-    fi
-    
-    # Create temporary projects directory in home (Docker-friendly)
-    export TEST_PROJECTS_DIR="$HOME/.podium-test-projects"
-    mkdir -p "$TEST_PROJECTS_DIR"
-    echo "   📁 Created temporary projects directory: $TEST_PROJECTS_DIR"
-    
-    # Update .env to use temporary directory for tests
-    if [ -f "/etc/podium-cli/.env" ]; then
-        sudo sed -i "s|^PROJECTS_DIR=.*|PROJECTS_DIR=$TEST_PROJECTS_DIR|" "/etc/podium-cli/.env"
-        echo "   ⚙️  Updated PROJECTS_DIR to use temporary location"
-    fi
+    # Use the regular projects directory from .env
+    export TEST_PROJECTS_DIR="$HOME/podium-projects"
+    echo "   📁 Using projects directory: $TEST_PROJECTS_DIR"
+    echo "   🏷️  Test isolation via 'podium_test_' prefix"
     
     echo "   ✅ Test environment ready"
 }
@@ -199,17 +187,16 @@ cleanup_test_environment() {
         fi
     fi
     
-    # Remove temporary projects directory
+    # Clean up test project directories
+    echo "   📁 Cleaning up test project directories..."
     if [ -d "$TEST_PROJECTS_DIR" ]; then
-        rm -rf "$TEST_PROJECTS_DIR"
-        echo "   🗑️  Removed temporary projects directory"
-    fi
-    
-    # Restore original .env file
-    if [ -f "/etc/podium-cli/.env.test-backup" ]; then
-        sudo cp "/etc/podium-cli/.env.test-backup" "/etc/podium-cli/.env"
-        sudo rm "/etc/podium-cli/.env.test-backup"
-        echo "   📋 Restored original /etc/podium-cli/.env"
+        for project_dir in "$TEST_PROJECTS_DIR"/podium_test_*; do
+            if [ -d "$project_dir" ]; then
+                project_name=$(basename "$project_dir")
+                echo "      🗑️  Removing project: $project_name"
+                rm -rf "$project_dir"
+            fi
+        done
     fi
     
     echo "   ✅ Test environment cleanup complete"
