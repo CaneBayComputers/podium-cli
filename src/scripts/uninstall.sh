@@ -10,6 +10,9 @@ source "$SCRIPT_DIR/functions.sh"
 # Initialize variables
 DELETE_IMAGES=""
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -46,7 +49,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize debug logging
-debug "Script started: uninstall.sh with args: $*"
+debug "Script started: uninstall.sh with args: $ORIGINAL_ARGS"
 
 # Check if Docker is running
 if ! docker info >/dev/null 2>&1; then

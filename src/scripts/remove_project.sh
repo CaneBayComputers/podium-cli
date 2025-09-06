@@ -40,6 +40,9 @@ PRESERVE_DATABASE=false
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -92,7 +95,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize debug logging
-debug "Script started: remove_project.sh with args: $*"
+debug "Script started: remove_project.sh with args: $ORIGINAL_ARGS"
 
 # Check if project name is provided
 if [ -z "$PROJECT_NAME" ]; then

@@ -30,6 +30,9 @@ PROJECT_NAME=""
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -74,7 +77,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize debug logging
-debug "Script started: shutdown.sh with args: $*"
+debug "Script started: shutdown.sh with args: $ORIGINAL_ARGS"
 
 
 # Functions

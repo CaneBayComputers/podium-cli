@@ -24,6 +24,10 @@ AWS_SECRET_KEY=""
 AWS_REGION="us-east-1"
 SKIP_AWS=false
 PROJECTS_DIR=""
+
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         --json-output)
@@ -90,7 +94,7 @@ done
 
 
 # Initialize debug logging
-debug "Script started: configure.sh with args: $*"
+debug "Script started: configure.sh with args: $ORIGINAL_ARGS"
 
 # Check for and set up environment variables
 # Use /etc/podium-cli/ as primary config location

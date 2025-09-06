@@ -15,10 +15,13 @@ cd ..
 
 DEV_DIR=$(pwd)
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 source scripts/pre_check.sh
 
 # Initialize debug logging
-debug "Script started: startup.sh with args: $*"
+debug "Script started: startup.sh with args: $ORIGINAL_ARGS"
 debug "PROJECTS_DIR: $PROJECTS_DIR"
 
 # Return to projects directory for project operations

@@ -24,6 +24,9 @@ source scripts/pre_check.sh
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -62,7 +65,7 @@ done
 echo-return; echo-return
 
 # Initialize debug logging
-debug "Script started: start_services.sh with args: $*"
+debug "Script started: start_services.sh with args: $ORIGINAL_ARGS"
 
 # Main
 source "$DEV_DIR/scripts/pre_check.sh"
