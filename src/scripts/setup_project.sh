@@ -61,6 +61,9 @@ FORCED_PHP_VERSION=""
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
@@ -131,7 +134,7 @@ if [ ${#POSITIONAL_ARGS[@]} -gt 4 ]; then
 fi
 
 # Initialize debug logging
-debug "Script started: setup_project.sh with args: $*"
+debug "Script started: setup_project.sh with args: $ORIGINAL_ARGS"
 
 # Interactive prompts for metadata (only in interactive mode)
 if [[ "$JSON_OUTPUT" != "1" ]]; then

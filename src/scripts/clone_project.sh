@@ -53,6 +53,9 @@ usage() {
     error "usage" 1
 }
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -145,7 +148,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize debug logging
-debug "Script started: clone_project.sh with args: $*"
+debug "Script started: clone_project.sh with args: $ORIGINAL_ARGS"
 
 # Check if repository argument is provided
 if [ -z "$REPOSITORY" ]; then

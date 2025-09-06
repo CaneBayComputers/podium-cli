@@ -92,6 +92,9 @@ FRAMEWORK=""
 DATABASE=""
 CREATE_GITHUB=""
 
+# Capture original arguments for debug logging
+ORIGINAL_ARGS="$*"
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -164,7 +167,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize debug logging
-debug "Script started: new_project.sh with args: $*"
+debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
 
 # Validation for JSON output mode
 debug "Starting validation phase"
