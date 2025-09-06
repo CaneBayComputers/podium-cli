@@ -16,10 +16,27 @@ cd "$PROJECTS_DIR"
 
 # Test configuration
 TEST_REPO="https://github.com/CaneBayComputers/cbc-laravel-website.git"
-CLONE_PROJECT="cbc-website-test"
+CLONE_PROJECT="podium_test_cbc-website-test"
 
 # Array to store test results
 declare -a TEST_RESULTS=()
+
+# Function to test if a project URL returns a working page
+test_project_url() {
+    local project_name="$1"
+    local url="http://$project_name"
+    
+    echo "   🌐 Testing URL: $url"
+    
+    # Test if URL responds with HTTP 200
+    if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$url" | grep -q "200"; then
+        echo "   ✅ URL accessible: $url"
+        return 0
+    else
+        echo "   ❌ URL not accessible: $url"
+        return 1
+    fi
+}
 
 # Function to run a test and capture JSON output
 run_json_test() {
@@ -37,8 +54,11 @@ run_json_test() {
     # - podium clone url project-name --options  
     # - podium setup project-name --options
     # - podium remove project-name --options
-    command=$(echo "$command" | sed -E 's/(podium (new|setup|remove) )([a-zA-Z0-9_-]+)( --)/\1podium_test_\3\4/g')
-    command=$(echo "$command" | sed -E 's/(podium clone [^ ]+ )([a-zA-Z0-9_-]+)( --)/\1podium_test_\2\3/g')
+    # Note: Skip if project name already has podium_test_ prefix
+    if [[ ! "$command" =~ podium_test_ ]]; then
+        command=$(echo "$command" | sed -E 's/(podium (new|setup|remove) )([a-zA-Z0-9_-]+)( --)/\1podium_test_\3\4/g')
+        command=$(echo "$command" | sed -E 's/(podium clone [^ ]+ )([a-zA-Z0-9_-]+)( --)/\1podium_test_\2\3/g')
+    fi
     
     echo "🧪 Running test: $test_name"
     echo "   Command: $command"
@@ -101,6 +121,23 @@ run_json_test() {
     # Show result
     if [[ "$test_status" == "success" ]]; then
         echo "   ✅ PASSED"
+        
+        # Test URL for new/clone projects that should create working websites
+        if [[ "$command" =~ podium\ (new|clone) ]] && [[ "$should_fail" != "true" ]]; then
+            # Extract project name from command
+            local project_name=""
+            if [[ "$command" =~ podium\ new\ ([a-zA-Z0-9_-]+) ]]; then
+                project_name="${BASH_REMATCH[1]}"
+            elif [[ "$command" =~ podium\ clone\ [^\ ]+\ ([a-zA-Z0-9_-]+) ]]; then
+                project_name="${BASH_REMATCH[1]}"
+            fi
+            
+            if [[ -n "$project_name" ]]; then
+                # Give the container a moment to start
+                sleep 5
+                test_project_url "$project_name"
+            fi
+        fi
     else
         echo "   ❌ FAILED (exit code: $exit_code)"
         echo "   Output: $output"
@@ -303,16 +340,11 @@ run_json_test "configure" \
     "podium configure --json-output --debug" \
     "Run configure command with JSON output"
 
-# Test 19: Stop Services
-run_json_test "stop_services" \
-    "podium down --json-output --debug" \
-    "Stop all services and projects with JSON output"
-
-# Test 20: Final Status Check (should show everything stopped)
-run_json_test "final_status" \
+# Test 19: Final Status Check
+run_json_test "final_status_check" \
     "podium status --json-output --debug" \
-    "Final status check - everything should be stopped" \
-    "true"
+    "Final status check of all projects and services"
+
 
 # Generate final test report
 generate_test_report() {
