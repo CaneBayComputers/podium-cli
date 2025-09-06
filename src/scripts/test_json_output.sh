@@ -108,13 +108,13 @@ run_json_test() {
 setup_test_environment() {
     echo "🔧 Setting up isolated test environment..."
     
-    # Backup original .env file
+    # Backup original .env file within /etc
     if [ -f "/etc/podium-cli/.env" ]; then
-        cp "/etc/podium-cli/.env" "/tmp/podium-cli-env-backup"
+        sudo cp "/etc/podium-cli/.env" "/etc/podium-cli/.env.test-backup"
         echo "   📋 Backed up /etc/podium-cli/.env"
     else
         echo "   ⚠️  No existing /etc/podium-cli/.env found"
-        touch "/tmp/podium-cli-env-backup-empty"
+        sudo touch "/etc/podium-cli/.env.test-backup-empty"
     fi
     
     # Create temporary projects directory
@@ -138,20 +138,69 @@ setup_test_environment() {
 cleanup_test_environment() {
     echo "🧹 Cleaning up test environment..."
     
-    # Stop and remove any test containers
+    # Stop and remove any test containers and clean hosts entries
     if [ -d "$TEST_PROJECTS_DIR" ]; then
         echo "   🐳 Stopping and removing test containers..."
         for project_dir in "$TEST_PROJECTS_DIR"/*; do
             if [ -d "$project_dir" ] && [ -f "$project_dir/docker-compose.yaml" ]; then
                 project_name=$(basename "$project_dir")
                 echo "      🔻 Stopping $project_name..."
+                
+                # Stop containers
                 (cd "$project_dir" && docker-compose down --remove-orphans --volumes >/dev/null 2>&1) || true
                 
-                # Remove any images created for this project
-                container_name=$(grep -A5 "services:" "$project_dir/docker-compose.yaml" | grep -E "^\s+[a-zA-Z0-9_-]+:" | head -1 | sed 's/://g' | xargs)
-                if [ -n "$container_name" ]; then
-                    docker rmi "${project_name}_${container_name}" >/dev/null 2>&1 || true
+                # Remove any images created for this project (try multiple naming patterns)
+                docker rmi "${project_name}_app" >/dev/null 2>&1 || true
+                docker rmi "${project_name}-app" >/dev/null 2>&1 || true
+                docker rmi "$(echo $project_name | tr '[:upper:]' '[:lower:]')_app" >/dev/null 2>&1 || true
+                
+                # Remove hosts entry for this project
+                if grep -q "^[0-9.]* $project_name$" /etc/hosts; then
+                    echo "      🌐 Removing hosts entry for $project_name"
+                    sudo sed -i "/^[0-9.]* $project_name$/d" /etc/hosts
                 fi
+            fi
+        done
+        
+        # Clean up any remaining test containers by pattern
+        echo "   🧹 Cleaning up any remaining test containers..."
+        docker ps -a --filter "name=podium-test" --format "{{.Names}}" | while read container; do
+            if [ -n "$container" ]; then
+                echo "      🗑️  Removing container: $container"
+                docker stop "$container" >/dev/null 2>&1 || true
+                docker rm "$container" >/dev/null 2>&1 || true
+            fi
+        done
+        
+        # Clean up any test-related Docker networks
+        docker network ls --filter "name=podium-test" --format "{{.Name}}" | while read network; do
+            if [ -n "$network" ]; then
+                echo "      🌐 Removing network: $network"
+                docker network rm "$network" >/dev/null 2>&1 || true
+            fi
+        done
+        
+        # Final hosts cleanup - remove any remaining test project entries
+        echo "   🌐 Final hosts file cleanup..."
+        test_hostnames=(
+            "cbc-website-test"
+            "laravel-latest-test"
+            "laravel-11-test"
+            "laravel-10-test"
+            "wordpress-test"
+            "php8-test"
+            "php7-test"
+            "funky-name-test"
+            "blank-folder-test"
+            "non-podium-test"
+            "invalid-version-test"
+            "invalid-framework-test"
+        )
+        
+        for hostname in "${test_hostnames[@]}"; do
+            if grep -q "^[0-9.]* $hostname$" /etc/hosts; then
+                echo "      🗑️  Removing hosts entry: $hostname"
+                sudo sed -i "/^[0-9.]* $hostname$/d" /etc/hosts
             fi
         done
     fi
@@ -163,13 +212,13 @@ cleanup_test_environment() {
     fi
     
     # Restore original .env file
-    if [ -f "/tmp/podium-cli-env-backup" ]; then
-        sudo cp "/tmp/podium-cli-env-backup" "/etc/podium-cli/.env"
-        rm "/tmp/podium-cli-env-backup"
+    if [ -f "/etc/podium-cli/.env.test-backup" ]; then
+        sudo cp "/etc/podium-cli/.env.test-backup" "/etc/podium-cli/.env"
+        sudo rm "/etc/podium-cli/.env.test-backup"
         echo "   📋 Restored original /etc/podium-cli/.env"
-    elif [ -f "/tmp/podium-cli-env-backup-empty" ]; then
+    elif [ -f "/etc/podium-cli/.env.test-backup-empty" ]; then
         sudo rm -f "/etc/podium-cli/.env"
-        rm "/tmp/podium-cli-env-backup-empty"
+        sudo rm "/etc/podium-cli/.env.test-backup-empty"
         echo "   📋 Removed /etc/podium-cli/.env (was not present before test)"
     fi
     
