@@ -28,6 +28,18 @@ run_json_test() {
     local description="$3"
     local should_fail="${4:-false}"
     
+    # Prepend podium_test_ to test name for easy cleanup identification
+    test_name="podium_test_${test_name}"
+    
+    # Prepend podium_test_ to any project names in the command for easy cleanup
+    # Handle different command patterns:
+    # - podium new project-name --options
+    # - podium clone url project-name --options  
+    # - podium setup project-name --options
+    # - podium remove project-name --options
+    command=$(echo "$command" | sed -E 's/(podium (new|setup|remove) )([a-zA-Z0-9_-]+)( --)/\1podium_test_\3\4/g')
+    command=$(echo "$command" | sed -E 's/(podium clone [^ ]+ )([a-zA-Z0-9_-]+)( --)/\1podium_test_\2\3/g')
+    
     echo "🧪 Running test: $test_name"
     echo "   Command: $command"
     
@@ -133,7 +145,7 @@ cleanup_test_environment() {
         
         # Clean up any remaining test containers by pattern
         echo "   🧹 Cleaning up any remaining test containers..."
-        docker ps -a --filter "name=podium-test" --format "{{.Names}}" | while read container; do
+        docker ps -a --filter "name=podium_test_" --format "{{.Names}}" | while read container; do
             if [ -n "$container" ]; then
                 echo "      🗑️  Removing container: $container"
                 docker stop "$container" >/dev/null 2>&1 || true
@@ -141,37 +153,28 @@ cleanup_test_environment() {
             fi
         done
         
+        # Clean up any test-related Docker images
+        docker images --filter "reference=*podium_test_*" --format "{{.Repository}}:{{.Tag}}" | while read image; do
+            if [ -n "$image" ]; then
+                echo "      🗑️  Removing image: $image"
+                docker rmi "$image" >/dev/null 2>&1 || true
+            fi
+        done
+        
         # Clean up any test-related Docker networks
-        docker network ls --filter "name=podium-test" --format "{{.Name}}" | while read network; do
+        docker network ls --filter "name=podium_test_" --format "{{.Name}}" | while read network; do
             if [ -n "$network" ]; then
                 echo "      🌐 Removing network: $network"
                 docker network rm "$network" >/dev/null 2>&1 || true
             fi
         done
         
-        # Final hosts cleanup - remove any remaining test project entries
+        # Final hosts cleanup - remove any entries with podium_test_ prefix
         echo "   🌐 Final hosts file cleanup..."
-        test_hostnames=(
-            "cbc-website-test"
-            "laravel-latest-test"
-            "laravel-11-test"
-            "laravel-10-test"
-            "wordpress-test"
-            "php8-test"
-            "php7-test"
-            "funky-name-test"
-            "blank-folder-test"
-            "non-podium-test"
-            "invalid-version-test"
-            "invalid-framework-test"
-        )
-        
-        for hostname in "${test_hostnames[@]}"; do
-            if grep -q "^[0-9.]* $hostname$" /etc/hosts; then
-                echo "      🗑️  Removing hosts entry: $hostname"
-                sudo sed -i "/^[0-9.]* $hostname$/d" /etc/hosts
-            fi
-        done
+        if grep -q "podium_test_" /etc/hosts; then
+            echo "      🗑️  Removing all podium_test_ hosts entries"
+            sudo sed -i "/podium_test_/d" /etc/hosts
+        fi
     fi
     
     # Remove temporary projects directory
