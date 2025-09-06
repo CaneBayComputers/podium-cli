@@ -16,19 +16,22 @@ usage() {
     echo-white "Usage: $0 <project_name> [options]"
     echo-white "Removes a project and associated settings"
     echo-white ""
+    echo-white "By default:"
+    echo-white "  • Project files are moved to trash (recoverable)"
+    echo-white "  • User is prompted about database deletion"
+    echo-white ""
     echo-white "Options:"
-    echo-white "  --force-trash-project    Skip confirmation for project directory removal"
-    echo-white "  --force-db-delete        Skip confirmation for database deletion"
-    echo-white "  --preserve-database      Skip database deletion entirely (preserve database)"
-    echo-white "  --force                  Skip all confirmations (combines both flags above)"
+    echo-white "  --force-db-delete        Delete database without confirmation"
+    echo-white "  --preserve-database      Skip database deletion entirely"
     echo-white "  --json-output            Output results in JSON format"
-    echo-white "  --debug                  Enable debug logging to /tmp/podium-cli-debug.log"
+    echo-white "  --debug                  Enable debug logging"
     echo-white "  --no-colors              Disable colored output"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 my-project --force-trash-project"
-    echo-white "  $0 my-project --force-db-delete"
-    echo-white "  $0 my-project --force"
+    echo-white "  $0 my-project                    # Remove project, prompt for database"
+    echo-white "  $0 my-project --force-db-delete  # Remove project and database without prompting"
+    echo-white "  $0 my-project --preserve-database # Remove project, keep database"
+    echo-white "  $0 my-project --json-output      # Remove with JSON output"
     error "usage" 1
 }
 
@@ -46,10 +49,6 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --force-trash-project)
-            FORCE_TRASH_PROJECT=true
-            shift
-            ;;
         --force-db-delete)
             FORCE_DB_DELETE=true
             shift
@@ -59,7 +58,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --force)
-            FORCE_TRASH_PROJECT=true
+            # Legacy flag - now only affects database deletion since trash is default
             FORCE_DB_DELETE=true
             shift
             ;;
@@ -110,26 +109,25 @@ debug "Force trash project: $FORCE_TRASH_PROJECT"
 debug "Force DB delete: $FORCE_DB_DELETE"
 debug "JSON output mode: $JSON_OUTPUT"
 
-# Confirm with the user before proceeding (skip in JSON mode)
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-    debug "JSON mode detected - skipping user confirmation"
-    echo-cyan "JSON mode: Removing project '$PROJECT_NAME' without confirmation..."
-elif [ "$FORCE_TRASH_PROJECT" = false ] || [ "$FORCE_DB_DELETE" = false ]; then
-    debug "Requesting user confirmation"
+# Project removal confirmation - only ask about database if needed
+if [ "$FORCE_DB_DELETE" = false ] && [[ "$JSON_OUTPUT" != "1" ]]; then
+    debug "Requesting database confirmation (non-JSON mode)"
     echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
     echo-cyan "Project files will be moved to trash (recoverable)."
     echo-white
-    read -p "Are you sure? (y/n): " CONFIRM
-    if [[ "$CONFIRM" != "y" ]]; then
-        echo-white "Operation cancelled."
-        debug "User cancelled operation"
-        exit 0
+    read -p "Also delete database data? (y/n): " DB_CONFIRM
+    if [[ "$DB_CONFIRM" == "y" ]]; then
+        FORCE_DB_DELETE=true
+        debug "User confirmed database deletion"
+    else
+        debug "User declined database deletion"
     fi
-    debug "User confirmed removal"
 else
-    debug "Force mode enabled - skipping confirmation"
-    echo-cyan "Force mode: Removing project '$PROJECT_NAME' without confirmation..."
+    debug "Skipping database confirmation (JSON mode or force mode)"
 fi
+
+debug "Starting project removal for: $PROJECT_NAME"
+echo-cyan "Removing project '$PROJECT_NAME'..."
 
 # 1. Run shutdown.sh to stop the project and remove iptables rules
 debug "Starting step 1: Shutting down project"
