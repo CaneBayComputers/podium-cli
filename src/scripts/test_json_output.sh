@@ -28,18 +28,25 @@ test_project_url() {
     
     echo "   🌐 Testing URL: $url"
     
-    # Test if URL responds with HTTP 200
+    # Test if URL responds with a valid HTTP response (200, 302, etc.)
     local http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$url")
     echo "   📊 HTTP Response: $http_code"
     
-    if [[ "$http_code" == "200" ]]; then
-        echo "   ✅ URL accessible: $url"
+    # Accept 200 (OK), 302 (Redirect - common for WordPress setup), 301 (Moved Permanently)
+    if [[ "$http_code" =~ ^(200|301|302)$ ]]; then
+        if [[ "$http_code" == "200" ]]; then
+            echo "   ✅ URL accessible: $url"
+        elif [[ "$http_code" == "302" ]]; then
+            echo "   ✅ URL accessible: $url (redirected - likely WordPress setup page)"
+        elif [[ "$http_code" == "301" ]]; then
+            echo "   ✅ URL accessible: $url (permanently redirected)"
+        fi
         return 0
     else
         echo "   ❌ URL not accessible: $url (HTTP $http_code)"
         # Check if container is actually running
         if docker ps --filter "name=$project_name" --format "{{.Names}}" | grep -q "$project_name"; then
-            echo "   🐳 Container is running - may need more time to start"
+            echo "   🐳 Container is running - HTTP $http_code may indicate app-level issue"
         else
             echo "   🐳 Container not found or not running"
         fi
