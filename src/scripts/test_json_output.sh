@@ -29,11 +29,20 @@ test_project_url() {
     echo "   🌐 Testing URL: $url"
     
     # Test if URL responds with HTTP 200
-    if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 "$url" | grep -q "200"; then
+    local http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$url")
+    echo "   📊 HTTP Response: $http_code"
+    
+    if [[ "$http_code" == "200" ]]; then
         echo "   ✅ URL accessible: $url"
         return 0
     else
-        echo "   ❌ URL not accessible: $url"
+        echo "   ❌ URL not accessible: $url (HTTP $http_code)"
+        # Check if container is actually running
+        if docker ps --filter "name=$project_name" --format "{{.Names}}" | grep -q "$project_name"; then
+            echo "   🐳 Container is running - may need more time to start"
+        else
+            echo "   🐳 Container not found or not running"
+        fi
         return 1
     fi
 }
@@ -128,14 +137,19 @@ run_json_test() {
             local project_name=""
             if [[ "$command" =~ podium\ new\ ([a-zA-Z0-9_-]+) ]]; then
                 project_name="${BASH_REMATCH[1]}"
+                echo "   🔍 Detected new project: $project_name"
             elif [[ "$command" =~ podium\ clone\ [^\ ]+\ ([a-zA-Z0-9_-]+) ]]; then
                 project_name="${BASH_REMATCH[1]}"
+                echo "   🔍 Detected clone project: $project_name"
             fi
             
             if [[ -n "$project_name" ]]; then
                 # Give the container a moment to start
+                echo "   ⏳ Waiting 5 seconds for container to start..."
                 sleep 5
                 test_project_url "$project_name"
+            else
+                echo "   ⚠️  Could not extract project name from command: $command"
             fi
         fi
     else
@@ -259,7 +273,7 @@ run_json_test "status_services" \
 
 # Test 3: Clone Project
 run_json_test "clone_project" \
-    "podium clone '$TEST_REPO' '$CLONE_PROJECT' --json-output --debug" \
+    "podium clone $TEST_REPO $CLONE_PROJECT --json-output --debug" \
     "Clone CBC Laravel website repository with JSON output"
 
 # Test 4: New Project - Laravel Latest

@@ -5,8 +5,8 @@
 # Get the projects directory (configurable)
 get_projects_dir() {
     # Get the directory where this script is located
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    local podium_root="$(dirname "$script_dir")"
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+    local podium_root="$(dirname "$script_dir" 2>/dev/null)"
     
     # First check /etc/podium-cli/.env file (primary config location)
     if [ -f "/etc/podium-cli/.env" ]; then
