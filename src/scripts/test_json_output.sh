@@ -50,6 +50,12 @@ run_json_test() {
         fi
     fi
     
+    # CRITICAL: Capture debug log IMMEDIATELY after test completes, before anything else
+    local debug_log_content=""
+    if [[ -f "/tmp/podium-cli-debug.log" ]]; then
+        debug_log_content=$(tail -20 /tmp/podium-cli-debug.log 2>/dev/null || echo "Debug log not readable")
+    fi
+    
     # Determine test result based on expectation
     local test_status
     if [[ "$should_fail" == "true" ]]; then
@@ -60,8 +66,8 @@ run_json_test() {
         test_status=$([ $exit_code -eq 0 ] && echo "success" || echo "failed")
     fi
     
-    # Store result
-    local result_json="{\"test_name\": \"$test_name\", \"command\": \"$command\", \"description\": \"$description\", \"exit_code\": $exit_code, \"expected_failure\": $should_fail, \"output\": $(echo "$output" | jq -R -s .), \"status\": \"$test_status\"}"
+    # Store result with captured debug log
+    local result_json="{\"test_name\": \"$test_name\", \"command\": \"$command\", \"description\": \"$description\", \"exit_code\": $exit_code, \"expected_failure\": $should_fail, \"output\": $(echo "$output" | jq -R -s .), \"debug_log\": $(echo "$debug_log_content" | jq -R -s .), \"status\": \"$test_status\"}"
     
     TEST_RESULTS+=("$result_json")
     
@@ -71,10 +77,10 @@ run_json_test() {
     else
         echo "   ❌ FAILED (exit code: $exit_code)"
         echo "   Output: $output"
-        # Check debug log if available
-        if [[ -f "/tmp/podium-cli-debug.log" ]]; then
-            echo "   Debug log (last 10 lines):"
-            tail -10 /tmp/podium-cli-debug.log | sed 's/^/      /'
+        # Show the captured debug log (not re-read it)
+        if [[ -n "$debug_log_content" ]]; then
+            echo "   Debug log (last 20 lines from this test):"
+            echo "$debug_log_content" | sed 's/^/      /'
         fi
     fi
     echo
