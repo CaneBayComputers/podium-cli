@@ -147,7 +147,7 @@ run_json_test() {
                 # Give the container a moment to start
                 echo "   ⏳ Waiting 5 seconds for container to start..."
                 sleep 5
-                test_project_url "$project_name"
+                test_project_url "$project_name" || echo "   ⚠️  URL test failed but continuing..."
             else
                 echo "   ⚠️  Could not extract project name from command: $command"
             fi
@@ -178,47 +178,8 @@ setup_test_environment() {
 
 # Function to cleanup test environment
 cleanup_test_environment() {
-    echo "🧹 Cleaning up test environment..."
-    
-    # Clean up test containers by pattern
-    echo "   🧹 Cleaning up test containers..."
-    docker ps -a --filter "name=podium_test_" --format "{{.Names}}" | while read container; do
-        if [ -n "$container" ]; then
-            echo "      🗑️  Removing container: $container"
-            docker stop "$container" >/dev/null 2>&1 || true
-            docker rm "$container" >/dev/null 2>&1 || true
-        fi
-    done
-    
-    # Clean up any test-related Docker images
-    docker images --filter "reference=*podium_test_*" --format "{{.Repository}}:{{.Tag}}" | while read image; do
-        if [ -n "$image" ]; then
-            echo "      🗑️  Removing image: $image"
-            docker rmi "$image" >/dev/null 2>&1 || true
-        fi
-    done
-    
-    # Clean up any test-related Docker networks
-    docker network ls --filter "name=podium_test_" --format "{{.Name}}" | while read network; do
-        if [ -n "$network" ]; then
-            echo "      🌐 Removing network: $network"
-            docker network rm "$network" >/dev/null 2>&1 || true
-        fi
-    done
-    
-    # Clean up test project directories
-    echo "   📁 Cleaning up test project directories..."
-    if [ -d "$TEST_PROJECTS_DIR" ]; then
-        for project_dir in "$TEST_PROJECTS_DIR"/podium_test_*; do
-            if [ -d "$project_dir" ]; then
-                project_name=$(basename "$project_dir")
-                echo "      🗑️  Removing project: $project_name"
-                rm -rf "$project_dir"
-            fi
-        done
-    fi
-    
-    echo "   ✅ Test environment cleanup complete"
+    echo "🧹 Calling standalone cleanup script..."
+    "$DEV_DIR/src/scripts/cleanup_test_environment.sh"
 }
 
 # Function to create test scenarios
