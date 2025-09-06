@@ -44,7 +44,7 @@ run_json_test() {
     echo "   Command: $command"
     
     # Set up custom debug log path for this test
-    local test_log_path="$(dirname "$DEV_DIR")/logs/test_${test_name}.log"
+    local test_log_path="$(dirname "$DEV_DIR")/logs/${test_name}.log"
     
     # Clear any previous debug session for clean test isolation
     unset DEBUG_STARTED
@@ -219,6 +219,11 @@ create_test_scenarios
 
 echo "🚀 Starting Podium CLI JSON Output Test Suite"
 echo "============================================="
+
+# Clean up old test logs
+echo "🧹 Cleaning up old test logs..."
+rm -f "$(dirname "$DEV_DIR")/logs/podium_test_"*.log 2>/dev/null || true
+echo "   ✅ Old logs cleaned"
 echo
 
 # Test 1: Start Services
@@ -342,27 +347,55 @@ generate_test_report() {
     done
     results_json+="]"
     
-    # Generate final report
-    cat << EOF
-{
-  "test_suite": "podium_comprehensive_json_test",
-  "timestamp": "$timestamp",
-  "summary": {
-    "total_tests": $total_tests,
-    "passed": $passed_tests,
-    "failed": $failed_tests,
-    "success_rate": $(echo "scale=2; $passed_tests * 100 / $total_tests" | bc -l 2>/dev/null || echo "0")
-  },
-  "test_configuration": {
-    "test_repository": "$TEST_REPO",
-    "clone_project": "$CLONE_PROJECT",
-    "json_output": true,
-    "debug_enabled": true
-  },
-  "results": $results_json,
-  "status": "$([ $failed_tests -eq 0 ] && echo "all_passed" || echo "some_failed")"
-}
-EOF
+    # Generate visual test report
+    local success_rate=$(echo "scale=1; $passed_tests * 100 / $total_tests" | bc -l 2>/dev/null || echo "0.0")
+    local status_emoji="$([ $failed_tests -eq 0 ] && echo "✅" || echo "❌")"
+    local status_text="$([ $failed_tests -eq 0 ] && echo "ALL PASSED" || echo "SOME FAILED")"
+    
+    echo
+    echo "📊 TEST SUITE RESULTS"
+    echo "===================="
+    echo "🏆 Status: $status_emoji $status_text"
+    echo "📈 Success Rate: ${success_rate}% ($passed_tests/$total_tests)"
+    echo "⏰ Completed: $timestamp"
+    echo
+    
+    if [ $failed_tests -gt 0 ]; then
+        echo "❌ FAILED TESTS:"
+        echo "==============="
+        for ((i=0; i<${#TEST_RESULTS[@]}; i++)); do
+            local result="${TEST_RESULTS[i]}"
+            local test_name=$(echo "$result" | jq -r '.test_name')
+            local exit_code=$(echo "$result" | jq -r '.exit_code')
+            local command=$(echo "$result" | jq -r '.command')
+            
+            if [ "$exit_code" != "0" ]; then
+                echo "   🔴 $test_name"
+                echo "      Command: $command"
+                echo "      Exit Code: $exit_code"
+                echo
+            fi
+        done
+    fi
+    
+    echo "✅ PASSED TESTS:"
+    echo "==============="
+    for ((i=0; i<${#TEST_RESULTS[@]}; i++)); do
+        local result="${TEST_RESULTS[i]}"
+        local test_name=$(echo "$result" | jq -r '.test_name')
+        local exit_code=$(echo "$result" | jq -r '.exit_code')
+        
+        if [ "$exit_code" == "0" ]; then
+            echo "   🟢 $test_name"
+        fi
+    done
+    echo
+    
+    echo "📋 DEBUG LOGS:"
+    echo "============="
+    echo "   Location: $(dirname "$DEV_DIR")/logs/"
+    echo "   Pattern: podium_test_*.log"
+    echo "   Use 'tail -f logs/podium_test_[test_name].log' to examine specific test logs"
 }
 
 echo "============================================="
