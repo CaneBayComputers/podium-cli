@@ -28,19 +28,13 @@ test_project_url() {
     
     echo "   🌐 Testing URL: $url"
     
-    # Test if URL responds with a valid HTTP response (200, 302, etc.)
-    local http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$url")
-    echo "   📊 HTTP Response: $http_code"
+    # Test if URL responds with a valid HTTP response (follow redirects)
+    local http_code=$(curl -s -L -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$url")
+    echo "   📊 HTTP Response: $http_code (following redirects)"
     
-    # Accept 200 (OK), 302 (Redirect - common for WordPress setup), 301 (Moved Permanently)
-    if [[ "$http_code" =~ ^(200|301|302)$ ]]; then
-        if [[ "$http_code" == "200" ]]; then
-            echo "   ✅ URL accessible: $url"
-        elif [[ "$http_code" == "302" ]]; then
-            echo "   ✅ URL accessible: $url (redirected - likely WordPress setup page)"
-        elif [[ "$http_code" == "301" ]]; then
-            echo "   ✅ URL accessible: $url (permanently redirected)"
-        fi
+    # Since we're following redirects, we should get final status code
+    if [[ "$http_code" == "200" ]]; then
+        echo "   ✅ URL accessible: $url"
         return 0
     else
         echo "   ❌ URL not accessible: $url (HTTP $http_code)"
@@ -140,12 +134,12 @@ run_json_test() {
         
         # Test URL for new/clone projects that should create working websites
         if [[ "$command" =~ podium\ (new|clone) ]] && [[ "$should_fail" != "true" ]]; then
-            # Extract project name from command
+            # Extract project name from command (handle quoted and unquoted names)
             local project_name=""
-            if [[ "$command" =~ podium\ new\ ([a-zA-Z0-9_-]+) ]]; then
+            if [[ "$command" =~ podium\ new\ \'([^\']+)\' ]] || [[ "$command" =~ podium\ new\ \"([^\"]+)\" ]] || [[ "$command" =~ podium\ new\ ([a-zA-Z0-9_-]+) ]]; then
                 project_name="${BASH_REMATCH[1]}"
                 echo "   🔍 Detected new project: $project_name"
-            elif [[ "$command" =~ podium\ clone\ [^\ ]+\ ([a-zA-Z0-9_-]+) ]]; then
+            elif [[ "$command" =~ podium\ clone\ [^\ ]+\ \'([^\']+)\' ]] || [[ "$command" =~ podium\ clone\ [^\ ]+\ \"([^\"]+)\" ]] || [[ "$command" =~ podium\ clone\ [^\ ]+\ ([a-zA-Z0-9_-]+) ]]; then
                 project_name="${BASH_REMATCH[1]}"
                 echo "   🔍 Detected clone project: $project_name"
             fi
@@ -289,9 +283,9 @@ run_json_test "new_php7" \
     "podium new php7-test --framework php --version 7 --json-output --debug" \
     "Create new PHP 7 project"
 
-# Test 13: New Project - Funky Name and Description
+# Test 13: New Project - Funky Name and Description  
 run_json_test "new_funky_name" \
-    "podium new 'funky-name-test' --framework laravel --display-name 'My Super Awesome Project' --description 'This has special characters' --emoji '🦄' --json-output --debug" \
+    "podium new 'my-ƒünky-tëst-prøjéct' --framework laravel --display-name 'My Süper Åwesome Prøject!' --description 'This has spëcial chars: @#$%&*()' --emoji '🦄' --json-output --debug" \
     "Create project with special characters in name and description"
 
 # Test 14: Setup Blank Folder (should work)
