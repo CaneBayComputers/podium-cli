@@ -557,23 +557,26 @@ if (Test-WSLInstalled) {
 if (Test-DockerInstalled) {
     Write-Output "[SUCCESS] Docker is already installed"
 } else {
-    if ($windowsInfo.IsHome -and $isVM) {
-        # Windows Home + VM: Skip Docker Desktop, install in WSL later
-        Write-Output "[INFO] Docker will be installed inside WSL for VM compatibility"
+    # Try Docker Desktop first for all environments
+    Write-Output "Installing Docker Desktop for Windows..."
+    if (Install-DockerDesktop) {
+        Write-Output "[SUCCESS] Docker Desktop installed successfully"
+        $dockerDesktopInstalled = $true
     } else {
-        # Bare metal Windows (any edition): Install Docker Desktop
-        Write-Output "Installing Docker Desktop for Windows..."
-        if (-not (Install-DockerDesktop)) {
+        Write-Output "[WARNING] Docker Desktop installation failed"
+        if ($windowsInfo.IsHome -and $isVM) {
+            Write-Output "[INFO] Falling back to Docker-in-WSL for VM compatibility"
+            $dockerDesktopInstalled = $false
+        } else {
             Write-Output "[ERROR] Docker Desktop installation failed. Exiting."
             exit 1
         }
     }
 }
 
-# Install Docker and Podium CLI
-# For Windows Home + VM, always install Docker-in-WSL regardless of WSL version
-if ($windowsInfo.IsHome -and $isVM) {
-    Write-Output "Windows Home + VM detected: Installing Docker inside WSL..."
+# Install Docker-in-WSL only if Docker Desktop failed
+if ($windowsInfo.IsHome -and $isVM -and -not $dockerDesktopInstalled) {
+    Write-Output "Installing Docker inside WSL as fallback..."
     
     # Ensure Ubuntu distribution exists
     $distros = wsl -l -q 2>$null
@@ -606,19 +609,19 @@ Write-Output "                    INSTALLATION COMPLETE                     "
 Write-Output "                                                              "
 Write-Output "  Next steps:                                                "
 
-if ($windowsInfo.IsHome -and $isVM) {
+if ($windowsInfo.IsHome -and $isVM -and -not $dockerDesktopInstalled) {
     Write-Output "  1. Open WSL: wsl                                         "
     Write-Output "  2. Run: podium configure                                 "
     Write-Output "  3. Run: podium new myproject                             "
     Write-Output "                                                              "
-    Write-Output "  VM Setup: Docker installed inside WSL for compatibility  "
+    Write-Output "  VM Fallback: Docker installed inside WSL                "
 } else {
     Write-Output "  1. Start Docker Desktop (installed for you)             "
     Write-Output "  2. Open WSL: wsl                                         "
     Write-Output "  3. Run: podium configure                                 "
     Write-Output "  4. Run: podium new myproject                             "
     Write-Output "                                                              "
-    Write-Output "  Standard Setup: Docker Desktop + WSL integration        "
+    Write-Output "  Docker Desktop + WSL integration active                 "
 }
 
 Write-Output "                                                              "
