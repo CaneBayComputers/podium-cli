@@ -102,8 +102,18 @@ function Test-WSLInstalled {
 }
 
 function Test-DockerInstalled {
+    # First check for Docker Desktop (Windows)
     try {
         $dockerVersion = docker --version 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            return $true
+        }
+    }
+    catch {}
+    
+    # Check for Docker in WSL
+    try {
+        $wslDockerVersion = wsl -e docker --version 2>$null
         return $LASTEXITCODE -eq 0
     }
     catch {
@@ -152,9 +162,27 @@ function Install-WSL {
     }
 }
 
-function Install-DockerDesktop {
-    Write-Output "Installing Docker Desktop..."
+function Install-Docker {
+    param(
+        [bool]$UseDockerDesktop = $true,
+        [bool]$IsVM = $false,
+        [bool]$IsWindowsHome = $false
+    )
     
+    # Determine Docker installation strategy
+    if ($IsWindowsHome -and $IsVM) {
+        Write-Output "Windows Home + VM detected: Installing Docker inside WSL (more reliable)"
+        return Install-DockerInWSL
+    } elseif (-not $UseDockerDesktop) {
+        Write-Output "Installing Docker inside WSL..."
+        return Install-DockerInWSL
+    } else {
+        Write-Output "Installing Docker Desktop..."
+        return Install-DockerDesktop
+    }
+}
+
+function Install-DockerDesktop {
     # Try winget first (Windows 10 1709+ / Windows 11)
     try {
         winget install Docker.DockerDesktop --silent --accept-package-agreements --accept-source-agreements
@@ -184,6 +212,67 @@ function Install-DockerDesktop {
     }
     catch {
         Write-Output "[ERROR] Failed to install Docker Desktop: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Install-DockerInWSL {
+    Write-Output "Installing Docker inside WSL Ubuntu..."
+    
+    # Check if Ubuntu is available
+    $distros = wsl -l -q 2>$null
+    if (-not $distros -or $distros -notcontains "Ubuntu") {
+        Write-Output "[ERROR] Ubuntu WSL distribution not found. Please install Ubuntu first."
+        return $false
+    }
+    
+    # Install Docker in WSL
+    $dockerInstallScript = @"
+# Update package list
+sudo apt-get update
+
+# Install Docker dependencies
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker GPG key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo "deb [arch=`$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu `$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Add user to docker group
+sudo usermod -aG docker `$USER
+
+# Start Docker service
+sudo service docker start
+
+# Enable Docker to start on boot
+echo 'sudo service docker start' >> ~/.bashrc
+
+echo "[SUCCESS] Docker installed in WSL"
+"@
+    
+    try {
+        # Write script to temp file and execute
+        $scriptPath = "/tmp/install-docker.sh"
+        $dockerInstallScript | wsl -d Ubuntu -e bash -c "cat > $scriptPath && chmod +x $scriptPath && bash $scriptPath"
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Output "[SUCCESS] Docker installed inside WSL Ubuntu"
+            Write-Output "[INFO] Docker will start automatically when you open WSL"
+            return $true
+        } else {
+            Write-Output "[ERROR] Failed to install Docker in WSL"
+            return $false
+        }
+    }
+    catch {
+        Write-Output "[ERROR] Error installing Docker in WSL: $($_.Exception.Message)"
         return $false
     }
 }
@@ -274,9 +363,23 @@ function Test-Installation {
     
     # Test Docker
     if (Test-DockerInstalled) {
-        Write-Output "[SUCCESS] Docker is working"
+        # Check if it's Docker Desktop or Docker in WSL
+        try {
+            $dockerVersion = docker --version 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Output "[SUCCESS] Docker Desktop is working"
+            } else {
+                $wslDockerVersion = wsl -e docker --version 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Output "[SUCCESS] Docker in WSL is working"
+                }
+            }
+        }
+        catch {
+            Write-Output "[SUCCESS] Docker is installed (version check failed)"
+        }
     } else {
-        Write-Output "[WARNING] Docker is not working (may need to start Docker Desktop)"
+        Write-Output "[WARNING] Docker is not working"
     }
     
     # Test Podium CLI
@@ -446,12 +549,18 @@ if (Test-WSLInstalled) {
     }
 }
 
-# Check and install Docker Desktop
+# Check and install Docker
 if (Test-DockerInstalled) {
-    Write-Output "[SUCCESS] Docker Desktop is already installed"
+    Write-Output "[SUCCESS] Docker is already installed"
 } else {
-    if (-not (Install-DockerDesktop)) {
-        Write-Output "Failed to install Docker Desktop. Exiting."
+    # Determine Docker installation strategy based on environment
+    $useDockerDesktop = $true
+    if ($windowsInfo.IsHome -and $isVM) {
+        $useDockerDesktop = $false  # Use Docker-in-WSL for Windows Home + VM
+    }
+    
+    if (-not (Install-Docker -UseDockerDesktop $useDockerDesktop -IsVM $isVM -IsWindowsHome $windowsInfo.IsHome)) {
+        Write-Output "Failed to install Docker. Exiting."
         exit 1
     }
 }
