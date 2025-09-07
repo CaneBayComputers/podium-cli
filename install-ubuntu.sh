@@ -5,6 +5,24 @@
 
 set -e
 
+# Parse command line arguments
+for arg in "$@"; do
+    case $arg in
+        --help)
+            echo "Podium CLI Ubuntu Installer"
+            echo ""
+            echo "Usage: $0 [options]"
+            echo ""
+            echo "Options:"
+            echo "  --help           Show this help message"
+            echo ""
+            echo "This installer automatically detects if Docker is already available"
+            echo "(e.g., from Docker Desktop) and skips Docker installation if found."
+            exit 0
+            ;;
+    esac
+done
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -73,7 +91,16 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-htt
 ###############################
 # Install Docker
 ###############################
-if ! command -v docker &> /dev/null; then
+# Check if Docker is already available (e.g., from Docker Desktop)
+if command -v docker &> /dev/null && docker --version &> /dev/null; then
+    DOCKER_VERSION=$(docker --version 2>/dev/null | head -n1)
+    echo -e "${GREEN}✓ Docker already available: $DOCKER_VERSION${NC}"
+    
+    # Check if it's Docker Desktop (common on Windows/Mac)
+    if docker context ls 2>/dev/null | grep -q "desktop-linux\|default.*docker-desktop"; then
+        echo -e "${CYAN}  Detected Docker Desktop integration${NC}"
+    fi
+elif ! command -v docker &> /dev/null; then
     echo -e "${BLUE}Installing Docker...${NC}"
     
     # Remove any old Docker packages
@@ -99,7 +126,8 @@ if ! command -v docker &> /dev/null; then
     
     echo -e "${GREEN}✓ Docker installed${NC}"
 else
-    echo -e "${GREEN}✓ Docker already installed${NC}"
+    echo -e "${GREEN}✓ Docker command available but version check failed${NC}"
+    echo -e "${YELLOW}  Continuing with installation (Docker may still work)${NC}"
 fi
 
 ###############################

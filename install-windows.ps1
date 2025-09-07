@@ -557,6 +557,18 @@ if (Test-WSLInstalled) {
 if (Test-DockerInstalled) {
     Write-Output "[SUCCESS] Docker is already installed"
 } else {
+    # Enable Hyper-V features for Docker Desktop (especially important for VMs)
+    Write-Output "Enabling Windows virtualization features..."
+    try {
+        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+        Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform -All -NoRestart -WarningAction SilentlyContinue | Out-Null
+        Write-Output "[SUCCESS] Virtualization features enabled"
+    }
+    catch {
+        Write-Output "[WARNING] Could not enable all virtualization features: $($_.Exception.Message)"
+    }
+
     # Try Docker Desktop first for all environments
     Write-Output "Installing Docker Desktop for Windows..."
     if (Install-DockerDesktop) {
