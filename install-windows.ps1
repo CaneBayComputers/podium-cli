@@ -1,5 +1,9 @@
 # Podium Windows Installation Script
-# This script sets up WSL2, Docker Desktop, and Podium CLI on Windows
+# This script sets up WSL, Docker Desktop (or Docker-in-WSL for VMs), and Podium CLI on Windows
+# 
+# Strategy:
+# - Bare metal Windows: Docker Desktop + WSL (standard Windows experience)
+# - Windows VMs: Docker-in-WSL (compatibility for nested virtualization issues)
 
 param(
     [switch]$SkipReboot
@@ -549,14 +553,20 @@ if (Test-WSLInstalled) {
     exit 1
 }
 
-# Check and install Docker (except for Windows Home + VM, handled after reboot)
+# Install Docker based on environment
 if (Test-DockerInstalled) {
     Write-Output "[SUCCESS] Docker is already installed"
-} elseif (-not ($windowsInfo.IsHome -and $isVM)) {
-    # Install Docker Desktop for non-VM or non-Home environments
-    if (-not (Install-DockerDesktop)) {
-        Write-Output "Failed to install Docker Desktop. Exiting."
-        exit 1
+} else {
+    if ($windowsInfo.IsHome -and $isVM) {
+        # Windows Home + VM: Skip Docker Desktop, install in WSL later
+        Write-Output "[INFO] Docker will be installed inside WSL for VM compatibility"
+    } else {
+        # Bare metal Windows (any edition): Install Docker Desktop
+        Write-Output "Installing Docker Desktop for Windows..."
+        if (-not (Install-DockerDesktop)) {
+            Write-Output "[ERROR] Docker Desktop installation failed. Exiting."
+            exit 1
+        }
     }
 }
 
@@ -601,12 +611,14 @@ if ($windowsInfo.IsHome -and $isVM) {
     Write-Output "  2. Run: podium configure                                 "
     Write-Output "  3. Run: podium new myproject                             "
     Write-Output "                                                              "
-    Write-Output "  Note: Docker is installed inside WSL (no Docker Desktop needed)"
+    Write-Output "  VM Setup: Docker installed inside WSL for compatibility  "
 } else {
-    Write-Output "  1. Start Docker Desktop                                   "
+    Write-Output "  1. Start Docker Desktop (installed for you)             "
     Write-Output "  2. Open WSL: wsl                                         "
     Write-Output "  3. Run: podium configure                                 "
     Write-Output "  4. Run: podium new myproject                             "
+    Write-Output "                                                              "
+    Write-Output "  Standard Setup: Docker Desktop + WSL integration        "
 }
 
 Write-Output "                                                              "
