@@ -84,43 +84,33 @@ wsl --install -d Ubuntu
 > dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 > dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 > 
-> # 2. Set WSL1 and install Ubuntu:
+> # 2. REBOOT REQUIRED - restart your computer
+> Restart-Computer
+> 
+> # 3. After reboot, run as Administrator:
 > wsl --set-default-version 1
 > wsl --install -d Ubuntu
-> 
-> # 3. Reboot when prompted (or run: Restart-Computer)
 > ```
 
-**3. After reboot, complete Ubuntu setup:**
-- Ubuntu will open automatically
-- Create a username and password
-- Close Ubuntu when setup is complete
-
-
-
-**4. Run the Windows installer (installs Docker):**
+**3. Run the Windows installer (installs Docker):**
 ```powershell
 # Download and run the Windows installer (PowerShell as Administrator)
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
 PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
 
-**5. Install Podium CLI in Ubuntu:**
+**4. Install Podium CLI in Ubuntu:**
 ```bash
+# Open WSL in PowerShell terminal (if not already)
+wsl
+
 # Open Ubuntu terminal and run:
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
-**What the installer does:**
-- Detects your Windows environment automatically
-- Installs Docker Desktop (or Docker-in-WSL for VMs)
-- Installs Podium CLI inside WSL
-- Configures everything for optimal performance
-- Tests the complete installation
-
-**Quick Start:**
+**5. Quick Start:**
 ```powershell
-# Open WSL terminal (if not already)
+# Open WSL in PowerShell terminal (if not already)
 wsl
 
 # Configure Podium
