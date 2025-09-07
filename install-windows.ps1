@@ -15,6 +15,59 @@ function Test-AdminRights {
     return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Test-VirtualizationSupport {
+    try {
+        # Check if Hyper-V is available (indicates virtualization support)
+        $hyperv = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -ErrorAction SilentlyContinue
+        if ($hyperv -and $hyperv.State -eq "Enabled") {
+            return $true
+        }
+        
+        # Check if virtualization is enabled in BIOS/UEFI
+        $cpu = Get-WmiObject -Class Win32_Processor | Select-Object -First 1
+        if ($cpu.VirtualizationFirmwareEnabled -eq $true) {
+            return $true
+        }
+        
+        # Alternative check using systeminfo
+        $systemInfo = systeminfo /fo csv | ConvertFrom-Csv
+        $hyperVRequirements = $systemInfo."Hyper-V Requirements"
+        if ($hyperVRequirements -match "Yes") {
+            return $true
+        }
+        
+        return $false
+    }
+    catch {
+        # If we can't determine, assume false for safety
+        return $false
+    }
+}
+
+function Test-VMEnvironment {
+    try {
+        # Check common VM indicators
+        $manufacturer = (Get-WmiObject -Class Win32_ComputerSystem).Manufacturer
+        $model = (Get-WmiObject -Class Win32_ComputerSystem).Model
+        
+        $vmIndicators = @(
+            "VMware", "VirtualBox", "Microsoft Corporation", 
+            "QEMU", "Xen", "Parallels", "Virtual Machine"
+        )
+        
+        foreach ($indicator in $vmIndicators) {
+            if ($manufacturer -match $indicator -or $model -match $indicator) {
+                return $true
+            }
+        }
+        
+        return $false
+    }
+    catch {
+        return $false
+    }
+}
+
 function Test-WSLInstalled {
     try {
         $wslVersion = wsl --version 2>$null
@@ -106,37 +159,56 @@ function Install-PodiumCLI {
     try {
         wsl -d Ubuntu -e bash -c $installCommand
         if ($LASTEXITCODE -eq 0) {
-            Write-Output "[SUCCESS] Podium CLI installed successfully"            return $true
+            Write-Output "[SUCCESS] Podium CLI installed successfully"
+            return $true
         } else {
-            Write-Output "[ERROR] Failed to install Podium CLI"            return $false
+            Write-Output "[ERROR] Failed to install Podium CLI"
+            return $false
         }
     }
     catch {
-        Write-Output "[ERROR] Error installing Podium CLI: $($_.Exception.Message)"        return $false
+        Write-Output "[ERROR] Error installing Podium CLI: $($_.Exception.Message)"
+        return $false
     }
 }
 
 function Test-Installation {
-    Write-Output "`nTesting installation..."    
+    Write-Output "`nTesting installation..."
+    
     # Test WSL2
     if (Test-WSLInstalled) {
-        Write-Output "[SUCCESS] WSL2 is working"    } else {
-        Write-Output "[ERROR] WSL2 is not working"    }
+        Write-Output "[SUCCESS] WSL2 is working"
+    } else {
+        Write-Output "[ERROR] WSL2 is not working"
+    }
     
     # Test Docker
     if (Test-DockerInstalled) {
-        Write-Output "[SUCCESS] Docker is working"    } else {
-        Write-Output "[WARNING] Docker is not working (may need to start Docker Desktop)"    }
+        Write-Output "[SUCCESS] Docker is working"
+    } else {
+        Write-Output "[WARNING] Docker is not working (may need to start Docker Desktop)"
+    }
     
     # Test Podium CLI
     try {
-        $podiumVersion = wsl -e podium --version 2>$null
+        Write-Output "Testing Podium CLI in WSL2..."
+        $podiumTest = wsl -d Ubuntu -e bash -c "which podium" 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-Output "[SUCCESS] Podium CLI is working: $podiumVersion"        } else {
-            Write-Output "[ERROR] Podium CLI is not working"        }
+            $podiumVersion = wsl -d Ubuntu -e bash -c "podium --version" 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Output "[SUCCESS] Podium CLI is working: $podiumVersion"
+            } else {
+                Write-Output "[WARNING] Podium CLI found but version check failed"
+            }
+        } else {
+            Write-Output "[ERROR] Podium CLI is not installed"
+            Write-Output "You can install it manually with:"
+            Write-Output "  wsl -d Ubuntu -e bash -c `"curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash`""
+        }
     }
     catch {
-        Write-Output "[ERROR] Cannot test Podium CLI"    }
+        Write-Output "[ERROR] Cannot test Podium CLI - WSL2 may not be ready"
+    }
 }
 
 # Check execution policy first
@@ -172,6 +244,56 @@ Write-Output @"
   Execution Policy: $executionPolicy                                
 ================================================================
 "@
+# Check virtualization support first
+$isVM = Test-VMEnvironment
+$hasVirtualization = Test-VirtualizationSupport
+
+if ($isVM -and -not $hasVirtualization) {
+    Write-Output @"
+================================================================
+                    VIRTUALIZATION NOT SUPPORTED                    
+                                                              
+  You are running in a Virtual Machine without nested virtualization.
+  WSL2 and Docker Desktop require hardware virtualization support.
+                                                              
+  Solutions:                                                    
+  1. Enable nested virtualization in your VM settings:
+     - VMware: Enable "Virtualize Intel VT-x/EPT or AMD-V/RVI"
+     - VirtualBox: Enable "Nested VT-x/AMD-V" in processor settings
+     - Hyper-V: Enable nested virtualization via PowerShell
+                                                              
+  2. Run this installer on a physical Windows machine instead
+                                                              
+  3. Use alternative development setup without Docker/WSL2
+                                                              
+================================================================
+"@
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+if ($isVM) {
+    Write-Output @"
+================================================================
+                    VIRTUAL MACHINE DETECTED                    
+                                                              
+  Running in VM: This installation may require nested virtualization
+  to be enabled in your hypervisor settings.
+                                                              
+  If installation fails, enable nested virtualization:
+  - VMware: VM Settings > Processors > Virtualization Engine
+  - VirtualBox: Settings > System > Processor > Enable Nested VT-x
+  - Hyper-V: Set-VMProcessor -VMName <name> -ExposeVirtualizationExtensions $true
+                                                              
+================================================================
+"@
+    $response = Read-Host "Continue anyway? (y/N)"
+    if ($response -ne 'y' -and $response -ne 'Y') {
+        Write-Output "Installation cancelled."
+        exit 0
+    }
+}
+
 # Check for admin rights
 if (-not (Test-AdminRights)) {
     Write-Output @"
