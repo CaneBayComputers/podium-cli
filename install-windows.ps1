@@ -53,10 +53,10 @@ function Install-WSL2 {
     wsl --install --no-launch
     
     if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput "✓ WSL2 installation initiated successfully" $GREEN
+        Write-ColorOutput "[SUCCESS] WSL2 installation initiated successfully" $GREEN
         return $true
     } else {
-        Write-ColorOutput "✗ Failed to install WSL2" $RED
+        Write-ColorOutput "[ERROR] Failed to install WSL2" $RED
         return $false
     }
 }
@@ -68,7 +68,7 @@ function Install-DockerDesktop {
     try {
         winget install Docker.DockerDesktop --silent --accept-package-agreements --accept-source-agreements
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "✓ Docker Desktop installed via winget" $GREEN
+            Write-ColorOutput "[SUCCESS] Docker Desktop installed via winget" $GREEN
             return $true
         }
     }
@@ -88,11 +88,11 @@ function Install-DockerDesktop {
         Start-Process -FilePath $dockerInstaller -ArgumentList "install", "--quiet" -Wait
         
         Remove-Item $dockerInstaller -Force
-        Write-ColorOutput "✓ Docker Desktop installed" $GREEN
+        Write-ColorOutput "[SUCCESS] Docker Desktop installed" $GREEN
         return $true
     }
     catch {
-        Write-ColorOutput "✗ Failed to install Docker Desktop: $($_.Exception.Message)" $RED
+        Write-ColorOutput "[ERROR] Failed to install Docker Desktop: $($_.Exception.Message)" $RED
         return $false
     }
 }
@@ -108,22 +108,20 @@ function Install-PodiumCLI {
     }
     
     # Install Podium CLI
-    $installCommand = @"
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/main/install-ubuntu.sh | bash
-"@
+    $installCommand = "curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash"
     
     try {
         wsl -d Ubuntu -e bash -c $installCommand
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "✓ Podium CLI installed successfully" $GREEN
+            Write-ColorOutput "[SUCCESS] Podium CLI installed successfully" $GREEN
             return $true
         } else {
-            Write-ColorOutput "✗ Failed to install Podium CLI" $RED
+            Write-ColorOutput "[ERROR] Failed to install Podium CLI" $RED
             return $false
         }
     }
     catch {
-        Write-ColorOutput "✗ Error installing Podium CLI: $($_.Exception.Message)" $RED
+        Write-ColorOutput "[ERROR] Error installing Podium CLI: $($_.Exception.Message)" $RED
         return $false
     }
 }
@@ -133,29 +131,29 @@ function Test-Installation {
     
     # Test WSL2
     if (Test-WSLInstalled) {
-        Write-ColorOutput "✓ WSL2 is working" $GREEN
+        Write-ColorOutput "[SUCCESS] WSL2 is working" $GREEN
     } else {
-        Write-ColorOutput "✗ WSL2 is not working" $RED
+        Write-ColorOutput "[ERROR] WSL2 is not working" $RED
     }
     
     # Test Docker
     if (Test-DockerInstalled) {
-        Write-ColorOutput "✓ Docker is working" $GREEN
+        Write-ColorOutput "[SUCCESS] Docker is working" $GREEN
     } else {
-        Write-ColorOutput "✗ Docker is not working (may need to start Docker Desktop)" $YELLOW
+        Write-ColorOutput "[WARNING] Docker is not working (may need to start Docker Desktop)" $YELLOW
     }
     
     # Test Podium CLI
     try {
         $podiumVersion = wsl -e podium --version 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "✓ Podium CLI is working: $podiumVersion" $GREEN
+            Write-ColorOutput "[SUCCESS] Podium CLI is working: $podiumVersion" $GREEN
         } else {
-            Write-ColorOutput "✗ Podium CLI is not working" $RED
+            Write-ColorOutput "[ERROR] Podium CLI is not working" $RED
         }
     }
     catch {
-        Write-ColorOutput "✗ Cannot test Podium CLI" $RED
+        Write-ColorOutput "[ERROR] Cannot test Podium CLI" $RED
     }
 }
 
@@ -220,7 +218,7 @@ $needsReboot = $false
 
 # Check and install WSL2
 if (Test-WSLInstalled) {
-    Write-ColorOutput "✓ WSL2 is already installed" $GREEN
+    Write-ColorOutput "[SUCCESS] WSL2 is already installed" $GREEN
 } else {
     if (Install-WSL2) {
         $needsReboot = $true
@@ -232,7 +230,7 @@ if (Test-WSLInstalled) {
 
 # Check and install Docker Desktop
 if (Test-DockerInstalled) {
-    Write-ColorOutput "✓ Docker Desktop is already installed" $GREEN
+    Write-ColorOutput "[SUCCESS] Docker Desktop is already installed" $GREEN
 } else {
     if (-not (Install-DockerDesktop)) {
         Write-ColorOutput "Failed to install Docker Desktop. Exiting." $RED
