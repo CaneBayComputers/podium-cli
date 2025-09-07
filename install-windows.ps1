@@ -93,8 +93,19 @@ function Test-VMEnvironment {
 
 function Test-WSLInstalled {
     try {
+        # First check if wsl command exists and works
         $wslVersion = wsl --version 2>$null
-        return $LASTEXITCODE -eq 0
+        if ($LASTEXITCODE -eq 0) {
+            return $true
+        }
+        
+        # Alternative check - see if WSL feature is enabled
+        $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -ErrorAction SilentlyContinue
+        if ($wslFeature -and $wslFeature.State -eq "Enabled") {
+            return $true
+        }
+        
+        return $false
     }
     catch {
         return $false
@@ -147,15 +158,32 @@ function Install-WSL {
         Write-Output "Installing WSL1..."
         
         # Enable only WSL feature (no Virtual Machine Platform needed)
-        dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+        Write-Output "Enabling Windows Subsystem for Linux feature..."
+        $dismResult = dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
         
-        if ($LASTEXITCODE -eq 0) {
+        # dism.exe returns 0 for success, 3010 for success but reboot required
+        if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) {
             Write-Output "[SUCCESS] WSL1 feature enabled successfully"
             Write-Output "[INFO] A reboot is required to complete WSL1 installation"
+            Write-Output "[INFO] After reboot, run this installer again to complete setup"
             return $true
         } else {
-            Write-Output "[ERROR] Failed to enable WSL1 feature"
-            return $false
+            Write-Output "[ERROR] Failed to enable WSL1 feature (Exit code: $LASTEXITCODE)"
+            Write-Output "DISM output: $dismResult"
+            
+            # Try alternative method using PowerShell
+            Write-Output "Trying alternative installation method..."
+            try {
+                Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -All
+                Write-Output "[SUCCESS] WSL1 feature enabled via PowerShell"
+                Write-Output "[INFO] A reboot is required to complete WSL1 installation"
+                Write-Output "[INFO] After reboot, run this installer again to complete setup"
+                return $true
+            }
+            catch {
+                Write-Output "[ERROR] Alternative installation method also failed: $($_.Exception.Message)"
+                return $false
+            }
         }
     }
 }
