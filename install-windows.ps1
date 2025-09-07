@@ -161,54 +161,54 @@ function Test-Installation {
 $executionPolicy = Get-ExecutionPolicy
 if ($executionPolicy -eq 'Restricted') {
     Write-ColorOutput @"
-╔══════════════════════════════════════════════════════════════╗
-║                    EXECUTION POLICY ERROR                    ║
-║                                                              ║
-║  Your PowerShell execution policy is set to 'Restricted'    ║
-║  which prevents this script from running.                   ║
-║                                                              ║
-║  Please run this command instead:                           ║
-║  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 ║
-║                                                              ║
-║  Or temporarily change your execution policy:               ║
-║  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
+================================================================
+                    EXECUTION POLICY ERROR                    
+                                                              
+  Your PowerShell execution policy is set to 'Restricted'    
+  which prevents this script from running.                   
+                                                              
+  Please run this command instead:                           
+  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 
+                                                              
+  Or temporarily change your execution policy:               
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser 
+                                                              
+================================================================
 "@ $RED
     exit 1
 }
 
 # Main installation process
 Write-ColorOutput @"
-╔══════════════════════════════════════════════════════════════╗
-║                    Podium Windows Installer                  ║
-║                                                              ║
-║  This script will install:                                  ║
-║  • WSL2 (Windows Subsystem for Linux)                      ║
-║  • Docker Desktop                                          ║
-║  • Podium CLI                                              ║
-║                                                              ║
-║  Execution Policy: $executionPolicy                                ║
-╚══════════════════════════════════════════════════════════════╝
+================================================================
+                    Podium Windows Installer                  
+                                                              
+  This script will install:                                  
+  - WSL2 (Windows Subsystem for Linux)                      
+  - Docker Desktop                                          
+  - Podium CLI                                              
+                                                              
+  Execution Policy: $executionPolicy                                
+================================================================
 "@ $BLUE
 
 # Check for admin rights
 if (-not (Test-AdminRights)) {
     Write-ColorOutput @"
-╔══════════════════════════════════════════════════════════════╗
-║                    ADMINISTRATOR REQUIRED                    ║
-║                                                              ║
-║  This script requires Administrator privileges to:          ║
-║  • Install WSL2 Windows features                           ║
-║  • Install Docker Desktop                                  ║
-║  • Modify system settings                                  ║
-║                                                              ║
-║  Please:                                                    ║
-║  1. Right-click PowerShell and select "Run as Administrator" ║
-║  2. Run this command:                                       ║
-║     PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
+================================================================
+                    ADMINISTRATOR REQUIRED                    
+                                                              
+  This script requires Administrator privileges to:          
+  - Install WSL2 Windows features                           
+  - Install Docker Desktop                                  
+  - Modify system settings                                  
+                                                              
+  Please:                                                    
+  1. Right-click PowerShell and select "Run as Administrator" 
+  2. Run this command:                                       
+     PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 
+                                                              
+================================================================
 "@ $RED
     Read-Host "Press Enter to exit"
     exit 1
@@ -241,15 +241,15 @@ if (Test-DockerInstalled) {
 # Handle reboot requirement
 if ($needsReboot -and -not $SkipReboot) {
     Write-ColorOutput "`n" $WHITE
-    Write-ColorOutput "╔══════════════════════════════════════════════════════════════╗" $YELLOW
-    Write-ColorOutput "║                    REBOOT REQUIRED                          ║" $YELLOW
-    Write-ColorOutput "║                                                              ║" $YELLOW
-    Write-ColorOutput "║  WSL2 installation requires a system reboot.               ║" $YELLOW
-    Write-ColorOutput "║                                                              ║" $YELLOW
-    Write-ColorOutput "║  After reboot, run this script again to complete setup:    ║" $YELLOW
-    Write-ColorOutput "║  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 ║" $YELLOW
-    Write-ColorOutput "║                                                              ║" $YELLOW
-    Write-ColorOutput "╚══════════════════════════════════════════════════════════════╝" $YELLOW
+    Write-ColorOutput "================================================================" $YELLOW
+    Write-ColorOutput "                    REBOOT REQUIRED                          " $YELLOW
+    Write-ColorOutput "                                                              " $YELLOW
+    Write-ColorOutput "  WSL2 installation requires a system reboot.               " $YELLOW
+    Write-ColorOutput "                                                              " $YELLOW
+    Write-ColorOutput "  After reboot, run this script again to complete setup:    " $YELLOW
+    Write-ColorOutput "  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 " $YELLOW
+    Write-ColorOutput "                                                              " $YELLOW
+    Write-ColorOutput "================================================================" $YELLOW
     
     $response = Read-Host "`nReboot now? (y/N)"
     if ($response -eq 'y' -or $response -eq 'Y') {
@@ -272,15 +272,15 @@ if (-not $needsReboot) {
     Test-Installation
     
     Write-ColorOutput "`n" $WHITE
-    Write-ColorOutput "╔══════════════════════════════════════════════════════════════╗" $GREEN
-    Write-ColorOutput "║                    INSTALLATION COMPLETE                     ║" $GREEN
-    Write-ColorOutput "║                                                              ║" $GREEN
-    Write-ColorOutput "║  Next steps:                                                ║" $GREEN
-    Write-ColorOutput "║  1. Start Docker Desktop                                   ║" $GREEN
-    Write-ColorOutput "║  2. Open WSL2: wsl                                         ║" $GREEN
-    Write-ColorOutput "║  3. Run: podium new myproject                              ║" $GREEN
-    Write-ColorOutput "║                                                              ║" $GREEN
-    Write-ColorOutput "║  Need help? Visit: https://podiumdev.io                    ║" $GREEN
-    Write-ColorOutput "║  Email: canebaycomputers@gmail.com                         ║" $GREEN
-    Write-ColorOutput "╚══════════════════════════════════════════════════════════════╝" $GREEN
+    Write-ColorOutput "================================================================" $GREEN
+    Write-ColorOutput "                    INSTALLATION COMPLETE                     " $GREEN
+    Write-ColorOutput "                                                              " $GREEN
+    Write-ColorOutput "  Next steps:                                                " $GREEN
+    Write-ColorOutput "  1. Start Docker Desktop                                   " $GREEN
+    Write-ColorOutput "  2. Open WSL2: wsl                                         " $GREEN
+    Write-ColorOutput "  3. Run: podium new myproject                              " $GREEN
+    Write-ColorOutput "                                                              " $GREEN
+    Write-ColorOutput "  Need help? Visit: https://podiumdev.io                    " $GREEN
+    Write-ColorOutput "  Email: canebaycomputers@gmail.com                         " $GREEN
+    Write-ColorOutput "================================================================" $GREEN
 }
