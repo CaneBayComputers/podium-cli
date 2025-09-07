@@ -160,6 +160,8 @@ function Install-Docker {
 function Install-DockerDesktop {
     # Try winget first (Windows 10 1709+ / Windows 11)
     try {
+        Write-Output "Downloading Docker Desktop via winget (this may take 3-5 minutes)..."
+        Write-Output "Please be patient - Docker Desktop is a large download (~500MB)"
         winget install Docker.DockerDesktop --silent --accept-package-agreements --accept-source-agreements
         if ($LASTEXITCODE -eq 0) {
             Write-Output "[SUCCESS] Docker Desktop installed via winget"
@@ -175,10 +177,12 @@ function Install-DockerDesktop {
     $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
     
     try {
-        Write-Output "Downloading Docker Desktop..."
+        Write-Output "Downloading Docker Desktop directly (this may take 5-10 minutes)..."
+        Write-Output "Please be patient - downloading ~500MB installer..."
         Invoke-WebRequest -Uri $dockerUrl -OutFile $dockerInstaller
         
-        Write-Output "Running Docker Desktop installer..."
+        Write-Output "Running Docker Desktop installer (this may take another 5 minutes)..."
+        Write-Output "Please wait - installer is configuring Docker Desktop..."
         Start-Process -FilePath $dockerInstaller -ArgumentList "install", "--quiet" -Wait
         
         Remove-Item $dockerInstaller -Force
@@ -324,22 +328,23 @@ function Install-PodiumCLI {
             return $false
         }
         
-        # Install Podium CLI
-        wsl -d Ubuntu -e bash -c $installCommand
+        # Install Podium CLI (change to home directory first to avoid path issues)
+        Write-Output "Downloading and installing Podium CLI (this may take 2-3 minutes)..."
+        wsl -d Ubuntu -e bash -c "cd ~ && $installCommand"
         if ($LASTEXITCODE -eq 0) {
             Write-Output "[SUCCESS] Podium CLI installed successfully"
             return $true
         } else {
             Write-Output "[ERROR] Failed to install Podium CLI"
             Write-Output "Manual installation command:"
-            Write-Output "  wsl -d Ubuntu -e bash -c `"$installCommand`""
+            Write-Output "  wsl -d Ubuntu -e bash -c `"cd ~ && $installCommand`""
             return $false
         }
     }
     catch {
         Write-Output "[ERROR] Error installing Podium CLI: $($_.Exception.Message)"
         Write-Output "Manual installation command:"
-        Write-Output "  wsl -d Ubuntu -e bash -c `"$installCommand`""
+        Write-Output "  wsl -d Ubuntu -e bash -c `"cd ~ && $installCommand`""
         return $false
     }
 }
@@ -389,7 +394,7 @@ function Test-Installation {
         } else {
             Write-Output "[ERROR] Podium CLI is not installed"
             Write-Output "You can install it manually with:"
-            Write-Output "  wsl -d Ubuntu -e bash -c `"curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash`""
+            Write-Output "  wsl -d Ubuntu -e bash -c `"cd ~ && curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash`""
         }
     }
     catch {
