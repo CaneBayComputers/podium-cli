@@ -286,7 +286,16 @@ project_status() {
     echo-green " MAPPED"
   fi
 
-  echo-white -n LOCAL ACCESS:; echo-yellow " http://$PROJ_NAME"
+  # Platform-specific URL display
+  echo-white -n LOCAL ACCESS:
+  if [[ -n "$WSL_DISTRO_NAME" ]] || [[ "$OS" == "Windows_NT" ]] || [[ -f /proc/version ]] && grep -qi microsoft /proc/version; then
+    # Windows/WSL: Show IP address
+    PROJ_IP=$(echo $HOST_ENTRY | cut -d' ' -f 1)
+    echo-yellow " http://$PROJ_IP"
+  else
+    # Linux/Mac: Show project name
+    echo-yellow " http://$PROJ_NAME"
+  fi
   echo-white -n LAN ACCESS:; echo-yellow " http://$LAN_IP:$EXT_PORT"
 }
 

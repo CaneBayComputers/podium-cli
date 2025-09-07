@@ -90,6 +90,9 @@ wsl --install -d Ubuntu
 > # 3. After reboot, run as Administrator:
 > wsl --set-default-version 1
 > wsl --install -d Ubuntu
+>
+> # 4. REBOOT REQUIRED - restart your computer
+> Restart-Computer
 > ```
 
 **3. Run the Windows installer (installs Docker):**
