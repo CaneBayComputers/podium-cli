@@ -4,18 +4,6 @@ Podium CLI is a powerful command-line interface for managing Docker-based PHP de
 
 Built for modern PHP development, Podium CLI eliminates the complexity of managing multiple local environments by containerizing everything while maintaining the simplicity developers love. Whether you're building a single Laravel API or managing dozens of WordPress sites, Podium handles the infrastructure so you can focus on writing code. Each project gets its own isolated environment with automatic database setup, intelligent port management, and instant LAN sharing for client demos.
 
-## 📊 Why Choose Podium?
-
-| Feature | Podium | Traditional Setup | Benefits |
-|---------|--------|------------------|----------|
-| **Multi-Project Support** | ✅ Unlimited isolated projects | ❌ Complex VHOST management | Run dozens of projects simultaneously |
-| **Database Management** | ✅ Auto-created per project | ❌ Manual database setup | Zero configuration databases |
-| **LAN Sharing** | ✅ Instant team access | ❌ Complex network setup | Share demos instantly |
-| **Service Integration** | ✅ Redis, Memcached, MailHog, etc. | ❌ Manual installation | All services ready to use |
-| **GUI Interface** | ✅ Modern desktop app | ❌ Terminal only | Visual project management |
-| **Email Testing** | ✅ Built-in MailHog | ❌ External tools needed | Catch and debug emails |
-| **AI Integration** | ✅ Local Ollama service | ❌ No AI tools | Local LLM for development |
-| **Port Management** | ✅ Automatic assignment | ❌ Manual port conflicts | No configuration needed |
 
 ## 💾 Installation
 
@@ -75,6 +63,10 @@ podium new my-project
 
 Podium CLI runs on Windows through **WSL2** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
 
+**First, download and install PowerShell 7.5+ (if needed):**
+- Download PowerShell MSI: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.5#msi
+
+**Then install Podium:**
 ```powershell
 # Download and run the Windows installer (PowerShell as Administrator)
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
@@ -108,72 +100,32 @@ podium new my-project
 
 ```
 
-## 🎨 Podium GUI
-
-Looking for a visual interface? **Podium GUI** provides a modern desktop application with:
-
-- 🎯 **Visual Project Management** - Create and manage projects with clicks
-- 📊 **Real-time Monitoring** - Live status updates and service management
-- 🎨 **Modern Interface** - Beautiful retro synthwave design
-- ⚡ **One-Click Operations** - Start/stop services instantly
-
-**Get Podium GUI**: Contact Cane Bay Computers for download and licensing information.
 
 ## 🪄 The Magic Commands - Daily Workflow
 
 Podium is designed around two magic commands that handle your entire development environment:
 
-### ⚡ Morning Startup: `podium up`
+### ⚡ `podium up`
 ```bash
 podium up
 ```
-**This single command does everything:**
+**Starts everything:**
 - Starts all shared services (MariaDB, Redis, PostgreSQL, MongoDB, etc.)
 - Starts ALL your project containers automatically
 - Configures networking so all projects are accessible
 - Shows status of everything that's running
 - Makes all your projects available at `http://project-name`
 
-**Perfect morning routine**: Open terminal, type `podium up`, grab coffee while everything starts! ☕
-
-### 🌅 Evening Shutdown: `podium down`
+### 🛑 `podium down`
 ```bash
 podium down
 ```
-**This single command cleans up everything:**
+**Stops everything:**
 - Stops ALL running project containers
 - Stops all shared services (databases, caches, etc.)
 - Cleans up networking configurations
 - Frees up system resources
 - Preserves all your data and configurations
-
-**Perfect evening routine**: Finish work, type `podium down`, everything shuts down cleanly! 🌙
-
-### 🤔 Do I Need to Shut Down?
-
-**Short answer: No, but it's nice to!**
-
-- **Shutdown computer without `podium down`**: Docker automatically stops containers and will restart them when you boot up
-- **Use `podium down` anyway because**:
-  - Frees up RAM and CPU resources immediately
-  - Clean shutdown prevents any potential data corruption
-  - Good habit for development discipline
-  - Useful when switching between different project sets
-
-### 💡 Daily Workflow Examples
-
-```bash
-# Monday morning - start everything for the week
-podium up
-
-# Tuesday through Thursday - everything keeps running
-# (no commands needed, just work on your projects)
-
-# Friday evening - clean shutdown for the weekend  
-podium down
-
-# Or just shut down your computer - Docker handles it! 💻
-```
 
 ## 📋 Commands Overview
 
@@ -243,12 +195,36 @@ podium down
 | `podium projects-dir` | Show projects directory path |
 | `podium gui` | Launch desktop GUI interface |
 
-### 🧪 Testing
+### 🧪 Testing & Utilities
 
 | Command | Description |
 |---------|-------------|
-| `podium test-interactive` | Run interactive test suite |
-| `podium test-json-output` | Run JSON output test suite |
+| `podium test-json-output [test_name]` | Run comprehensive JSON output test suite (optionally run specific test) |
+| `podium cleanup-test-environment` | Clean up test resources (containers, networks, files) |
+
+**Test Suite Features:**
+- Tests all JSON commands for proper output format
+- Validates project creation, setup, cloning, removal
+- Tests different frameworks (Laravel, WordPress, PHP)
+- Tests different PHP versions and database engines
+- Isolated test environment using `podium_test_` prefix
+- Comprehensive cleanup of all test resources
+- Visual test reports with pass/fail status
+- Debug logging for troubleshooting failures
+
+**Run specific tests for debugging:**
+```bash
+# Run all tests
+podium test-json-output
+
+# Run specific test only
+podium test-json-output new_laravel_latest
+podium test-json-output remove_project
+podium test-json-output clone_project
+
+# Clean up test resources manually
+podium cleanup-test-environment
+```
 
 ## 🎯 Command Options
 
@@ -258,25 +234,74 @@ podium down
 |--------|-------------|
 | `--json-output` | Clean JSON output (suppresses all text/colors) |
 | `--no-colors` | Disable colored output |
+| `--debug` | Enable debug logging to `/tmp/podium-cli-debug.log` |
 
 ### New Project Options
 
 | Option | Description | Values |
 |--------|-------------|---------|
 | `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php` |
+| `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework/PHP version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version<br/>**PHP:** `8` (default - PHP 8.3), `7` (PHP 7.4) |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
+| `--description <text>` | Project description | Optional text description |
+| `--emoji <emoji>` | Project emoji | Will prompt if not provided |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
+
+### Clone Project Options
+
+| Option | Description |
+|--------|-------------|
+| `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
+| `--php-version <ver>` | Force specific PHP version | `7` or `8` |
+| `--database <type>` | Database type | `mysql`, `postgres`, `mongodb` |
+| `--display-name <name>` | Display name for project | Optional |
+| `--description <text>` | Project description | Optional |
+| `--emoji <emoji>` | Project emoji | Default: 🚀 |
+| `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
+| `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
+
+### Setup Project Options
+
+| Option | Description |
+|--------|-------------|
+| `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
+| `--php-version <ver>` | Force specific PHP version | `7` or `8` |
+| `--framework <type>` | Force specific framework | `laravel`, `wordpress`, `php` |
 
 ### Remove Project Options
 
 | Option | Description |
 |--------|-------------|
-| `--force` | Skip confirmation prompts |
-| `--force-db-delete` | Force database deletion without prompt |
-| `--preserve-database` | Keep database (skip deletion) |
+| `--force-db-delete` | Delete database without confirmation |
+| `--preserve-database` | Skip database deletion entirely |
+| `--force` | Legacy flag (now only affects database deletion) |
+
+### Uninstall Options
+
+| Option | Description |
+|--------|-------------|
+| `--delete-images` | Also remove Docker images (default: keep for faster reinstall) |
+
+### Configure Options
+
+| Option | Description |
+|--------|-------------|
+| `--git-name <name>` | Git user name |
+| `--git-email <email>` | Git user email |
+| `--aws-access-key <key>` | AWS access key |
+| `--aws-secret-key <key>` | AWS secret key |
+| `--aws-region <region>` | AWS region (default: us-east-1) |
+| `--skip-aws` | Skip AWS configuration |
+| `--projects-dir <dir>` | Custom projects directory |
+
+### Test Suite Options
+
+| Option | Description |
+|--------|-------------|
+| `[test_name]` | Run specific test only (e.g., `new_laravel_latest`) |
 
 ## 💡 Usage Examples
 
@@ -388,12 +413,31 @@ const data = JSON.parse(result.stdout);
 
 ### Available JSON Commands
 
+**All commands support `--json-output` except containerized development tools:**
+
+✅ **JSON Support Available:**
 - `podium status --json-output` - Project and service status
 - `podium new --json-output` - Project creation confirmation
+- `podium clone --json-output` - Project clone confirmation
+- `podium setup --json-output` - Project setup confirmation
 - `podium remove --json-output` - Project removal confirmation
-- `podium stop-services --json-output` - Service stop confirmation
 - `podium up --json-output` - Project startup confirmation
 - `podium down --json-output` - Project shutdown confirmation
+- `podium start-services --json-output` - Service start confirmation
+- `podium stop-services --json-output` - Service stop confirmation
+- `podium configure --json-output` - Configuration confirmation
+- `podium uninstall --json-output` - Uninstall confirmation
+
+❌ **No JSON Support (Container Commands):**
+- `podium composer` - Runs inside container
+- `podium art` - Runs inside container
+- `podium wp` - Runs inside container
+- `podium php` - Runs inside container
+- `podium exec` - Runs inside container
+- `podium exec-root` - Runs inside container
+- `podium supervisor` - Runs inside container
+- `podium redis` - Direct service connection
+- `podium memcache` - Direct service connection
 
 ## 🏗️ Architecture
 
@@ -429,34 +473,9 @@ Each project gets:
 - Local URL: `http://project-name`
 - LAN URL: `http://your-ip:port`
 
-## 📱 GUI Interface
-
-Launch the desktop GUI with:
-
-```bash
-podium gui
-```
-
-The GUI provides:
-- Visual project management
-- One-click project creation
-- Service status monitoring
-- Real-time logs and output
-- Dark theme with modern UI
 
 ## 🗑️ Uninstallation
 
-### Complete Removal
-
-To completely remove Podium and all Docker resources:
-
-```bash
-# Remove all Docker containers, images, volumes, networks, and hosts entries
-podium uninstall
-
-# Optional: Remove only containers/networks but keep images for faster reinstall
-podium uninstall --no-delete-images
-```
 
 ### Platform-Specific Uninstall
 
