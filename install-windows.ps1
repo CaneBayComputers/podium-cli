@@ -149,17 +149,12 @@ function Install-WSL {
         # Enable only WSL feature (no Virtual Machine Platform needed)
         dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
         
-        # Install Ubuntu distribution immediately for WSL1
-        Write-Output "Installing Ubuntu distribution for WSL1..."
-        wsl --set-default-version 1
-        wsl --install -d Ubuntu --no-launch
-        
         if ($LASTEXITCODE -eq 0) {
-            Write-Output "[SUCCESS] WSL1 and Ubuntu installed successfully"
-            Write-Output "[INFO] Ubuntu will need initial setup on first launch"
+            Write-Output "[SUCCESS] WSL1 feature enabled successfully"
+            Write-Output "[INFO] A reboot is required to complete WSL1 installation"
             return $true
         } else {
-            Write-Output "[ERROR] Failed to install WSL1 and Ubuntu"
+            Write-Output "[ERROR] Failed to enable WSL1 feature"
             return $false
         }
     }
@@ -570,38 +565,13 @@ if (Test-WSLInstalled) {
     }
 }
 
-# Check and install Docker
+# Check and install Docker (except for Windows Home + VM, handled after reboot)
 if (Test-DockerInstalled) {
     Write-Output "[SUCCESS] Docker is already installed"
-} else {
-    # Determine Docker installation strategy based on environment
-    $useDockerDesktop = $true
-    if ($windowsInfo.IsHome -and $isVM) {
-        $useDockerDesktop = $false  # Use Docker-in-WSL for Windows Home + VM
-    }
-    
-    if (-not (Install-Docker -UseDockerDesktop $useDockerDesktop -IsVM $isVM -IsWindowsHome $windowsInfo.IsHome)) {
-        if ($windowsInfo.IsHome -and $isVM) {
-            Write-Output @"
-================================================================
-                    UBUNTU SETUP REQUIRED                    
-                                                              
-  Ubuntu WSL distribution needs initial user setup.
-                                                              
-  Next steps:                                                
-  1. Run: wsl -d Ubuntu                                     
-  2. Complete username/password setup                       
-  3. Exit Ubuntu (type 'exit')                             
-  4. Re-run this installer to complete Docker installation   
-                                                              
-  Command to re-run installer:                              
-  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
-                                                              
-================================================================
-"@
-        } else {
-            Write-Output "Failed to install Docker. Exiting."
-        }
+} elseif (-not ($windowsInfo.IsHome -and $isVM)) {
+    # Install Docker Desktop for non-VM or non-Home environments
+    if (-not (Install-DockerDesktop)) {
+        Write-Output "Failed to install Docker Desktop. Exiting."
         exit 1
     }
 }
@@ -629,8 +599,30 @@ if ($needsReboot -and -not $SkipReboot) {
     }
 }
 
-# Install Podium CLI (only if no reboot needed or after reboot)
+# Install Ubuntu, Docker, and Podium CLI (only if no reboot needed or after reboot)
 if (-not $needsReboot) {
+    # For WSL1 + Windows Home + VM, we need to install Ubuntu and Docker after WSL is ready
+    if ($windowsInfo.IsHome -and $isVM -and -not $useWSL2) {
+        Write-Output "Installing Ubuntu distribution for WSL1..."
+        wsl --set-default-version 1
+        wsl --install -d Ubuntu --no-launch
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "[ERROR] Failed to install Ubuntu distribution"
+            Write-Output "Manual installation: wsl --install -d Ubuntu"
+            exit 1
+        }
+        
+        Write-Output "[SUCCESS] Ubuntu distribution installed"
+        
+        # Now install Docker in WSL
+        if (-not (Install-DockerInWSL)) {
+            Write-Output "Warning: Docker installation failed, but you can install it manually later."
+            Write-Output "Manual installation: Run 'wsl -d Ubuntu' then install Docker manually"
+        }
+    }
+    
+    # Install Podium CLI
     if (-not (Install-PodiumCLI -UseWSL2 $useWSL2)) {
         Write-Output "Warning: Podium CLI installation failed, but you can install it manually later."
     }
