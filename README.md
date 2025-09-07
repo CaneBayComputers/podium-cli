@@ -63,60 +63,35 @@ podium new my-project
 
 Podium CLI runs on Windows through **WSL** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
 
-#### Prerequisites
+#### Installation Steps
 
-**1. Install PowerShell 7.5+ (if needed):**
-- Download PowerShell MSI: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.5#msi
-
-**2. Install WSL with Ubuntu:**
-
+**1. Install WSL with Ubuntu:**
 ```powershell
 # Open PowerShell as Administrator and run:
 wsl --install -d Ubuntu
 
-# Reboot when prompted (or run: Restart-Computer)
+# Reboot when prompted
 ```
 
-> **🖥️ VM Users Only:** If you're running Windows in a Virtual Machine (VirtualBox, VMware, etc.), use these commands instead:
-> ```powershell
-> # VM users only - run as Administrator:
-> # 1. Enable WSL features
-> dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-> dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-> 
-> # 2. REBOOT REQUIRED - restart your computer
-> Restart-Computer
-> 
-> # 3. After reboot, run as Administrator:
-> wsl --set-default-version 1
-> wsl --install -d Ubuntu
-> ```
+**2. Install Docker Desktop:**
+- Download Docker Desktop from: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
+- Run the installer (requires reboot)
+- Start Docker Desktop after reboot
 
-**3. Run the Windows installer (installs Docker):**
-```powershell
-# Download and run the Windows installer (PowerShell as Administrator)
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
-PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
-```
-
-**4. Install Podium CLI in Ubuntu:**
+**3. Install Podium CLI:**
 ```bash
-# Open WSL in PowerShell terminal (if not already)
-wsl
-
-# Open Ubuntu terminal and run:
+# Open Ubuntu terminal (search "Ubuntu" in Start menu) and run:
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
-**5. Quick Start:**
-```powershell
-# Open WSL in PowerShell terminal (if not already)
-wsl
+#### Quick Start
 
-# Configure Podium
+**Open Ubuntu terminal and start using Podium:**
+```bash
+# Configure your development environment
 podium configure
 
-# Create a new project
+# Create your first project  
 podium new my-project
 ```
 
