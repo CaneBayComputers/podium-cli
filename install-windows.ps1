@@ -132,61 +132,6 @@ function Test-DockerInstalled {
     }
 }
 
-function Install-WSL {
-    param(
-        [bool]$UseWSL2 = $true
-    )
-    
-    if ($UseWSL2) {
-        Write-Output "Installing WSL2..."
-        
-        # Enable WSL and Virtual Machine Platform features
-        dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-        dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-        
-        # Install WSL2
-        wsl --install --no-launch
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Output "[SUCCESS] WSL2 installation initiated successfully"
-            return $true
-        } else {
-            Write-Output "[WARNING] WSL2 installation failed, falling back to WSL1..."
-            return Install-WSL -UseWSL2 $false
-        }
-    } else {
-        Write-Output "Installing WSL1..."
-        
-        # Enable only WSL feature (no Virtual Machine Platform needed)
-        Write-Output "Enabling Windows Subsystem for Linux feature..."
-        $dismResult = dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-        
-        # dism.exe returns 0 for success, 3010 for success but reboot required
-        if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) {
-            Write-Output "[SUCCESS] WSL1 feature enabled successfully"
-            Write-Output "[INFO] A reboot is required to complete WSL1 installation"
-            Write-Output "[INFO] After reboot, run this installer again to complete setup"
-            return $true
-        } else {
-            Write-Output "[ERROR] Failed to enable WSL1 feature (Exit code: $LASTEXITCODE)"
-            Write-Output "DISM output: $dismResult"
-            
-            # Try alternative method using PowerShell
-            Write-Output "Trying alternative installation method..."
-            try {
-                Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart -All
-                Write-Output "[SUCCESS] WSL1 feature enabled via PowerShell"
-                Write-Output "[INFO] A reboot is required to complete WSL1 installation"
-                Write-Output "[INFO] After reboot, run this installer again to complete setup"
-                return $true
-            }
-            catch {
-                Write-Output "[ERROR] Alternative installation method also failed: $($_.Exception.Message)"
-                return $false
-            }
-        }
-    }
-}
 
 function Install-Docker {
     param(
@@ -474,8 +419,7 @@ Write-Output @"
                     Podium Windows Installer                  
                                                               
   This script will install:                                  
-  - WSL2 (Windows Subsystem for Linux)                      
-  - Docker Desktop                                          
+  - Docker (Desktop or WSL-based)                           
   - Podium CLI                                              
                                                               
   Execution Policy: $executionPolicy                                
@@ -579,18 +523,30 @@ if (-not (Test-AdminRights)) {
     exit 1
 }
 
-$needsReboot = $false
 
-# Check and install WSL
+# Check WSL prerequisite
 if (Test-WSLInstalled) {
-    Write-Output "[SUCCESS] WSL is already installed"
+    Write-Output "[SUCCESS] WSL is installed"
 } else {
-    if (Install-WSL -UseWSL2 $useWSL2) {
-        $needsReboot = $true
-    } else {
-        Write-Output "Failed to install WSL. Exiting."
-        exit 1
-    }
+    Write-Output @"
+================================================================
+                    WSL PREREQUISITE REQUIRED                    
+                                                              
+  Windows Subsystem for Linux (WSL) is not installed.
+  Please install WSL first, then run this installer.
+                                                              
+  Install WSL with Ubuntu:                                   
+  1. Open PowerShell as Administrator                        
+  2. Run: wsl --install -d Ubuntu                            
+  3. Reboot when prompted                                    
+  4. Complete Ubuntu setup (username/password)              
+  5. Re-run this Podium installer                           
+                                                              
+  Command: wsl --install -d Ubuntu                                     
+                                                              
+================================================================
+"@
+    exit 1
 }
 
 # Check and install Docker (except for Windows Home + VM, handled after reboot)
@@ -604,70 +560,56 @@ if (Test-DockerInstalled) {
     }
 }
 
-# Handle reboot requirement
-if ($needsReboot -and -not $SkipReboot) {
-    Write-Output "`n"
-    Write-Output "================================================================"
-    Write-Output "                    REBOOT REQUIRED                          "
-    Write-Output "                                                              "
-    Write-Output "  WSL installation requires a system reboot.               "
-    Write-Output "                                                              "
-    Write-Output "  After reboot, run this script again to complete setup:    "
-    Write-Output "  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 "
-    Write-Output "                                                              "
-    Write-Output "================================================================"    
-    $response = Read-Host "`nReboot now? (y/N)"
-    if ($response -eq 'y' -or $response -eq 'Y') {
-        Write-Output "Rebooting in 10 seconds..."
-        Start-Sleep -Seconds 10
-        Restart-Computer -Force
-    } else {
-        Write-Output "Please reboot manually and run this script again."
-        exit 0
+# Install Docker and Podium CLI
+# For Windows Home + VM, always install Docker-in-WSL regardless of WSL version
+if ($windowsInfo.IsHome -and $isVM) {
+    Write-Output "Windows Home + VM detected: Installing Docker inside WSL..."
+    
+    # Ensure Ubuntu distribution exists
+    $distros = wsl -l -q 2>$null
+    if (-not $distros -or $distros -notcontains "Ubuntu") {
+        Write-Output "[ERROR] Ubuntu distribution not found"
+        Write-Output "Please install Ubuntu: wsl --install -d Ubuntu"
+        Write-Output "Then reboot and re-run this installer"
+        exit 1
+    }
+    
+    # Install Docker in WSL
+    if (-not (Install-DockerInWSL)) {
+        Write-Output "[ERROR] Docker-in-WSL installation failed"
+        exit 1
     }
 }
 
-# Install Ubuntu, Docker, and Podium CLI (only if no reboot needed or after reboot)
-if (-not $needsReboot) {
-    # For WSL1 + Windows Home + VM, we need to install Ubuntu and Docker after WSL is ready
-    if ($windowsInfo.IsHome -and $isVM -and -not $useWSL2) {
-        Write-Output "Installing Ubuntu distribution for WSL1..."
-        wsl --set-default-version 1
-        wsl --install -d Ubuntu --no-launch
-        
-        if ($LASTEXITCODE -ne 0) {
-            Write-Output "[ERROR] Failed to install Ubuntu distribution"
-            Write-Output "Manual installation: wsl --install -d Ubuntu"
-            exit 1
-        }
-        
-        Write-Output "[SUCCESS] Ubuntu distribution installed"
-        
-        # Now install Docker in WSL
-        if (-not (Install-DockerInWSL)) {
-            Write-Output "Warning: Docker installation failed, but you can install it manually later."
-            Write-Output "Manual installation: Run 'wsl -d Ubuntu' then install Docker manually"
-        }
-    }
-    
-    # Install Podium CLI
-    if (-not (Install-PodiumCLI -UseWSL2 $useWSL2)) {
-        Write-Output "Warning: Podium CLI installation failed, but you can install it manually later."
-    }
-    
-    # Test everything
-    Test-Installation
-    
-    Write-Output "`n"
-    Write-Output "================================================================"
-    Write-Output "                    INSTALLATION COMPLETE                     "
+# Install Podium CLI
+if (-not (Install-PodiumCLI -UseWSL2 $useWSL2)) {
+    Write-Output "[ERROR] Podium CLI installation failed"
+    exit 1
+}
+
+# Test everything
+Test-Installation
+
+Write-Output "`n"
+Write-Output "================================================================"
+Write-Output "                    INSTALLATION COMPLETE                     "
+Write-Output "                                                              "
+Write-Output "  Next steps:                                                "
+
+if ($windowsInfo.IsHome -and $isVM) {
+    Write-Output "  1. Open WSL: wsl                                         "
+    Write-Output "  2. Run: podium configure                                 "
+    Write-Output "  3. Run: podium new myproject                             "
     Write-Output "                                                              "
-    Write-Output "  Next steps:                                                "
+    Write-Output "  Note: Docker is installed inside WSL (no Docker Desktop needed)"
+} else {
     Write-Output "  1. Start Docker Desktop                                   "
     Write-Output "  2. Open WSL: wsl                                         "
-    Write-Output "  3. Run: podium new myproject                              "
-    Write-Output "                                                              "
-    Write-Output "  Need help? Visit: https://podiumdev.io                    "
-    Write-Output "  Email: canebaycomputers@gmail.com                         "
-    Write-Output "================================================================"
+    Write-Output "  3. Run: podium configure                                 "
+    Write-Output "  4. Run: podium new myproject                             "
 }
+
+Write-Output "                                                              "
+Write-Output "  Need help? Visit: https://podiumdev.io                    "
+Write-Output "  Email: canebaycomputers@gmail.com                         "
+Write-Output "================================================================"

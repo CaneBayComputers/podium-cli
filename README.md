@@ -61,14 +61,45 @@ podium new my-project
 
 ### 🪟 Windows
 
-Podium CLI runs on Windows through **WSL2** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
+Podium CLI runs on Windows through **WSL** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
 
-**First, download and install PowerShell 7.5+ (if needed):**
+#### Prerequisites
+
+**1. Install PowerShell 7.5+ (if needed):**
 - Download PowerShell MSI: https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-windows?view=powershell-7.5#msi
 
-**Then install Podium:**
+**2. Install WSL with Ubuntu:**
+
 ```powershell
-# Download and run the Windows installer (PowerShell as Administrator)
+# Open PowerShell as Administrator and run:
+wsl --install -d Ubuntu
+
+# Reboot when prompted (or run: Restart-Computer)
+```
+
+> **🖥️ VM Users Only:** If you're running Windows in a Virtual Machine (VirtualBox, VMware, etc.), use these commands instead:
+> ```powershell
+> # VM users only - run as Administrator:
+> # 1. Enable WSL features
+> dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+> dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+> 
+> # 2. Set WSL1 and install Ubuntu:
+> wsl --set-default-version 1
+> wsl --install -d Ubuntu
+> 
+> # 3. Reboot when prompted (or run: Restart-Computer)
+> ```
+
+**3. After reboot, complete Ubuntu setup:**
+- Ubuntu will open automatically
+- Create a username and password
+- Close Ubuntu when setup is complete
+
+#### Install Podium
+
+```powershell
+# Download and run the Podium installer (PowerShell as Administrator)
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
 PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
@@ -80,24 +111,22 @@ powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw
 ```
 
 **What the installer does:**
-- Installs WSL2 (Windows Subsystem for Linux)
-- Installs Ubuntu distribution
-- Downloads and installs Docker Desktop
-- Configures Docker for WSL2 integration
-- Installs Podium CLI inside WSL2
+- Detects your Windows environment automatically
+- Installs Docker Desktop (or Docker-in-WSL for VMs)
+- Installs Podium CLI inside WSL
+- Configures everything for optimal performance
 - Tests the complete installation
 
 **Quick Start:**
 ```powershell
-# Open WSL2 terminal
+# Open WSL terminal
 wsl
 
-# Install and configure Podium
+# Configure Podium
 podium configure
 
 # Create a new project
 podium new my-project
-
 ```
 
 
