@@ -149,14 +149,17 @@ function Install-WSL {
         # Enable only WSL feature (no Virtual Machine Platform needed)
         dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
         
-        # Set WSL1 as default
+        # Install Ubuntu distribution immediately for WSL1
+        Write-Output "Installing Ubuntu distribution for WSL1..."
         wsl --set-default-version 1
+        wsl --install -d Ubuntu --no-launch
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Output "[SUCCESS] WSL1 configured successfully"
+            Write-Output "[SUCCESS] WSL1 and Ubuntu installed successfully"
+            Write-Output "[INFO] Ubuntu will need initial setup on first launch"
             return $true
         } else {
-            Write-Output "[ERROR] Failed to configure WSL1"
+            Write-Output "[ERROR] Failed to install WSL1 and Ubuntu"
             return $false
         }
     }
@@ -222,8 +225,26 @@ function Install-DockerInWSL {
     # Check if Ubuntu is available
     $distros = wsl -l -q 2>$null
     if (-not $distros -or $distros -notcontains "Ubuntu") {
-        Write-Output "[ERROR] Ubuntu WSL distribution not found. Please install Ubuntu first."
-        return $false
+        Write-Output "[WARNING] Ubuntu WSL distribution not found. Installing Ubuntu..."
+        
+        # Install Ubuntu distribution
+        wsl --set-default-version 1
+        wsl --install -d Ubuntu --no-launch
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "[ERROR] Failed to install Ubuntu distribution"
+            return $false
+        }
+        
+        Write-Output "[SUCCESS] Ubuntu distribution installed"
+        Write-Output "[INFO] Launching Ubuntu for initial user setup..."
+        Write-Output "[INFO] Please complete Ubuntu setup (username/password) then close Ubuntu"
+        Write-Output "[INFO] The installer will continue automatically after Ubuntu setup"
+        
+        # Launch Ubuntu for initial setup
+        Start-Process -FilePath "wsl" -ArgumentList "-d", "Ubuntu" -Wait
+        
+        Write-Output "[INFO] Ubuntu setup completed, continuing with Docker installation..."
     }
     
     # Install Docker in WSL
@@ -560,7 +581,27 @@ if (Test-DockerInstalled) {
     }
     
     if (-not (Install-Docker -UseDockerDesktop $useDockerDesktop -IsVM $isVM -IsWindowsHome $windowsInfo.IsHome)) {
-        Write-Output "Failed to install Docker. Exiting."
+        if ($windowsInfo.IsHome -and $isVM) {
+            Write-Output @"
+================================================================
+                    UBUNTU SETUP REQUIRED                    
+                                                              
+  Ubuntu WSL distribution needs initial user setup.
+                                                              
+  Next steps:                                                
+  1. Run: wsl -d Ubuntu                                     
+  2. Complete username/password setup                       
+  3. Exit Ubuntu (type 'exit')                             
+  4. Re-run this installer to complete Docker installation   
+                                                              
+  Command to re-run installer:                              
+  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
+                                                              
+================================================================
+"@
+        } else {
+            Write-Output "Failed to install Docker. Exiting."
+        }
         exit 1
     }
 }
