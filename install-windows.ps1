@@ -557,17 +557,41 @@ if (Test-WSLInstalled) {
 if (Test-DockerInstalled) {
     Write-Output "[SUCCESS] Docker is already installed"
 } else {
-    # Enable Hyper-V features for Docker Desktop (especially important for VMs)
+    # Enable virtualization features for Docker Desktop (especially important for VMs)
     Write-Output "Enabling Windows virtualization features..."
-    try {
-        Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All -NoRestart -WarningAction SilentlyContinue | Out-Null
-        Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart -WarningAction SilentlyContinue | Out-Null
-        Enable-WindowsOptionalFeature -Online -FeatureName HypervisorPlatform -All -NoRestart -WarningAction SilentlyContinue | Out-Null
-        Write-Output "[SUCCESS] Virtualization features enabled"
+    $featuresEnabled = 0
+    $totalFeatures = 0
+    
+    # Try to enable each feature individually with proper error handling
+    $features = @(
+        @{Name="VirtualMachinePlatform"; Description="Virtual Machine Platform"},
+        @{Name="Microsoft-Windows-Subsystem-Linux"; Description="WSL"},
+        @{Name="HypervisorPlatform"; Description="Hypervisor Platform"}
+    )
+    
+    # Only try Hyper-V on Pro/Enterprise editions
+    if (-not $windowsInfo.IsHome) {
+        $features += @{Name="Microsoft-Hyper-V-All"; Description="Hyper-V"}
     }
-    catch {
-        Write-Output "[WARNING] Could not enable all virtualization features: $($_.Exception.Message)"
+    
+    foreach ($feature in $features) {
+        $totalFeatures++
+        try {
+            $result = Enable-WindowsOptionalFeature -Online -FeatureName $feature.Name -All -NoRestart -WarningAction SilentlyContinue
+            if ($result.RestartNeeded -eq $false -or $result.Online -eq $true) {
+                Write-Output "[SUCCESS] Enabled $($feature.Description)"
+                $featuresEnabled++
+            } else {
+                Write-Output "[INFO] $($feature.Description) scheduled for next reboot"
+                $featuresEnabled++
+            }
+        }
+        catch {
+            Write-Output "[WARNING] Could not enable $($feature.Description): Feature may not be available on this Windows edition"
+        }
     }
+    
+    Write-Output "[INFO] Successfully enabled $featuresEnabled of $totalFeatures virtualization features"
 
     # Try Docker Desktop first for all environments
     Write-Output "Installing Docker Desktop for Windows..."
