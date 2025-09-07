@@ -96,18 +96,19 @@ wsl --install -d Ubuntu
 - Create a username and password
 - Close Ubuntu when setup is complete
 
-#### Install Podium
 
+
+**4. Run the Windows installer (installs Docker):**
 ```powershell
-# Download and run the Podium installer (PowerShell as Administrator)
+# Download and run the Windows installer (PowerShell as Administrator)
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile "install-windows.ps1"
 PowerShell -ExecutionPolicy Bypass -File install-windows.ps1
 ```
 
-**If you get execution policy errors, use this one-liner instead:**
-```powershell
-# One-liner that handles execution policy automatically
-powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1' -OutFile 'install-windows.ps1'; PowerShell -ExecutionPolicy Bypass -File install-windows.ps1"
+**5. Install Podium CLI in Ubuntu:**
+```bash
+# Open Ubuntu terminal and run:
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
 **What the installer does:**
@@ -119,7 +120,7 @@ powershell -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri 'https://raw
 
 **Quick Start:**
 ```powershell
-# Open WSL terminal
+# Open WSL terminal (if not already)
 wsl
 
 # Configure Podium
@@ -320,10 +321,6 @@ podium cleanup-test-environment
 |--------|-------------|
 | `--git-name <name>` | Git user name |
 | `--git-email <email>` | Git user email |
-| `--aws-access-key <key>` | AWS access key |
-| `--aws-secret-key <key>` | AWS secret key |
-| `--aws-region <region>` | AWS region (default: us-east-1) |
-| `--skip-aws` | Skip AWS configuration |
 | `--projects-dir <dir>` | Custom projects directory |
 
 ### Test Suite Options

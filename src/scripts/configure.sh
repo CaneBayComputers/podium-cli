@@ -19,10 +19,6 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 # Parse arguments
 GIT_NAME=""
 GIT_EMAIL=""
-AWS_ACCESS_KEY=""
-AWS_SECRET_KEY=""
-AWS_REGION="us-east-1"
-SKIP_AWS=false
 PROJECTS_DIR=""
 
 # Capture original arguments for debug logging
@@ -42,22 +38,6 @@ while [[ $# -gt 0 ]]; do
             GIT_EMAIL="$2"
             shift 2
             ;;
-        --aws-access-key)
-            AWS_ACCESS_KEY="$2"
-            shift 2
-            ;;
-        --aws-secret-key)
-            AWS_SECRET_KEY="$2"
-            shift 2
-            ;;
-        --aws-region)
-            AWS_REGION="$2"
-            shift 2
-            ;;
-        --skip-aws)
-            SKIP_AWS=true
-            shift
-            ;;
         --projects-dir)
             PROJECTS_DIR="$2"
             shift 2
@@ -76,10 +56,6 @@ while [[ $# -gt 0 ]]; do
             echo "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
             echo "  --git-name NAME         Git user name"
             echo "  --git-email EMAIL       Git user email"
-            echo "  --aws-access-key KEY    AWS access key"
-            echo "  --aws-secret-key KEY    AWS secret key"
-            echo "  --aws-region REGION     AWS region (default: us-east-1)"
-            echo "  --skip-aws              Skip AWS configuration"
             echo "  --projects-dir DIR      Custom projects directory"
             echo "  --help                  Show this help message"
             exit 0
@@ -324,115 +300,6 @@ fi
 
 
 
-###############################
-# AWS
-###############################
-
-# AWS Configuration
-if [[ "$SKIP_AWS" == "true" ]]; then
-	echo-cyan 'Skipping AWS setup (user choice)'
-	echo-return
-elif [[ "$JSON_OUTPUT" == "1" ]]; then
-	if [[ -n "$AWS_ACCESS_KEY" && -n "$AWS_SECRET_KEY" ]]; then
-		echo-cyan 'Configuring AWS with GUI-provided settings...'
-
-		mkdir -p ~/s3
-
-		# Configure AWS with GUI values
-		aws configure set aws_access_key_id "$AWS_ACCESS_KEY"
-		aws configure set aws_secret_access_key "$AWS_SECRET_KEY"
-		aws configure set default.region "$AWS_REGION"
-		aws configure set default.output json
-		
-		# Create s3fs password file
-		echo "$AWS_ACCESS_KEY:$AWS_SECRET_KEY" > ~/.passwd-s3fs
-		chmod 600 ~/.passwd-s3fs
-		
-		echo-cyan "AWS configured with region: $AWS_REGION"
-		echo-return
-	else
-		echo-cyan 'Skipping AWS setup in GUI mode (no credentials provided)'
-		echo-return
-	fi
-else
-	echo-return; echo-cyan 'AWS Setup'; echo-white
-	
-	echo-cyan "AWS CLI can be configured for cloud storage and services."
-	echo-white "To set up AWS, you will need:"
-	echo-white "  1. An AWS account (aws.amazon.com)"
-	echo-white "  2. Your AWS Access Key ID"
-	echo-white "  3. Your AWS Secret Access Key"
-	echo-white "  4. Your preferred AWS region (e.g., us-east-1)"
-	echo-return
-	echo-white "To get your AWS credentials:"
-	echo-white "  • Log into AWS Console → IAM → Users → Your User → Security Credentials"
-	echo-white "  • Create Access Key → Command Line Interface (CLI)"
-	echo-white "  • Download or copy the Access Key ID and Secret Access Key"
-	echo-return
-	echo-yellow "This is optional - you can skip and set up later if needed."
-	echo-return
-	read -p "Do you want to set up AWS now? [N/y]: " -n 1 -r SETUP_AWS
-	echo-return
-	
-	if [[ $SETUP_AWS =~ ^[Yy]$ ]]; then
-		echo-cyan 'Setting up AWS...'
-
-		mkdir -p ~/s3
-
-		echo-white
-
-
-	if ! aws configure get default.region > /dev/null; then
-
-		aws configure set default.region us-east-1
-
-	fi
-
-	if ! aws configure get default.output > /dev/null; then
-
-		aws configure set default.output json
-
-	fi
-
-	aws configure
-
-	if ! [ -f ~/.passwd-s3fs ]; then
-
-		# Extract the AWS access key ID
-		if AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id); then
-
-			# Extract the AWS secret access key
-			if AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key); then
-
-				echo $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY > ~/.passwd-s3fs
-
-				chmod 600 ~/.passwd-s3fs
-
-			fi
-
-		fi
-
-	fi
-	else
-		echo-cyan "Skipping AWS setup"
-		echo-white "You can set it up later with: aws configure"
-		echo-return
-	fi
-
-fi
-
-echo-return
-
-if [[ "$JSON_OUTPUT" != "1" ]]; then
-	if command -v aws >/dev/null 2>&1; then
-		aws --version
-		echo-green "AWS setup completed!"
-	else
-		echo-cyan "AWS setup skipped"
-	fi
-else
-	echo-cyan 'AWS setup completed in GUI mode'
-fi
 
 echo-white
 

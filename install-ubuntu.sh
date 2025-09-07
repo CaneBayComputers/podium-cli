@@ -134,28 +134,6 @@ else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
 
-###############################
-# Install AWS CLI (optional but recommended)
-###############################
-if ! command -v aws &> /dev/null; then
-    echo -e "${BLUE}Installing AWS CLI...${NC}"
-    
-    # Download and install AWS CLI v2
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscli-bundle.zip"
-    unzip -q awscli-bundle.zip
-    sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
-    
-    # Fix permissions (known issue with AWS CLI)
-    sudo chmod -R o+rx /usr/local/aws-cli/v2/current/dist
-    
-    # Clean up
-    rm -f awscli-bundle.zip
-    rm -rf aws
-    
-    echo -e "${GREEN}✓ AWS CLI installed${NC}"
-else
-    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
-fi
 
 ###############################
 # Clean up
