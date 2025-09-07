@@ -5,15 +5,8 @@ param(
     [switch]$SkipReboot
 )
 
-# Colors for output
-$RED = "Red"
-$GREEN = "Green" 
-$YELLOW = "Yellow"
-$CYAN = "Cyan"
-$BLUE = "Blue"
-
-function Write-ColorOutput($Message, $Color = "White") {
-    Write-Host $Message -ForegroundColor $Color
+function Write-Output($Message) {
+    Write-Host $Message
 }
 
 function Test-AdminRights {
@@ -43,7 +36,7 @@ function Test-DockerInstalled {
 }
 
 function Install-WSL2 {
-    Write-ColorOutput "Installing WSL2..." $CYAN
+    Write-Output "Installing WSL2..."
     
     # Enable WSL and Virtual Machine Platform features
     dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
@@ -53,27 +46,27 @@ function Install-WSL2 {
     wsl --install --no-launch
     
     if ($LASTEXITCODE -eq 0) {
-        Write-ColorOutput "[SUCCESS] WSL2 installation initiated successfully" $GREEN
+        Write-Output "[SUCCESS] WSL2 installation initiated successfully"
         return $true
     } else {
-        Write-ColorOutput "[ERROR] Failed to install WSL2" $RED
+        Write-Output "[ERROR] Failed to install WSL2"
         return $false
     }
 }
 
 function Install-DockerDesktop {
-    Write-ColorOutput "Installing Docker Desktop..." $CYAN
+    Write-Output "Installing Docker Desktop..."
     
     # Try winget first (Windows 10 1709+ / Windows 11)
     try {
         winget install Docker.DockerDesktop --silent --accept-package-agreements --accept-source-agreements
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "[SUCCESS] Docker Desktop installed via winget" $GREEN
+            Write-Output "[SUCCESS] Docker Desktop installed via winget"
             return $true
         }
     }
     catch {
-        Write-ColorOutput "winget not available, trying direct download..." $YELLOW
+        Write-Output "winget not available, trying direct download..."
     }
     
     # Fallback to direct download
@@ -81,29 +74,29 @@ function Install-DockerDesktop {
     $dockerInstaller = "$env:TEMP\DockerDesktopInstaller.exe"
     
     try {
-        Write-ColorOutput "Downloading Docker Desktop..." $CYAN
+        Write-Output "Downloading Docker Desktop..."
         Invoke-WebRequest -Uri $dockerUrl -OutFile $dockerInstaller
         
-        Write-ColorOutput "Running Docker Desktop installer..." $CYAN
+        Write-Output "Running Docker Desktop installer..."
         Start-Process -FilePath $dockerInstaller -ArgumentList "install", "--quiet" -Wait
         
         Remove-Item $dockerInstaller -Force
-        Write-ColorOutput "[SUCCESS] Docker Desktop installed" $GREEN
+        Write-Output "[SUCCESS] Docker Desktop installed"
         return $true
     }
     catch {
-        Write-ColorOutput "[ERROR] Failed to install Docker Desktop: $($_.Exception.Message)" $RED
+        Write-Output "[ERROR] Failed to install Docker Desktop: $($_.Exception.Message)"
         return $false
     }
 }
 
 function Install-PodiumCLI {
-    Write-ColorOutput "Installing Podium CLI in WSL2..." $CYAN
+    Write-Output "Installing Podium CLI in WSL2..."
     
     # Check if Ubuntu is the default WSL distro, if not set it
     $distros = wsl -l -q
     if ($distros -notcontains "Ubuntu") {
-        Write-ColorOutput "Installing Ubuntu..." $CYAN
+        Write-Output "Installing Ubuntu..."
         wsl --install -d Ubuntu --no-launch
     }
     
@@ -113,54 +106,43 @@ function Install-PodiumCLI {
     try {
         wsl -d Ubuntu -e bash -c $installCommand
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "[SUCCESS] Podium CLI installed successfully" $GREEN
-            return $true
+            Write-Output "[SUCCESS] Podium CLI installed successfully"            return $true
         } else {
-            Write-ColorOutput "[ERROR] Failed to install Podium CLI" $RED
-            return $false
+            Write-Output "[ERROR] Failed to install Podium CLI"            return $false
         }
     }
     catch {
-        Write-ColorOutput "[ERROR] Error installing Podium CLI: $($_.Exception.Message)" $RED
-        return $false
+        Write-Output "[ERROR] Error installing Podium CLI: $($_.Exception.Message)"        return $false
     }
 }
 
 function Test-Installation {
-    Write-ColorOutput "`nTesting installation..." $CYAN
-    
+    Write-Output "`nTesting installation..."    
     # Test WSL2
     if (Test-WSLInstalled) {
-        Write-ColorOutput "[SUCCESS] WSL2 is working" $GREEN
-    } else {
-        Write-ColorOutput "[ERROR] WSL2 is not working" $RED
-    }
+        Write-Output "[SUCCESS] WSL2 is working"    } else {
+        Write-Output "[ERROR] WSL2 is not working"    }
     
     # Test Docker
     if (Test-DockerInstalled) {
-        Write-ColorOutput "[SUCCESS] Docker is working" $GREEN
-    } else {
-        Write-ColorOutput "[WARNING] Docker is not working (may need to start Docker Desktop)" $YELLOW
-    }
+        Write-Output "[SUCCESS] Docker is working"    } else {
+        Write-Output "[WARNING] Docker is not working (may need to start Docker Desktop)"    }
     
     # Test Podium CLI
     try {
         $podiumVersion = wsl -e podium --version 2>$null
         if ($LASTEXITCODE -eq 0) {
-            Write-ColorOutput "[SUCCESS] Podium CLI is working: $podiumVersion" $GREEN
-        } else {
-            Write-ColorOutput "[ERROR] Podium CLI is not working" $RED
-        }
+            Write-Output "[SUCCESS] Podium CLI is working: $podiumVersion"        } else {
+            Write-Output "[ERROR] Podium CLI is not working"        }
     }
     catch {
-        Write-ColorOutput "[ERROR] Cannot test Podium CLI" $RED
-    }
+        Write-Output "[ERROR] Cannot test Podium CLI"    }
 }
 
 # Check execution policy first
 $executionPolicy = Get-ExecutionPolicy
 if ($executionPolicy -eq 'Restricted') {
-    Write-ColorOutput @"
+    Write-Output @"
 ================================================================
                     EXECUTION POLICY ERROR                    
                                                               
@@ -174,12 +156,11 @@ if ($executionPolicy -eq 'Restricted') {
   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser 
                                                               
 ================================================================
-"@ $RED
-    exit 1
+"@    exit 1
 }
 
 # Main installation process
-Write-ColorOutput @"
+Write-Output @"
 ================================================================
                     Podium Windows Installer                  
                                                               
@@ -190,11 +171,10 @@ Write-ColorOutput @"
                                                               
   Execution Policy: $executionPolicy                                
 ================================================================
-"@ $BLUE
-
+"@
 # Check for admin rights
 if (-not (Test-AdminRights)) {
-    Write-ColorOutput @"
+    Write-Output @"
 ================================================================
                     ADMINISTRATOR REQUIRED                    
                                                               
@@ -209,8 +189,7 @@ if (-not (Test-AdminRights)) {
      PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 
                                                               
 ================================================================
-"@ $RED
-    Read-Host "Press Enter to exit"
+"@    Read-Host "Press Enter to exit"
     exit 1
 }
 
@@ -218,69 +197,40 @@ $needsReboot = $false
 
 # Check and install WSL2
 if (Test-WSLInstalled) {
-    Write-ColorOutput "[SUCCESS] WSL2 is already installed" $GREEN
-} else {
+    Write-Output "[SUCCESS] WSL2 is already installed"} else {
     if (Install-WSL2) {
         $needsReboot = $true
     } else {
-        Write-ColorOutput "Failed to install WSL2. Exiting." $RED
-        exit 1
+        Write-Output "Failed to install WSL2. Exiting."        exit 1
     }
 }
 
 # Check and install Docker Desktop
 if (Test-DockerInstalled) {
-    Write-ColorOutput "[SUCCESS] Docker Desktop is already installed" $GREEN
-} else {
+    Write-Output "[SUCCESS] Docker Desktop is already installed"} else {
     if (-not (Install-DockerDesktop)) {
-        Write-ColorOutput "Failed to install Docker Desktop. Exiting." $RED
-        exit 1
+        Write-Output "Failed to install Docker Desktop. Exiting."        exit 1
     }
 }
 
 # Handle reboot requirement
 if ($needsReboot -and -not $SkipReboot) {
-    Write-ColorOutput "`n" $WHITE
-    Write-ColorOutput "================================================================" $YELLOW
-    Write-ColorOutput "                    REBOOT REQUIRED                          " $YELLOW
-    Write-ColorOutput "                                                              " $YELLOW
-    Write-ColorOutput "  WSL2 installation requires a system reboot.               " $YELLOW
-    Write-ColorOutput "                                                              " $YELLOW
-    Write-ColorOutput "  After reboot, run this script again to complete setup:    " $YELLOW
-    Write-ColorOutput "  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 " $YELLOW
-    Write-ColorOutput "                                                              " $YELLOW
-    Write-ColorOutput "================================================================" $YELLOW
-    
+    Write-Output "`n"    Write-Output "================================================================"    Write-Output "                    REBOOT REQUIRED                          "    Write-Output "                                                              "    Write-Output "  WSL2 installation requires a system reboot.               "    Write-Output "                                                              "    Write-Output "  After reboot, run this script again to complete setup:    "    Write-Output "  PowerShell -ExecutionPolicy Bypass -File install-windows.ps1 "    Write-Output "                                                              "    Write-Output "================================================================"    
     $response = Read-Host "`nReboot now? (y/N)"
     if ($response -eq 'y' -or $response -eq 'Y') {
-        Write-ColorOutput "Rebooting in 10 seconds..." $CYAN
-        Start-Sleep -Seconds 10
+        Write-Output "Rebooting in 10 seconds..."        Start-Sleep -Seconds 10
         Restart-Computer -Force
     } else {
-        Write-ColorOutput "Please reboot manually and run this script again." $YELLOW
-        exit 0
+        Write-Output "Please reboot manually and run this script again."        exit 0
     }
 }
 
 # Install Podium CLI (only if no reboot needed or after reboot)
 if (-not $needsReboot) {
     if (-not (Install-PodiumCLI)) {
-        Write-ColorOutput "Warning: Podium CLI installation failed, but you can install it manually later." $YELLOW
-    }
+        Write-Output "Warning: Podium CLI installation failed, but you can install it manually later."    }
     
     # Test everything
     Test-Installation
     
-    Write-ColorOutput "`n" $WHITE
-    Write-ColorOutput "================================================================" $GREEN
-    Write-ColorOutput "                    INSTALLATION COMPLETE                     " $GREEN
-    Write-ColorOutput "                                                              " $GREEN
-    Write-ColorOutput "  Next steps:                                                " $GREEN
-    Write-ColorOutput "  1. Start Docker Desktop                                   " $GREEN
-    Write-ColorOutput "  2. Open WSL2: wsl                                         " $GREEN
-    Write-ColorOutput "  3. Run: podium new myproject                              " $GREEN
-    Write-ColorOutput "                                                              " $GREEN
-    Write-ColorOutput "  Need help? Visit: https://podiumdev.io                    " $GREEN
-    Write-ColorOutput "  Email: canebaycomputers@gmail.com                         " $GREEN
-    Write-ColorOutput "================================================================" $GREEN
-}
+    Write-Output "`n"    Write-Output "================================================================"    Write-Output "                    INSTALLATION COMPLETE                     "    Write-Output "                                                              "    Write-Output "  Next steps:                                                "    Write-Output "  1. Start Docker Desktop                                   "    Write-Output "  2. Open WSL2: wsl                                         "    Write-Output "  3. Run: podium new myproject                              "    Write-Output "                                                              "    Write-Output "  Need help? Visit: https://podiumdev.io                    "    Write-Output "  Email: canebaycomputers@gmail.com                         "    Write-Output "================================================================"}
