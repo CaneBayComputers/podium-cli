@@ -121,14 +121,16 @@ elif ! command -v docker &> /dev/null; then
     sudo apt-get update -y -q
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
     
-    # Add user to docker group
-    sudo usermod -aG docker $USER
-    
     echo -e "${GREEN}✓ Docker installed${NC}"
 else
-    echo -e "${GREEN}✓ Docker command available but version check failed${NC}"
-    echo -e "${YELLOW}  Continuing with installation (Docker may still work)${NC}"
+    echo -e "${RED}Error: Docker command version check failed${NC}"
+    exit 1
 fi
+
+# Add user to docker group even if docker is already installed
+newgrp docker
+
+sudo usermod -aG docker $USER
 
 ###############################
 # Install Node.js and NPM
@@ -247,12 +249,6 @@ if command -v podium &> /dev/null; then
     echo -e "${GREEN}✓ Podium CLI installed successfully${NC}"
     
     # Configuration is now permanently stored in /etc/podium-cli/ - no restoration needed
-    
-    # Check if user needs to log out for docker group
-    if ! groups | grep -q docker; then
-        echo -e "${YELLOW}⚠️  You need to log out and back in for Docker access${NC}"
-        echo -e "   Or run: ${BLUE}newgrp docker${NC}"
-    fi
     
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"

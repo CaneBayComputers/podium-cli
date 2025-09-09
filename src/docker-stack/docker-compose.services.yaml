@@ -79,7 +79,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.6"
 
   mailhog:
-    image: mailhog/mailhog:latest
+    image: axllent/mailpit:latest
     container_name: mailhog
     restart: always
     ports:

@@ -159,19 +159,24 @@ cd "$PROJECTS_DIR_PATH"
 # Note: We're in the projects directory
 
 if ! [ -z "$PROJECT_NAME" ]; then
-  debug "Starting specific project: $PROJECT_NAME"
-  if start_project $PROJECT_NAME; then true; fi
+    debug "Starting specific project: $PROJECT_NAME"
+    if start_project $PROJECT_NAME; then true; fi
 
 else
-  debug "Starting all projects"
-  # Ensure we're in the projects directory before iterating
-  cd "$PROJECTS_DIR_PATH"
+    debug "Starting all projects"
   
-  for PROJECT_FOLDER_NAME in *; do
-    debug "Attempting to start project: $PROJECT_FOLDER_NAME"
-    if start_project $PROJECT_FOLDER_NAME; then true; fi
+    # Only iterate directories; avoid literal '*' / '*/' with nullglob
+    shopt -s nullglob
 
-  done
+    for PROJECT_FOLDER_NAME in */ ; do
+        PROJECT_FOLDER_NAME=${PROJECT_FOLDER_NAME%/}
+
+        debug "Attempting to start project: $PROJECT_FOLDER_NAME"
+        start_project "$PROJECT_FOLDER_NAME" || true
+
+    done
+
+    shopt -u nullglob
 
 fi
 
