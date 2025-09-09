@@ -81,6 +81,13 @@ echo -e "${BLUE}Updating package lists...${NC}"
 sudo apt-get update -y -q
 
 ###############################
+# Add Ubuntu repos
+###############################
+sudo add-apt-repository -y universe
+sudo add-apt-repository -y multiverse   # harmless if already enabled
+sudo apt-get update -y -q
+
+###############################
 # Install basic packages
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
