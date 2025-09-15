@@ -354,7 +354,7 @@ create_github_repo() {
     fi
     
     # Create the repository
-    if gh repo create "$repo_name" --private --source=. --push 2>/dev/null; then
+    if gh repo create "$repo_name" --private --source=. --push >/dev/null 2>&1; then
         echo-green "GitHub repository created successfully: $repo_name"
         return 0
     else
