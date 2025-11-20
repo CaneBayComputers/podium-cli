@@ -207,9 +207,9 @@ docker_exec() {
     local project_name="$(get_project_name)"
     
     if [ "$user" = "root" ]; then
-        docker container exec -it --user root "$project_name" "$@"
+        docker container exec -it --user root -w /usr/share/nginx/html "$project_name" "$@"
     else
-        docker container exec -it --user "$(id -u):$(id -g)" "$project_name" "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
     fi
 }
 
@@ -235,6 +235,51 @@ case "$1" in
         validate_project_context || exit 1
         shift
         docker_exec developer php "$@"
+        ;;
+    "phpcs")
+        validate_project_context || exit 1
+        shift
+        # Auto-attach default ruleset if none provided
+        has_standard=false
+        for arg in "$@"; do
+            case "$arg" in
+                --standard=*|--standard)
+                    has_standard=true
+                    break
+                    ;;
+            esac
+        done
+        if [ "$has_standard" = false ]; then
+            set -- --standard="/home/developer/.config/phpcs-ruleset.xml" "$@"
+        fi
+        docker_exec developer phpcs "$@"
+        ;;
+    "phpcbf")
+        validate_project_context || exit 1
+        shift
+        # Auto-attach default ruleset if none provided
+        has_standard=false
+        for arg in "$@"; do
+            case "$arg" in
+                --standard=*|--standard)
+                    has_standard=true
+                    break
+                    ;;
+            esac
+        done
+        if [ "$has_standard" = false ]; then
+            set -- --standard="/home/developer/.config/phpcs-ruleset.xml" "$@"
+        fi
+        docker_exec developer phpcbf "$@"
+        ;;
+    "phpmd")
+        validate_project_context || exit 1
+        shift
+        # Auto-attach default format and ruleset if only a path is provided
+        if [ "$#" -eq 1 ]; then
+            set -- "$1" text "/home/developer/.config/phpmd.xml"
+        fi
+        docker_exec developer phpmd "$@"
         ;;
     
     # Container execution
