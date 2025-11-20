@@ -1,5 +1,15 @@
 # Repository Guidelines
 
+## Initial Context Acquisition
+
+**Read the following files** in the given order to become acquainted with the project’s architecture, dependencies, and conventions:
+
+1. `README.md` – Overall purpose, setup, and deployment notes.
+2. `src/podium`  – Entry script showing commands and options.
+3. `src/scripts/functions.sh` – Helper functions.
+4. `src/docker-stack/docker-compose.services.yaml` – Docker list of shared services used by projects.
+5. `src/scripts/configure.sh` – Sets up Podium and dev environment.
+
 ## Project Structure & Module Organization
 - `src/podium` is the Bash entrypoint; it wires subcommands and shared helpers from `src/scripts/`.
 - Keep command logic inside `src/scripts/`, grouping related workflows beside their support files.
@@ -8,10 +18,9 @@
 - Runtime configuration is resolved from `/etc/podium-cli/.env`; ship repo defaults via examples rather than committed secrets.
 
 ## Build, Test, and Development Commands
-- Run the CLI in place with `./src/podium <command>`; most development happens against `configure`, `up`, `down`, and `status`.
-- Exercise automation outputs with `./src/podium --json-output status` or any subcommand that feeds the GUI.
-- Use `./src/podium test-json-output [case]` for regression coverage and `./src/podium cleanup-test-environment` to tear down fixtures after ad hoc runs.
-- When adjusting installers, test in a disposable VM by piping the relevant `install-*.sh` script; never run against your primary host.
+- Run the CLI just as `podium <command>`. Do not run CLI from `./src/podium`.
+- Exercise automation outputs with `podium <command> --json-output` or any subcommand that feeds the GUI. Not all commands have this option so check help first.
+- Use `podium test-json-output [case]` for regression coverage and `podium cleanup-test-environment` to tear down fixtures after ad hoc runs.
 
 ## Coding Style & Naming Conventions
 - Author scripts with `#!/bin/bash`, `set -e`, four-space indentation, and snake_case helpers (`init_projects_dir`).

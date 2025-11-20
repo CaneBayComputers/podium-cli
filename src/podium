@@ -30,12 +30,6 @@ for arg in "$@"; do
 done
 set -- "${new_args[@]}"
 
-# Resolve Kavera repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
-if [ -z "$KAVERA_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
-    KAVERA_REPOSITORY_URL=$(grep "^KAVERA_REPOSITORY_URL=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2-)
-fi
-: "${KAVERA_REPOSITORY_URL:=https://github.com/CaneBayComputers/kavera.git}"
-
 # Initialize projects directory
 init_projects_dir
 
@@ -71,7 +65,6 @@ show_help() {
     echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
-    echo "  podium create <name>      - Create new Kavera flat-file site"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
@@ -93,7 +86,7 @@ show_help() {
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --framework <name>        - Framework: laravel (default), wordpress, php"
+    echo "  --framework <name>        - Framework: laravel (default), wordpress, php, kavera"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb"
     echo "  --github                  - Create GitHub repository in user account"
@@ -365,14 +358,6 @@ case "$1" in
         ;;
     "new")
         "$SCRIPT_DIR/scripts/new_project.sh" "${@:2}"
-        ;;
-    "create")
-        if [ -z "$2" ]; then
-            echo-red "Usage: podium create <project-name> [options]"
-            echo-white "Alias for: podium clone \$KAVERA_REPOSITORY_URL <project-name> [options]"
-            exit 1
-        fi
-        "$SCRIPT_DIR/scripts/clone_project.sh" "$KAVERA_REPOSITORY_URL" "$2" "${@:3}"
         ;;
     "clone")
         if [ -z "$2" ]; then

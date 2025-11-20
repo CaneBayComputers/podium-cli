@@ -177,7 +177,6 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
-| `podium create <project>` | Create new Kavera flat-file site (alias for `podium clone https://github.com/CaneBayComputers/kavera.git <project>`) |
 | `podium clone <repo>` | Clone existing project |
 | `podium remove <project> [options]` | Remove project |
 
@@ -236,7 +235,7 @@ podium cleanup-test-environment
 
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php` |
+| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `kavera` |
 | `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework/PHP version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version<br/>**PHP:** `8` (default - PHP 8.3), `7` (PHP 7.4) |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |

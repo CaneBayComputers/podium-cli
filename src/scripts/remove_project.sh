@@ -134,7 +134,12 @@ debug "Starting step 1: Shutting down project"
 echo-return
 echo-cyan "Shutting down project '$PROJECT_NAME'..."
 echo-white
-"$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME"
+# Treat a non-running or already-removed project as a non-fatal condition
+if ! "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME"; then
+    debug "shutdown.sh returned non-zero for project '$PROJECT_NAME' (likely not running); continuing removal"
+    echo-yellow "Project '$PROJECT_NAME' is not running or could not be shut down. Continuing removal."
+    echo-white
+fi
 
 # 2. Move Project Directory to Trash  
 debug "Starting step 2: Moving project directory to trash"

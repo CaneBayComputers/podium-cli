@@ -55,7 +55,7 @@ validate_wordpress_version() {
 # Function to display usage
 usage() {
     echo-white "Usage: $0 <project_name> [organization] [version] [options]"
-    echo-white "Creates a new Laravel or WordPress project"
+    echo-white "Creates a new Laravel, WordPress, PHP, or Kavera project"
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name    Name of the project to create"
@@ -63,7 +63,7 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, kavera (required with --json-output)"
     echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
@@ -78,9 +78,15 @@ usage() {
     echo-white "Examples:"
     echo-white "  $0 my-app --framework laravel --display-name \"My App\" --database postgres --github"
     echo-white "  $0 my-blog --framework wordpress --display-name \"My Blog\" --github-org myorg"
+    echo-white "  $0 my-site --framework kavera --display-name \"My Flat Site\" --database mysql"
     error "usage" 1
 }
 
+# Resolve Kavera repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
+if [ -z "$KAVERA_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
+    KAVERA_REPOSITORY_URL=$(grep "^KAVERA_REPOSITORY_URL=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2-)
+fi
+: "${KAVERA_REPOSITORY_URL:=https://github.com/CaneBayComputers/kavera.git}"
 # Initialize variables
 PROJECT_NAME=""
 DISPLAY_NAME=""
@@ -209,11 +215,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php")
+        "laravel"|"wordpress"|"php"|"kavera")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, or php)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, or kavera)"
             ;;
     esac
 
@@ -311,7 +317,8 @@ if [ -z "$FRAMEWORK" ]; then
     echo-white "1) Laravel (PHP Framework)"
     echo-white "2) WordPress (CMS)"
     echo-white "3) PHP (Plain PHP project)"
-    echo-return; echo-yellow -n "Enter your choice (1-3): "
+    echo-white "4) Kavera (Laravel flat-file site for AI agents)"
+    echo-return; echo-yellow -n "Enter your choice (1-4): "
     read FRAMEWORK_CHOICE
     
     case $FRAMEWORK_CHOICE in
@@ -323,6 +330,9 @@ if [ -z "$FRAMEWORK" ]; then
             ;;
         3)
             FRAMEWORK="php"
+            ;;
+        4)
+            FRAMEWORK="kavera"
             ;;
         *)
             error "Invalid choice. Exiting..."
@@ -445,6 +455,11 @@ case $FRAMEWORK in
         
         # PHP projects don't need version validation
         echo-green "PHP project will be created with basic structure"
+        ;;
+    kavera)
+        echo-return; echo-cyan "Kavera flat-file project selected!"
+        # Kavera uses the starter repo; no version selection required.
+        echo-green "Kavera starter will be cloned from: $KAVERA_REPOSITORY_URL"
         ;;
     *)
         error "Unknown framework '$FRAMEWORK'. Exiting..."
@@ -621,6 +636,22 @@ EOF
     # Gitignore setup will be handled by setup_project.sh
     
     echo-green "PHP project structure created!"
+
+elif [ "$FRAMEWORK" = "kavera" ]; then
+    echo-return; echo-cyan "Cloning Kavera starter project..."
+    
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        if ! git clone "$KAVERA_REPOSITORY_URL" . > /dev/null 2>&1; then
+            echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"status\": \"error\", \"error\": \"clone_failed\", \"details\": \"Failed to clone Kavera repository from $KAVERA_REPOSITORY_URL\"}"
+            exit 1
+        fi
+    else
+        if ! git clone "$KAVERA_REPOSITORY_URL" .; then
+            error "Failed to clone Kavera repository from $KAVERA_REPOSITORY_URL"
+        fi
+    fi
+    
+    echo-green "Kavera project structure created!"
 fi
 
 
