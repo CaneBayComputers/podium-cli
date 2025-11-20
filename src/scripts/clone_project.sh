@@ -262,42 +262,55 @@ echo-return
 
 cd ..
 
-# Build setup options to pass along
-SETUP_OPTIONS="$PROJECT_NAME"
+# Build setup options to pass along (positional arguments expected by setup_project.sh)
+# Use an array to preserve spaces and avoid quoting issues.
+SETUP_ARGS=()
+
+# setup_project.sh expects:
+#   $1 = project_name
+#   $2 = database_engine
+#   $3 = display_name
+#   $4 = description (optional)
+#   $5 = emoji (optional)
+SETUP_ARGS+=("$PROJECT_NAME")
 if [[ -n "$DATABASE_ENGINE" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS $DATABASE_ENGINE"
+    SETUP_ARGS+=("$DATABASE_ENGINE")
 else
-    SETUP_OPTIONS="$SETUP_OPTIONS mysql"  # default
+    SETUP_ARGS+=("mysql")  # default
 fi
-if [[ -n "$DISPLAY_NAME" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS \"$DISPLAY_NAME\""
+
+if [[ -z "$DISPLAY_NAME" ]]; then
+    DISPLAY_NAME="$PROJECT_NAME"
 fi
+SETUP_ARGS+=("$DISPLAY_NAME")
+
 if [[ -n "$PROJECT_DESCRIPTION" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS \"$PROJECT_DESCRIPTION\""
+    SETUP_ARGS+=("$PROJECT_DESCRIPTION")
 fi
 if [[ -n "$PROJECT_EMOJI" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS \"$PROJECT_EMOJI\""
+    SETUP_ARGS+=("$PROJECT_EMOJI")
 fi
+
 # Add flags
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --json-output"
+    SETUP_ARGS+=("--json-output")
 fi
 if [[ "$NO_COLOR" == "1" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --no-colors"
+    SETUP_ARGS+=("--no-colors")
 fi
 if [[ "$DEBUG" == "1" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --debug"
+    SETUP_ARGS+=("--debug")
 fi
 if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-docker-compose"
+    SETUP_ARGS+=("--overwrite-docker-compose")
 fi
 if [[ -n "$PHP_VERSION" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --php-version $PHP_VERSION"
+    SETUP_ARGS+=("--php-version" "$PHP_VERSION")
 fi
 
 # Setup project
 if [[ "$JSON_OUTPUT" == "1" ]]; then
-    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS 2>&1)
+    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" "${SETUP_ARGS[@]}" 2>&1)
     SETUP_EXIT_CODE=$?
     
     if [ $SETUP_EXIT_CODE -ne 0 ]; then
@@ -306,7 +319,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         exit $SETUP_EXIT_CODE
     fi
 else
-    source "$DEV_DIR/scripts/setup_project.sh" $SETUP_OPTIONS
+    source "$DEV_DIR/scripts/setup_project.sh" "${SETUP_ARGS[@]}"
 fi
 
 # GitHub repository creation (interactive prompts if not specified)

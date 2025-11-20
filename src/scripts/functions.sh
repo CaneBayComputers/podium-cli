@@ -156,7 +156,6 @@ check-memcached() { [ "$(docker ps -q -f name=memcached)" ] && return 0 || retur
 check-mongo() { [ "$(docker ps -q -f name=mongo)" ] && return 0 || return 1; }
 check-postgres() { [ "$(docker ps -q -f name=postgres)" ] && return 0 || return 1; }
 check-mailhog() { [ "$(docker ps -q -f name=mailhog)" ] && return 0 || return 1; }
-check-ollama() { [ "$(docker ps -q -f name=ollama)" ] && return 0 || return 1; }
 
 # Utility functions
 divider() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo; echo-white '==============================='; echo; fi; }

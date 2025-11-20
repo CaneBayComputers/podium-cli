@@ -177,6 +177,7 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
+| `podium create <project>` | Create new Kavera flat-file site (alias for `podium clone https://github.com/CaneBayComputers/kavera.git <project>`) |
 | `podium clone <repo>` | Clone existing project |
 | `podium remove <project> [options]` | Remove project |
 
@@ -441,7 +442,6 @@ const data = JSON.parse(result.stdout);
 - **Memcached** - Additional caching layer
 - **phpMyAdmin** - Database management interface
 - **MailHog** - Email testing and debugging (captures outbound emails)
-- **Ollama** - Local LLM/AI service for development
 
 ### Project Structure
 

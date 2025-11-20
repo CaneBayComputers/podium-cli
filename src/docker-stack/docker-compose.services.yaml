@@ -90,24 +90,11 @@ services:
       vpc:
         ipv4_address: "${VPC_SUBNET}.8"
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    restart: always
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      vpc:
-        ipv4_address: "${VPC_SUBNET}.9"
-
 volumes:
   redis_data:
   mysql_data:
   mongo_data:
   postgres_data:
-  ollama_data:
 
 networks:
   vpc:

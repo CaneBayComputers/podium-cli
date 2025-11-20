@@ -101,8 +101,76 @@ fi
 
 HOSTS=$(cat /etc/hosts)
 
+RUNNING_CONTAINERS=$(docker ps --format "{{.Names}}")
+
 
 # Functions
+service_running() {
+    local name="$1"
+    echo "$RUNNING_CONTAINERS" | grep -q "^${name}$"
+}
+
+ping_host() {
+    local hostname="$1"
+    local resolved_ip
+    if command -v getent >/dev/null 2>&1; then
+        resolved_ip=$(getent hosts "$hostname" 2>/dev/null | awk '{print $1}' | head -n 1)
+    elif command -v host >/dev/null 2>&1; then
+        resolved_ip=$(host "$hostname" 2>/dev/null | awk '/has address/ {print $4; exit}')
+    else
+        resolved_ip=""
+    fi
+
+    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || ping -c 1 "$hostname" >/dev/null 2>&1; then
+        if [ -n "$resolved_ip" ]; then
+            echo-green "OK ($resolved_ip)"
+        else
+            echo-green "OK"
+        fi
+    else
+        echo-red "FAILED"
+    fi
+}
+
+curl_check() {
+    local url="$1"
+
+    if curl -fsS --max-time 3 --connect-timeout 2 "$url" >/dev/null 2>&1; then
+        echo-green "OK ($url)"
+    else
+        echo-red "FAILED ($url)"
+    fi
+}
+
+resolve_host() {
+    local hostname="$1"
+    if command -v getent >/dev/null 2>&1; then
+        getent hosts "$hostname" 2>/dev/null | awk '{print $1}' | head -n 1
+    elif command -v host >/dev/null 2>&1; then
+        host "$hostname" 2>/dev/null | awk '/has address/ {print $4; exit}'
+    else
+        echo ""
+    fi
+}
+
+ping_status() {
+    local hostname="$1"
+    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || ping -c 1 "$hostname" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+curl_status() {
+    local url="$1"
+    if curl -fsS --max-time 3 --connect-timeout 2 "$url" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Parse docker-compose.yaml to get all services dynamically
 parse_docker_compose_services() {
     local compose_file="$1"
@@ -206,26 +274,46 @@ get_project_status() {
     fi
     
     # Host entry check
+    local resolved_ip=""
     if HOST_ENTRY=$(printf "%s\n" "$HOSTS" | grep " $proj_name$"); then
         EXT_PORT=$(echo $HOST_ENTRY | cut -d'.' -f 4 | cut -d' ' -f 1)
+        resolved_ip=$(echo $HOST_ENTRY | awk '{print $1}')
         project_data=$(echo "$project_data" | jq --arg port "$EXT_PORT" '. + {host_entry: true, external_port: $port}')
     else
         project_data=$(echo "$project_data" | jq '. + {host_entry: false, external_port: null}')
     fi
     
+    project_data=$(echo "$project_data" | jq --arg ip "$resolved_ip" '. + {resolved_ip: (if ($ip|length>0) then $ip else null end)}')
+    
     # Docker status check
+    ping_state="skipped"
+    http_state="skipped"
     if [ "$(docker ps -q -f name=$proj_name)" ]; then
         project_data=$(echo "$project_data" | jq '. + {docker_running: true}')
+        
+        if ping_status "$proj_name"; then
+            ping_state="ok"
+        else
+            ping_state="failed"
+        fi
         
         # Port mapping check (only if running)
         if docker port "$proj_name" 80/tcp > /dev/null 2>&1; then
             project_data=$(echo "$project_data" | jq '. + {port_mapped: true}')
+            if curl_status "http://$proj_name"; then
+                http_state="ok"
+            else
+                http_state="failed"
+            fi
         else
             project_data=$(echo "$project_data" | jq '. + {port_mapped: false}')
+            http_state="skipped"
         fi
     else
         project_data=$(echo "$project_data" | jq '. + {docker_running: false, port_mapped: false}')
     fi
+    
+    project_data=$(echo "$project_data" | jq --arg ping "$ping_state" --arg http "$http_state" '. + {ping_status: $ping, http_status: $http}')
     
     # URLs
     if [ -n "$HOST_ENTRY" ]; then
@@ -284,6 +372,31 @@ project_status() {
     return 1
   else
     echo-green " MAPPED"
+  fi
+
+  RESOLVED_IP=""
+  if [ -n "$HOST_ENTRY" ]; then
+    RESOLVED_IP=$(echo $HOST_ENTRY | awk '{print $1}')
+  else
+    RESOLVED_IP=$(resolve_host "$PROJ_NAME")
+  fi
+
+  echo-white -n "PING: "
+  if ping_status "$PROJ_NAME"; then
+    if [ -n "$RESOLVED_IP" ]; then
+        echo-green "OK ($RESOLVED_IP)"
+    else
+        echo-green "OK"
+    fi
+  else
+    echo-red "FAILED"
+  fi
+
+  echo-white -n "HTTP: "
+  if curl_status "http://$PROJ_NAME"; then
+    echo-green "OK (http://$PROJ_NAME)"
+  else
+    echo-red "FAILED (http://$PROJ_NAME)"
   fi
 
   # Platform-specific URL display
@@ -345,6 +458,56 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     if [ -f "$COMPOSE_FILE" ]; then
         SERVICES_JSON=$(parse_docker_compose_services "$COMPOSE_FILE" "$VPC_SUBNET")
+        
+        # Add connectivity details to services JSON
+        if [ -n "$SERVICES_JSON" ]; then
+            while IFS= read -r service_name; do
+                [ -z "$service_name" ] && continue
+                
+                service_status=$(echo "$SERVICES_JSON" | jq -r --arg name "$service_name" '.[$name].status')
+                resolved_ip=$(resolve_host "$service_name")
+                
+                ping_state="skipped"
+                http_state="skipped"
+                http_url=""
+                
+                if [ "$service_status" = "running" ]; then
+                    if ping_status "$service_name"; then
+                        ping_state="ok"
+                    else
+                        ping_state="failed"
+                    fi
+                    
+                    case "$service_name" in
+                        phpmyadmin)
+                            http_url="http://phpmyadmin/"
+                            ;;
+                        mailhog)
+                            http_url="http://mailhog:8025/"
+                            ;;
+                    esac
+                    
+                    if [ -n "$http_url" ]; then
+                        if curl_status "$http_url"; then
+                            http_state="ok"
+                        else
+                            http_state="failed"
+                        fi
+                    fi
+                fi
+                
+                SERVICES_JSON=$(echo "$SERVICES_JSON" | jq \
+                    --arg name "$service_name" \
+                    --arg resolved "$resolved_ip" \
+                    --arg ping "$ping_state" \
+                    --arg http "$http_state" \
+                    --arg url "$http_url" \
+                    '.[$name].resolved_ip = ( ($resolved | select(length>0)) // null)
+                     | .[$name].ping_status = $ping
+                     | (if ($url|length>0) then .[$name].http_url = $url | .[$name].http_status = $http else . end)')
+            done <<< "$(echo "$SERVICES_JSON" | jq -r 'keys[]')"
+        fi
+        
         JSON_DATA=$(echo "$JSON_DATA" | jq --argjson services "$SERVICES_JSON" '.shared_services = $services')
     fi
     
@@ -385,7 +548,7 @@ echo-return
 
 # Check MariaDB
 echo-white -n "MariaDB: "
-if docker ps --format "table {{.Names}}" | grep -q "mariadb"; then
+if service_running "mariadb"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -393,7 +556,7 @@ fi
 
 # Check phpMyAdmin
 echo-white -n "phpMyAdmin: "
-if docker ps --format "table {{.Names}}" | grep -q "phpmyadmin"; then
+if service_running "phpmyadmin"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -401,7 +564,7 @@ fi
 
 # Check Redis
 echo-white -n "Redis: "
-if docker ps --format "table {{.Names}}" | grep -q "redis"; then
+if service_running "redis"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -409,7 +572,7 @@ fi
 
 # Check Memcached
 echo-white -n "Memcached: "
-if docker ps --format "table {{.Names}}" | grep -q "memcached"; then
+if service_running "memcached"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -417,7 +580,7 @@ fi
 
 # Check PostgreSQL
 echo-white -n "PostgreSQL: "
-if docker ps --format "table {{.Names}}" | grep -q "postgres"; then
+if service_running "postgres"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -425,7 +588,7 @@ fi
 
 # Check MongoDB
 echo-white -n "MongoDB: "
-if docker ps --format "table {{.Names}}" | grep -q "mongo"; then
+if service_running "mongo"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -433,18 +596,92 @@ fi
 
 # Check MailHog
 echo-white -n "MailHog: "
-if docker ps --format "table {{.Names}}" | grep -q "mailhog"; then
+if service_running "mailhog"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
 fi
 
-# Check Ollama
-echo-white -n "Ollama: "
-if docker ps --format "table {{.Names}}" | grep -q "ollama"; then
-    echo-green "RUNNING"
+echo-return
+echo-cyan "SHARED SERVICES CONNECTIVITY:"
+echo-return
+
+if service_running "mariadb"; then
+    echo-white -n "PING (MariaDB): "
+    ping_host "mariadb"
 else
-    echo-red "STOPPED"
+    echo-yellow "PING (MariaDB): skipped (not running)"
+fi
+
+if service_running "phpmyadmin"; then
+    echo-white -n "PING (phpMyAdmin): "
+    ping_host "phpmyadmin"
+else
+    echo-yellow "PING (phpMyAdmin): skipped (not running)"
+fi
+
+if service_running "redis"; then
+    echo-white -n "PING (Redis): "
+    ping_host "redis"
+else
+    echo-yellow "PING (Redis): skipped (not running)"
+fi
+
+if service_running "memcached"; then
+    echo-white -n "PING (Memcached): "
+    ping_host "memcached"
+else
+    echo-yellow "PING (Memcached): skipped (not running)"
+fi
+
+if service_running "postgres"; then
+    echo-white -n "PING (PostgreSQL): "
+    ping_host "postgres"
+else
+    echo-yellow "PING (PostgreSQL): skipped (not running)"
+fi
+
+if service_running "mongo"; then
+    echo-white -n "PING (MongoDB): "
+    ping_host "mongo"
+else
+    echo-yellow "PING (MongoDB): skipped (not running)"
+fi
+
+if service_running "mailhog"; then
+    echo-white -n "PING (MailHog): "
+    ping_host "mailhog"
+else
+    echo-yellow "PING (MailHog): skipped (not running)"
+fi
+
+echo-return
+divider
+echo-cyan "SHARED SERVICES ACCESS:"
+echo-return
+if service_running "phpmyadmin"; then
+    echo-white "phpMyAdmin UI: http://phpmyadmin/"
+fi
+if service_running "mailhog"; then
+    echo-white "MailHog UI: http://mailhog:8025/"
+fi
+
+echo-return
+echo-cyan "SHARED SERVICE HTTP CHECKS:"
+echo-return
+
+if service_running "phpmyadmin"; then
+    echo-white -n "HTTP (phpMyAdmin): "
+    curl_check "http://phpmyadmin/"
+else
+    echo-yellow "HTTP (phpMyAdmin): skipped (not running)"
+fi
+
+if service_running "mailhog"; then
+    echo-white -n "HTTP (MailHog): "
+    curl_check "http://mailhog:8025/"
+else
+    echo-yellow "HTTP (MailHog): skipped (not running)"
 fi
 
 divider

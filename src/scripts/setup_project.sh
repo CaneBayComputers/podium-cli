@@ -375,6 +375,11 @@ PROJECT_EMOJI_SAFE="${PROJECT_EMOJI:-🚀}"
 DISPLAY_NAME_SAFE="${DISPLAY_NAME:-$PROJECT_NAME}"
 PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION:-}"
 
+# Escape any embedded double quotes to keep YAML valid inside the surrounding quotes
+PROJECT_EMOJI_SAFE="${PROJECT_EMOJI_SAFE//\"/\\\"}"
+DISPLAY_NAME_SAFE="${DISPLAY_NAME_SAFE//\"/\\\"}"
+PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION_SAFE//\"/\\\"}"
+
 # Use a delimiter that's very unlikely to appear in the replacement text
 podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
 podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml  

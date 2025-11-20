@@ -192,6 +192,9 @@ if [[ "$NO_COLOR" == "1" ]]; then
     STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
 fi
 
+# Allow containers time to finish booting before running status checks
+sleep 12
+
 # Show status to confirm successful startup
 if [ -n "$PROJECT_NAME" ]; then
     source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
