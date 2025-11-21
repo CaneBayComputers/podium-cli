@@ -41,6 +41,7 @@ usage() {
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php)"
+    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel/Kavera)"
     echo-white ""
     echo-white "Examples:"
     echo-white "  $0 my-project mysql"
