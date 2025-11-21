@@ -250,7 +250,7 @@ case "$1" in
             esac
         done
         if [ "$has_standard" = false ]; then
-            set -- --standard="/home/developer/.config/phpcs-ruleset.xml" "$@"
+            set -- --standard="/etc/phpcs-ruleset.xml" "$@"
         fi
         docker_exec developer phpcs "$@"
         ;;
@@ -268,7 +268,7 @@ case "$1" in
             esac
         done
         if [ "$has_standard" = false ]; then
-            set -- --standard="/home/developer/.config/phpcs-ruleset.xml" "$@"
+            set -- --standard="/etc/phpcs-ruleset.xml" "$@"
         fi
         docker_exec developer phpcbf "$@"
         ;;
@@ -277,7 +277,7 @@ case "$1" in
         shift
         # Auto-attach default format and ruleset if only a path is provided
         if [ "$#" -eq 1 ]; then
-            set -- "$1" text "/home/developer/.config/phpmd.xml"
+            set -- "$1" text "/etc/phpmd.xml"
         fi
         docker_exec developer phpmd "$@"
         ;;
