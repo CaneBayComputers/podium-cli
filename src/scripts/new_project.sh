@@ -69,6 +69,7 @@ usage() {
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --description TEXT      Project description (optional)"
     echo-white "  --emoji EMOJI           Project emoji (will prompt if not provided)"
+    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel/Kavera)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
@@ -97,6 +98,7 @@ VERSION="latest"
 FRAMEWORK=""
 DATABASE=""
 CREATE_GITHUB=""
+SKIP_STORAGE_SYMLINK=0
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -127,6 +129,10 @@ while [[ $# -gt 0 ]]; do
         --emoji)
             PROJECT_EMOJI="$2"
             shift 2
+            ;;
+        --no-storage-symlink)
+            SKIP_STORAGE_SYMLINK=1
+            shift
             ;;
         --github)
             CREATE_GITHUB="yes"
@@ -687,6 +693,9 @@ fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # In JSON mode, capture setup output and combine with new_project info
+    if [[ "$SKIP_STORAGE_SYMLINK" == "1" ]]; then
+        SETUP_OPTIONS="$SETUP_OPTIONS --no-storage-symlink"
+    fi
     SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS 2>&1)
     SETUP_EXIT_CODE=$?
     
@@ -700,6 +709,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     echo "{\"action\": \"new_project\", \"project_name\": \"$PROJECT_NAME\", \"framework\": \"$FRAMEWORK\", \"database\": \"$DATABASE\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 else
     # In normal mode, run setup with full output (setup handles startup internally)
+    if [[ "$SKIP_STORAGE_SYMLINK" == "1" ]]; then
+        SETUP_OPTIONS="$SETUP_OPTIONS --no-storage-symlink"
+    fi
     source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
 fi
 

@@ -26,6 +26,7 @@ PROJECT_DESCRIPTION=""
 PROJECT_EMOJI=""
 CREATE_GITHUB=""
 ORGANIZATION=""
+NO_STORAGE_SYMLINK=0
 
 # Function to display usage
 usage() {
@@ -48,6 +49,7 @@ usage() {
     echo-white "  --emoji EMOJI                Project emoji (default: 🚀)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
+    echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --help                       Show this help message"
     
     error "usage" 1
@@ -110,6 +112,10 @@ while [[ $# -gt 0 ]]; do
             else
                 error "Error: --emoji requires an emoji"
             fi
+            ;;
+        --no-storage-symlink)
+            NO_STORAGE_SYMLINK=1
+            shift
             ;;
         --github)
             CREATE_GITHUB="yes"
@@ -306,6 +312,9 @@ if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
 fi
 if [[ -n "$PHP_VERSION" ]]; then
     SETUP_ARGS+=("--php-version" "$PHP_VERSION")
+fi
+if [[ "$NO_STORAGE_SYMLINK" == "1" ]]; then
+    SETUP_ARGS+=("--no-storage-symlink")
 fi
 
 # Setup project

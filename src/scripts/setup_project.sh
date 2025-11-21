@@ -58,6 +58,7 @@ PROJECT_DESCRIPTION=""
 PROJECT_EMOJI="🚀"
 OVERWRITE_DOCKER_COMPOSE=""
 FORCED_PHP_VERSION=""
+SKIP_STORAGE_SYMLINK=false
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -95,6 +96,10 @@ while [[ $# -gt 0 ]]; do
             else
                 error "Error: --framework requires a framework type (laravel, wordpress, php)"
             fi
+            ;;
+        --no-storage-symlink)
+            SKIP_STORAGE_SYMLINK=true
+            shift
             ;;
         --debug)
             DEBUG=1
@@ -587,6 +592,22 @@ if [ -d "storage" ]; then
     find storage -type d -exec setfacl -m "default:group::rw" {} +
 
     echo-green 'Storage folder permissions set!'; echo-white
+
+    # Create storage symlink for Laravel/Kavera unless disabled
+    if [ "$SKIP_STORAGE_SYMLINK" != "true" ] && [ -f "artisan" ]; then
+        if [ -d "public" ] && [ -d "storage/app/public" ]; then
+            if [ -L "public/storage" ]; then
+                :
+            elif [ -e "public/storage" ]; then
+                echo-yellow "public/storage exists and is not a symlink. Skipping storage symlink creation."
+            else
+                ln -s ../storage/app/public public/storage
+                if [[ "$JSON_OUTPUT" != "1" ]]; then
+                    echo-green "Symlink created: public/storage -> ../storage/app/public"
+                fi
+            fi
+        fi
+    fi
 
 fi
 

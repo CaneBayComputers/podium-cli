@@ -244,6 +244,7 @@ podium cleanup-test-environment
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
+| `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel/Kavera only) |
 
 ### Clone Project Options
 
@@ -257,6 +258,7 @@ podium cleanup-test-environment
 | `--emoji <emoji>` | Project emoji | Default: 🚀 |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
+| `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel projects) |
 
 ### Setup Project Options
 
