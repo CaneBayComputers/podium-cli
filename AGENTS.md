@@ -33,9 +33,9 @@
 - New commands should follow the existing verb-first naming (`podium cleanup-test-environment`) and reuse the echo wrappers instead of raw `echo`.
 
 ## AI / Automation Usage Notes
-- When running Podium commands non-interactively (CI, agents, or scripts), wrap them with `script` so TTY-dependent tooling behaves correctly, for example:
-  - `script -q -c "podium art app:images-manifest" /dev/null`
-  - `script -q -c "podium php -l app/Console/Commands/BuildImageManifest.php" /dev/null`
+- For non-interactive runs (CI, agents, scripts), prefer the non-TTY container execution commands:
+  - `podium exec <cmd>` / `podium exec-root <cmd>` – run inside the project container without allocating a TTY.
+  - Avoid interactive REPL-style commands (`podium bash`, `podium tinker`, `podium exec-tty*`) in agents; keep those for human-operated terminals.
 
 ## Testing Guidelines
 - Add new coverage by extending `src/scripts/test_json_output.sh`; name scenarios after the command under test (`new_laravel_latest`).

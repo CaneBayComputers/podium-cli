@@ -79,9 +79,8 @@ sudo pacman -Syu --noconfirm
 ###############################
 echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
-    git curl jq p7zip net-tools \
+    git curl jq \
     docker nodejs npm \
-    mariadb-clients \
     trash-cli
 
 ###############################
@@ -180,4 +179,3 @@ else
     echo "The podium command is not available in PATH."
     exit 1
 fi
-

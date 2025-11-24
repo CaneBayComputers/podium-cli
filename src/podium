@@ -44,14 +44,19 @@ show_help() {
     echo "  podium php <args>         - Run PHP inside container"
     echo
     echo-white "CONTAINER EXECUTION: (Run from project directory)"
-    echo "  podium exec <cmd>         - Execute command as developer user"
-    echo "  podium exec-root <cmd>    - Execute command as root user"
+    echo "  podium exec <cmd>         - Execute command as developer user (no TTY, great for automation/CI)"
+    echo "  podium exec-root <cmd>    - Execute command as root user (no TTY)"
+    echo "  podium exec-tty <cmd>     - Execute command as developer user with TTY"
+    echo "  podium exec-tty-root <cmd> - Execute command as root user with TTY"
+    echo "  podium bash [args]        - Open bash shell inside container with TTY"
+    echo "  podium tinker [args]      - Open Laravel tinker REPL with TTY"
     echo
     echo-white "ENHANCED LARAVEL COMMANDS: (Run from project directory)"
     echo "  podium db-refresh         - Fresh migration + seed"
     echo "  podium cache-refresh      - Clear all Laravel caches"
     echo
     echo-white "SERVICE MANAGEMENT:"
+    echo "  podium mysql <args>       - Run MySQL client inside mariadb container"
     echo "  podium redis <cmd>        - Run Redis CLI commands"
     echo "  podium redis-flush        - Flush all Redis data"
     echo "  podium memcache <cmd>     - Run Memcached commands via telnet"
@@ -71,6 +76,7 @@ show_help() {
     echo
     echo-white "SYSTEM MANAGEMENT:"
     echo "  podium configure          - Configure Podium environment"
+    echo "  podium update             - Update Podium CLI and base Docker images"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
     echo "  podium uninstall          - Remove Podium Docker resources"
@@ -130,6 +136,8 @@ show_help() {
     echo "  podium remove myproject --force --preserve-database"
     echo "                                             # Remove project but keep database"
     echo "  podium exec 'ls -la'                       # Execute shell command in project container"
+    echo "  podium exec-tty bash                       # Open interactive bash shell in project container"
+    echo "  podium tinker                              # Open Laravel tinker REPL inside project container"
     echo "  podium supervisor restart all              # Restart all supervised processes"
     echo
     echo-white "NOTES:"
@@ -213,6 +221,19 @@ docker_exec() {
     fi
 }
 
+# Docker exec helper without TTY (for automation/CI)
+docker_exec_notty() {
+    local user="$1"
+    shift
+    local project_name="$(get_project_name)"
+    
+    if [ "$user" = "root" ]; then
+        docker container exec -i --user root -w /usr/share/nginx/html "$project_name" "$@"
+    else
+        docker container exec -i --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
+    fi
+}
+
 # Main command dispatcher
 case "$1" in
     # Containerized development tools
@@ -286,12 +307,32 @@ case "$1" in
     "exec")
         validate_project_context || exit 1
         shift
-        docker_exec developer "$@"
+        docker_exec_notty developer "$@"
         ;;
     "exec-root")
         validate_project_context || exit 1
         shift
+        docker_exec_notty root "$@"
+        ;;
+    "exec-tty")
+        validate_project_context || exit 1
+        shift
+        docker_exec developer "$@"
+        ;;
+    "exec-tty-root")
+        validate_project_context || exit 1
+        shift
         docker_exec root "$@"
+        ;;
+    "bash")
+        validate_project_context || exit 1
+        shift
+        docker_exec developer bash "$@"
+        ;;
+    "tinker")
+        validate_project_context || exit 1
+        shift
+        docker_exec developer php /usr/share/nginx/html/artisan tinker "$@"
         ;;
     
     # Enhanced Laravel commands
@@ -313,6 +354,14 @@ case "$1" in
         ;;
     
     # Service management
+    "mysql")
+        shift
+        if [ -t 0 ]; then
+            docker container exec -it mariadb mariadb -u"root" "$@"
+        else
+            docker container exec -i mariadb mariadb -u"root" "$@"
+        fi
+        ;;
     "redis")
         shift
         docker container exec -it redis redis-cli "$@"
@@ -432,6 +481,9 @@ case "$1" in
     # System management
     "configure")
         "$SCRIPT_DIR/scripts/configure.sh" "${@:2}"
+        ;;
+    "update")
+        "$SCRIPT_DIR/scripts/update.sh" "${@:2}"
         ;;
     "start-services")
         "$SCRIPT_DIR/scripts/start_services.sh"

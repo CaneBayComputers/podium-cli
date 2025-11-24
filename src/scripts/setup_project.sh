@@ -615,7 +615,7 @@ fi
 # Create new database, run migration and seed
 echo-cyan "Creating database $PROJECT_NAME_SNAKE ..."; echo-white
 
-json-mysql -h"mariadb" -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
+json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
 
 echo-green 'Database created!'; echo-white
 
@@ -657,7 +657,7 @@ elif [ -f "create_tables.sql" ]; then
 
     echo-cyan 'Creating tables ...'; echo-white
 
-    mysql -h"mariadb" -u"root" $PROJECT_NAME_SNAKE < create_tables.sql
+    docker container exec -i mariadb mariadb -u"root" "$PROJECT_NAME_SNAKE" < create_tables.sql
 
 fi
 

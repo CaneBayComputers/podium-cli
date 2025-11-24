@@ -47,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - Docker CE with Compose plugin
 - Node.js 20 with NPM
 - GitHub CLI
-- MariaDB client, p7zip, trash-cli, net-tools
+- jq, trash-cli
 - All system dependencies
 
 ### 🐧 Linux (Arch / Arch-based)
@@ -58,7 +58,7 @@ On Arch Linux and Arch-based distributions:
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash
 ```
 
-This installs Docker, Node.js, Git, MariaDB client tools, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
+This installs Docker, Node.js, Git, `jq`, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
 
 
 ### 🍎 MacOS
@@ -72,7 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - Docker Desktop
 - Node.js with NPM
 - GitHub CLI
-- Additional tools: jq, p7zip, trash, mysql-client
+- Additional tools: jq, trash
 
 **Note:** You might need to start Docker Desktop manually after installation.
 
@@ -120,16 +120,30 @@ podium down
 | `podium wp <args>` | Run WordPress CLI commands |
 | `podium php <args>` | Run PHP inside container |
 
+### ✅ Static Analysis & Linting
+*Run from project directory; paths are relative to the project root (for example `app/Console/Commands/Foo.php`)*
+
+| Command | Description |
+|---------|-------------|
+| `podium phpcs <relative-path>` | Run PHPCS with the default ruleset |
+| `podium phpcbf <relative-path>` | Run PHPCBF with the default ruleset to auto-fix |
+| `podium phpmd <relative-path>` | Run PHPMD against a file using the default rules |
+| `podium php -l <relative-path>` | Run PHP lint against a file |
+
 ### 📦 Container Execution
 *Run from project directory*
 
 | Command | Description |
 |---------|-------------|
-| `podium exec <cmd>` | Execute command as developer user |
-| `podium exec-root <cmd>` | Execute command as root user |
+| `podium exec <cmd>` | Execute command as developer user (no TTY, automation‑friendly) |
+| `podium exec-root <cmd>` | Execute command as root user (no TTY) |
+| `podium exec-tty <cmd>` | Execute command as developer user with TTY (interactive) |
+| `podium exec-tty-root <cmd>` | Execute command as root user with TTY (interactive) |
+| `podium bash [args]` | Open bash shell inside container with TTY |
+| `podium tinker [args]` | Open Laravel tinker REPL inside container with TTY |
 
 ### ⚡ Enhanced Laravel Commands
-*Run from anywhere*
+*Run from project directory*
 
 | Command | Description |
 |---------|-------------|
@@ -141,6 +155,7 @@ podium down
 
 | Command | Description |
 |---------|-------------|
+| `podium mysql <args>` | Run MySQL client inside the `mariadb` service container |
 | `podium redis <cmd>` | Run Redis CLI commands |
 | `podium redis-flush` | Flush all Redis data |
 | `podium memcache <cmd>` | Run Memcached commands via telnet |
@@ -171,6 +186,7 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium configure` | Configure Podium environment |
+| `podium update` | Update Podium CLI and base Docker images |
 | `podium stop-services` | Stop shared services |
 | `podium uninstall` | Remove all Podium Docker resources |
 | `podium projects-dir` | Show projects directory path |

@@ -86,10 +86,12 @@ dockerrm() { docker container rm "$@"; }
 
 # JSON-aware command wrappers
 json-mysql() {
+    # Always execute the MariaDB client from inside the mariadb container so we don't
+    # require a host-side mariadb-client installation.
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        mysql "$@" > /dev/null 2>&1
+        docker container exec mariadb mariadb "$@" > /dev/null 2>&1
     else
-        mysql "$@"
+        docker container exec -i mariadb mariadb "$@"
     fi
 }
 
