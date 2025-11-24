@@ -165,8 +165,9 @@ if [ -d "$PROJECT_DIR" ]; then
         else
             echo-yellow "Project directory removal cancelled."
             echo-white "Install trash-cli for safer project removal:"
-            echo-white "  Linux: sudo apt-get install trash-cli"
-            echo-white "  macOS: brew install trash-cli"
+            echo-white "  Ubuntu/Debian: sudo apt-get install trash-cli"
+            echo-white "  Arch Linux:    sudo pacman -S trash-cli"
+            echo-white "  macOS:         brew install trash-cli"
             cd "$ORIG_DIR"
             exit 0
         fi

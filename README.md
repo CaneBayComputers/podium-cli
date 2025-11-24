@@ -4,10 +4,40 @@ Podium CLI is a powerful command-line interface for managing Docker-based PHP de
 
 Built for modern PHP development, Podium CLI eliminates the complexity of managing multiple local environments by containerizing everything while maintaining the simplicity developers love. Whether you're building a single Laravel API or managing dozens of WordPress sites, Podium handles the infrastructure so you can focus on writing code. Each project gets its own isolated environment with automatic database setup, intelligent port management, and instant LAN sharing for client demos.
 
+## Quick Start
+
+**Open a terminal and start using Podium:**
+```bash
+# Configure your development environment post installation
+podium configure
+
+# Create a new Kavera website project (Laravel flat‑file sites)
+podium new my-kavera-site --framework kavera
+```
+
+Kavera (https://github.com/CaneBayComputers/kavera) is an AI‑agent‑first Laravel website framework: pages are flat-file Blade templates on purpose so agents can safely read, edit, and rearrange content without fighting a CMS, while service-driven integrations (Blogger, Eventbrite, Flickr, webhooks, etc.) stream dynamic data into the site. Paired with Podium, it lets you spin up agent-managed, production-ready marketing sites in minutes instead of weeks.
+
+Other common project types:
+
+- Laravel API / app:
+  ```bash
+  podium new my-laravel-app --framework laravel
+  ```
+- WordPress site:
+  ```bash
+  podium new my-wp-site --framework wordpress
+  ```
+- Empty PHP project:
+  ```bash
+  podium new my-php-app --framework php
+  ```
+
 
 ## 💾 Installation
 
-### 🐧 Linux (Ubuntu/Debian)
+### 🐧 Linux (Debian / Ubuntu / Ubuntu-based)
+
+Podium CLI works best in Linux!
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
@@ -20,19 +50,18 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - MariaDB client, p7zip, trash-cli, net-tools
 - All system dependencies
 
-**Quick Start:**
+### 🐧 Linux (Arch / Arch-based)
+
+On Arch Linux and Arch-based distributions:
+
 ```bash
-# Install and configure Podium
-podium configure
-
-# Create a new project
-podium new my-project
-
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash
 ```
 
----
+This installs Docker, Node.js, Git, MariaDB client tools, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
 
-### 🍎 macOS
+
+### 🍎 MacOS
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
@@ -45,55 +74,12 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 - GitHub CLI
 - Additional tools: jq, p7zip, trash, mysql-client
 
-**Note:** You'll need to start Docker Desktop manually after installation.
+**Note:** You might need to start Docker Desktop manually after installation.
 
-**Quick Start:**
-```bash
-# Install and configure Podium
-podium configure
-
-# Create a new project
-podium new my-project
-
-```
-
----
 
 ### 🪟 Windows
 
-Podium CLI runs on Windows through **WSL** (Windows Subsystem for Linux). This provides a full Linux environment with excellent Docker integration.
-
-#### Installation Steps
-
-**1. Install WSL with Ubuntu:**
-```powershell
-# Open PowerShell as Administrator and run:
-wsl --install -d Ubuntu
-
-# Reboot when prompted
-```
-
-**2. Install Docker Desktop:**
-- Download Docker Desktop from: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
-- Run the installer (requires reboot)
-- Start Docker Desktop after reboot
-
-**3. Install Podium CLI:**
-```bash
-# Open Ubuntu terminal (search "Ubuntu" in Start menu) and run:
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
-```
-
-#### Quick Start
-
-**Open Ubuntu terminal and start using Podium:**
-```bash
-# Configure your development environment
-podium configure
-
-# Create your first project  
-podium new my-project
-```
+Podium CLI runs best on Linux, period. You can try WSL but it is not officially supported. Windows/WSL issues will not be addressed nor fixed.
 
 
 ## 🪄 The Magic Commands - Daily Workflow
@@ -471,7 +457,7 @@ Each project gets:
 
 ### Platform-Specific Uninstall
 
-#### 🐧 Linux (Ubuntu/Debian)
+#### 🐧 Linux (Debian / Ubuntu / Ubuntu-based)
 ```bash
 # 1. Clean up Docker resources first
 podium uninstall
@@ -484,7 +470,7 @@ sudo rm -rf /usr/local/share/podium-cli
 sudo rm -rf /etc/podium-cli
 ```
 
-#### 🍎 macOS (Homebrew)
+#### 🍎 MacOS (Homebrew)
 ```bash
 # Automatic cleanup - runs 'podium uninstall' then removes CLI
 brew uninstall podium-cli
@@ -493,20 +479,6 @@ brew uninstall podium-cli
 podium uninstall
 rm -rf /usr/local/bin/podium
 sudo rm -rf /etc/podium-cli
-```
-
-#### 🪟 Windows (WSL2)
-```bash
-# Inside WSL2 terminal
-podium uninstall
-
-# Remove CLI files
-sudo rm -rf /usr/local/bin/podium
-sudo rm -rf /etc/podium-cli
-
-# Optional: Remove WSL2 distribution entirely
-# (Run in Windows PowerShell as Administrator)
-# wsl --unregister Ubuntu
 ```
 
 ### What Gets Removed

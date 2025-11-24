@@ -21,21 +21,26 @@
 - Run the CLI just as `podium <command>`. Do not run CLI from `./src/podium`.
 - Exercise automation outputs with `podium <command> --json-output` or any subcommand that feeds the GUI. Not all commands have this option so check help first.
 - Use `podium test-json-output [case]` for regression coverage and `podium cleanup-test-environment` to tear down fixtures after ad hoc runs.
+- Static analysis and linting commands run inside the project container and expect project-relative paths (from the project root, for example `app/Console/Commands/Foo.php`):
+  - `podium phpcs <relative-path>` – Run PHPCS with the default ruleset.
+  - `podium phpcbf <relative-path>` – Run PHPCBF with the default ruleset to auto-fix.
+  - `podium phpmd <relative-path>` – Run PHPMD against a file using the default rules.
+  - `podium php -l <relative-path>` – Run PHP lint against a file.
 
 ## Coding Style & Naming Conventions
 - Author scripts with `#!/bin/bash`, `set -e`, four-space indentation, and snake_case helpers (`init_projects_dir`).
 - Prefer extending the shared utilities in `functions.sh` so color handling, JSON quiet mode, and logging stay consistent.
 - New commands should follow the existing verb-first naming (`podium cleanup-test-environment`) and reuse the echo wrappers instead of raw `echo`.
 
+## AI / Automation Usage Notes
+- When running Podium commands non-interactively (CI, agents, or scripts), wrap them with `script` so TTY-dependent tooling behaves correctly, for example:
+  - `script -q -c "podium art app:images-manifest" /dev/null`
+  - `script -q -c "podium php -l app/Console/Commands/BuildImageManifest.php" /dev/null`
+
 ## Testing Guidelines
 - Add new coverage by extending `src/scripts/test_json_output.sh`; name scenarios after the command under test (`new_laravel_latest`).
 - Keep Docker noise isolated by using the `podium_test_` prefixes and calling `cleanup-test-environment` within failure handlers.
 - Capture debugging data with the `--debug` flag and attach the relevant portion of `/tmp/podium-cli-debug.log` to reviews when issues arise.
-
-## Commit & Pull Request Guidelines
-- Follow the existing log style: short, imperative subjects (`docs: refine JSON flags`) with detail in the body when context is needed.
-- Reference related issues and list the Podium commands or installer scripts you touched; include `podium test-json-output` results in PR summaries.
-- Screenshots are optional—prefer clipped command output or log excerpts to demonstrate behaviour changes.
 
 ## Configuration & Security Notes
 - Document new environment variables in `src/docker-stack/env.example` and keep defaults non-sensitive.
