@@ -474,7 +474,7 @@ if [ -f ".env.example" ]; then
     case $DATABASE_ENGINE in
         "postgresql")
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=postgres" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
             podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
             podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=postgres" .env
@@ -482,7 +482,7 @@ if [ -f ".env.example" ]; then
             ;;
         "mongodb")
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=mongo" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
             podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
             podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
@@ -490,7 +490,7 @@ if [ -f ".env.example" ]; then
             ;;
         *)
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=mariadb" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
             podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
             podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
@@ -502,11 +502,11 @@ if [ -f ".env.example" ]; then
     podium-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
     podium-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
     podium-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
-    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=memcached" .env
-    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=redis" .env
+    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=$MEMCACHED_CONTAINER_NAME" .env
+    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
     # Configure MailHog for development email testing
     podium-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
-    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=mailhog" .env
+    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
     podium-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
     podium-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
     podium-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
@@ -657,7 +657,7 @@ elif [ -f "create_tables.sql" ]; then
 
     echo-cyan 'Creating tables ...'; echo-white
 
-    docker container exec -i mariadb mariadb -u"root" "$PROJECT_NAME_SNAKE" < create_tables.sql
+    docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$PROJECT_NAME_SNAKE" < create_tables.sql
 
 fi
 

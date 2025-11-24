@@ -233,7 +233,7 @@ if [[ "$DELETE_DB_CONFIRM" == "y" ]]; then
     echo-white
     
     # Check database existence from inside the mariadb container
-    DB_EXISTS=$(docker container exec mariadb mariadb -u root -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME" || true)
+    DB_EXISTS=$(docker container exec "$MARIADB_CONTAINER_NAME" mariadb -u root -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME" || true)
 
     if [ -n "$DB_EXISTS" ]; then
         # If the database exists, proceed with deletion

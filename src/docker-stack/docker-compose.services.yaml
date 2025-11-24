@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mariadb
-    container_name: mariadb
+    container_name: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
     volumes:
@@ -15,7 +15,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin
-    container_name: phpmyadmin
+    container_name: "${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
     restart: always
     environment:
       PMA_HOST: "${VPC_SUBNET}.2"
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: redis
-    container_name: redis
+    container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
     restart: always
     expose:
       - "6379"
@@ -39,7 +39,7 @@ services:
 
   memcached:
     image: memcached
-    container_name: memcached
+    container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
     restart: always
     expose:
       - "11211"
@@ -49,7 +49,7 @@ services:
 
   mongo:
     image: mongo
-    container_name: mongo
+    container_name: "${MONGO_CONTAINER_NAME:-podium-mongo}"
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
@@ -64,7 +64,7 @@ services:
 
   postgres:
     image: postgres
-    container_name: postgres
+    container_name: "${POSTGRES_CONTAINER_NAME:-podium-postgres}"
     restart: always
     environment:
       POSTGRES_USER: root
@@ -80,7 +80,7 @@ services:
 
   mailhog:
     image: axllent/mailpit:latest
-    container_name: mailhog
+    container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
     restart: always
     ports:
       - "8025:8025"

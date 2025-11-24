@@ -480,10 +480,10 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
                     
                     case "$service_name" in
                         phpmyadmin)
-                            http_url="http://phpmyadmin/"
+                            http_url="http://$PHPMYADMIN_CONTAINER_NAME/"
                             ;;
                         mailhog)
-                            http_url="http://mailhog:8025/"
+                            http_url="http://$MAILHOG_CONTAINER_NAME:8025/"
                             ;;
                     esac
                     
@@ -548,7 +548,7 @@ echo-return
 
 # Check MariaDB
 echo-white -n "MariaDB: "
-if service_running "mariadb"; then
+if service_running "$MARIADB_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -556,7 +556,7 @@ fi
 
 # Check phpMyAdmin
 echo-white -n "phpMyAdmin: "
-if service_running "phpmyadmin"; then
+if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -564,7 +564,7 @@ fi
 
 # Check Redis
 echo-white -n "Redis: "
-if service_running "redis"; then
+if service_running "$REDIS_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -572,7 +572,7 @@ fi
 
 # Check Memcached
 echo-white -n "Memcached: "
-if service_running "memcached"; then
+if service_running "$MEMCACHED_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -580,7 +580,7 @@ fi
 
 # Check PostgreSQL
 echo-white -n "PostgreSQL: "
-if service_running "postgres"; then
+if service_running "$POSTGRES_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -588,7 +588,7 @@ fi
 
 # Check MongoDB
 echo-white -n "MongoDB: "
-if service_running "mongo"; then
+if service_running "$MONGO_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -596,7 +596,7 @@ fi
 
 # Check MailHog
 echo-white -n "MailHog: "
-if service_running "mailhog"; then
+if service_running "$MAILHOG_CONTAINER_NAME"; then
     echo-green "RUNNING"
 else
     echo-red "STOPPED"
@@ -606,51 +606,51 @@ echo-return
 echo-cyan "SHARED SERVICES CONNECTIVITY:"
 echo-return
 
-if service_running "mariadb"; then
+if service_running "$MARIADB_CONTAINER_NAME"; then
     echo-white -n "PING (MariaDB): "
-    ping_host "mariadb"
+    ping_host "$MARIADB_CONTAINER_NAME"
 else
     echo-yellow "PING (MariaDB): skipped (not running)"
 fi
 
-if service_running "phpmyadmin"; then
+if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
     echo-white -n "PING (phpMyAdmin): "
-    ping_host "phpmyadmin"
+    ping_host "$PHPMYADMIN_CONTAINER_NAME"
 else
     echo-yellow "PING (phpMyAdmin): skipped (not running)"
 fi
 
-if service_running "redis"; then
+if service_running "$REDIS_CONTAINER_NAME"; then
     echo-white -n "PING (Redis): "
-    ping_host "redis"
+    ping_host "$REDIS_CONTAINER_NAME"
 else
     echo-yellow "PING (Redis): skipped (not running)"
 fi
 
-if service_running "memcached"; then
+if service_running "$MEMCACHED_CONTAINER_NAME"; then
     echo-white -n "PING (Memcached): "
-    ping_host "memcached"
+    ping_host "$MEMCACHED_CONTAINER_NAME"
 else
     echo-yellow "PING (Memcached): skipped (not running)"
 fi
 
-if service_running "postgres"; then
+if service_running "$POSTGRES_CONTAINER_NAME"; then
     echo-white -n "PING (PostgreSQL): "
-    ping_host "postgres"
+    ping_host "$POSTGRES_CONTAINER_NAME"
 else
     echo-yellow "PING (PostgreSQL): skipped (not running)"
 fi
 
-if service_running "mongo"; then
+if service_running "$MONGO_CONTAINER_NAME"; then
     echo-white -n "PING (MongoDB): "
-    ping_host "mongo"
+    ping_host "$MONGO_CONTAINER_NAME"
 else
     echo-yellow "PING (MongoDB): skipped (not running)"
 fi
 
-if service_running "mailhog"; then
+if service_running "$MAILHOG_CONTAINER_NAME"; then
     echo-white -n "PING (MailHog): "
-    ping_host "mailhog"
+    ping_host "$MAILHOG_CONTAINER_NAME"
 else
     echo-yellow "PING (MailHog): skipped (not running)"
 fi
@@ -659,27 +659,27 @@ echo-return
 divider
 echo-cyan "SHARED SERVICES ACCESS:"
 echo-return
-if service_running "phpmyadmin"; then
-    echo-white "phpMyAdmin UI: http://phpmyadmin/"
+if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
+    echo-white "phpMyAdmin UI: http://$PHPMYADMIN_CONTAINER_NAME/"
 fi
-if service_running "mailhog"; then
-    echo-white "MailHog UI: http://mailhog:8025/"
+if service_running "$MAILHOG_CONTAINER_NAME"; then
+    echo-white "MailHog UI: http://$MAILHOG_CONTAINER_NAME:8025/"
 fi
 
 echo-return
 echo-cyan "SHARED SERVICE HTTP CHECKS:"
 echo-return
 
-if service_running "phpmyadmin"; then
+if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
     echo-white -n "HTTP (phpMyAdmin): "
-    curl_check "http://phpmyadmin/"
+    curl_check "http://$PHPMYADMIN_CONTAINER_NAME/"
 else
     echo-yellow "HTTP (phpMyAdmin): skipped (not running)"
 fi
 
-if service_running "mailhog"; then
+if service_running "$MAILHOG_CONTAINER_NAME"; then
     echo-white -n "HTTP (MailHog): "
-    curl_check "http://mailhog:8025/"
+    curl_check "http://$MAILHOG_CONTAINER_NAME:8025/"
 else
     echo-yellow "HTTP (MailHog): skipped (not running)"
 fi

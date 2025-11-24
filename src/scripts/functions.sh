@@ -2,6 +2,26 @@
 # Podium - Internal Functions
 # This file provides functions needed by Podium scripts without polluting user's shell
 
+# Load primary configuration if available (for container names, etc.)
+if [ -f "/etc/podium-cli/.env" ]; then
+    # shellcheck disable=SC1091
+    source "/etc/podium-cli/.env"
+fi
+
+# Set default container names if not provided in config
+MARIADB_CONTAINER_NAME="${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+REDIS_CONTAINER_NAME="${REDIS_CONTAINER_NAME:-podium-redis}"
+MEMCACHED_CONTAINER_NAME="${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
+MONGO_CONTAINER_NAME="${MONGO_CONTAINER_NAME:-podium-mongo}"
+POSTGRES_CONTAINER_NAME="${POSTGRES_CONTAINER_NAME:-podium-postgres}"
+PHPMYADMIN_CONTAINER_NAME="${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
+MAILHOG_CONTAINER_NAME="${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
+
+# Default debug log path and public IP lookup settings
+DEBUG_LOG_PATH="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
+WHATISMYIP_DNS_NAME="${WHATISMYIP_DNS_NAME:-myip.opendns.com}"
+WHATISMYIP_DNS_SERVER="${WHATISMYIP_DNS_SERVER:-resolver1.opendns.com}"
+
 # Get the projects directory (configurable)
 get_projects_dir() {
     # Get the directory where this script is located
@@ -89,9 +109,9 @@ json-mysql() {
     # Always execute the MariaDB client from inside the mariadb container so we don't
     # require a host-side mariadb-client installation.
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        docker container exec mariadb mariadb "$@" > /dev/null 2>&1
+        docker container exec "$MARIADB_CONTAINER_NAME" mariadb "$@" > /dev/null 2>&1
     else
-        docker container exec -i mariadb mariadb "$@"
+        docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb "$@"
     fi
 }
 
@@ -151,17 +171,17 @@ art-docker() {
 }
 
 # Check if services are running
-check-mariadb() { [ "$(docker ps -q -f name=mariadb)" ] && return 0 || return 1; }
-check-phpmyadmin() { [ "$(docker ps -q -f name=phpmyadmin)" ] && return 0 || return 1; }
-check-redis() { [ "$(docker ps -q -f name=redis)" ] && return 0 || return 1; }
-check-memcached() { [ "$(docker ps -q -f name=memcached)" ] && return 0 || return 1; }
-check-mongo() { [ "$(docker ps -q -f name=mongo)" ] && return 0 || return 1; }
-check-postgres() { [ "$(docker ps -q -f name=postgres)" ] && return 0 || return 1; }
-check-mailhog() { [ "$(docker ps -q -f name=mailhog)" ] && return 0 || return 1; }
+check-mariadb() { [ "$(docker ps -q -f name="$MARIADB_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-phpmyadmin() { [ "$(docker ps -q -f name="$PHPMYADMIN_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-redis() { [ "$(docker ps -q -f name="$REDIS_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-memcached() { [ "$(docker ps -q -f name="$MEMCACHED_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-mongo() { [ "$(docker ps -q -f name="$MONGO_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-postgres() { [ "$(docker ps -q -f name="$POSTGRES_CONTAINER_NAME")" ] && return 0 || return 1; }
+check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && return 0 || return 1; }
 
 # Utility functions
 divider() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo; echo-white '==============================='; echo; fi; }
-whatismyip() { dig +short myip.opendns.com @resolver1.opendns.com 2>/dev/null || echo "Unable to get IP"; }
+whatismyip() { dig +short "$WHATISMYIP_DNS_NAME" @"$WHATISMYIP_DNS_SERVER" 2>/dev/null || echo "Unable to get IP"; }
 
 # Cross-platform sed function
 podium-sed() {

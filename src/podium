@@ -357,17 +357,17 @@ case "$1" in
     "mysql")
         shift
         if [ -t 0 ]; then
-            docker container exec -it mariadb mariadb -u"root" "$@"
+            docker container exec -it "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$@"
         else
-            docker container exec -i mariadb mariadb -u"root" "$@"
+            docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$@"
         fi
         ;;
     "redis")
         shift
-        docker container exec -it redis redis-cli "$@"
+        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli "$@"
         ;;
     "redis-flush")
-        docker container exec -it redis redis-cli FLUSHALL
+        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
         echo-green "Redis flushed!"
         ;;
     "memcache")

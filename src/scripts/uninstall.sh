@@ -99,7 +99,7 @@ else
     echo "Searching for Podium containers by name pattern..."
     
     # Fallback: find containers by common Podium names
-    FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(mariadb|redis|postgres|mongo|memcached|phpmyadmin|mailhog)" 2>/dev/null || true)
+FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(podium-mariadb|podium-redis|mariadb|redis|postgres|mongo|memcached|phpmyadmin|mailhog)" 2>/dev/null || true)
     
     if [ -n "$FALLBACK_CONTAINERS" ]; then
         echo "Found containers by pattern: $FALLBACK_CONTAINERS"
@@ -152,7 +152,7 @@ else
     
     # Fallback: find containers that aren't service containers
     ALL_CONTAINERS=$(docker ps -a --format "{{.Names}}")
-    SERVICE_CONTAINERS="mariadb redis postgres mongo memcached phpmyadmin mailhog"
+SERVICE_CONTAINERS="$MARIADB_CONTAINER_NAME $REDIS_CONTAINER_NAME postgres mongo memcached phpmyadmin mailhog"
     
     for container in $ALL_CONTAINERS; do
         # Skip if it's a known service container
