@@ -87,7 +87,7 @@ if ! [ -f /etc/podium-cli/.env ]; then
 	VPC_SUBNET="10.$B_CLASS.$C_CLASS"
 
 	# Cross-platform sed with proper c\ command handling
-	sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+	sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
 
 fi
 
