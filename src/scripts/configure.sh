@@ -89,10 +89,12 @@ if ! [ -f /etc/podium-cli/.env ]; then
 	# Cross-platform sed with proper c\ command handling
 	sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
 
-else
+fi
 
-	source /etc/podium-cli/.env
-
+# Load environment configuration (including AI agent defaults) after ensuring .env exists
+if [ -f /etc/podium-cli/.env ]; then
+    # shellcheck disable=SC1091
+    source /etc/podium-cli/.env
 fi
 
 

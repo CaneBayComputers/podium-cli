@@ -70,12 +70,14 @@ show_help() {
     echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
+    echo "  podium kavera <name> [options] - Create and initialize a new Kavera site"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
     echo
     echo-white "SYSTEM MANAGEMENT:"
     echo "  podium configure          - Configure Podium environment"
+    echo "  podium ai-set             - Configure AI agent and model"
     echo "  podium update             - Update Podium CLI and base Docker images"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
@@ -453,6 +455,9 @@ case "$1" in
     "new")
         "$SCRIPT_DIR/scripts/new_project.sh" "${@:2}"
         ;;
+    "kavera")
+        "$SCRIPT_DIR/scripts/kavera_project.sh" "${@:2}"
+        ;;
     "clone")
         if [ -z "$2" ]; then
             echo-red "Usage: podium clone <repository-url> [project-name] [options]"
@@ -481,6 +486,12 @@ case "$1" in
     # System management
     "configure")
         "$SCRIPT_DIR/scripts/configure.sh" "${@:2}"
+        ;;
+    "ai")
+        "$SCRIPT_DIR/scripts/ai.sh" "${@:2}"
+        ;;
+    "ai-set")
+        "$SCRIPT_DIR/scripts/ai_set.sh" "${@:2}"
         ;;
     "update")
         "$SCRIPT_DIR/scripts/update.sh" "${@:2}"

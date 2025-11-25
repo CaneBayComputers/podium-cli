@@ -11,8 +11,8 @@ Built for modern PHP development, Podium CLI eliminates the complexity of managi
 # Configure your development environment post installation
 podium configure
 
-# Create a new Kavera website project (Laravel flat‑file sites)
-podium new my-kavera-site --framework kavera
+# Create a new Kavera website project (AI website creation platform)
+podium kavera my-kavera-site
 ```
 
 Kavera (https://github.com/CaneBayComputers/kavera) is an AI‑agent‑first Laravel website framework: pages are flat-file Blade templates on purpose so agents can safely read, edit, and rearrange content without fighting a CMS, while service-driven integrations (Blogger, Eventbrite, Flickr, webhooks, etc.) stream dynamic data into the site. Paired with Podium, it lets you spin up agent-managed, production-ready marketing sites in minutes instead of weeks.
@@ -22,6 +22,10 @@ Other common project types:
 - Laravel API / app:
   ```bash
   podium new my-laravel-app --framework laravel
+  ```
+- Kavera site without auto prompts:
+  ```bash
+  podium new my-kavera-site --framework kavera
   ```
 - WordPress site:
   ```bash
@@ -178,6 +182,7 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
+| `podium kavera <name> [options]` | Create and initialize a new Kavera flat-file site |
 | `podium clone <repo>` | Clone existing project |
 | `podium remove <project> [options]` | Remove project |
 
@@ -186,11 +191,60 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium configure` | Configure Podium environment |
+| `podium ai-set [options]` | Configure global AI agent, model, and API key (for Kavera and tooling) |
 | `podium update` | Update Podium CLI and base Docker images |
 | `podium stop-services` | Stop shared services |
 | `podium uninstall` | Remove all Podium Docker resources |
 | `podium projects-dir` | Show projects directory path |
 | `podium gui` | Launch desktop GUI interface |
+
+#### `podium ai-set` options
+
+`podium ai-set` manages the global AI agent CLI, model, and API key used by Podium (for example by `podium kavera` when bootstrapping a Kavera site).
+
+```bash
+podium ai-set --agent ollama --model llama3.1
+podium ai-set --agent codex --model gpt-4.1
+podium ai-set --json-output
+```
+
+Supported flags:
+
+- `--agent <name>` – Set the AI agent CLI (for example: `ollama`, `codex`, `claude`, `gemini`, `deepseek`, `aider`, or a custom command).
+- `--model <name>` – Set the model name; required for `ollama`, optional for `codex`, `claude`, and `aider`. Ignored for `gemini` and `deepseek` one-off prompts.
+- `--api-key <key>` – Set the AI API key, used by DeepSeek and other agents that require an API key.
+- `--json-output` – Return the current configuration or update result as JSON (non-interactive).
+
+Examples:
+
+- Inspect current AI settings:
+  - `podium ai-set --json-output`
+- Configure Ollama with an explicit model:
+  - `podium ai-set --agent ollama --model llama3.1`
+- Configure Claude with a model:
+  - `podium ai-set --agent claude --model claude-3.7-sonnet`
+
+### 🤖 One-off AI prompts
+
+Once you have set your global AI agent with `podium ai-set`, you can run a one-off AI prompt from any Podium project directory:
+
+```bash
+cd /path/to/project
+podium ai "Build a unique homepage hero section."
+```
+
+`podium ai "<one-off prompt>"`:
+
+- Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
+- Runs a single prompt against the selected CLI using safe, automation-friendly flags:
+  - DeepSeek: `deepseek-cli chat "<prompt>" --api-key "$AI_API_KEY"`
+  - Codex: `codex exec --yolo "<prompt>"`
+  - Claude: `claude --dangerously-skip-permissions -p "<prompt>"`
+  - Gemini: `gemini -p "<prompt>"`
+  - Ollama: `ollama run "$AI_MODEL" "<prompt>"` (requires `AI_MODEL`)
+  - Aider: `aider -m "<prompt>" .`
+
+When you run `podium kavera`, Podium automatically generates a Kavera-specific initial prompt and calls `podium ai "<that prompt>"` from the new project directory.
 
 ### 🧪 Testing & Utilities
 
