@@ -14,6 +14,9 @@ source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
+# Run the AI agent from the original directory (project root), not the CLI repo
+cd "$CALLER_DIR"
+
 usage() {
     echo-white "Usage: podium ai \"<one-off prompt>\""
     echo-white ""
