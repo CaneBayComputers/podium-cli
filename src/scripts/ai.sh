@@ -98,21 +98,33 @@ case "$AI_AGENT_CLI_NAME" in
             echo-yellow "Set AI_API_KEY in /etc/podium-cli/.env and re-run, or run deepseek-cli manually with this prompt:"
             echo-white "$ONE_OFF_PROMPT"
         else
-            deepseek-cli chat "$ONE_OFF_PROMPT" --api-key "$AI_API_KEY"
+            deepseek-cli chat --api-key "$AI_API_KEY" "$ONE_OFF_PROMPT"
         fi
         ;;
     codex)
         echo-yellow "Using codex exec one-off prompt with the following prompt (this is safe and recommended):"
         echo-white "$ONE_OFF_PROMPT"
-        codex exec --yolo "$ONE_OFF_PROMPT"
+        if [[ -n "$AI_API_KEY" ]]; then
+            codex exec --api-key "$AI_API_KEY" --yolo "$ONE_OFF_PROMPT"
+        else
+            codex exec --yolo "$ONE_OFF_PROMPT"
+        fi
         ;;
     claude)
         echo-yellow "Using claude one-off prompt with the following prompt (this is safe and recommended):"
         echo-white "$ONE_OFF_PROMPT"
-        claude --dangerously-skip-permissions -p "$ONE_OFF_PROMPT"
+        if [[ -n "$AI_API_KEY" ]]; then
+            claude --dangerously-skip-permissions --api-key "$AI_API_KEY" -p "$ONE_OFF_PROMPT"
+        else
+            claude --dangerously-skip-permissions -p "$ONE_OFF_PROMPT"
+        fi
         ;;
     gemini)
-        gemini -p "$ONE_OFF_PROMPT"
+        if [[ -n "$AI_API_KEY" ]]; then
+            gemini --api-key "$AI_API_KEY" -p "$ONE_OFF_PROMPT"
+        else
+            gemini -p "$ONE_OFF_PROMPT"
+        fi
         ;;
     ollama)
         if [[ -z "$AI_MODEL" ]]; then
