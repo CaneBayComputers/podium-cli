@@ -87,7 +87,6 @@ usage() {
 if [ -z "$KAVERA_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
     KAVERA_REPOSITORY_URL=$(grep "^KAVERA_REPOSITORY_URL=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2-)
 fi
-: "${KAVERA_REPOSITORY_URL:=https://github.com/CaneBayComputers/kavera.git}"
 # Initialize variables
 PROJECT_NAME=""
 DISPLAY_NAME=""

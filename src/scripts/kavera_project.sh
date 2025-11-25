@@ -59,22 +59,6 @@ echo-white
 art-docker app:agent-brief || echo-yellow "Warning: app:agent-brief command failed or is unavailable."
 art-docker app:images-manifest || echo-yellow "Warning: app:images-manifest command failed or is unavailable."
 
-# Define and persist the initial agent prompt
-KAVERA_AGENT_INITIAL_PROMPT="Build a unique website for this project by following the instructions found in storage/app/private/agent-brief.txt (project brief) and AGENTS.md (project rules). Use them as a source of truth when deciding what pages to create, how they should look, and how to handle images, forms, and JSON-LD."
-export KAVERA_AGENT_INITIAL_PROMPT
-
-if [ -f .env ]; then
-    if grep -q "^KAVERA_AGENT_INITIAL_PROMPT=" .env 2>/dev/null; then
-        podium-sed-change "/^KAVERA_AGENT_INITIAL_PROMPT=/" "KAVERA_AGENT_INITIAL_PROMPT=$KAVERA_AGENT_INITIAL_PROMPT" .env
-    else
-        printf '\nKAVERA_AGENT_INITIAL_PROMPT=%s\n' "$KAVERA_AGENT_INITIAL_PROMPT" >> .env
-    fi
-    echo-green "Saved KAVERA_AGENT_INITIAL_PROMPT to project .env"
-    echo-white
-else
-    echo-yellow "Project .env file not found; KAVERA_AGENT_INITIAL_PROMPT not written to file."
-fi
-
 # Launch the configured AI agent CLI, if available
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     echo-cyan "Skipping interactive AI agent CLI launch in JSON mode."
@@ -82,6 +66,13 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     exit 0
 fi
 
+KAVERA_PROMPT="$KAVERA_AGENT_INITIAL_PROMPT"
+if [[ -z "$KAVERA_PROMPT" ]]; then
+    KAVERA_PROMPT="Build a unique website for this project by following the instructions found in storage/app/private/agent-brief.txt (project brief) and AGENTS.md (project rules). Use them as a source of truth when deciding what pages to create, how they should look, and how to handle images, forms, and JSON-LD."
+    echo-yellow "KAVERA_AGENT_INITIAL_PROMPT is not set in /etc/podium-cli/.env; using built-in default prompt (not saved to config)."
+    echo-white
+fi
+
 echo-cyan "Launching AI agent for this project using 'podium ai'..."
 echo-white
-podium ai "$KAVERA_AGENT_INITIAL_PROMPT"
+podium ai "$KAVERA_PROMPT"
