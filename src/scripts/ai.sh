@@ -2,14 +2,15 @@
 
 set -e
 
-ORIG_DIR=$(pwd)
+CALLER_DIR=$(pwd)
 
 cd "$(dirname "$(realpath "$0")")"
 cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+# Run standard pre-checks (loads /etc/podium-cli/.env, validates projects dir, etc.)
+source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
@@ -27,51 +28,14 @@ if [[ -z "$ONE_OFF_PROMPT" ]]; then
     exit 1
 fi
 
-# Ensure primary config exists
-sudo mkdir -p /etc/podium-cli
-
-if ! [ -f /etc/podium-cli/.env ]; then
-    sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/podium-cli/.env
-
-    # Initialize VPC_SUBNET on first creation (same behavior as configure.sh)
-    B_CLASS=$((RANDOM % 255 + 1))
-    C_CLASS=$((RANDOM % 256))
-    VPC_SUBNET="10.$B_CLASS.$C_CLASS"
-    sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
-fi
-
-if [ -f /etc/podium-cli/.env ]; then
-    # shellcheck disable=SC1091
-    source /etc/podium-cli/.env
-fi
-
-# Backward compatibility: if AI_AGENT is empty but AI_AGENT_CLI exists, reuse it
-if [[ -z "$AI_AGENT" && -n "$AI_AGENT_CLI" ]]; then
-    AI_AGENT="$AI_AGENT_CLI"
-fi
-
 AI_AGENT_CLI_NAME="$AI_AGENT"
 
 if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
-    echo-cyan "AI agent is not configured. Launching 'podium ai-set' to configure it..."
-    echo-white
-    podium ai-set
-    if [ -f /etc/podium-cli/.env ]; then
-        # shellcheck disable=SC1091
-        source /etc/podium-cli/.env
-    fi
-    AI_AGENT_CLI_NAME="$AI_AGENT"
-    if [[ -z "$AI_AGENT_CLI_NAME" && -n "$AI_AGENT_CLI" ]]; then
-        AI_AGENT_CLI_NAME="$AI_AGENT_CLI"
-    fi
-fi
-
-if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
-    echo-yellow "AI agent is still not configured. Skipping AI agent launch."
-    echo-yellow "Prompt:"
+    echo-cyan "AI agent is not configured. Run 'podium ai-set' to choose an agent and model."
+    echo-white "Prompt:"
     echo-white "$ONE_OFF_PROMPT"
-    cd "$ORIG_DIR"
-    exit 0
+    cd "$CALLER_DIR"
+    exit 1
 fi
 
 # Map logical CLI name to actual executable when needed
@@ -84,7 +48,7 @@ if ! command -v "$EXEC_AI_AGENT_CLI" >/dev/null 2>&1; then
     echo-yellow "Configured AI agent CLI '$AI_AGENT_CLI_NAME' (command: $EXEC_AI_AGENT_CLI) is not on PATH."
     echo-yellow "Prompt:"
     echo-white "$ONE_OFF_PROMPT"
-    cd "$ORIG_DIR"
+    cd "$CALLER_DIR"
     exit 0
 fi
 
@@ -104,20 +68,28 @@ case "$AI_AGENT_CLI_NAME" in
     codex)
         echo-yellow "Using codex exec one-off prompt with the following prompt (this is safe and recommended):"
         echo-white "$ONE_OFF_PROMPT"
-        if [[ -n "$AI_API_KEY" ]]; then
-            codex exec --api-key "$AI_API_KEY" --yolo "$ONE_OFF_PROMPT"
-        else
-            codex exec --yolo "$ONE_OFF_PROMPT"
+        codex_args=(exec)
+        if [[ -n "$AI_MODEL" ]]; then
+            codex_args+=("--model" "$AI_MODEL")
         fi
+        if [[ -n "$AI_API_KEY" ]]; then
+            codex_args+=("--api-key" "$AI_API_KEY")
+        fi
+        codex_args+=("--yolo" "$ONE_OFF_PROMPT")
+        codex "${codex_args[@]}"
         ;;
     claude)
         echo-yellow "Using claude one-off prompt with the following prompt (this is safe and recommended):"
         echo-white "$ONE_OFF_PROMPT"
-        if [[ -n "$AI_API_KEY" ]]; then
-            claude --dangerously-skip-permissions --api-key "$AI_API_KEY" -p "$ONE_OFF_PROMPT"
-        else
-            claude --dangerously-skip-permissions -p "$ONE_OFF_PROMPT"
+        claude_args=(--dangerously-skip-permissions)
+        if [[ -n "$AI_MODEL" ]]; then
+            claude_args+=("--model" "$AI_MODEL")
         fi
+        if [[ -n "$AI_API_KEY" ]]; then
+            claude_args+=("--api-key" "$AI_API_KEY")
+        fi
+        claude_args+=(-p "$ONE_OFF_PROMPT")
+        claude "${claude_args[@]}"
         ;;
     gemini)
         if [[ -n "$AI_API_KEY" ]]; then
@@ -138,7 +110,11 @@ case "$AI_AGENT_CLI_NAME" in
     aider)
         echo-yellow "Using aider one-off prompt with the following prompt (this is safe and recommended):"
         echo-white "$ONE_OFF_PROMPT"
-        aider -m "$ONE_OFF_PROMPT" .
+        if [[ -n "$AI_MODEL" ]]; then
+            aider --model "$AI_MODEL" -m "$ONE_OFF_PROMPT" .
+        else
+            aider -m "$ONE_OFF_PROMPT" .
+        fi
         ;;
     *)
         echo-yellow "Automatic one-off prompt integration is not configured for '$AI_AGENT_CLI_NAME'."
@@ -147,4 +123,4 @@ case "$AI_AGENT_CLI_NAME" in
         ;;
 esac
 
-cd "$ORIG_DIR"
+cd "$CALLER_DIR"

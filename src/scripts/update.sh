@@ -2,14 +2,15 @@
 
 set -e
 
-ORIG_DIR=$(pwd)
+CALLER_DIR=$(pwd)
 
 cd "$(dirname "$(realpath "$0")")"
 cd ..
 
 DEV_DIR=$(pwd)
 
-source scripts/functions.sh
+# Run standard pre-checks (loads /etc/podium-cli/.env, validates projects dir, etc.)
+source scripts/pre_check.sh
 
 # Initialize flags
 JSON_OUTPUT="${JSON_OUTPUT:-}"
@@ -113,5 +114,4 @@ fi
 echo-return
 echo-green "podium update completed."; echo-white
 
-cd "$ORIG_DIR"
-
+cd "$CALLER_DIR"

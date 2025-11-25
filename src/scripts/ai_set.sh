@@ -17,6 +17,36 @@ NEW_AGENT=""
 NEW_MODEL=""
 NEW_API_KEY=""
 
+# AI agent configuration rules (summary)
+# --------------------------------------
+# Supported agents and how global vars apply:
+#   - ollama
+#       * AI_MODEL: REQUIRED (used as model name in `ollama run "$AI_MODEL" "<prompt>"`)
+#       * AI_API_KEY: not used
+#   - deepseek
+#       * AI_MODEL: ignored for one-off prompts
+#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `deepseek-cli chat`)
+#   - codex
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `codex exec`)
+#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `codex exec`)
+#   - claude
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `claude`)
+#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `claude`)
+#   - gemini
+#       * AI_MODEL: ignored for one-off prompts
+#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `gemini`)
+#   - aider
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `aider`)
+#       * AI_API_KEY: not used
+#
+# One-off prompt behavior (driven by `podium ai "<prompt>"`):
+#   - deepseek : `deepseek-cli chat --api-key "$AI_API_KEY" "<prompt>"`
+#   - codex    : `codex exec [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+#   - claude   : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] -p "<prompt>"`
+#   - gemini   : `gemini [--api-key "$AI_API_KEY"] -p "<prompt>"`
+#   - ollama   : `ollama run "$AI_MODEL" "<prompt>"`
+#   - aider    : `aider [--model "$AI_MODEL"] -m "<prompt>" .`
+
 usage() {
     echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--json-output]"
     echo-white ""
@@ -70,33 +100,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Ensure primary config exists
-sudo mkdir -p /etc/podium-cli
-
-if ! [ -f /etc/podium-cli/.env ]; then
-    sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/podium-cli/.env
-
-    # Initialize VPC_SUBNET on first creation (same behavior as configure.sh)
-    B_CLASS=$((RANDOM % 255 + 1))
-    C_CLASS=$((RANDOM % 256))
-    VPC_SUBNET="10.$B_CLASS.$C_CLASS"
-    sudo-podium-sed-change "/^#VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
-fi
-
-# Load configuration
-if [ -f /etc/podium-cli/.env ]; then
-    # shellcheck disable=SC1091
-    source /etc/podium-cli/.env
-fi
-
-# Backward compatibility: if AI_AGENT is empty but AI_AGENT_CLI exists, reuse it
-if [[ -z "$AI_AGENT" && -n "$AI_AGENT_CLI" ]]; then
-    AI_AGENT="$AI_AGENT_CLI"
-fi
-
 # Apply non-interactive overrides
 if [[ -n "$NEW_AGENT" ]]; then
     AI_AGENT="$NEW_AGENT"
+    # If the agent changed and no explicit model was provided, clear any stale model
+    if [[ -z "$NEW_MODEL" ]]; then
+        AI_MODEL=""
+    fi
 fi
 if [[ -n "$NEW_MODEL" ]]; then
     AI_MODEL="$NEW_MODEL"
@@ -220,6 +230,7 @@ ensure_ai_agent_installed() {
         return 0
     fi
 
+    # If the CLI is already available, nothing to do
     if command -v "$exec_command" >/dev/null 2>&1; then
         echo-green "AI agent CLI '$cli_command' is already installed (command: $exec_command)."
         echo-white
@@ -230,48 +241,24 @@ ensure_ai_agent_installed() {
 
     case "$cli_command" in
         aider)
-            if command -v pipx >/dev/null 2>&1; then
-                pipx install aider-chat || true
-            elif command -v pip >/dev/null 2>&1; then
-                pip install --user aider-chat || true
-            else
-                echo-yellow "Neither pipx nor pip is available. Please install 'aider' manually."
-            fi
+            # Assume pipx/pip are available; let this fail loudly if not
+            pipx install aider-chat || pip install --user aider-chat
             ;;
         ollama)
-            if command -v curl >/dev/null 2>&1; then
-                curl -fsSL https://ollama.com/install.sh | sh || true
-            else
-                echo-yellow "curl is not available. Please install 'ollama' manually from https://ollama.com."
-            fi
+            # Assume curl is available
+            curl -fsSL https://ollama.com/install.sh | sh
             ;;
         codex)
-            if command -v npm >/dev/null 2>&1; then
-                npm install -g @openai/codex || true
-            else
-                echo-yellow "npm is not available. Please install '@openai/codex' globally using npm."
-            fi
+            npm install -g @openai/codex
             ;;
         gemini)
-            if command -v npm >/dev/null 2>&1; then
-                npm install -g @google/gemini-cli || true
-            else
-                echo-yellow "npm is not available. Please install '@google/gemini-cli' globally using npm."
-            fi
+            npm install -g @google/gemini-cli
             ;;
         claude)
-            if command -v curl >/dev/null 2>&1; then
-                curl -fsSL https://claude.ai/install.sh | bash || true
-            else
-                echo-yellow "curl is not available. Please install the Claude CLI manually from https://claude.ai."
-            fi
+            curl -fsSL https://claude.ai/install.sh | bash
             ;;
         deepseek)
-            if command -v npm >/dev/null 2>&1; then
-                npm install -g run-deepseek-cli || true
-            else
-                echo-yellow "npm is not available. Please install 'run-deepseek-cli' globally using npm."
-            fi
+            npm install -g run-deepseek-cli
             ;;
         *)
             echo-yellow "Automatic installation for '$cli_command' is not configured. Please install it manually."
@@ -285,7 +272,7 @@ ensure_ai_agent_installed() {
     fi
 
     echo-yellow "AI agent CLI '$cli_command' is still not available on PATH."
-        echo-yellow "You can install it manually and re-run 'podium ai-set' or choose a different CLI."
+    echo-yellow "You can install it manually and re-run 'podium ai-set' or choose a different CLI."
     echo-white
 }
 
@@ -308,20 +295,14 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
 
     # Persist configuration
     if [[ -n "$AI_AGENT" ]]; then
-        sudo-podium-sed-change "/^#AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
         sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
-        # Backward compatibility
-        sudo-podium-sed-change "/^#AI_AGENT_CLI=/" "AI_AGENT_CLI=$AI_AGENT" /etc/podium-cli/.env
-        sudo-podium-sed-change "/^AI_AGENT_CLI=/" "AI_AGENT_CLI=$AI_AGENT" /etc/podium-cli/.env
     fi
 
     if [[ -n "$AI_MODEL" ]]; then
-        sudo-podium-sed-change "/^#AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
         sudo-podium-sed-change "/^AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
     fi
 
     if [[ -n "$AI_API_KEY" ]]; then
-        sudo-podium-sed-change "/^#AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
         sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
     fi
 
@@ -368,20 +349,14 @@ ensure_ai_agent_installed "$AI_AGENT"
 
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
-    sudo-podium-sed-change "/^#AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
     sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
-    # Backward compatibility
-    sudo-podium-sed-change "/^#AI_AGENT_CLI=/" "AI_AGENT_CLI=$AI_AGENT" /etc/podium-cli/.env
-    sudo-podium-sed-change "/^AI_AGENT_CLI=/" "AI_AGENT_CLI=$AI_AGENT" /etc/podium-cli/.env
 fi
 
 if [[ -n "$AI_MODEL" ]]; then
-    sudo-podium-sed-change "/^#AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
     sudo-podium-sed-change "/^AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
 fi
 
 if [[ -n "$AI_API_KEY" ]]; then
-    sudo-podium-sed-change "/^#AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
     sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
 fi
 
