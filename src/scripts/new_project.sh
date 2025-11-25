@@ -669,7 +669,12 @@ fi
 
 # Create GitHub repository if requested
 if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
-    create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
+    if [ "$FRAMEWORK" = "kavera" ]; then
+        # For Kavera projects, we cloned from a starter repository; pass that URL
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$KAVERA_REPOSITORY_URL"
+    else
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
+    fi
 fi
 
 cd ../..

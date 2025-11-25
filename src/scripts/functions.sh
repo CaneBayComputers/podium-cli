@@ -333,6 +333,7 @@ create_github_repo() {
     local create_github="$2"
     local organization="$3"
     local existing_repo_url="$4"
+    local existing_repo_name=""
     
     # Skip if GitHub creation is disabled
     if [ "$create_github" = "no" ] || [ -z "$create_github" ]; then
@@ -359,34 +360,93 @@ create_github_repo() {
     
     echo-cyan "Creating GitHub repository: $repo_name"
     
-    # Check if we're trying to create the same repo we just cloned from
+    # Derive existing repository name (if any) from the source URL
     if [ -n "$existing_repo_url" ]; then
-        local existing_repo_name=""
         if [[ "$existing_repo_url" =~ github\.com[:/]([^/]+/[^/]+)(\.git)?$ ]]; then
             existing_repo_name="${BASH_REMATCH[1]}"
             existing_repo_name="${existing_repo_name%.git}"
         fi
         
-        if [ "$repo_name" = "$existing_repo_name" ]; then
+        # If we're trying to create the same repo we just cloned from, skip to avoid conflicts
+        if [ -n "$existing_repo_name" ] && [ "$repo_name" = "$existing_repo_name" ]; then
             echo-yellow "Warning: Attempting to create repository '$repo_name' which is the same as the cloned source."
             echo-yellow "Skipping GitHub repository creation to avoid conflicts."
             return 0
         fi
     fi
     
-    # Create the repository
-    if gh repo create "$repo_name" --private --source=. --push >/dev/null 2>&1; then
+    # Create the repository first (without pushing)
+    local repo_created=false
+    if gh repo create "$repo_name" --private --confirm >/dev/null 2>&1; then
         echo-green "GitHub repository created successfully: $repo_name"
-        return 0
+        repo_created=true
     else
         # Check if repository already exists
         if gh repo view "$repo_name" >/dev/null 2>&1; then
             echo-yellow "Repository '$repo_name' already exists. Skipping creation."
-            return 0
         else
             echo-yellow "GitHub repository creation failed, but project setup will continue."
             return 1
         fi
+    fi
+    
+    # Ensure we are in a git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo-yellow "Current directory is not a Git repository. Skipping initial push."
+        return 1
+    fi
+    
+    # Ensure there is at least one commit; if not, create an initial commit
+    if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+        # Only create a commit if there are changes to commit
+        if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+            echo-cyan "Creating initial commit before pushing to GitHub..."
+            if ! git add . >/dev/null 2>&1; then
+                git add .
+            fi
+            if ! git commit -m "Initial commit" >/dev/null 2>&1; then
+                git commit -m "Initial commit"
+            fi
+        else
+            echo-yellow "No commits and no changes to commit. Skipping initial push."
+            return 1
+        fi
+    fi
+    
+    # Ensure a Git remote is configured for this repository
+    local remote_name="origin"
+    local current_origin_url
+    current_origin_url=$(git remote get-url "$remote_name" 2>/dev/null || true)
+    
+    # If this project was cloned from another repository, preserve that remote as 'upstream'
+    if [ -n "$existing_repo_name" ] && [ -n "$current_origin_url" ]; then
+        if [[ "$current_origin_url" == *"$existing_repo_name"* ]]; then
+            git remote rename "$remote_name" upstream >/dev/null 2>&1 || true
+            current_origin_url=""
+        fi
+    fi
+    
+    # Point 'origin' at the newly created GitHub repository
+    local repo_url
+    repo_url=$(gh repo view "$repo_name" --json sshUrl,cloneUrl -q '.sshUrl // .cloneUrl' 2>/dev/null || true)
+    if [ -z "$repo_url" ]; then
+        repo_url="git@github.com:${repo_name}.git"
+    fi
+    
+    if [ -n "$current_origin_url" ]; then
+        git remote set-url "$remote_name" "$repo_url" >/dev/null 2>&1 || true
+    else
+        git remote add "$remote_name" "$repo_url" >/dev/null 2>&1 || true
+    fi
+    
+    # Push local commits separately so push failures are not masked by creation success
+    echo-cyan "Pushing local repository to GitHub..."
+    if git push -u "$remote_name" HEAD >/dev/null 2>&1; then
+        echo-green "Repository pushed successfully to GitHub: $repo_name"
+        return 0
+    else
+        echo-yellow "Initial push to GitHub failed. Please check your Git remote and push manually."
+        return 1
     fi
 }
 

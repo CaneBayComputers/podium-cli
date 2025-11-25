@@ -70,42 +70,6 @@ debug "Script started: start_services.sh with args: $ORIGINAL_ARGS"
 # Main
 source "$DEV_DIR/scripts/pre_check.sh"
 
-# Migrate legacy service volumes to new podium_* names (one-time, best-effort)
-migrate_volume_if_needed() {
-    local old_name="$1"
-    local new_name="$2"
-    
-    if ! command -v docker >/dev/null 2>&1; then
-        return
-    fi
-    
-    # If new volume already exists, nothing to do
-    if docker volume inspect "$new_name" >/dev/null 2>&1; then
-        return
-    fi
-    
-    # If old volume does not exist, nothing to migrate
-    if ! docker volume inspect "$old_name" >/dev/null 2>&1; then
-        return
-    fi
-    
-    echo-cyan "Migrating Docker volume '$old_name' to '$new_name' ..."; echo-white
-    
-    # Create new volume
-    docker volume create "$new_name" >/dev/null
-    
-    # Copy data using a temporary container
-    docker run --rm -v "$old_name":/from -v "$new_name":/to alpine sh -c "cp -a /from/. /to/" >/dev/null 2>&1 || true
-}
-
-# Attempt migrations for known service volumes (compose project is 'podium-cli')
-SERVICE_STACK="podium-cli"
-migrate_volume_if_needed "${SERVICE_STACK}_mysql_data" "${SERVICE_STACK}_podium_mysql_data"
-migrate_volume_if_needed "${SERVICE_STACK}_redis_data" "${SERVICE_STACK}_podium_redis_data"
-migrate_volume_if_needed "${SERVICE_STACK}_mongo_data" "${SERVICE_STACK}_podium_mongo_data"
-migrate_volume_if_needed "${SERVICE_STACK}_postgres_data" "${SERVICE_STACK}_podium_postgres_data"
-
-
 # Start CBC stack
 if ! check-mariadb; then
 
