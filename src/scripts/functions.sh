@@ -2,25 +2,11 @@
 # Podium - Internal Functions
 # This file provides functions needed by Podium scripts without polluting user's shell
 
-# Load primary configuration if available (for container names, etc.)
+# Load primary configuration if available (for container names, paths, etc.)
 if [ -f "/etc/podium-cli/.env" ]; then
     # shellcheck disable=SC1091
     source "/etc/podium-cli/.env"
 fi
-
-# Set default container names if not provided in config
-MARIADB_CONTAINER_NAME="${MARIADB_CONTAINER_NAME:-podium-mariadb}"
-REDIS_CONTAINER_NAME="${REDIS_CONTAINER_NAME:-podium-redis}"
-MEMCACHED_CONTAINER_NAME="${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
-MONGO_CONTAINER_NAME="${MONGO_CONTAINER_NAME:-podium-mongo}"
-POSTGRES_CONTAINER_NAME="${POSTGRES_CONTAINER_NAME:-podium-postgres}"
-PHPMYADMIN_CONTAINER_NAME="${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
-MAILHOG_CONTAINER_NAME="${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
-
-# Default debug log path and public IP lookup settings
-DEBUG_LOG_PATH="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
-WHATISMYIP_DNS_NAME="${WHATISMYIP_DNS_NAME:-myip.opendns.com}"
-WHATISMYIP_DNS_SERVER="${WHATISMYIP_DNS_SERVER:-resolver1.opendns.com}"
 
 # Get the projects directory (configurable)
 get_projects_dir() {
