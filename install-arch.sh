@@ -174,7 +174,7 @@ if command -v podium >/dev/null 2>&1; then
     echo -e "  ${BLUE}sudo rm -rf /usr/local/share/podium-cli${NC}"
     echo -e "  ${BLUE}sudo rm -rf /etc/podium-cli${NC}"
     echo
-    echo -e "${YELLOW}IMPORTANT:${NC} For Docker permissions to work correctly, please ${YELLOW}log out and back in or reboot your system${NC} before using Podium (including running ${BLUE}podium configure${NC} or ${BLUE}podium start-services${NC})."
+    echo -e "${YELLOW}IMPORTANT:${NC} For Docker permissions to work correctly, please ${YELLOW}log out and back in or reboot your system${NC} before using Podium (including running ${BLUE}podium configure${NC} or ${BLUE}podium up${NC})."
 else
     echo -e "${RED}✗ Installation failed.${NC}"
     echo "The podium command is not available in PATH."
