@@ -249,6 +249,7 @@ if command -v podium &> /dev/null; then
     echo -e "${CYAN}📖 Documentation:${NC}"
     echo "   https://podiumdev.io"
     echo
+    echo -e "${YELLOW}IMPORTANT:${NC} If you just installed Docker Desktop or Homebrew, you may need to ${YELLOW}restart Docker Desktop and open a new terminal or reboot${NC} before using Podium (for example: ${BLUE}podium configure${NC} or ${BLUE}podium start-services${NC})."
 else
     echo -e "${RED}✗ Installation failed${NC}"
     echo "The podium command is not available in PATH."
