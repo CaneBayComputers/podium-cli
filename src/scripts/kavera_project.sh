@@ -17,7 +17,7 @@ PROJECTS_DIR="$PROJECTS_DIR_PATH"
 # Usage: podium kavera <site-name> [options]
 if [ -z "$1" ]; then
     echo-red "Usage: podium kavera <site-name> [options]"
-    echo-white "Creates a new Kavera project and prepares the agent brief."
+    echo-white "Creates a new Kavera project from the configured Kavera starter repository using a GitHub fork."
     exit 1
 fi
 
@@ -49,44 +49,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         exit $NEW_PROJECT_EXIT
     fi
 
-    BRIEF_PATH="$PROJECT_PATH/storage/app/private/agent-brief.txt"
-    MANIFEST_PATH="$PROJECT_PATH/storage/app/private/images/manifest.json"
-
-    if [[ -f "$BRIEF_PATH" && -f "$MANIFEST_PATH" ]]; then
-        echo "{\"action\": \"kavera\", \"status\": \"success\", \"new_project\": $NEW_PROJECT_OUTPUT}"
-    else
-        echo "{\"action\": \"kavera\", \"status\": \"warning\", \"message\": \"Kavera project created but agent-brief and/or images manifest are missing\", \"new_project\": $NEW_PROJECT_OUTPUT}"
-    fi
-
+    echo "{\"action\": \"kavera\", \"status\": \"success\", \"new_project\": $NEW_PROJECT_OUTPUT}"
     exit 0
 fi
 
 # Non-JSON (interactive) mode
 NEW_PROJECT_FORCE_FORK=1 "$DEV_DIR/scripts/new_project.sh" "$SITE_NAME" --framework kavera "${FORWARD_ARGS[@]}"
 
-if [ ! -d "$PROJECT_PATH" ]; then
-    echo-yellow "Unable to locate project directory at: $PROJECT_PATH"
-    echo-yellow "If you changed the project name during creation, please cd into the project manually."
-    exit 0
-fi
-
-cd "$PROJECT_PATH"
-
-echo-return
-echo-cyan "Running Kavera initialization commands inside project: $PROJECT_DIR_NAME"
-echo-white
-
-# Ensure containers/services are up via setup_project; assume standard flow has already handled this
-
-# Generate the agent brief and images manifest
-art-docker app:agent-brief || echo-yellow "Warning: app:agent-brief command failed or is unavailable."
-art-docker app:images-manifest || echo-yellow "Warning: app:images-manifest command failed or is unavailable."
-
-# Launch the configured AI agent CLI, if available
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-    echo-cyan "Skipping interactive AI agent CLI launch in JSON mode."
-    echo-white "You can run your AI agent manually from the project directory."
-    exit 0
-fi
-
-podium ai "$KAVERA_AGENT_INITIAL_PROMPT"
+cd "$CALLER_DIR"
