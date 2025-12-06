@@ -146,7 +146,7 @@ debug "Script started: setup_project.sh with args: $ORIGINAL_ARGS"
 if [[ "$JSON_OUTPUT" != "1" ]]; then
     # Prompt for display name if not provided
     if [ -z "$DISPLAY_NAME" ]; then
-        echo-yellow -n "Enter project display name [$PROJECT_NAME]: "
+        echo-yellow -n "Enter project name [$PROJECT_NAME]: "
         read USER_DISPLAY_NAME
         if [ -n "$USER_DISPLAY_NAME" ]; then
             DISPLAY_NAME="$USER_DISPLAY_NAME"
