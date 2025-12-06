@@ -134,9 +134,8 @@ else
 fi
 
 # Add user to docker group even if docker is already installed
-newgrp docker
-
-sudo usermod -aG docker $USER
+sudo usermod -aG docker "$USER"
+echo -e "${YELLOW}Note: You may need to log out and back in (or start a new shell with 'newgrp docker') for Docker group changes to take effect.${NC}"
 
 ###############################
 # Install Node.js and NPM
