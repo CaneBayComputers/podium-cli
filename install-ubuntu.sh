@@ -279,3 +279,6 @@ else
     echo "The podium command is not available in PATH."
     exit 1
 fi
+
+echo
+echo -e "${YELLOW}IMPORTANT:${NC} For Docker permissions to work correctly, please ${YELLOW}log out and back in or reboot your system${NC} before using Podium (including running ${BLUE}podium configure${NC} or ${BLUE}podium start-services${NC})."
