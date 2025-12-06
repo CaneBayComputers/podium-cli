@@ -27,6 +27,8 @@ PROJECT_EMOJI=""
 CREATE_GITHUB=""
 ORGANIZATION=""
 NO_STORAGE_SYMLINK=0
+REQUEST_FORK=0
+FORK_USED=0
 
 # Function to display usage
 usage() {
@@ -50,6 +52,7 @@ usage() {
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
+    echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --help                       Show this help message"
     
     error "usage" 1
@@ -130,6 +133,10 @@ while [[ $# -gt 0 ]]; do
                 error "Error: --github-org requires an organization name"
             fi
             ;;
+        --fork)
+            REQUEST_FORK=1
+            shift
+            ;;
         --debug)
             DEBUG=1
             shift
@@ -160,6 +167,15 @@ debug "Script started: clone_project.sh with args: $ORIGINAL_ARGS"
 if [ -z "$REPOSITORY" ]; then
     error "Error: Repository is required."
 fi
+
+# Helper to detect GitHub repository URLs
+is_github_repo() {
+    local repo_url="$1"
+    if [[ "$repo_url" =~ github\.com[:/].+ ]]; then
+        return 0
+    fi
+    return 1
+}
 
 # Validate GitHub options in JSON mode
 if [[ "$JSON_OUTPUT" == "1" ]]; then
@@ -225,6 +241,40 @@ fi
 
 echo-return
 
+# Decide whether to fork via GitHub CLI
+FORK_CHOICE=""
+if is_github_repo "$REPOSITORY"; then
+    # Non-interactive flag: always prefer fork when possible
+    if [[ "$REQUEST_FORK" -eq 1 ]]; then
+        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+            FORK_USED=1
+        else
+            # gh not available or not authenticated; fall back to clone
+            echo-yellow "GitHub CLI (gh) is not installed or not authenticated. Cloning original repository instead of forking."
+            FORK_USED=0
+        fi
+    # Interactive prompt (only when no explicit GitHub options are set)
+    elif [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
+        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+            echo-cyan "GitHub repository detected."
+            echo-white "How would you like to work with this repository?"
+            echo-white "1) Work directly with the original repository"
+            echo-white "2) Fork to your GitHub account and work from the fork"
+            echo-yellow -n "Enter your choice (1-2): "
+            read FORK_CHOICE
+            
+            case "$FORK_CHOICE" in
+                2)
+                    FORK_USED=1
+                    ;;
+                *)
+                    FORK_USED=0
+                    ;;
+            esac
+        fi
+    fi
+fi
+
 # Check repository for existing docker-compose.yaml before cloning (unless overwrite is already set)
 if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
     echo-white "Checking repository for existing Docker configuration..."
@@ -257,11 +307,70 @@ fi
 
 echo-return
 
-# Clone repository
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-    git clone "$REPOSITORY" "$PROJECT_NAME" > /dev/null 2>&1
-else
-    git clone "$REPOSITORY" "$PROJECT_NAME"
+# Clone repository (or fork via GitHub CLI if requested and available)
+if [[ "$FORK_USED" -eq 1 ]]; then
+    echo-cyan "Forking repository on GitHub and cloning your fork..."
+    
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        if ! gh repo fork "$REPOSITORY" --clone > /dev/null 2>&1; then
+            echo-yellow "GitHub fork failed; falling back to cloning original repository."
+            FORK_USED=0
+        fi
+    else
+        if ! gh repo fork "$REPOSITORY" --clone; then
+            echo-yellow "GitHub fork failed; falling back to cloning original repository."
+            FORK_USED=0
+        fi
+    fi
+    
+    # If fork succeeded, rename directory (if needed) and configure remotes
+    if [[ "$FORK_USED" -eq 1 ]]; then
+        # Determine default directory name created by gh (basename of repo URL)
+        FORK_DIR_NAME=$(basename -s .git "$REPOSITORY")
+        if [ -z "$FORK_DIR_NAME" ]; then
+            FORK_DIR_NAME="$PROJECT_NAME"
+        fi
+        
+        # If user provided a custom project name, rename directory accordingly
+        if [ "$FORK_DIR_NAME" != "$PROJECT_NAME" ] && [ -d "$FORK_DIR_NAME" ] && [ ! -d "$PROJECT_NAME" ]; then
+            mv "$FORK_DIR_NAME" "$PROJECT_NAME"
+        fi
+        
+        # Configure remotes: origin -> fork, <repo-name> -> original source
+        if [ -d "$PROJECT_NAME/.git" ]; then
+            cd "$PROJECT_NAME"
+            
+            # Base remote name on original repo slug (e.g., some-project)
+            ORIGINAL_REMOTE_NAME=$(basename -s .git "$REPOSITORY")
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                ORIGINAL_REMOTE_NAME=$(echo "$ORIGINAL_REMOTE_NAME" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr ' ' '-' | LC_ALL=C tr -cd 'a-z0-9-_.')
+            else
+                ORIGINAL_REMOTE_NAME=$(echo "$ORIGINAL_REMOTE_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_.')
+            fi
+            if [ -z "$ORIGINAL_REMOTE_NAME" ]; then
+                ORIGINAL_REMOTE_NAME="upstream"
+            fi
+            
+            # gh repo fork typically sets 'upstream' to the original source
+            if git remote get-url upstream >/dev/null 2>&1; then
+                # Only rename if the target name does not already exist
+                if ! git remote get-url "$ORIGINAL_REMOTE_NAME" >/dev/null 2>&1; then
+                    git remote rename upstream "$ORIGINAL_REMOTE_NAME" >/dev/null 2>&1 || true
+                fi
+            fi
+            
+            cd "$PROJECTS_DIR_PATH"
+        fi
+    fi
+fi
+
+# Fallback: standard git clone when not forking or when fork fails
+if [[ "$FORK_USED" -ne 1 ]]; then
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git clone "$REPOSITORY" "$PROJECT_NAME" > /dev/null 2>&1
+    else
+        git clone "$REPOSITORY" "$PROJECT_NAME"
+    fi
 fi
 
 echo-return
@@ -331,15 +440,18 @@ else
     source "$DEV_DIR/scripts/setup_project.sh" "${SETUP_ARGS[@]}"
 fi
 
-# GitHub repository creation (interactive prompts if not specified)
-if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
-    prompt_github_creation
-fi
-
-# Create GitHub repository if requested
-if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
-    cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
-    create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY"
+# GitHub repository creation (interactive prompts if not specified).
+# Skip this when we already created a fork via gh.
+if [[ "$FORK_USED" -ne 1 ]]; then
+    if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
+        prompt_github_creation
+    fi
+    
+    # Create GitHub repository if requested
+    if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
+        cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY"
+    fi
 fi
 
 # Setup handles startup internally, so we just output the setup results

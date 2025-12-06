@@ -41,7 +41,7 @@ PROJECT_PATH="$PROJECTS_DIR/$PROJECT_DIR_NAME"
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # JSON mode: capture new_project JSON output and avoid running interactive commands
-    NEW_PROJECT_OUTPUT="$("$DEV_DIR/scripts/new_project.sh" "$SITE_NAME" --framework kavera --json-output "${FORWARD_ARGS[@]}" 2>&1)"
+    NEW_PROJECT_OUTPUT="$(NEW_PROJECT_FORCE_FORK=1 "$DEV_DIR/scripts/new_project.sh" "$SITE_NAME" --framework kavera --json-output "${FORWARD_ARGS[@]}" 2>&1)"
     NEW_PROJECT_EXIT=$?
 
     if [ $NEW_PROJECT_EXIT -ne 0 ]; then
@@ -62,7 +62,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 fi
 
 # Non-JSON (interactive) mode
-"$DEV_DIR/scripts/new_project.sh" "$SITE_NAME" --framework kavera "${FORWARD_ARGS[@]}"
+NEW_PROJECT_FORCE_FORK=1 "$DEV_DIR/scripts/new_project.sh" "$SITE_NAME" --framework kavera "${FORWARD_ARGS[@]}"
 
 if [ ! -d "$PROJECT_PATH" ]; then
     echo-yellow "Unable to locate project directory at: $PROJECT_PATH"

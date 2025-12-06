@@ -70,6 +70,7 @@ show_help() {
     echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
+    echo "  podium laravel <name> [options] - Create a new Laravel project from laravel/laravel (GitHub fork)"
     echo "  podium kavera <name> [options] - Create and initialize a new Kavera site"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
@@ -454,6 +455,9 @@ case "$1" in
         ;;
     "new")
         "$SCRIPT_DIR/scripts/new_project.sh" "${@:2}"
+        ;;
+    "laravel")
+        "$SCRIPT_DIR/scripts/laravel_project.sh" "${@:2}"
         ;;
     "kavera")
         "$SCRIPT_DIR/scripts/kavera_project.sh" "${@:2}"
