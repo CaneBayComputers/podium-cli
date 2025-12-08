@@ -27,7 +27,20 @@ usage() {
 INIT_PROMPT="$*"
 
 if [[ -z "$INIT_PROMPT" ]]; then
-    usage
+    echo-return
+    echo-cyan "AI Session Initial Prompt"; echo-white
+    echo-white "You're about to start an interactive session with your configured AI agent CLI."
+    echo-white "Set the stage with a clear initial instruction for this project."
+    echo-return
+    echo-yellow -n "Enter initial prompt: "
+    echo-white -ne
+    read -r INIT_PROMPT
+    echo-return
+fi
+
+if [[ -z "$INIT_PROMPT" ]]; then
+    echo-yellow "No initial prompt provided. Aborting 'podium ai' session."
+    cd "$CALLER_DIR"
     exit 1
 fi
 
