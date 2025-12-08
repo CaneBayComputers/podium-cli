@@ -206,6 +206,34 @@ configure_ai_api_key() {
     fi
 }
 
+configure_grok_api_key_required() {
+    while true; do
+        echo-return
+        echo-cyan "Grok API key (required)"; echo-white
+        echo-white "Grok requires an API key before it can run."
+        echo-white "You can create a key here: https://docs.x.ai/docs/overview"
+        if [[ -n "$AI_API_KEY" ]]; then
+            echo-yellow "Press Enter to keep the existing key, or enter a new one."
+        fi
+        echo-yellow -ne 'Enter Grok API key: '
+        echo-white -ne
+        read -r NEW_AI_API_KEY
+        echo-return
+
+        if [[ -z "$NEW_AI_API_KEY" && -n "$AI_API_KEY" ]]; then
+            # Keep existing
+            return 0
+        fi
+
+        if [[ -n "$NEW_AI_API_KEY" ]]; then
+            AI_API_KEY="$NEW_AI_API_KEY"
+            return 0
+        fi
+
+        echo-yellow "Grok API key cannot be empty."; echo-white
+    done
+}
+
 configure_codex_auth() {
     echo-return
     echo-cyan "Codex Authentication"; echo-white
@@ -246,6 +274,50 @@ configure_codex_auth() {
             ;;
         *)
             echo-yellow "Invalid selection. Skipping Codex authentication helper."; echo-white
+            ;;
+    esac
+}
+
+configure_claude_auth() {
+    echo-return
+    echo-cyan "Claude Authentication"; echo-white
+    echo-white "You can configure Claude via:"
+    echo-white "  1) Interactive CLI (run 'claude' to configure)"
+    echo-white "  2) API key"
+    echo-return
+    echo-yellow -ne "Choose authentication method for Claude (1-2): "
+    echo-white -ne
+    read CLAUDE_AUTH_CHOICE
+    echo-return
+
+    case "$CLAUDE_AUTH_CHOICE" in
+        1)
+            while true; do
+                echo-yellow "Starting 'claude' ..."; echo-white
+                if claude; then
+                    echo-green "Claude CLI finished without errors."; echo-white
+                    echo-return
+                    break
+                fi
+                echo-yellow "Claude CLI exited with an error or was cancelled."; echo-white
+                echo-yellow -ne "Would you like to run 'claude' again? (y/N): "
+                echo-white -ne
+                read RETRY_CLAUDE
+                echo-return
+                if [[ ! "$RETRY_CLAUDE" =~ ^[Yy]$ ]]; then
+                    echo-cyan "Continuing without additional Claude setup."; echo-white
+                    echo-return
+                    break
+                fi
+            done
+            ;;
+        2)
+            echo-return
+            echo-white "Claude API keys: https://console.anthropic.com/"
+            configure_ai_api_key
+            ;;
+        *)
+            echo-yellow "Invalid selection. Skipping Claude authentication helper."; echo-white
             ;;
     esac
 }
@@ -343,7 +415,16 @@ ensure_ai_agent_installed() {
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     # Validation for non-interactive mode
     if [[ "$AI_AGENT" == "grok" && "$JSON_OUTPUT" != "1" && -z "$AI_API_KEY" ]]; then
-        echo-yellow "Warning: AI_API_KEY is not configured; grok CLI will not work until a key is set."
+        echo-red "Error: AI_API_KEY is required when using grok as the AI agent."
+        echo-white "Grok will not start without an API key. See https://docs.x.ai/docs/overview"
+        cd "$ORIG_DIR"
+        exit 1
+    fi
+
+    if [[ "$AI_AGENT" == "grok" && "$JSON_OUTPUT" == "1" && -z "$AI_API_KEY" ]]; then
+        echo "{\"action\": \"ai_set\", \"status\": \"error\", \"error\": \"missing_api_key\", \"details\": \"AI_API_KEY is required when AI_AGENT=grok. See https://docs.x.ai/docs/overview\"}"
+        cd "$ORIG_DIR"
+        exit 1
     fi
 
     ensure_ai_agent_installed "$AI_AGENT"
@@ -400,13 +481,15 @@ fi
 prompt_ai_model
 
 if [[ "$AI_AGENT" == "grok" ]]; then
-    configure_ai_api_key
+    configure_grok_api_key_required
 fi
 
 ensure_ai_agent_installed "$AI_AGENT"
 
 if [[ "$AI_AGENT" == "codex" ]]; then
     configure_codex_auth
+elif [[ "$AI_AGENT" == "claude" ]]; then
+    configure_claude_auth
 elif [[ "$AI_AGENT" == "gemini" ]]; then
     configure_gemini_auth
 fi
