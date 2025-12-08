@@ -245,8 +245,11 @@ detect_closest_aws_region() {
         time_total=$(curl -o /dev/null -s -w '%{time_total}' "$endpoint" || echo "")
 
         if [[ -z "$time_total" ]]; then
+            echo-yellow "  $region: error (unreachable)"; echo-white
             continue
         fi
+
+        echo-white "  $region: ${time_total}s"
 
         if [[ -z "$best_time" ]] || awk "BEGIN {exit !($time_total < $best_time)}"; then
             best_time="$time_total"
@@ -279,12 +282,24 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
     read CONFIG_AWS
     echo-return
     if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
-        # Auto-detect closest region and pre-populate AWS defaults
-        CLOSEST_REGION="$(detect_closest_aws_region || true)"
-        if [[ -n "$CLOSEST_REGION" ]]; then
-            export AWS_DEFAULT_REGION="$CLOSEST_REGION"
+        # Only auto-detect closest region and seed config if no config file exists yet
+        AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-$HOME/.aws/config}"
+        if [[ ! -f "$AWS_CONFIG_FILE" ]]; then
+            CLOSEST_REGION="$(detect_closest_aws_region || true)"
+            # Fallback to us-east-1 if detection fails
+            local seeded_region="${CLOSEST_REGION:-us-east-1}"
+
+            mkdir -p "$(dirname "$AWS_CONFIG_FILE")"
+            {
+                echo "[default]"
+                echo "region = $seeded_region"
+                echo "output = json"
+            } > "$AWS_CONFIG_FILE"
+
+            export AWS_DEFAULT_REGION="$seeded_region"
             export AWS_DEFAULT_OUTPUT="json"
-            echo-cyan "Using closest AWS region as default: $CLOSEST_REGION"; echo-white
+            echo-cyan "Seeded AWS config at $AWS_CONFIG_FILE"; echo-white
+            echo-cyan "Default region set to: $seeded_region"; echo-white
             echo-cyan "Default AWS output format set to: json"; echo-white
             echo-return
         fi
@@ -390,7 +405,9 @@ else
 		echo-return
 		echo-yellow "This is optional - you can skip and set up later if needed."
 		echo-return
-		read -p "Do you want to set up GitHub authentication now? [N/y]: " -n 1 -r SETUP_GITHUB
+        echo-yellow -ne "Do you want to set up GitHub authentication now? [N/y]: "
+        echo-white -ne
+        read SETUP_GITHUB
 		echo-return
 
 		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
