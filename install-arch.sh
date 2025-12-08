@@ -81,7 +81,18 @@ echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
     git curl jq \
     docker nodejs npm \
-    trash-cli
+    trash-cli python-pipx
+
+###############################
+# Install AWS CLI (if not present)
+###############################
+if ! command -v aws &> /dev/null; then
+    echo -e "${BLUE}Installing AWS CLI...${NC}"
+    sudo pacman -S --noconfirm --needed aws-cli
+    echo -e "${GREEN}✓ AWS CLI installed${NC}"
+else
+    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
+fi
 
 ###############################
 # Install GitHub CLI (optional but recommended)

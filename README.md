@@ -210,17 +210,17 @@ podium ai-set --json-output
 
 Supported flags:
 
-- `--agent <name>` – Set the AI agent CLI (for example: `ollama`, `codex`, `claude`, `gemini`, `deepseek`, `aider`, or a custom command).
-- `--model <name>` – Set the model name; required for `ollama`, optional for `codex`, `claude`, and `aider`. Ignored for `gemini` and `deepseek` one-off prompts.
-- `--api-key <key>` – Set the AI API key, used by DeepSeek and other agents that require an API key.
+- `--agent <name>` – Set the AI agent CLI (for example: `codex`, `claude`, `gemini`, `deepseek`, `grok`, or a custom command).
+- `--model <name>` – Set the model name; optional for `codex`, `claude`, and `grok`. Ignored for `gemini` and `deepseek` in the current flow.
+- `--api-key <key>` – Set the AI API key, required by DeepSeek and Grok, optional for Codex, Claude, and Gemini.
 - `--json-output` – Return the current configuration or update result as JSON (non-interactive).
 
 Examples:
 
 - Inspect current AI settings:
   - `podium ai-set --json-output`
-- Configure Ollama with an explicit model:
-  - `podium ai-set --agent ollama --model llama3.1`
+- Configure Grok with an explicit model:
+  - `podium ai-set --agent grok --model grok-beta`
 - Configure Claude with a model:
   - `podium ai-set --agent claude --model claude-3.7-sonnet`
 
@@ -234,15 +234,15 @@ podium ai "Build a unique homepage hero section."
 ```
 
 `podium ai "<one-off prompt>"`:
+`podium ai "<initial prompt>"`:
 
 - Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
-- Runs a single prompt against the selected CLI using safe, automation-friendly flags:
-  - DeepSeek: `deepseek-cli chat "<prompt>" --api-key "$AI_API_KEY"`
-  - Codex: `codex exec --yolo "<prompt>"`
-  - Claude: `claude --dangerously-skip-permissions -p "<prompt>"`
-  - Gemini: `gemini -p "<prompt>"`
-  - Ollama: `ollama run "$AI_MODEL" "<prompt>"` (requires `AI_MODEL`)
-  - Aider: `aider -m "<prompt>" .`
+- Starts an interactive AI agent session and seeds it with the initial prompt using safe, automation-friendly flags:
+  - DeepSeek: `deepseek --api-key "$AI_API_KEY" -q "<prompt>"`
+  - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+  - Claude: `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+  - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
+  - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
 
 When you run `podium kavera`, Podium automatically generates a Kavera-specific initial prompt and calls `podium ai "<that prompt>"` from the new project directory.
 

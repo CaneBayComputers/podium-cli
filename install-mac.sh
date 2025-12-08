@@ -152,6 +152,18 @@ else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
 
+# Install pipx
+echo -e "${BLUE}Installing pipx...${NC}"
+brew install pipx >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ pipx installation may have failed${NC}"
+
+# Install AWS CLI (if not present)
+if ! command -v aws &> /dev/null; then
+    echo -e "${BLUE}Installing AWS CLI...${NC}"
+    brew install awscli >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ AWS CLI installation may have failed${NC}"
+else
+    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
+fi
+
 
 ###############################
 # Check if already installed

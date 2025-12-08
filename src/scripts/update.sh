@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
             echo
             echo "This command:"
             echo "  - Updates canebaycomputers/cbc:nginx-php8 and nginx-php7 Docker images (best-effort)."
-            echo "  - Attempts to update the Podium CLI via your system package manager (if applicable)."
+            echo "  - Re-runs the Podium CLI install script for your platform from GitHub."
             echo
             echo "Options:"
             echo "  --json-output     Reserved for future JSON output support"
@@ -50,11 +50,52 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo-return
+echo-cyan "Stopping all Podium projects and shared services before update ..."; echo-white
+
+if command -v docker >/dev/null 2>&1; then
+    if [[ -n "$PROJECTS_DIR_PATH" && -d "$PROJECTS_DIR_PATH" ]]; then
+        (
+            cd "$PROJECTS_DIR_PATH"
+            "$DEV_DIR/scripts/shutdown.sh" || true
+        )
+    else
+        echo-yellow "Projects directory not found; skipping shutdown."
+    fi
+else
+    echo-yellow "Docker is not available on this system. Skipping shutdown."
+fi
+
+echo-return
 echo-cyan "Updating Podium base Docker images ..."; echo-white
 
 if ! command -v docker >/dev/null 2>&1; then
     echo-yellow "Docker is not available on this system. Skipping image updates."
 else
+    # Remove shared service images so they are re-pulled fresh
+    COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
+    if [ -f "$COMPOSE_FILE" ]; then
+        SERVICE_IMAGES=""
+        RENDERED_COMPOSE=$(mktemp)
+        if docker compose -f "$COMPOSE_FILE" config > "$RENDERED_COMPOSE" 2>/dev/null; then
+            SOURCE_FILE="$RENDERED_COMPOSE"
+        else
+            SOURCE_FILE="$COMPOSE_FILE"
+        fi
+
+        SERVICE_IMAGES=$(awk '/^[[:space:]]*image:/ {print $2}' "$SOURCE_FILE" | sort -u)
+
+        if [ -n "$SERVICE_IMAGES" ]; then
+            echo-white "Removing Podium shared service images so they will be re-pulled ..."
+            for image in $SERVICE_IMAGES; do
+                echo-white "Removing image: $image"
+                docker rmi "$image" >/dev/null 2>&1 || echo-yellow "Could not remove image: $image (it may not exist or is in use). Skipping."
+            done
+            echo-return
+        fi
+
+        rm -f "$RENDERED_COMPOSE"
+    fi
+
     BASE_IMAGES=(
         "canebaycomputers/cbc:nginx-php8"
         "canebaycomputers/cbc:nginx-php7"
@@ -72,43 +113,41 @@ else
 fi
 
 echo-return
-echo-cyan "Updating Podium CLI (if managed by a package manager) ..."; echo-white
+echo-cyan "Updating Podium CLI from GitHub install script ..."; echo-white
 
-CLI_UPDATED=false
+INSTALL_SCRIPT=""
 
-# Homebrew (macOS)
-if command -v brew >/dev/null 2>&1 && brew list podium-cli >/dev/null 2>&1; then
-    echo-white "Detected Homebrew-managed installation."
-    if brew update && brew upgrade podium-cli; then
-        echo-green "Podium CLI updated via Homebrew."
-        CLI_UPDATED=true
+# Detect platform to choose the correct installer
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    INSTALL_SCRIPT="install-mac.sh"
+elif [[ -f /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "$ID" in
+        arch|manjaro|endeavouros)
+            INSTALL_SCRIPT="install-arch.sh"
+            ;;
+        ubuntu|debian|linuxmint|pop)
+            INSTALL_SCRIPT="install-ubuntu.sh"
+            ;;
+        *)
+            INSTALL_SCRIPT=""
+            ;;
+    esac
+fi
+
+if [[ -n "$INSTALL_SCRIPT" ]]; then
+    UPDATE_URL="https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/$INSTALL_SCRIPT"
+    echo-white "Running remote installer: $INSTALL_SCRIPT"
+    if curl -fsSL "$UPDATE_URL" | bash; then
+        echo-green "Podium CLI updated via $INSTALL_SCRIPT."
     else
-        echo-yellow "Homebrew update for podium-cli failed. Please run 'brew upgrade podium-cli' manually."
+        echo-yellow "Failed to run remote installer: $INSTALL_SCRIPT"
+        echo-yellow "Please check your network connection or run the appropriate install script manually."
     fi
-
-# Debian/Ubuntu (apt)
-elif command -v apt-get >/dev/null 2>&1 && dpkg -s podium-cli >/dev/null 2>&1; then
-    echo-white "Detected apt-managed installation."
-    if sudo apt-get update -y -q && sudo apt-get install -y --only-upgrade podium-cli; then
-        echo-green "Podium CLI updated via apt."
-        CLI_UPDATED=true
-    else
-        echo-yellow "apt update for podium-cli failed. Please run 'sudo apt-get install --only-upgrade podium-cli' manually."
-    fi
-
-# Arch (pacman)
-elif command -v pacman >/dev/null 2>&1 && pacman -Qi podium-cli >/dev/null 2>&1; then
-    echo-white "Detected pacman-managed installation."
-    if sudo pacman -Syu --noconfirm podium-cli; then
-        echo-green "Podium CLI updated via pacman."
-        CLI_UPDATED=true
-    else
-        echo-yellow "pacman update for podium-cli failed. Please run 'sudo pacman -Syu podium-cli' manually."
-    fi
-
 else
-    echo-yellow "Podium CLI does not appear to be managed by Homebrew, apt, or pacman."
-    echo-yellow "Skipping CLI update. Use your original install method to update the CLI itself."
+    echo-yellow "Could not detect a supported platform (ubuntu/arch/mac) for automatic CLI update."
+    echo-yellow "Please update Podium CLI manually using the install scripts from the repository."
 fi
 
 echo-return

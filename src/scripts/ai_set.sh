@@ -20,32 +20,28 @@ NEW_API_KEY=""
 # AI agent configuration rules (summary)
 # --------------------------------------
 # Supported agents and how global vars apply:
-#   - ollama
-#       * AI_MODEL: REQUIRED (used as model name in `ollama run "$AI_MODEL" "<prompt>"`)
-#       * AI_API_KEY: not used
 #   - deepseek
-#       * AI_MODEL: ignored for one-off prompts
-#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `deepseek-cli chat`)
+#       * AI_MODEL: ignored for now
+#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `deepseek`)
 #   - codex
-#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `codex exec`)
-#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `codex exec`)
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `codex`)
+#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `codex`)
 #   - claude
 #       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `claude`)
 #       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `claude`)
 #   - gemini
-#       * AI_MODEL: ignored for one-off prompts
+#       * AI_MODEL: ignored for now
 #       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `gemini`)
-#   - aider
-#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `aider`)
-#       * AI_API_KEY: not used
+#   - grok
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `grok`)
+#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `grok`)
 #
-# One-off prompt behavior (driven by `podium ai "<prompt>"`):
-#   - deepseek : `deepseek-cli chat --api-key "$AI_API_KEY" "<prompt>"`
-#   - codex    : `codex exec [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
-#   - claude   : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] -p "<prompt>"`
-#   - gemini   : `gemini [--api-key "$AI_API_KEY"] -p "<prompt>"`
-#   - ollama   : `ollama run "$AI_MODEL" "<prompt>"`
-#   - aider    : `aider [--model "$AI_MODEL"] -m "<prompt>" .`
+# Initial-prompt behavior (driven by `podium ai "<prompt>"`):
+#   - deepseek : `deepseek [--api-key "$AI_API_KEY"] -q "<prompt>"`
+#   - codex    : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+#   - claude   : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+#   - gemini   : `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
+#   - grok     : `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
 
 usage() {
     echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--json-output]"
@@ -53,16 +49,15 @@ usage() {
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (ollama, codex, claude, gemini, deepseek, aider, or custom)."
-    echo-white "  --model NAME       Set the AI model name (required for ollama; optional for codex, claude, aider)."
-    echo-white "  --api-key KEY      Set the AI API key (used by deepseek and other CLIs that require a key)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, deepseek, grok, or custom)."
+    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, grok; ignored for gemini, deepseek)."
+    echo-white "  --api-key KEY      Set the AI API key (required by deepseek and grok; optional for codex, claude, gemini)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
     echo-white "Notes:"
     echo-white "  - When --json-output is used, no interactive prompts are shown."
     echo-white "  - If called with only --json-output, the current configuration is returned as JSON."
-    echo-white "  - For ollama, a model is required and must be provided via --model or existing AI_MODEL."
-    echo-white "  - Gemini and DeepSeek one-off prompts do not use AI_MODEL (it is ignored for those agents)."
+    echo-white "  - Gemini and DeepSeek do not currently use AI_MODEL."
 }
 
 # Parse arguments
@@ -125,27 +120,25 @@ select_ai_agent() {
         echo-return
         echo-cyan 'AI Agent CLI Selection'; echo-white
         echo-white 'Choose the AI agent CLI you prefer to use:'
-        echo-white '  1) ollama'
-        echo-white '  2) codex'
-        echo-white '  3) claude'
-        echo-white '  4) gemini'
-        echo-white '  5) deepseek'
-        echo-white '  6) aider'
-        echo-white '  7) other'
+        echo-white '  1) codex'
+        echo-white '  2) claude'
+        echo-white '  3) gemini'
+        echo-white '  4) deepseek'
+        echo-white '  5) grok'
+        echo-white '  6) other'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-7): '
+        echo-yellow -ne 'Enter your choice (1-6): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
 
         case "$AI_AGENT_CHOICE" in
-            1) AI_AGENT="ollama"; break ;;
-            2) AI_AGENT="codex"; break ;;
-            3) AI_AGENT="claude"; break ;;
-            4) AI_AGENT="gemini"; break ;;
-            5) AI_AGENT="deepseek"; break ;;
-            6) AI_AGENT="aider"; break ;;
-            7)
+            1) AI_AGENT="codex"; break ;;
+            2) AI_AGENT="claude"; break ;;
+            3) AI_AGENT="gemini"; break ;;
+            4) AI_AGENT="deepseek"; break ;;
+            5) AI_AGENT="grok"; break ;;
+            6)
                 echo-yellow -ne 'Enter the command name for your AI agent CLI: '
                 echo-white -ne
                 read CUSTOM_AI_AGENT
@@ -158,7 +151,7 @@ select_ai_agent() {
                 break
                 ;;
             *)
-                echo-yellow "Invalid selection. Please enter a number between 1 and 7."
+                echo-yellow "Invalid selection. Please enter a number between 1 and 6."
                 ;;
         esac
     done
@@ -174,27 +167,12 @@ prompt_ai_model() {
         echo-white "No model is currently configured."
     fi
 
-    if [[ "$AI_AGENT" == "ollama" ]]; then
-        # Model required for Ollama
-        while true; do
-            echo-yellow -ne 'Enter Ollama model name (required, for example: llama3.1): '
-            echo-white -ne
-            read NEW_MODEL
-            echo-return
-            if [[ -n "$NEW_MODEL" ]]; then
-                AI_MODEL="$NEW_MODEL"
-                break
-            fi
-            echo-yellow "Model name cannot be empty for Ollama."
-        done
-    else
-        echo-yellow -ne 'Enter model name (optional, press Enter to leave blank): '
-        echo-white -ne
-        read NEW_MODEL
-        echo-return
-        if [[ -n "$NEW_MODEL" ]]; then
-            AI_MODEL="$NEW_MODEL"
-        fi
+    echo-yellow -ne 'Enter model name (optional, press Enter to leave blank): '
+    echo-white -ne
+    read NEW_MODEL
+    echo-return
+    if [[ -n "$NEW_MODEL" ]]; then
+        AI_MODEL="$NEW_MODEL"
     fi
 }
 
@@ -221,11 +199,6 @@ ensure_ai_agent_installed() {
     local cli_command="$1"
     local exec_command="$cli_command"
 
-    # DeepSeek uses the deepseek-cli binary even though the logical choice is "deepseek"
-    if [[ "$cli_command" == "deepseek" ]]; then
-        exec_command="deepseek-cli"
-    fi
-
     if [[ -z "$cli_command" ]]; then
         return 0
     fi
@@ -240,14 +213,6 @@ ensure_ai_agent_installed() {
     echo-yellow "AI agent CLI '$cli_command' is not installed. Attempting automatic installation..."
 
     case "$cli_command" in
-        aider)
-            # Assume pipx/pip are available; let this fail loudly if not
-            pipx install aider-chat || pip install --user aider-chat
-            ;;
-        ollama)
-            # Assume curl is available
-            curl -fsSL https://ollama.com/install.sh | sh
-            ;;
         codex)
             npm install -g @openai/codex
             ;;
@@ -258,7 +223,11 @@ ensure_ai_agent_installed() {
             curl -fsSL https://claude.ai/install.sh | bash
             ;;
         deepseek)
-            npm install -g run-deepseek-cli
+            # Install deepseek-cli via pipx; binary is `deepseek`
+            pipx install deepseek-cli
+            ;;
+        grok)
+            npm install -g @vibe-kit/grok-cli
             ;;
         *)
             echo-yellow "Automatic installation for '$cli_command' is not configured. Please install it manually."
@@ -278,15 +247,6 @@ ensure_ai_agent_installed() {
 
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     # Validation for non-interactive mode
-    if [[ "$AI_AGENT" == "ollama" && -z "$AI_MODEL" ]]; then
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"ai_set\", \"status\": \"error\", \"error\": \"missing_model\", \"details\": \"AI_MODEL is required when AI_AGENT is 'ollama'.\"}"
-        else
-            echo-red "Error: AI_MODEL is required when AI_AGENT is 'ollama'."
-        fi
-        exit 1
-    fi
-
     if [[ "$AI_AGENT" == "deepseek" && "$JSON_OUTPUT" != "1" && -z "$AI_API_KEY" ]]; then
         echo-yellow "Warning: AI_API_KEY is not configured; DeepSeek CLI will not work until a key is set."
     fi
@@ -341,7 +301,7 @@ fi
 
 prompt_ai_model
 
-if [[ "$AI_AGENT" == "deepseek" ]]; then
+if [[ "$AI_AGENT" == "deepseek" || "$AI_AGENT" == "grok" ]]; then
     configure_ai_api_key
 fi
 
@@ -363,6 +323,11 @@ fi
 echo-green "AI agent configuration complete."
 echo-white "  Agent: ${AI_AGENT:-<none>}"
 echo-white "  Model: ${AI_MODEL:-<none>}"
+echo-return
+
+echo-yellow "IMPORTANT:"
+echo-white "  All 'podium ai' commands start the selected AI CLI in a high-trust, \"dangerous\" mode (for example: --dangerously-skip-permissions, --yolo, or equivalent)."
+echo-white "  Only use 'podium ai' from project directories you are comfortable letting the AI modify extensively."
 echo-return
 
 cd "$ORIG_DIR"

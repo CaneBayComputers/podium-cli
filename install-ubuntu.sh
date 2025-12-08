@@ -92,7 +92,7 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git jq software-properties-common trash-cli
+    git jq software-properties-common trash-cli python3-pipx
 
 ###############################
 # Install Docker
@@ -167,6 +167,17 @@ if ! command -v gh &> /dev/null; then
     echo -e "${GREEN}✓ GitHub CLI installed${NC}"
 else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
+fi
+
+###############################
+# Install AWS CLI (if not present)
+###############################
+if ! command -v aws &> /dev/null; then
+    echo -e "${BLUE}Installing AWS CLI...${NC}"
+    sudo apt-get install -y awscli
+    echo -e "${GREEN}✓ AWS CLI installed${NC}"
+else
+    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
 fi
 
 

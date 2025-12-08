@@ -210,6 +210,28 @@ fi
 echo-green "Git configured!"; echo-white; echo
 
 
+###############################
+# Optional AWS CLI configuration
+###############################
+if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
+    echo-return
+    echo-cyan "AWS CLI Configuration"; echo-white
+    echo-white "You can configure the AWS CLI so Podium and your projects can use AWS credentials."
+    echo-white "You'll need your AWS Access Key ID, Secret Access Key, and default region handy."
+    echo-return
+    echo-yellow -ne "Would you like to run 'aws configure' now? (y/N): "
+    echo-white -ne
+    read CONFIG_AWS
+    echo-return
+    if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
+        aws configure
+    else
+        echo-cyan "Skipping AWS CLI configuration for now."
+        echo-white
+    fi
+fi
+
+
 
 ###############################
 # Set up projects directory
@@ -355,19 +377,10 @@ if [ -f "$COMPOSE_FILE" ]; then
     if [ -s "$TEMP_MAPPING" ]; then
         while IFS=':' read -r container_name ip_address; do
             hosts_entry="$ip_address        $container_name"
-            
-            # Check if entry already exists in hosts file (match on container_name)
-            if ! grep -q "[[:space:]]${container_name}[[:space:]]*$" /etc/hosts 2>/dev/null; then
-                echo-white "Adding hosts entry: $hosts_entry"
-                echo "$hosts_entry" | sudo tee -a /etc/hosts > /dev/null
-            else
-                # Update existing entry if IP has changed
-                current_ip=$(grep "[[:space:]]${container_name}[[:space:]]*$" /etc/hosts | awk '{print $1}')
-                if [ "$current_ip" != "$ip_address" ]; then
-                    echo-white "Updating hosts entry for $container_name: $ip_address (was $current_ip)"
-                    sudo sed -i "s/^[0-9.]*[[:space:]]*${container_name}[[:space:]]*.*$/${hosts_entry}/" /etc/hosts
-                fi
-            fi
+            # Always remove existing entries for this container and re-add the current mapping
+            sudo sed -i "/[[:space:]]${container_name}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
+            echo-white "Adding hosts entry: $hosts_entry"
+            echo "$hosts_entry" | sudo tee -a /etc/hosts > /dev/null
         done < "$TEMP_MAPPING"
         echo-green "Hosts file updated with container entries"
     else
@@ -410,8 +423,17 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     else
         echo "{\"action\": \"configure\", \"status\": \"success\", \"warning\": \"Services failed to start but configuration completed\", \"services_result\": null}"
     fi
-else
-    source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
+    cd "$ORIG_DIR"
+    exit 0
 fi
+
+# Interactive follow-up: AI agent configuration and service startup
+if [[ "$JSON_OUTPUT" != "1" ]]; then
+    echo-return
+    echo-cyan "Configuring AI agent (podium ai-set) ..."; echo-white
+    "$DEV_DIR/scripts/ai_set.sh"
+fi
+
+source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
 
 cd "$ORIG_DIR"
