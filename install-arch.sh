@@ -79,7 +79,7 @@ sudo pacman -Syu --noconfirm
 ###############################
 echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
-    git curl jq \
+    git curl jq unzip \
     docker nodejs npm \
     trash-cli pipx
 
@@ -88,7 +88,10 @@ sudo pacman -S --noconfirm --needed \
 ###############################
 if ! command -v aws &> /dev/null; then
     echo -e "${BLUE}Installing AWS CLI...${NC}"
-    sudo pacman -S --noconfirm --needed aws-cli
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+    rm -rf awscliv2.zip aws
     echo -e "${GREEN}✓ AWS CLI installed${NC}"
 else
     echo -e "${GREEN}✓ AWS CLI already installed${NC}"

@@ -159,7 +159,14 @@ brew install pipx >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ pipx installation 
 # Install AWS CLI (if not present)
 if ! command -v aws &> /dev/null; then
     echo -e "${BLUE}Installing AWS CLI...${NC}"
-    brew install awscli >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ AWS CLI installation may have failed${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would download and install AWS CLI from AWSCLIV2.pkg"
+    else
+        curl -fsSL "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+        sudo installer -pkg "AWSCLIV2.pkg" -target /
+        rm -f "AWSCLIV2.pkg"
+    fi
+    echo -e "${GREEN}✓ AWS CLI installed (or installation attempted)${NC}"
 else
     echo -e "${GREEN}✓ AWS CLI already installed${NC}"
 fi

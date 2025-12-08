@@ -92,7 +92,7 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git jq software-properties-common trash-cli pipx
+    git jq software-properties-common trash-cli pipx unzip
 
 ###############################
 # Install Docker
@@ -174,7 +174,10 @@ fi
 ###############################
 if ! command -v aws &> /dev/null; then
     echo -e "${BLUE}Installing AWS CLI...${NC}"
-    sudo apt-get install -y awscli
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+    rm -rf awscliv2.zip aws
     echo -e "${GREEN}✓ AWS CLI installed${NC}"
 else
     echo -e "${GREEN}✓ AWS CLI already installed${NC}"
