@@ -235,8 +235,8 @@ detect_closest_aws_region() {
     local best_region=""
     local best_time=""
 
-    echo-return
-    echo-cyan "Detecting closest AWS region (latency test) ..."; echo-white
+    echo-return >&2
+    echo "Detecting closest AWS region (latency test) ..." >&2
 
     for region in "${regions[@]}"; do
         local endpoint="https://ec2.${region}.amazonaws.com"
@@ -245,11 +245,11 @@ detect_closest_aws_region() {
         time_total=$(curl -o /dev/null -s -w '%{time_total}' "$endpoint" || echo "")
 
         if [[ -z "$time_total" ]]; then
-            echo-yellow "  $region: error (unreachable)"; echo-white
+            echo "  $region: error (unreachable)" >&2
             continue
         fi
 
-        echo-white "  $region: ${time_total}s"
+        echo "  $region: ${time_total}s" >&2
 
         if [[ -z "$best_time" ]] || awk "BEGIN {exit !($time_total < $best_time)}"; then
             best_time="$time_total"
@@ -258,12 +258,12 @@ detect_closest_aws_region() {
     done
 
     if [[ -n "$best_region" ]]; then
-        echo-cyan "Closest AWS region by latency: $best_region"; echo-white
-        echo "$best_region"
+        echo "Closest AWS region by latency: $best_region" >&2
+        echo "$best_region"   # stdout (captured by caller)
         return 0
     fi
 
-    echo-yellow "Could not automatically detect closest AWS region."; echo-white
+    echo "Could not automatically detect closest AWS region." >&2
     return 1
 }
 
