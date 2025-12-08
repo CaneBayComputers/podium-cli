@@ -120,12 +120,29 @@ else
 fi
 
 ###############################
-# Install Node.js and NPM
+# Install Node.js and NPM via NVM
 ###############################
 if ! command -v node &> /dev/null || [[ $(node -v | cut -d'v' -f2 | cut -d'.' -f1) -lt 16 ]]; then
-    echo -e "${BLUE}Installing Node.js...${NC}"
-    brew install node
-    echo -e "${GREEN}✓ Node.js $(node -v) and NPM $(npm -v) installed${NC}"
+    echo -e "${BLUE}Installing Node.js (via NVM)...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would install NVM and latest LTS Node.js"
+    else
+        if [ ! -d "$HOME/.nvm" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        fi
+
+        export NVM_DIR="$HOME/.nvm"
+        # shellcheck disable=SC1090
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+        if command -v nvm >/dev/null 2>&1; then
+            nvm install --lts
+            nvm alias default 'lts/*'
+            echo -e "${GREEN}✓ Node.js $(node -v) and NPM $(npm -v) installed via NVM${NC}"
+        else
+            echo -e "${YELLOW}⚠️ NVM did not initialize correctly; please install Node.js manually.${NC}"
+        fi
+    fi
 else
     echo -e "${GREEN}✓ Node.js already installed${NC}"
 fi

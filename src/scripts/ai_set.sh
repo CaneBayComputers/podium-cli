@@ -20,12 +20,9 @@ NEW_API_KEY=""
 # AI agent configuration rules (summary)
 # --------------------------------------
 # Supported agents and how global vars apply:
-#   - deepseek
-#       * AI_MODEL: ignored for now
-#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `deepseek`)
 #   - codex
 #       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `codex`)
-#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `codex`)
+#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `codex`) if you choose API-key auth
 #   - claude
 #       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `claude`)
 #       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `claude`)
@@ -37,11 +34,10 @@ NEW_API_KEY=""
 #       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `grok`)
 #
 # Initial-prompt behavior (driven by `podium ai "<prompt>"`):
-#   - deepseek : `deepseek [--api-key "$AI_API_KEY"] -q "<prompt>"`
-#   - codex    : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
-#   - claude   : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
-#   - gemini   : `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
-#   - grok     : `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
+#   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+#   - claude : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+#   - gemini : `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
+#   - grok   : `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
 
 usage() {
     echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--json-output]"
@@ -49,15 +45,15 @@ usage() {
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, deepseek, grok, or custom)."
-    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, grok; ignored for gemini, deepseek)."
-    echo-white "  --api-key KEY      Set the AI API key (required by deepseek and grok; optional for codex, claude, gemini)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, grok, or custom)."
+    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, grok; ignored for gemini)."
+    echo-white "  --api-key KEY      Set the AI API key (required by grok; optional for codex, claude, gemini)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
     echo-white "Notes:"
     echo-white "  - When --json-output is used, no interactive prompts are shown."
     echo-white "  - If called with only --json-output, the current configuration is returned as JSON."
-    echo-white "  - Gemini and DeepSeek do not currently use AI_MODEL."
+    echo-white "  - Gemini does not currently use AI_MODEL."
 }
 
 # Parse arguments
@@ -123,11 +119,10 @@ select_ai_agent() {
         echo-white '  1) codex'
         echo-white '  2) claude'
         echo-white '  3) gemini'
-        echo-white '  4) deepseek'
-        echo-white '  5) grok'
-        echo-white '  6) other'
+        echo-white '  4) grok'
+        echo-white '  5) other'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-6): '
+        echo-yellow -ne 'Enter your choice (1-5): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
@@ -136,9 +131,8 @@ select_ai_agent() {
             1) AI_AGENT="codex"; break ;;
             2) AI_AGENT="claude"; break ;;
             3) AI_AGENT="gemini"; break ;;
-            4) AI_AGENT="deepseek"; break ;;
-            5) AI_AGENT="grok"; break ;;
-            6)
+            4) AI_AGENT="grok"; break ;;
+            5)
                 echo-yellow -ne 'Enter the command name for your AI agent CLI: '
                 echo-white -ne
                 read CUSTOM_AI_AGENT
@@ -151,7 +145,7 @@ select_ai_agent() {
                 break
                 ;;
             *)
-                echo-yellow "Invalid selection. Please enter a number between 1 and 6."
+                echo-yellow "Invalid selection. Please enter a number between 1 and 5."
                 ;;
         esac
     done
@@ -195,6 +189,48 @@ configure_ai_api_key() {
     fi
 }
 
+configure_codex_auth() {
+    echo-return
+    echo-cyan "Codex Authentication"; echo-white
+    echo-white "You can authenticate Codex via:"
+    echo-white "  1) Login (recommended - uses your ChatGPT billing/account)"
+    echo-white "  2) API key"
+    echo-return
+    echo-yellow -ne "Choose authentication method for Codex (1-2): "
+    echo-white -ne
+    read CODEX_AUTH_CHOICE
+    echo-return
+
+    case "$CODEX_AUTH_CHOICE" in
+        1)
+            while true; do
+                echo-yellow "Starting 'codex login' ..."; echo-white
+                if codex login; then
+                    echo-green "Codex login completed successfully."; echo-white
+                    echo-return
+                    break
+                fi
+                echo-yellow "Codex login failed or was cancelled."; echo-white
+                echo-yellow -ne "Would you like to try 'codex login' again? (y/N): "
+                echo-white -ne
+                read RETRY_CODEX_LOGIN
+                echo-return
+                if [[ ! "$RETRY_CODEX_LOGIN" =~ ^[Yy]$ ]]; then
+                    echo-cyan "Continuing without successful Codex login."; echo-white
+                    echo-return
+                    break
+                fi
+            done
+            ;;
+        2)
+            configure_ai_api_key
+            ;;
+        *)
+            echo-yellow "Invalid selection. Skipping Codex authentication helper."; echo-white
+            ;;
+    esac
+}
+
 ensure_ai_agent_installed() {
     local cli_command="$1"
     local exec_command="$cli_command"
@@ -222,10 +258,6 @@ ensure_ai_agent_installed() {
         claude)
             curl -fsSL https://claude.ai/install.sh | bash
             ;;
-        deepseek)
-            # Install deepseek-cli via pipx; binary is `deepseek`
-            pipx install deepseek-cli
-            ;;
         grok)
             npm install -g @vibe-kit/grok-cli
             ;;
@@ -247,8 +279,8 @@ ensure_ai_agent_installed() {
 
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     # Validation for non-interactive mode
-    if [[ "$AI_AGENT" == "deepseek" && "$JSON_OUTPUT" != "1" && -z "$AI_API_KEY" ]]; then
-        echo-yellow "Warning: AI_API_KEY is not configured; DeepSeek CLI will not work until a key is set."
+    if [[ "$AI_AGENT" == "grok" && "$JSON_OUTPUT" != "1" && -z "$AI_API_KEY" ]]; then
+        echo-yellow "Warning: AI_API_KEY is not configured; grok CLI will not work until a key is set."
     fi
 
     ensure_ai_agent_installed "$AI_AGENT"
@@ -301,11 +333,15 @@ fi
 
 prompt_ai_model
 
-if [[ "$AI_AGENT" == "deepseek" || "$AI_AGENT" == "grok" ]]; then
+if [[ "$AI_AGENT" == "grok" ]]; then
     configure_ai_api_key
 fi
 
 ensure_ai_agent_installed "$AI_AGENT"
+
+if [[ "$AI_AGENT" == "codex" ]]; then
+    configure_codex_auth
+fi
 
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
