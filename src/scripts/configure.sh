@@ -211,6 +211,61 @@ echo-green "Git configured!"; echo-white; echo
 
 
 ###############################
+# Helper: Detect closest AWS region by latency
+###############################
+detect_closest_aws_region() {
+    local regions=(
+        us-east-1
+        us-east-2
+        us-west-1
+        us-west-2
+        ca-central-1
+        eu-west-1
+        eu-west-2
+        eu-west-3
+        eu-central-1
+        eu-north-1
+        ap-south-1
+        ap-southeast-1
+        ap-southeast-2
+        ap-northeast-1
+        ap-northeast-2
+        sa-east-1
+    )
+    local best_region=""
+    local best_time=""
+
+    echo-return
+    echo-cyan "Detecting closest AWS region (latency test) ..."; echo-white
+
+    for region in "${regions[@]}"; do
+        local endpoint="https://ec2.${region}.amazonaws.com"
+        local time_total
+
+        time_total=$(curl -o /dev/null -s -w '%{time_total}' "$endpoint" || echo "")
+
+        if [[ -z "$time_total" ]]; then
+            continue
+        fi
+
+        if [[ -z "$best_time" ]] || awk "BEGIN {exit !($time_total < $best_time)}"; then
+            best_time="$time_total"
+            best_region="$region"
+        fi
+    done
+
+    if [[ -n "$best_region" ]]; then
+        echo-cyan "Closest AWS region by latency: $best_region"; echo-white
+        echo "$best_region"
+        return 0
+    fi
+
+    echo-yellow "Could not automatically detect closest AWS region."; echo-white
+    return 1
+}
+
+
+###############################
 # Optional AWS CLI configuration
 ###############################
 if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
@@ -224,7 +279,38 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
     read CONFIG_AWS
     echo-return
     if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
-        aws configure
+        # Auto-detect closest region and pre-populate AWS defaults
+        CLOSEST_REGION="$(detect_closest_aws_region || true)"
+        if [[ -n "$CLOSEST_REGION" ]]; then
+            export AWS_DEFAULT_REGION="$CLOSEST_REGION"
+            export AWS_DEFAULT_OUTPUT="json"
+            echo-cyan "Using closest AWS region as default: $CLOSEST_REGION"; echo-white
+            echo-cyan "Default AWS output format set to: json"; echo-white
+            echo-return
+        fi
+
+        # Run aws configure in a loop until credentials validate or user opts out
+        while true; do
+            aws configure
+            echo-return
+            echo-cyan "Verifying AWS credentials with 'aws sts get-caller-identity' ..."; echo-white
+            if aws sts get-caller-identity >/dev/null 2>&1; then
+                echo-green "AWS credentials verified successfully."; echo-white
+                echo-return
+                break
+            fi
+
+            echo-yellow "AWS credentials test failed."; echo-white
+            echo-yellow -ne "Would you like to run 'aws configure' again? (y/N): "
+            echo-white -ne
+            read RETRY_AWS
+            echo-return
+            if [[ ! "$RETRY_AWS" =~ ^[Yy]$ ]]; then
+                echo-cyan "Continuing without verified AWS credentials."; echo-white
+                echo-return
+                break
+            fi
+        done
     else
         echo-cyan "Skipping AWS CLI configuration for now."
         echo-white
@@ -289,8 +375,9 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 	echo-white 'GitHub setup can be done later if needed for repository operations'
 	echo-return
 else
-	echo-return; echo-cyan 'GitHub Authentication Setup'; echo-white
-	
+	echo-return; echo-cyan 'GitHub Authentication Setup'
+    echo-return; echo-cyan 'Checking current auth status. Please wait ...'; echo-white
+
 	if ! gh auth status > /dev/null 2>&1; then
 		echo-return
 		echo-cyan "GitHub CLI can be set up for repository operations."
@@ -305,13 +392,29 @@ else
 		echo-return
 		read -p "Do you want to set up GitHub authentication now? [N/y]: " -n 1 -r SETUP_GITHUB
 		echo-return
-		
+
 		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
-			echo-return
-			echo-yellow "Starting GitHub authentication process..."
-			echo-return
-			gh auth login --hostname github.com
-			echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
+            while true; do
+				echo-return
+				echo-yellow "Starting GitHub authentication process..."; echo-white
+				echo-return
+				gh auth login --hostname github.com
+				if gh auth status >/dev/null 2>&1; then
+					echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
+					break
+				fi
+				echo-yellow "GitHub authentication failed or was cancelled."; echo-white
+				echo-yellow -n "Would you like to try GitHub authentication again? (y/N): "
+				echo-white -ne
+				read RETRY_GITHUB
+				echo-return
+				if [[ ! "$RETRY_GITHUB" =~ ^[Yy]$ ]]; then
+					echo-cyan "Skipping further GitHub authentication attempts."; echo-white
+					echo-white "You can set it up later with: gh auth login"
+					echo-return
+					break
+				fi
+			done
 		else
 			echo-cyan "Skipping GitHub authentication"
 			echo-white "You can set it up later with: gh auth login"
