@@ -398,11 +398,10 @@ else
 				echo-return
 				echo-yellow "Starting GitHub authentication process..."; echo-white
 				echo-return
-				gh auth login --hostname github.com
-				if gh auth status >/dev/null 2>&1; then
-					echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
-					break
-				fi
+                if gh auth login --hostname github.com; then
+                    echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
+                    break
+                fi
 				echo-yellow "GitHub authentication failed or was cancelled."; echo-white
 				echo-yellow -n "Would you like to try GitHub authentication again? (y/N): "
 				echo-white -ne
