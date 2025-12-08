@@ -81,7 +81,7 @@ echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
     git curl jq \
     docker nodejs npm \
-    trash-cli python-pipx
+    trash-cli pipx
 
 ###############################
 # Install AWS CLI (if not present)

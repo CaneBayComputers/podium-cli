@@ -92,7 +92,7 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git jq software-properties-common trash-cli python3-pipx
+    git jq software-properties-common trash-cli pipx
 
 ###############################
 # Install Docker
