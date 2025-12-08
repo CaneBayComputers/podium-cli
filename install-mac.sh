@@ -161,6 +161,14 @@ fi
 echo -e "Installing: jq, trash ..."
 brew install jq trash >/dev/null 2>&1 && echo -e "${GREEN}✓ Additional tools installed${NC}" || echo -e "${YELLOW}⚠️ Some tools may have failed to install${NC}"
 
+###############################
+# Ensure local bin directory and PATH
+###############################
+mkdir -p "$HOME/.local/bin"
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+fi
+
 # Install GitHub CLI (optional but recommended)
 if ! command -v gh &> /dev/null; then
     echo -e "Installing GitHub CLI..."

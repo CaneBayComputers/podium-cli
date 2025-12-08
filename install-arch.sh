@@ -84,6 +84,14 @@ sudo pacman -S --noconfirm --needed \
     trash-cli pipx
 
 ###############################
+# Ensure local bin directory and PATH
+###############################
+mkdir -p "$HOME/.local/bin"
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+fi
+
+###############################
 # Install Node.js and NPM via NVM
 ###############################
 if ! command -v node &> /dev/null || [[ $(node -v | cut -d'v' -f2 | cut -d'.' -f1) -lt 16 ]]; then

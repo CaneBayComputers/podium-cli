@@ -95,6 +95,14 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-htt
     git jq software-properties-common trash-cli pipx unzip
 
 ###############################
+# Ensure local bin directory and PATH
+###############################
+mkdir -p "$HOME/.local/bin"
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" 2>/dev/null; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+fi
+
+###############################
 # Install Docker
 ###############################
 # Check if Docker is already available (e.g., from Docker Desktop)

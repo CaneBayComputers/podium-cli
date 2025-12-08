@@ -546,13 +546,14 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     exit 0
 fi
 
-# Interactive follow-up: AI agent configuration and service startup
+# Start services first in interactive mode
+source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
+
+# Then run AI agent configuration as the final step
 if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-return
     echo-cyan "Configuring AI agent (podium ai-set) ..."; echo-white
     "$DEV_DIR/scripts/ai_set.sh"
 fi
-
-source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
 
 cd "$ORIG_DIR"
