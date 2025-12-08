@@ -287,7 +287,7 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
         if [[ ! -f "$AWS_CONFIG_FILE" ]]; then
             CLOSEST_REGION="$(detect_closest_aws_region || true)"
             # Fallback to us-east-1 if detection fails
-            local seeded_region="${CLOSEST_REGION:-us-east-1}"
+            seeded_region="${CLOSEST_REGION:-us-east-1}"
 
             mkdir -p "$(dirname "$AWS_CONFIG_FILE")"
             {
