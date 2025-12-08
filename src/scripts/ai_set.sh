@@ -128,10 +128,26 @@ select_ai_agent() {
         echo-return
 
         case "$AI_AGENT_CHOICE" in
-            1) AI_AGENT="codex"; break ;;
-            2) AI_AGENT="claude"; break ;;
-            3) AI_AGENT="gemini"; break ;;
-            4) AI_AGENT="grok"; break ;;
+            1)
+                AI_AGENT="codex"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
+            2)
+                AI_AGENT="claude"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
+            3)
+                AI_AGENT="gemini"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
+            4)
+                AI_AGENT="grok"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
             5)
                 echo-yellow -ne 'Enter the command name for your AI agent CLI: '
                 echo-white -ne
@@ -142,6 +158,7 @@ select_ai_agent() {
                     continue
                 fi
                 AI_AGENT="$CUSTOM_AI_AGENT"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
                 break
                 ;;
             *)
@@ -223,10 +240,56 @@ configure_codex_auth() {
             done
             ;;
         2)
+            echo-return
+            echo-white "OpenAI API keys: https://platform.openai.com/api-keys"
             configure_ai_api_key
             ;;
         *)
             echo-yellow "Invalid selection. Skipping Codex authentication helper."; echo-white
+            ;;
+    esac
+}
+
+configure_gemini_auth() {
+    echo-return
+    echo-cyan "Gemini Authentication"; echo-white
+    echo-white "You can configure Gemini via:"
+    echo-white "  1) Interactive CLI (run 'gemini' to configure)"
+    echo-white "  2) API key"
+    echo-return
+    echo-yellow -ne "Choose authentication method for Gemini (1-2): "
+    echo-white -ne
+    read GEMINI_AUTH_CHOICE
+    echo-return
+
+    case "$GEMINI_AUTH_CHOICE" in
+        1)
+            while true; do
+                echo-yellow "Starting 'gemini' ..."; echo-white
+                if gemini; then
+                    echo-green "Gemini CLI finished without errors."; echo-white
+                    echo-return
+                    break
+                fi
+                echo-yellow "Gemini CLI exited with an error or was cancelled."; echo-white
+                echo-yellow -ne "Would you like to run 'gemini' again? (y/N): "
+                echo-white -ne
+                read RETRY_GEMINI
+                echo-return
+                if [[ ! "$RETRY_GEMINI" =~ ^[Yy]$ ]]; then
+                    echo-cyan "Continuing without additional Gemini setup."; echo-white
+                    echo-return
+                    break
+                fi
+            done
+            ;;
+        2)
+            echo-return
+            echo-white "Gemini API keys: https://aistudio.google.com/app/api-keys"
+            configure_ai_api_key
+            ;;
+        *)
+            echo-yellow "Invalid selection. Skipping Gemini authentication helper."; echo-white
             ;;
     esac
 }
@@ -326,6 +389,9 @@ if [[ -n "$AI_AGENT" ]]; then
     echo-return
     if [[ "$CHANGE_AGENT" =~ ^[Yy]$ ]]; then
         select_ai_agent
+    else
+        # Ensure current agent is persisted immediately as well
+        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
     fi
 else
     select_ai_agent
@@ -341,6 +407,8 @@ ensure_ai_agent_installed "$AI_AGENT"
 
 if [[ "$AI_AGENT" == "codex" ]]; then
     configure_codex_auth
+elif [[ "$AI_AGENT" == "gemini" ]]; then
+    configure_gemini_auth
 fi
 
 # Persist configuration
