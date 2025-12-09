@@ -468,6 +468,31 @@ else
     debug "No composer.json found"
 fi
 
+# Install and build front-end assets when Vite/Laravel is detected
+if [ -f "package.json" ]; then
+    if grep -qi '"vite"' package.json; then
+        debug "Detected Vite configuration in package.json; installing Node dependencies and building assets"
+        if [[ "$JSON_OUTPUT" != "1" ]]; then
+            echo-cyan "Installing Node dependencies (npm install) ..."; echo-white
+        fi
+        if ! docker container exec --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$PROJECT_NAME" npm install >/dev/null 2>&1; then
+            echo-yellow "Warning: npm install failed inside project container. Vite assets may not be built."; echo-white
+        else
+            if [[ "$JSON_OUTPUT" != "1" ]]; then
+                echo-green "Node dependencies installed."; echo-white
+                echo-cyan "Building front-end assets (npm run build) ..."; echo-white
+            fi
+            if ! docker container exec --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$PROJECT_NAME" npm run build >/dev/null 2>&1; then
+                echo-yellow "Warning: npm run build failed inside project container. Vite manifest may be missing."; echo-white
+            elif [[ "$JSON_OUTPUT" != "1" ]]; then
+                echo-green "Front-end assets built successfully."; echo-white
+            fi
+        fi
+    else
+        debug "package.json found but no Vite references detected; skipping npm install/build"
+    fi
+fi
+
 
 # Install and setup .env file
 unalias cp 2>/dev/null || true
