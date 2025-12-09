@@ -571,13 +571,13 @@ if [ "$FRAMEWORK" = "laravel" ]; then
             fi
             
             if [[ "$JSON_OUTPUT" == "1" ]]; then
-                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone --private > /dev/null 2>&1; then
+                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone > /dev/null 2>&1; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to standard Laravel download."
                 fi
             else
-                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone --private; then
+                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to standard Laravel download."
@@ -617,6 +617,11 @@ if [ "$FRAMEWORK" = "laravel" ]; then
                     fi
                     
                     cd "$PROJECTS_DIR"
+
+                    if [[ "$JSON_OUTPUT" != "1" ]]; then
+                        echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
+                        echo-yellow "If you need this fork to be private, update its visibility in the GitHub repository settings."
+                    fi
                 fi
             fi
             
@@ -737,13 +742,13 @@ elif [ "$FRAMEWORK" = "kavera" ]; then
             fi
             
             if [[ "$JSON_OUTPUT" == "1" ]]; then
-                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone --private > /dev/null 2>&1; then
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone > /dev/null 2>&1; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to cloning starter repository."
                 fi
             else
-                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone --private; then
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to cloning starter repository."
@@ -783,6 +788,11 @@ elif [ "$FRAMEWORK" = "kavera" ]; then
                     fi
                     
                     cd "$PROJECTS_DIR"
+
+                    if [[ "$JSON_OUTPUT" != "1" ]]; then
+                        echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
+                        echo-yellow "If you need this fork to be private, update its visibility in the GitHub repository settings."
+                    fi
                 fi
             fi
             

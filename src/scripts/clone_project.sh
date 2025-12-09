@@ -313,12 +313,12 @@ if [[ "$FORK_USED" -eq 1 ]]; then
     echo-cyan "Forking repository on GitHub and cloning your fork..."
     
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        if ! gh repo fork "$REPOSITORY" --clone --private > /dev/null 2>&1; then
+        if ! gh repo fork "$REPOSITORY" --clone > /dev/null 2>&1; then
             echo-yellow "GitHub fork failed; falling back to cloning original repository."
             FORK_USED=0
         fi
     else
-        if ! gh repo fork "$REPOSITORY" --clone --private; then
+        if ! gh repo fork "$REPOSITORY" --clone; then
             echo-yellow "GitHub fork failed; falling back to cloning original repository."
             FORK_USED=0
         fi
@@ -361,6 +361,11 @@ if [[ "$FORK_USED" -eq 1 ]]; then
             fi
             
             cd "$PROJECTS_DIR_PATH"
+
+            if [[ "$JSON_OUTPUT" != "1" ]]; then
+                echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
+                echo-yellow "If you need this fork to be private, update its visibility in the GitHub repository settings."
+            fi
         fi
     fi
 fi
