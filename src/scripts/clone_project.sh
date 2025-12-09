@@ -175,6 +175,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Helper to detect GitHub repository URLs
+is_github_repo() {
+    local repo_url="$1"
+    if [[ "$repo_url" =~ github\.com[:/].+ ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # Initialize debug logging
 debug "Script started: clone_project.sh with args: $ORIGINAL_ARGS"
 
@@ -189,15 +198,6 @@ if ! is_github_repo "$REPOSITORY"; then
         REPOSITORY="https://github.com/$REPOSITORY"
     fi
 fi
-
-# Helper to detect GitHub repository URLs
-is_github_repo() {
-    local repo_url="$1"
-    if [[ "$repo_url" =~ github\.com[:/].+ ]]; then
-        return 0
-    fi
-    return 1
-}
 
 # Validate GitHub options in JSON mode
 if [[ "$JSON_OUTPUT" == "1" ]]; then
