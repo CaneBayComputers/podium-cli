@@ -561,6 +561,37 @@ if [ -f ".env.example" ]; then
     podium-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
     podium-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
     podium-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
+    # Optionally propagate AWS credentials into project .env if available
+    AWS_ACCESS_KEY_FROM_CLI=""
+    AWS_SECRET_KEY_FROM_CLI=""
+    AWS_REGION_FROM_CLI=""
+    if command -v aws >/dev/null 2>&1; then
+        AWS_ACCESS_KEY_FROM_CLI=$(aws configure get aws_access_key_id 2>/dev/null || echo "")
+        AWS_SECRET_KEY_FROM_CLI=$(aws configure get aws_secret_access_key 2>/dev/null || echo "")
+        AWS_REGION_FROM_CLI=$(aws configure get region 2>/dev/null || echo "")
+    fi
+    if [[ -z "$AWS_ACCESS_KEY_FROM_CLI" || -z "$AWS_SECRET_KEY_FROM_CLI" ]]; then
+        AWS_CREDENTIALS_FILE="$HOME/.aws/credentials"
+        if [[ -f "$AWS_CREDENTIALS_FILE" ]]; then
+            AWS_ACCESS_KEY_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*aws_access_key_id[[:space:]]*=/{print $3}' "$AWS_CREDENTIALS_FILE" 2>/dev/null | head -n1 || echo "")
+            AWS_SECRET_KEY_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*aws_secret_access_key[[:space:]]*=/{print $3}' "$AWS_CREDENTIALS_FILE" 2>/dev/null | head -n1 || echo "")
+        fi
+    fi
+    if [[ -z "$AWS_REGION_FROM_CLI" ]]; then
+        AWS_CONFIG_FILE_LOCAL="$HOME/.aws/config"
+        if [[ -f "$AWS_CONFIG_FILE_LOCAL" ]]; then
+            AWS_REGION_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*region[[:space:]]*=/{print $3}' "$AWS_CONFIG_FILE_LOCAL" 2>/dev/null | head -n1 || echo "")
+        fi
+    fi
+    if [[ -n "$AWS_ACCESS_KEY_FROM_CLI" ]]; then
+        podium-sed-change "/^#*\s*AWS_ACCESS_KEY_ID=/" "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_FROM_CLI" .env
+    fi
+    if [[ -n "$AWS_SECRET_KEY_FROM_CLI" ]]; then
+        podium-sed-change "/^#*\s*AWS_SECRET_ACCESS_KEY=/" "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY_FROM_CLI" .env
+    fi
+    if [[ -n "$AWS_REGION_FROM_CLI" ]]; then
+        podium-sed-change "/^#*\s*AWS_DEFAULT_REGION=/" "AWS_DEFAULT_REGION=$AWS_REGION_FROM_CLI" .env
+    fi
     echo "" >> .env
     echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
 
