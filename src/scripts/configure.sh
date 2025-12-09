@@ -552,7 +552,9 @@ source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
 # Then run AI agent configuration as the final step
 if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-return
+    echo-return
     echo-cyan "Configuring AI agent (podium ai-set) ..."; echo-white
+    echo-return
     "$DEV_DIR/scripts/ai_set.sh"
 fi
 

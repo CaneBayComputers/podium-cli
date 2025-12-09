@@ -29,10 +29,11 @@ ORGANIZATION=""
 NO_STORAGE_SYMLINK=0
 REQUEST_FORK=0
 FORK_USED=0
+GIT_CLONE_ARGS=()
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 [OPTIONS] <repository> [project_name]"
+    echo-white "Usage: $0 <repository> [OPTIONS] [project_name]"
     echo-white "Clone a Git repository and set up as Podium project"
     echo-white ""
     echo-white "Arguments:"
@@ -53,6 +54,8 @@ usage() {
     echo-white "  --github-org ORG             Create GitHub repository in organization"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
+    echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
+    echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
     echo-white "  --help                       Show this help message"
     
     error "usage" 1
@@ -137,6 +140,18 @@ while [[ $# -gt 0 ]]; do
             REQUEST_FORK=1
             shift
             ;;
+        --branch)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                GIT_CLONE_ARGS+=("--branch" "$2")
+                shift 2
+            else
+                error "Error: --branch requires a branch name"
+            fi
+            ;;
+        --single-branch)
+            GIT_CLONE_ARGS+=("--single-branch")
+            shift
+            ;;
         --debug)
             DEBUG=1
             shift
@@ -166,6 +181,13 @@ debug "Script started: clone_project.sh with args: $ORIGINAL_ARGS"
 # Check if repository argument is provided
 if [ -z "$REPOSITORY" ]; then
     error "Error: Repository is required."
+fi
+
+# Normalize GitHub shorthand (owner/repo or owner/repo.git) into full HTTPS URL
+if ! is_github_repo "$REPOSITORY"; then
+    if [[ "$REPOSITORY" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(\.git)?$ ]]; then
+        REPOSITORY="https://github.com/$REPOSITORY"
+    fi
 fi
 
 # Helper to detect GitHub repository URLs
@@ -284,7 +306,7 @@ if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
     cd "$TEMP_CHECK_DIR"
 
     # Clone just the top level to check for docker-compose.yaml (shallow clone)
-    if git clone --depth 1 "$REPOSITORY" temp_check > /dev/null 2>&1; then
+    if git clone --depth 1 "${GIT_CLONE_ARGS[@]}" "$REPOSITORY" temp_check > /dev/null 2>&1; then
         cd temp_check
         
         # Use the new reusable function to handle docker-compose conflicts
@@ -367,9 +389,9 @@ fi
 # Fallback: standard git clone when not forking or when fork fails
 if [[ "$FORK_USED" -ne 1 ]]; then
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        git clone "$REPOSITORY" "$PROJECT_NAME" > /dev/null 2>&1
+        git clone "${GIT_CLONE_ARGS[@]}" "$REPOSITORY" "$PROJECT_NAME" > /dev/null 2>&1
     else
-        git clone "$REPOSITORY" "$PROJECT_NAME"
+        git clone "${GIT_CLONE_ARGS[@]}" "$REPOSITORY" "$PROJECT_NAME"
     fi
 fi
 
