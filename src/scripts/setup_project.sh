@@ -482,6 +482,8 @@ if [ -f ".env.example" ]; then
 
     podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
     podium-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
+    podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
+    podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
     podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
     # Configure database connection based on selected engine
     case $DATABASE_ENGINE in
