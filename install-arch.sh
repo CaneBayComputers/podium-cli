@@ -81,7 +81,7 @@ echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
     git curl jq unzip \
     docker \
-    trash-cli pipx
+    trash-cli
 
 ###############################
 # Ensure local bin directory and PATH
