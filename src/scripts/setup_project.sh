@@ -225,9 +225,9 @@ else
 fi
 
 
-# Only shutdown project if docker-compose.yaml already exists (existing project reconfiguration)
+# Only shutdown project if a docker-compose file already exists (existing project reconfiguration)
 # For new projects, there's no need to shut down containers that don't exist yet
-if [ -f "$PROJECT_DIR/docker-compose.yaml" ]; then
+if [ -f "$PROJECT_DIR/docker-compose.yaml" ] || [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
     echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1) || true
@@ -359,8 +359,17 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 echo-return
 
 
-# Check if docker-compose.yaml already exists and handle overwrite using reusable function
-handle_docker_compose_conflict "docker-compose.yaml" "setup"
+# Check if a docker-compose file already exists and handle overwrite using reusable function
+EXISTING_COMPOSE_FILE=""
+if [ -f "docker-compose.yaml" ]; then
+    EXISTING_COMPOSE_FILE="docker-compose.yaml"
+elif [ -f "docker-compose.yml" ]; then
+    EXISTING_COMPOSE_FILE="docker-compose.yml"
+fi
+
+if [ -n "$EXISTING_COMPOSE_FILE" ]; then
+    handle_docker_compose_conflict "$EXISTING_COMPOSE_FILE" "setup"
+fi
 
 
 # Use absolute path to docker-stack directory
