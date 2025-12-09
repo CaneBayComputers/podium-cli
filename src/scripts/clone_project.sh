@@ -334,12 +334,12 @@ if [[ "$FORK_USED" -eq 1 ]]; then
     echo-cyan "Forking repository on GitHub and cloning your fork..."
     
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        if ! gh repo fork "$REPOSITORY" --clone > /dev/null 2>&1; then
+        if ! gh repo fork "$REPOSITORY" --clone --private > /dev/null 2>&1; then
             echo-yellow "GitHub fork failed; falling back to cloning original repository."
             FORK_USED=0
         fi
     else
-        if ! gh repo fork "$REPOSITORY" --clone; then
+        if ! gh repo fork "$REPOSITORY" --clone --private; then
             echo-yellow "GitHub fork failed; falling back to cloning original repository."
             FORK_USED=0
         fi

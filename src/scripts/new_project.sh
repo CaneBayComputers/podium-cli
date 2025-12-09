@@ -571,13 +571,13 @@ if [ "$FRAMEWORK" = "laravel" ]; then
             fi
             
             if [[ "$JSON_OUTPUT" == "1" ]]; then
-                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone > /dev/null 2>&1; then
+                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone --private > /dev/null 2>&1; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to standard Laravel download."
                 fi
             else
-                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone; then
+                if gh repo fork "$LARAVEL_REPOSITORY_URL" --clone --private; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to standard Laravel download."
@@ -737,13 +737,13 @@ elif [ "$FRAMEWORK" = "kavera" ]; then
             fi
             
             if [[ "$JSON_OUTPUT" == "1" ]]; then
-                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone > /dev/null 2>&1; then
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone --private > /dev/null 2>&1; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to cloning starter repository."
                 fi
             else
-                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone; then
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone --private; then
                     FORK_USED=1
                 else
                     echo-yellow "GitHub fork failed; falling back to cloning starter repository."
