@@ -369,6 +369,10 @@ fi
 
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     handle_docker_compose_conflict "$EXISTING_COMPOSE_FILE" "setup"
+    # At this point, either the operation was cancelled (error/exit)
+    # or overwrite has been confirmed/forced. Remove any existing
+    # docker-compose files so the Podium-managed one is the only source.
+    rm -f docker-compose.yml docker-compose.yaml
 fi
 
 

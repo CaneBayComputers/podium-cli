@@ -295,13 +295,13 @@ handle_docker_compose_conflict() {
             ;;
         "non-podium")
             if [[ "$JSON_OUTPUT" == "1" ]]; then
-                error "docker-compose.yaml already exists and is not a Podium project. Use --overwrite-docker-compose to force overwrite."
+                error "A docker-compose file already exists and is not a Podium project. Use --overwrite-docker-compose to force overwrite."
             else
-                echo-yellow "⚠️  Found a docker-compose.yaml file that is not from Podium."
-                echo-yellow "This file will be overwritten during $operation_name to work with Podium."
-                echo-yellow -n "Do you want to continue? (y/N): "
+                echo-yellow "⚠️  Found a docker-compose file that is not from Podium."
+                echo-yellow "Overwriting it with a Podium-managed configuration is recommended so Podium can manage the project correctly."
+                echo-yellow -n "Do you want to continue and overwrite it? (Y/n): "
                 read OVERWRITE_RESPONSE
-                if [[ ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
+                if [[ -n "$OVERWRITE_RESPONSE" && ! "$OVERWRITE_RESPONSE" =~ ^[Yy]$ ]]; then
                     error "$operation_name cancelled. Use --overwrite-docker-compose to force overwrite."
                 fi
                 OVERWRITE_DOCKER_COMPOSE=1
