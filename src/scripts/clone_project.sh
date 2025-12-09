@@ -297,38 +297,6 @@ if is_github_repo "$REPOSITORY"; then
     fi
 fi
 
-# Check repository for existing docker-compose.yaml before cloning (unless overwrite is already set)
-if [[ "$OVERWRITE_DOCKER_COMPOSE" != "1" ]]; then
-    echo-white "Checking repository for existing Docker configuration..."
-
-    # Create a temporary directory to check the repo
-    TEMP_CHECK_DIR=$(mktemp -d)
-    cd "$TEMP_CHECK_DIR"
-
-    # Clone just the top level to check for docker-compose.yaml (shallow clone)
-    if git clone --depth 1 "${GIT_CLONE_ARGS[@]}" "$REPOSITORY" temp_check > /dev/null 2>&1; then
-        cd temp_check
-        
-        # Use the new reusable function to handle docker-compose conflicts
-        if ! handle_docker_compose_conflict "docker-compose.yaml" "clone"; then
-            cd "$PROJECTS_DIR"
-            rm -rf "$TEMP_CHECK_DIR"
-            error "Clone cancelled due to Docker configuration conflict."
-        fi
-    else
-        echo-yellow "⚠️  Could not check repository contents (private repo or network issue)"
-        echo-white "Proceeding with clone - will handle conflicts during setup if needed"
-    fi
-
-    # Clean up temp directory
-    cd "$PROJECTS_DIR"
-    rm -rf "$TEMP_CHECK_DIR"
-else
-    echo-white "✅ Overwrite flag set - skipping Docker configuration check"
-fi
-
-echo-return
-
 # Clone repository (or fork via GitHub CLI if requested and available)
 if [[ "$FORK_USED" -eq 1 ]]; then
     echo-cyan "Forking repository on GitHub and cloning your fork..."
