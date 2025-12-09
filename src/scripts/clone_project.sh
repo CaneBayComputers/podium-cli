@@ -282,15 +282,26 @@ if is_github_repo "$REPOSITORY"; then
             echo-white "How would you like to work with this repository?"
             echo-white "1) Work directly with the original repository"
             echo-white "2) Fork to your GitHub account and work from the fork"
-            echo-yellow -n "Enter your choice (1-2): "
+            echo-white "3) Create a new private GitHub repository for this project (no fork)"
+            echo-yellow -n "Enter your choice (1-3): "
             read FORK_CHOICE
             
             case "$FORK_CHOICE" in
+                1)
+                    FORK_USED=0
+                    CREATE_GITHUB="no"
+                    ;;
                 2)
                     FORK_USED=1
+                    CREATE_GITHUB="no"
+                    ;;
+                3)
+                    FORK_USED=0
+                    CREATE_GITHUB="yes"
                     ;;
                 *)
                     FORK_USED=0
+                    CREATE_GITHUB="no"
                     ;;
             esac
         fi
