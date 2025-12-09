@@ -211,6 +211,64 @@ echo-green "Git configured!"; echo-white; echo
 
 
 ###############################
+# Helper: Detect closest AWS region by latency
+###############################
+detect_closest_aws_region() {
+    local regions=(
+        us-east-1
+        us-east-2
+        us-west-1
+        us-west-2
+        ca-central-1
+        eu-west-1
+        eu-west-2
+        eu-west-3
+        eu-central-1
+        eu-north-1
+        ap-south-1
+        ap-southeast-1
+        ap-southeast-2
+        ap-northeast-1
+        ap-northeast-2
+        sa-east-1
+    )
+    local best_region=""
+    local best_time=""
+
+    echo-return >&2
+    echo "Detecting closest AWS region (latency test) ..." >&2
+
+    for region in "${regions[@]}"; do
+        local endpoint="https://ec2.${region}.amazonaws.com"
+        local time_total
+
+        time_total=$(curl -o /dev/null -s -w '%{time_total}' "$endpoint" || echo "")
+
+        if [[ -z "$time_total" ]]; then
+            echo "  $region: error (unreachable)" >&2
+            continue
+        fi
+
+        echo "  $region: ${time_total}s" >&2
+
+        if [[ -z "$best_time" ]] || awk "BEGIN {exit !($time_total < $best_time)}"; then
+            best_time="$time_total"
+            best_region="$region"
+        fi
+    done
+
+    if [[ -n "$best_region" ]]; then
+        echo "Closest AWS region by latency: $best_region" >&2
+        echo "$best_region"   # stdout (captured by caller)
+        return 0
+    fi
+
+    echo "Could not automatically detect closest AWS region." >&2
+    return 1
+}
+
+
+###############################
 # Optional AWS CLI configuration
 ###############################
 if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
@@ -224,7 +282,50 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
     read CONFIG_AWS
     echo-return
     if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
-        aws configure
+        # Only auto-detect closest region and seed config if no config file exists yet
+        AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-$HOME/.aws/config}"
+        if [[ ! -f "$AWS_CONFIG_FILE" ]]; then
+            CLOSEST_REGION="$(detect_closest_aws_region || true)"
+            # Fallback to us-east-1 if detection fails
+            seeded_region="${CLOSEST_REGION:-us-east-1}"
+
+            mkdir -p "$(dirname "$AWS_CONFIG_FILE")"
+            {
+                echo "[default]"
+                echo "region = $seeded_region"
+                echo "output = json"
+            } > "$AWS_CONFIG_FILE"
+
+            export AWS_DEFAULT_REGION="$seeded_region"
+            export AWS_DEFAULT_OUTPUT="json"
+            echo-cyan "Seeded AWS config at $AWS_CONFIG_FILE"; echo-white
+            echo-cyan "Default region set to: $seeded_region"; echo-white
+            echo-cyan "Default AWS output format set to: json"; echo-white
+            echo-return
+        fi
+
+        # Run aws configure in a loop until credentials validate or user opts out
+        while true; do
+            aws configure
+            echo-return
+            echo-cyan "Verifying AWS credentials with 'aws sts get-caller-identity' ..."; echo-white
+            if aws sts get-caller-identity >/dev/null 2>&1; then
+                echo-green "AWS credentials verified successfully."; echo-white
+                echo-return
+                break
+            fi
+
+            echo-yellow "AWS credentials test failed."; echo-white
+            echo-yellow -ne "Would you like to run 'aws configure' again? (y/N): "
+            echo-white -ne
+            read RETRY_AWS
+            echo-return
+            if [[ ! "$RETRY_AWS" =~ ^[Yy]$ ]]; then
+                echo-cyan "Continuing without verified AWS credentials."; echo-white
+                echo-return
+                break
+            fi
+        done
     else
         echo-cyan "Skipping AWS CLI configuration for now."
         echo-white
