@@ -17,6 +17,21 @@ NC='\033[0m' # No Color
 INSTALL_DIR="/usr/local/share/podium-cli"
 BIN_DIR="/usr/local/bin"
 REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
+NVM_FALLBACK_VERSION="v0.40.1"
+
+get_latest_nvm_version() {
+    local tag
+    tag="$(
+        curl -fsSL "https://api.github.com/repos/nvm-sh/nvm/releases/latest" 2>/dev/null | \
+            sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | \
+            head -n 1
+    )"
+    if [[ -n "$tag" ]]; then
+        echo "$tag"
+        return 0
+    fi
+    return 1
+}
 
 echo -e "${BLUE}Podium CLI Arch Installer${NC}"
 echo "========================="
@@ -26,6 +41,13 @@ echo
 if ! pwd &>/dev/null; then
     echo "⚠️  Current directory is invalid, changing to home directory..."
     cd "$HOME" || cd /tmp
+fi
+
+# Detect a local Podium CLI checkout (for development installs)
+CURRENT_DIR="$(pwd -P)"
+LOCAL_REPO_DIR=""
+if [[ -f "$CURRENT_DIR/README.md" && -f "$CURRENT_DIR/src/podium" && -f "$CURRENT_DIR/src/scripts/functions.sh" ]]; then
+    LOCAL_REPO_DIR="$CURRENT_DIR"
 fi
 
 # Basic help
@@ -98,7 +120,8 @@ if ! command -v node &> /dev/null || [[ $(node -v | cut -d'v' -f2 | cut -d'.' -f
     echo -e "${BLUE}Installing Node.js (via NVM)...${NC}"
 
     if [ ! -d "$HOME/.nvm" ]; then
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        NVM_VERSION="$(get_latest_nvm_version || echo "$NVM_FALLBACK_VERSION")"
+        curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
     fi
 
     export NVM_DIR="$HOME/.nvm"
@@ -167,36 +190,84 @@ fi
 ###############################
 # Install / Update Podium CLI
 ###############################
-if [[ -d "$INSTALL_DIR" ]]; then
-    echo -e "${YELLOW}Podium CLI is already installed.${NC}"
-    if [ -t 0 ]; then
-        read -p "Do you want to update it? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled."
-            exit 0
-        fi
-    else
-        echo -e "${CYAN}Running in non-interactive mode - updating existing installation...${NC}"
-    fi
-    echo -e "${YELLOW}Updating existing installation...${NC}"
-    sudo rm -rf "$INSTALL_DIR"
-fi
-
 echo -e "${CYAN}Installing Podium CLI...${NC}"
 
-sudo mkdir -p "$INSTALL_DIR"
-echo -e "${BLUE}Cloning repository...${NC}"
-sudo git clone "$REPO_URL" "$INSTALL_DIR"
+if [[ -n "$LOCAL_REPO_DIR" ]]; then
+    echo -e "${GREEN}✓ Detected existing Podium CLI checkout${NC}"
+    echo -e "${CYAN}Using local directory:${NC} $LOCAL_REPO_DIR"
 
-echo -e "${BLUE}Setting permissions...${NC}"
-sudo chmod +x "$INSTALL_DIR/src/podium"
-sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
-sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
-sudo chown root:root "$INSTALL_DIR/src/podium"
+    desired_target="$(readlink -f "$LOCAL_REPO_DIR")"
+    current_target="$(readlink -f "$INSTALL_DIR" 2>/dev/null || true)"
 
-echo -e "${BLUE}Creating command symlink...${NC}"
-sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+    if [[ -e "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
+        if [[ -n "$current_target" && "$current_target" != "$desired_target" ]]; then
+            echo -e "${YELLOW}Podium CLI is already installed at:${NC} $INSTALL_DIR -> $current_target"
+
+            if [ -t 0 ]; then
+                read -p "Do you want to repoint it to this local checkout? (y/N): " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    echo "Installation cancelled."
+                    exit 0
+                fi
+            else
+                echo -e "${CYAN}Non-interactive run - automatically repointing to local checkout...${NC}"
+                sleep 1
+            fi
+        fi
+    fi
+
+    if [[ "$desired_target" == "$INSTALL_DIR" ]]; then
+        echo -e "${BLUE}Using existing directory at installation path...${NC}"
+    else
+        echo -e "${BLUE}Linking installation directory to local checkout...${NC}"
+        sudo mkdir -p "$(dirname "$INSTALL_DIR")"
+
+        if [[ -L "$INSTALL_DIR" ]]; then
+            sudo ln -sfn "$desired_target" "$INSTALL_DIR"
+        elif [[ -e "$INSTALL_DIR" ]]; then
+            backup_dir="${INSTALL_DIR}.backup.$(date +%Y%m%d%H%M%S)"
+            echo -e "${YELLOW}Backing up existing install to:${NC} $backup_dir"
+            sudo mv "$INSTALL_DIR" "$backup_dir"
+            sudo ln -s "$desired_target" "$INSTALL_DIR"
+        else
+            sudo ln -s "$desired_target" "$INSTALL_DIR"
+        fi
+    fi
+
+    echo -e "${BLUE}Creating command symlink...${NC}"
+    sudo chmod +x "$INSTALL_DIR/src/podium" 2>/dev/null || true
+    sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+else
+    if [[ -d "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
+        echo -e "${YELLOW}Podium CLI is already installed.${NC}"
+        if [ -t 0 ]; then
+            read -p "Do you want to update it? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                echo "Installation cancelled."
+                exit 0
+            fi
+        else
+            echo -e "${CYAN}Running in non-interactive mode - updating existing installation...${NC}"
+        fi
+        echo -e "${YELLOW}Updating existing installation...${NC}"
+        sudo rm -rf "$INSTALL_DIR"
+    fi
+
+    sudo mkdir -p "$INSTALL_DIR"
+    echo -e "${BLUE}Cloning repository...${NC}"
+    sudo git clone "$REPO_URL" "$INSTALL_DIR"
+
+    echo -e "${BLUE}Setting permissions...${NC}"
+    sudo chmod +x "$INSTALL_DIR/src/podium"
+    sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
+    sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
+    sudo chown root:root "$INSTALL_DIR/src/podium"
+
+    echo -e "${BLUE}Creating command symlink...${NC}"
+    sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+fi
 
 ###############################
 # Final verification and instructions

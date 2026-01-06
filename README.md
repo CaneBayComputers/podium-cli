@@ -1,16 +1,99 @@
-# Podium CLI - PHP Development Environment
+# Podium CLI - PHP and Python Development Environment
 
-Podium CLI is a powerful command-line interface for managing Docker-based PHP development environments. It provides seamless support for Laravel, WordPress, and custom PHP applications with integrated database services, caching, and development tools.
+Built for modern PHP and Python development, Podium CLI eliminates the complexity of managing multiple local environments by containerizing everything while maintaining the simplicity developers love. Whether you're building a single Laravel API, managing dozens of WordPress sites, or supporting a front-end with FastAPI, Podium handles the infrastructure so you can focus on writing code. Each project gets its own isolated environment with automatic database setup, intelligent port management, and instant LAN sharing for client demos. Backed by Docker, it provides seamless support for Laravel, FastAPI, Django, WordPress, and custom PHP or Python applications with integrated database services, caching, and development tools.
 
-Built for modern PHP development, Podium CLI eliminates the complexity of managing multiple local environments by containerizing everything while maintaining the simplicity developers love. Whether you're building a single Laravel API or managing dozens of WordPress sites, Podium handles the infrastructure so you can focus on writing code. Each project gets its own isolated environment with automatic database setup, intelligent port management, and instant LAN sharing for client demos.
+
+## 💾 Installation
+
+
+### Option A: One-line installer (recommended)
+
+Use this when you just want Podium installed quickly.
+
+
+#### 🐧 Linux (Debian / Ubuntu / Ubuntu-based)
+
+Podium CLI works best in Linux!
+
+```bash
+# One-liner install
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
+
+# Configure your development environment post installation
+podium configure
+```
+
+**What it installs:**
+- Docker CE with Compose plugin
+- Node.js 20 with NPM
+- GitHub CLI
+- jq, trash-cli
+- All system dependencies
+
+#### 🐧 Linux (Arch / Arch-based)
+
+On Arch Linux and Arch-based distributions:
+
+```bash
+# One-liner install
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash
+
+# Configure your development environment post installation
+podium configure
+```
+
+This installs Docker, Node.js, Git, `jq`, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
+
+
+#### 🍎 MacOS
+
+```bash
+# One-liner install
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
+
+# Configure your development environment post installation
+podium configure
+```
+
+**What it installs:**
+- Homebrew (if not installed)
+- Docker Desktop
+- Node.js with NPM
+- GitHub CLI
+- Additional tools: jq, trash
+
+**Note:** You might need to start Docker Desktop manually after installation.
+
+
+#### 🪟 Windows
+
+Podium CLI runs best on Linux, period. You can try WSL but it is not officially supported. Windows/WSL issues will not be addressed nor fixed.
+
+---
+
+### Option B: Clone first, then run the installer (development / local checkout)
+
+Use this when you already have the repo checked out (or you want to hack on Podium CLI itself). If you run an installer from inside a `podium-cli` checkout, it will **skip `git clone`** and instead link `/usr/local/share/podium-cli` to your existing folder (and still create `/usr/local/bin/podium`).
+
+```bash
+git clone https://github.com/CaneBayComputers/podium-cli.git
+cd podium-cli
+```
+
+- Ubuntu/Debian: `./install-ubuntu.sh`
+- Arch: `./install-arch.sh`
+- macOS: `./install-mac.sh`
+
 
 ## Quick Start
 
-**Open a terminal and start using Podium:**
+**Open a terminal and start your first Podium project:**
 ```bash
-# Configure your development environment post installation
-podium configure
+podium new
+```
 
+## Kavera AI-Ready Website
+```bash
 # Create a new Kavera website project (AI website creation platform)
 podium kavera my-kavera-site
 ```
@@ -36,54 +119,6 @@ Other common project types:
   podium new my-php-app --framework php
   ```
 
-
-## 💾 Installation
-
-### 🐧 Linux (Debian / Ubuntu / Ubuntu-based)
-
-Podium CLI works best in Linux!
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
-```
-
-**What it installs:**
-- Docker CE with Compose plugin
-- Node.js 20 with NPM
-- GitHub CLI
-- jq, trash-cli
-- All system dependencies
-
-### 🐧 Linux (Arch / Arch-based)
-
-On Arch Linux and Arch-based distributions:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash
-```
-
-This installs Docker, Node.js, Git, `jq`, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
-
-
-### 🍎 MacOS
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
-```
-
-**What it installs:**
-- Homebrew (if not installed)
-- Docker Desktop
-- Node.js with NPM
-- GitHub CLI
-- Additional tools: jq, trash
-
-**Note:** You might need to start Docker Desktop manually after installation.
-
-
-### 🪟 Windows
-
-Podium CLI runs best on Linux, period. You can try WSL but it is not officially supported. Windows/WSL issues will not be addressed nor fixed.
 
 
 ## 🪄 The Magic Commands - Daily Workflow

@@ -17,6 +17,13 @@ if ! pwd &>/dev/null; then
     cd "$HOME" || cd /tmp
 fi
 
+# Detect a local Podium CLI checkout (for development installs)
+CURRENT_DIR="$(pwd -P)"
+LOCAL_REPO_DIR=""
+if [[ -f "$CURRENT_DIR/README.md" && -f "$CURRENT_DIR/src/podium" && -f "$CURRENT_DIR/src/scripts/functions.sh" ]]; then
+    LOCAL_REPO_DIR="$CURRENT_DIR"
+fi
+
 sleep 1
 
 # Check for dry-run mode
@@ -40,6 +47,21 @@ INSTALL_DIR="/usr/local/share/podium-cli"
 CONFIG_DIR="/etc/podium-cli"
 BIN_DIR="/usr/local/bin"
 REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
+NVM_FALLBACK_VERSION="v0.40.1"
+
+get_latest_nvm_version() {
+    local tag
+    tag="$(
+        curl -fsSL "https://api.github.com/repos/nvm-sh/nvm/releases/latest" 2>/dev/null | \
+            sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | \
+            head -n 1
+    )"
+    if [[ -n "$tag" ]]; then
+        echo "$tag"
+        return 0
+    fi
+    return 1
+}
 
 echo -e "${BLUE}Podium CLI Mac Installer${NC}"
 echo "========================"
@@ -128,7 +150,8 @@ if ! command -v node &> /dev/null || [[ $(node -v | cut -d'v' -f2 | cut -d'.' -f
         echo "  [DRY RUN] Would install NVM and latest LTS Node.js"
     else
         if [ ! -d "$HOME/.nvm" ]; then
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            NVM_VERSION="$(get_latest_nvm_version || echo "$NVM_FALLBACK_VERSION")"
+            curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
         fi
 
         export NVM_DIR="$HOME/.nvm"
@@ -198,59 +221,131 @@ fi
 
 
 ###############################
-# Check if already installed
-###############################
-if [[ -d "$INSTALL_DIR" ]]; then
-    echo -e "${YELLOW}Podium CLI is already installed.${NC}"
-    
-    # Check if we're running in a pipe (curl | bash) or interactive terminal
-    if [ -t 0 ]; then
-        # Interactive terminal - ask user
-        read -p "Do you want to update it? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled."
-            exit 0
-        fi
-    else
-        # Running via pipe (curl | bash) - auto-update
-        echo -e "${CYAN}Running via curl | bash - automatically updating...${NC}"
-        sleep 2
-    fi
-    
-    echo -e "${YELLOW}Updating existing installation...${NC}"
-    
-    # Configuration is now stored in /etc/podium-cli/ and will persist across reinstalls
-    
-    sudo rm -rf "$INSTALL_DIR"
-fi
-
-###############################
-# Install Podium CLI
+# Install / Update Podium CLI
 ###############################
 echo -e "${CYAN}Installing Podium CLI...${NC}"
 
-# Create installation directory
-echo -e "${BLUE}Creating installation directory...${NC}"
-sudo mkdir -p "$INSTALL_DIR"
+if [[ -n "$LOCAL_REPO_DIR" ]]; then
+    echo -e "${GREEN}✓ Detected existing Podium CLI checkout${NC}"
+    echo -e "${CYAN}Using local directory:${NC} $LOCAL_REPO_DIR"
 
-# Clone repository
-echo -e "${BLUE}Downloading Podium CLI...${NC}"
-sudo git clone "$REPO_URL" "$INSTALL_DIR"
+    desired_target="$(cd "$LOCAL_REPO_DIR" 2>/dev/null && pwd -P)"
+    current_target="$(cd "$INSTALL_DIR" 2>/dev/null && pwd -P || true)"
 
-# Set proper permissions
-echo -e "${BLUE}Setting permissions...${NC}"
-# Keep most files accessible to users, only set execute permissions for scripts
-sudo chmod +x "$INSTALL_DIR/src/podium"
-sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
-# Make sure current user can read/write config files
-sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
-# Only the main binary needs special permissions
-sudo chown root:wheel "$INSTALL_DIR/src/podium"
+    if [[ -e "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
+        if [[ -n "$current_target" && "$current_target" != "$desired_target" ]]; then
+            echo -e "${YELLOW}Podium CLI is already installed at:${NC} $INSTALL_DIR -> $current_target"
 
-# Create symlink
-echo -e "${BLUE}Creating command symlink...${NC}"
-sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+            if [ -t 0 ]; then
+                read -p "Do you want to repoint it to this local checkout? (y/N): " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    echo "Installation cancelled."
+                    exit 0
+                fi
+            else
+                echo -e "${CYAN}Non-interactive run - automatically repointing to local checkout...${NC}"
+                sleep 1
+            fi
+        fi
+    fi
+
+    if [[ "$desired_target" == "$INSTALL_DIR" ]]; then
+        echo -e "${BLUE}Using existing directory at installation path...${NC}"
+    else
+        echo -e "${BLUE}Linking installation directory to local checkout...${NC}"
+        if [ "$DRY_RUN" = "1" ]; then
+            echo "  [DRY RUN] Would link $INSTALL_DIR -> $desired_target"
+        else
+            sudo mkdir -p "$(dirname "$INSTALL_DIR")"
+
+            if [[ -L "$INSTALL_DIR" ]]; then
+                sudo ln -sfn "$desired_target" "$INSTALL_DIR"
+            elif [[ -e "$INSTALL_DIR" ]]; then
+                backup_dir="${INSTALL_DIR}.backup.$(date +%Y%m%d%H%M%S)"
+                echo -e "${YELLOW}Backing up existing install to:${NC} $backup_dir"
+                sudo mv "$INSTALL_DIR" "$backup_dir"
+                sudo ln -s "$desired_target" "$INSTALL_DIR"
+            else
+                sudo ln -s "$desired_target" "$INSTALL_DIR"
+            fi
+        fi
+    fi
+
+    echo -e "${BLUE}Creating command symlink...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would symlink $BIN_DIR/podium -> $INSTALL_DIR/src/podium"
+    else
+        sudo chmod +x "$INSTALL_DIR/src/podium" 2>/dev/null || true
+        sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+    fi
+else
+    if [[ -d "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
+        echo -e "${YELLOW}Podium CLI is already installed.${NC}"
+
+        # Check if we're running in a pipe (curl | bash) or interactive terminal
+        if [ -t 0 ]; then
+            # Interactive terminal - ask user
+            read -p "Do you want to update it? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                echo "Installation cancelled."
+                exit 0
+            fi
+        else
+            # Running via pipe (curl | bash) - auto-update
+            echo -e "${CYAN}Running via curl | bash - automatically updating...${NC}"
+            sleep 2
+        fi
+
+        echo -e "${YELLOW}Updating existing installation...${NC}"
+
+        # Configuration is now stored in /etc/podium-cli/ and will persist across reinstalls
+        if [ "$DRY_RUN" = "1" ]; then
+            echo "  [DRY RUN] Would remove existing install at $INSTALL_DIR"
+        else
+            sudo rm -rf "$INSTALL_DIR"
+        fi
+    fi
+
+    # Create installation directory
+    echo -e "${BLUE}Creating installation directory...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would create $INSTALL_DIR"
+    else
+        sudo mkdir -p "$INSTALL_DIR"
+    fi
+
+    # Clone repository
+    echo -e "${BLUE}Downloading Podium CLI...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would clone $REPO_URL to $INSTALL_DIR"
+    else
+        sudo git clone "$REPO_URL" "$INSTALL_DIR"
+    fi
+
+    # Set proper permissions
+    echo -e "${BLUE}Setting permissions...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would chmod/chown installed files"
+    else
+        # Keep most files accessible to users, only set execute permissions for scripts
+        sudo chmod +x "$INSTALL_DIR/src/podium"
+        sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
+        # Make sure current user can read/write config files
+        sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
+        # Only the main binary needs special permissions
+        sudo chown root:wheel "$INSTALL_DIR/src/podium"
+    fi
+
+    # Create symlink
+    echo -e "${BLUE}Creating command symlink...${NC}"
+    if [ "$DRY_RUN" = "1" ]; then
+        echo "  [DRY RUN] Would symlink $BIN_DIR/podium -> $INSTALL_DIR/src/podium"
+    else
+        sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+    fi
+fi
 
 ###############################
 # Final verification and instructions
