@@ -1,0 +1,25 @@
+services:
+  server:
+    image: canebaycomputers/cbc:nginx-python3
+    container_name: CONTAINER_NAME
+    environment:
+      - "PYTHON_APP_COMMAND=PYTHON_START_COMMAND"
+    ports:
+      - "PROJECT_PORT:80"
+    volumes:
+      - .:/usr/share/nginx/htmlPUBLIC
+      - /etc/hosts:/etc/hosts:ro
+    networks:
+      default:
+        ipv4_address: IPV4_ADDRESS
+    x-metadata:
+      type: "podium-project"
+      version: "1.0.0"
+      emoji: "PROJECT_EMOJI"
+      name: "PROJECT_NAME"
+      description: "PROJECT_DESCRIPTION"
+
+networks:
+  default:
+    external: true
+    name: podium-cli_vpc

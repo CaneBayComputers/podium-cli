@@ -1,6 +1,16 @@
-# Podium CLI - PHP and Python Development Environment
+# Podium CLI
 
-Built for modern PHP and Python development, Podium CLI eliminates the complexity of managing multiple local environments by containerizing everything while maintaining the simplicity developers love. Whether you're building a single Laravel API, managing dozens of WordPress sites, or supporting a front-end with FastAPI, Podium handles the infrastructure so you can focus on writing code. Each project gets its own isolated environment with automatic database setup, intelligent port management, and instant LAN sharing for client demos. Backed by Docker, it provides seamless support for Laravel, FastAPI, Django, WordPress, and custom PHP or Python applications with integrated database services, caching, and development tools.
+Every tutorial about coding with AI skips a step. They show you how to prompt. How to iterate. How to ship. They assume you already have a working local development environment. Most people don't. They get stuck installing Docker, fighting config files, Googling why their port isn't working. They give up before they write a single line of code.
+
+Podium is the missing first step.
+
+One command and you have a running project. A real URL. A real database. Everything wired together. No Docker knowledge required. No config files to wrestle with. No Googling why your port isn't working. Just a URL and a folder, ready for an AI to write code into.
+
+Podium supports Laravel, FastAPI, Django, and WordPress today. Node.js is next. Every project shares the same database, Redis, and services automatically. A Laravel backend and a FastAPI service can talk to the same database on day one without any extra configuration. That is not a convenience feature. That is production parity on localhost, baked in from the start.
+
+Podium runs on Linux and Mac. It is open source. It is built for developers who want to spend their time building, not configuring.
+
+Stop configuring. Start building.
 
 
 ## 💾 Installation

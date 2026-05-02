@@ -378,13 +378,19 @@ fi
 
 # Use absolute path to docker-stack directory
 PODIUM_DIR="$DEV_DIR"
-cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
+if [ -f "main.py" ] || [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
+    cp -f "$PODIUM_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
+else
+    cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
+fi
 
 podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
 
-podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
+if [ ! -f "main.py" ] && [ ! -f "manage.py" ] && [ "$FRAMEWORK" != "django" ]; then
+    podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
+fi
 
 podium-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
 
@@ -404,7 +410,7 @@ podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
 podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml  
 podium-sed "s#PROJECT_DESCRIPTION#$PROJECT_DESCRIPTION_SAFE#g" docker-compose.yaml
 
-if [ -d "public" ]; then
+if [ -d "public" ] || [ -f "main.py" ] || [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
 
     podium-sed "s/PUBLIC//g" docker-compose.yaml
 
@@ -412,6 +418,13 @@ else
 
     podium-sed "s/PUBLIC/\/public/g" docker-compose.yaml
 
+fi
+
+# Set start command for Python projects
+if [ -f "main.py" ]; then
+    podium-sed "s|PYTHON_START_COMMAND|uvicorn main:app --host 127.0.0.1 --port 8000|g" docker-compose.yaml
+elif [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
+    podium-sed "s|PYTHON_START_COMMAND|gunicorn ${PROJECT_NAME_SNAKE}.wsgi:application --bind 127.0.0.1:8000 --workers 2|g" docker-compose.yaml
 fi
 
 # Start the project container before composer installation
@@ -450,6 +463,51 @@ debug "Project container started successfully"
 debug "Returning to project directory: $PROJECT_DIR"
 cd "$PROJECT_DIR"
 debug "Current directory after returning: $(pwd)"
+
+# Django scaffolding: run django-admin startproject inside the container
+if [ "$FRAMEWORK" = "django" ] && [ ! -f "manage.py" ]; then
+    echo-cyan "Scaffolding Django project inside container..."; echo-white
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && django-admin startproject ${PROJECT_NAME_SNAKE} ." > /dev/null 2>&1
+    else
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && django-admin startproject ${PROJECT_NAME_SNAKE} ."
+    fi
+    # Fix ownership of files created by root inside the container
+    sudo chown -R "$(id -u):$(id -g)" .
+    echo-green "Django project scaffolded!"; echo-white
+fi
+
+# Patch Django settings.py to use environment variables (idempotent)
+SETTINGS_FILE="${PROJECT_NAME_SNAKE}/settings.py"
+if [ -f "manage.py" ] && [ -f "$SETTINGS_FILE" ] && ! grep -q "load_dotenv" "$SETTINGS_FILE"; then
+    echo-cyan "Patching Django settings.py ..."; echo-white
+
+    # Prepend dotenv imports and pymysql shim before existing content
+    printf 'from dotenv import load_dotenv\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv()\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
+
+    # Replace ALLOWED_HOSTS line
+    podium-sed "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
+
+    # Replace the DATABASES block
+    python3 - "$SETTINGS_FILE" << 'PYEOF'
+import re, sys
+path = sys.argv[1]
+content = open(path).read()
+new_db = """DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.' + os.getenv('DB_CONNECTION', 'mysql'),
+        'NAME': os.getenv('DB_DATABASE', ''),
+        'USER': os.getenv('DB_USERNAME', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '3306'),
+    }
+}"""
+content = re.sub(r'DATABASES\s*=\s*\{[^}]*\{[^}]*\}[^}]*\}', new_db, content, flags=re.DOTALL)
+open(path, 'w').write(content)
+PYEOF
+    echo-green "Django settings.py patched!"; echo-white
+fi
 
 # Install Composer libraries
 debug "Checking for composer.json file"
@@ -505,11 +563,113 @@ fi
 # Install and setup .env file
 unalias cp 2>/dev/null || true
 
-if [ -f ".env.example" ]; then
+if [ -f "main.py" ]; then
+
+    echo-cyan "Setting up .env file ..."; echo-white
+
+    case $DATABASE_ENGINE in
+        "postgresql")
+            PYTHON_DB_CONNECTION="pgsql"
+            PYTHON_DB_HOST="$POSTGRES_CONTAINER_NAME"
+            PYTHON_DB_PORT="5432"
+            ;;
+        "mongodb")
+            PYTHON_DB_CONNECTION="mongodb"
+            PYTHON_DB_HOST="$MONGO_CONTAINER_NAME"
+            PYTHON_DB_PORT="27017"
+            ;;
+        *)
+            PYTHON_DB_CONNECTION="mysql"
+            PYTHON_DB_HOST="$MARIADB_CONTAINER_NAME"
+            PYTHON_DB_PORT="3306"
+            ;;
+    esac
+
+    cat > .env << EOF
+APP_NAME=$PROJECT_NAME
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://$PROJECT_NAME
+DB_CONNECTION=$PYTHON_DB_CONNECTION
+DB_HOST=$PYTHON_DB_HOST
+DB_PORT=$PYTHON_DB_PORT
+DB_DATABASE=$PROJECT_NAME_SNAKE
+DB_USERNAME=root
+DB_PASSWORD=
+REDIS_HOST=$REDIS_CONTAINER_NAME
+REDIS_PORT=6379
+MAIL_HOST=$MAILHOG_CONTAINER_NAME
+MAIL_PORT=1025
+EOF
+
+    echo-green "The .env file has been created!"; echo-white
+
+elif [ -f "manage.py" ] && [ ! -f ".env" ]; then
+
+    echo-cyan "Setting up .env file ..."; echo-white
+
+    case $DATABASE_ENGINE in
+        "postgresql")
+            PYTHON_DB_CONNECTION="pgsql"
+            PYTHON_DB_HOST="$POSTGRES_CONTAINER_NAME"
+            PYTHON_DB_PORT="5432"
+            ;;
+        "mongodb")
+            PYTHON_DB_CONNECTION="mongodb"
+            PYTHON_DB_HOST="$MONGO_CONTAINER_NAME"
+            PYTHON_DB_PORT="27017"
+            ;;
+        *)
+            PYTHON_DB_CONNECTION="mysql"
+            PYTHON_DB_HOST="$MARIADB_CONTAINER_NAME"
+            PYTHON_DB_PORT="3306"
+            ;;
+    esac
+
+    cat > .env << EOF
+APP_NAME=$PROJECT_NAME
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://$PROJECT_NAME
+DB_CONNECTION=$PYTHON_DB_CONNECTION
+DB_HOST=$PYTHON_DB_HOST
+DB_PORT=$PYTHON_DB_PORT
+DB_DATABASE=$PROJECT_NAME_SNAKE
+DB_USERNAME=root
+DB_PASSWORD=
+REDIS_HOST=$REDIS_CONTAINER_NAME
+REDIS_PORT=6379
+MAIL_HOST=$MAILHOG_CONTAINER_NAME
+MAIL_PORT=1025
+EOF
+
+    echo-green "The .env file has been created!"; echo-white
+
+elif [ -f ".env.example" ]; then
 
     echo-cyan "Setting up .env file ..."; echo-white
 
     cp -f .env.example .env
+
+    if [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
+        podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
+        podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
+        podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
+        podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
+        case $DATABASE_ENGINE in
+            "postgresql")
+                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
+                ;;
+            "mongodb")
+                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
+                ;;
+            *)
+                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
+                ;;
+        esac
+        podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
+        podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
+    else
 
     APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
 
@@ -594,6 +754,8 @@ if [ -f ".env.example" ]; then
     fi
     echo "" >> .env
     echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
+
+    fi
 
     echo-green "The .env file has been created!"; echo-white
 
@@ -732,6 +894,18 @@ if [ -f "artisan" ]; then
 
     fi
 
+elif [ "$FRAMEWORK" = "django" ] && [ -f "manage.py" ]; then
+
+    echo-cyan 'Running Django initial migrations ...'; echo-white
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && python3 manage.py migrate" > /dev/null 2>&1
+    else
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && python3 manage.py migrate"
+    fi
+
+    echo-green 'Django migrations complete!'; echo-white
+
 elif [ -f "create_tables.sql" ]; then
 
     echo-cyan 'Creating tables ...'; echo-white
@@ -748,7 +922,11 @@ setup_gitignore() {
     local framework_type=""
     
     # Detect framework type
-    if [ -f "artisan" ]; then
+    if [ -f "main.py" ]; then
+        framework_type="fastapi"
+    elif [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
+        framework_type="django"
+    elif [ -f "artisan" ]; then
         framework_type="laravel"
     elif [ -f "wp-config-sample.php" ] || [ -f "wp-config.php" ]; then
         framework_type="wordpress"
@@ -780,6 +958,34 @@ EOF
     # Only create .gitignore if it doesn't exist
     if [ ! -f ".gitignore" ]; then
         case $framework_type in
+            "fastapi")
+                cat > .gitignore << 'EOF'
+docker-compose.yaml
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+*.log
+.DS_Store
+EOF
+                ;;
+            "django")
+                cat > .gitignore << 'EOF'
+docker-compose.yaml
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv/
+venv/
+*.log
+.DS_Store
+staticfiles/
+media/
+EOF
+                ;;
             "laravel")
                 # Laravel should already have .gitignore, but add docker-compose.yaml if missing
                 if ! grep -q "docker-compose.yaml" .gitignore 2>/dev/null; then

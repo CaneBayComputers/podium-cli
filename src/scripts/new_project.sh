@@ -65,7 +65,7 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, kavera (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, kavera, fastapi, django (required with --json-output)"
     echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
@@ -227,11 +227,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php"|"kavera")
+        "laravel"|"wordpress"|"php"|"kavera"|"fastapi"|"django")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, or kavera)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, kavera, fastapi, or django)"
             ;;
     esac
 
@@ -330,9 +330,11 @@ if [ -z "$FRAMEWORK" ]; then
     echo-white "2) WordPress (CMS)"
     echo-white "3) PHP (Plain PHP project)"
     echo-white "4) Kavera (Laravel flat-file site for AI agents)"
-    echo-return; echo-yellow -n "Enter your choice (1-4): "
+    echo-white "5) FastAPI (Python Framework)"
+    echo-white "6) Django (Python Framework)"
+    echo-return; echo-yellow -n "Enter your choice (1-6): "
     read FRAMEWORK_CHOICE
-    
+
     case $FRAMEWORK_CHOICE in
         1)
             FRAMEWORK="laravel"
@@ -345,6 +347,12 @@ if [ -z "$FRAMEWORK" ]; then
             ;;
         4)
             FRAMEWORK="kavera"
+            ;;
+        5)
+            FRAMEWORK="fastapi"
+            ;;
+        6)
+            FRAMEWORK="django"
             ;;
         *)
             error "Invalid choice. Exiting..."
@@ -472,6 +480,14 @@ case $FRAMEWORK in
         echo-return; echo-cyan "Kavera flat-file project selected!"
         # Kavera uses the starter repo; no version selection required.
         echo-green "Kavera starter will be cloned from: $KAVERA_REPOSITORY_URL"
+        ;;
+    fastapi)
+        echo-return; echo-cyan "FastAPI project selected!"
+        echo-green "FastAPI project will be created with basic structure"
+        ;;
+    django)
+        echo-return; echo-cyan "Django project selected!"
+        echo-green "Django project will be scaffolded inside the container during setup."
         ;;
     *)
         error "Unknown framework '$FRAMEWORK'. Exiting..."
@@ -820,6 +836,58 @@ elif [ "$FRAMEWORK" = "kavera" ]; then
     fi
     
     echo-green "Kavera project structure created!"
+
+elif [ "$FRAMEWORK" = "fastapi" ]; then
+    echo-return; echo-cyan "FastAPI project selected!"
+
+    cat > main.py << 'EOF'
+from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+app = FastAPI()
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from FastAPI!", "project": os.getenv("APP_NAME", "my-project")}
+EOF
+
+    cat > requirements.txt << 'EOF'
+fastapi
+uvicorn
+python-dotenv
+sqlalchemy
+psycopg2-binary
+pymysql
+pymongo
+redis
+EOF
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git init > /dev/null 2>&1
+        git add . > /dev/null 2>&1
+        git commit -m "Initial FastAPI project setup" > /dev/null 2>&1
+    else
+        git init
+        git add .
+        git commit -m "Initial FastAPI project setup"
+    fi
+
+    echo-green "FastAPI project structure created!"
+
+elif [ "$FRAMEWORK" = "django" ]; then
+    echo-return; echo-cyan "Django project selected!"
+    echo-green "Django project will be scaffolded inside the container during setup."
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git init > /dev/null 2>&1
+        git commit --allow-empty -m "Initial Django project setup" > /dev/null 2>&1
+    else
+        git init
+        git commit --allow-empty -m "Initial Django project setup"
+    fi
 fi
 
 
