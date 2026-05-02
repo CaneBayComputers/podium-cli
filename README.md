@@ -6,7 +6,7 @@ Podium is the missing first step.
 
 One command and you have a running project. A real URL. A real database. Everything wired together. No Docker knowledge required. No config files to wrestle with. No Googling why your port isn't working. Just a URL and a folder, ready for an AI to write code into.
 
-Podium supports Laravel, FastAPI, Django, and WordPress today. Node.js is next. Every project shares the same database, Redis, and services automatically. A Laravel backend and a FastAPI service can talk to the same database on day one without any extra configuration. That is not a convenience feature. That is production parity on localhost, baked in from the start.
+Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares the same database, Redis, and services automatically. A Laravel backend and a FastAPI service can talk to the same database on day one without any extra configuration. That is not a convenience feature. That is production parity on localhost, baked in from the start.
 
 Podium runs on Linux and Mac. It is open source. It is built for developers who want to spend their time building, not configuring.
 
@@ -116,6 +116,26 @@ Common project types:
   ```bash
   podium new my-api --framework fastapi
   ```
+- Django project:
+  ```bash
+  podium new my-django-app --framework django
+  ```
+- Express project:
+  ```bash
+  podium new my-express-app --framework express
+  ```
+- NestJS project:
+  ```bash
+  podium new my-nest-app --framework nestjs
+  ```
+- Fastify project:
+  ```bash
+  podium new my-fastify-app --framework fastify
+  ```
+- Plain Node.js project:
+  ```bash
+  podium new my-node-app --framework node
+  ```
 - Empty PHP project:
   ```bash
   podium new my-php-app --framework php
@@ -160,6 +180,10 @@ podium down
 | `podium art <args>` | Run Laravel Artisan commands |
 | `podium wp <args>` | Run WordPress CLI commands |
 | `podium php <args>` | Run PHP inside container |
+| `podium npm <args>` | Run npm commands inside container |
+| `podium npx <args>` | Run npx commands inside container |
+| `podium node <args>` | Run Node.js inside container |
+| `podium python <args>` | Run Python inside container |
 
 ### ✅ Static Analysis & Linting
 *Run from project directory; paths are relative to the project root (for example `app/Console/Commands/Foo.php`)*
@@ -232,7 +256,6 @@ podium down
 | `podium stop-services` | Stop shared services |
 | `podium uninstall` | Remove all Podium Docker resources |
 | `podium projects-dir` | Show projects directory path |
-| `podium gui` | Launch desktop GUI interface |
 
 #### `podium ai-set` options
 
@@ -280,37 +303,6 @@ podium ai "Build a unique homepage hero section."
   - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
   - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
 
-### 🧪 Testing & Utilities
-
-| Command | Description |
-|---------|-------------|
-| `podium test-json-output [test_name]` | Run comprehensive JSON output test suite (optionally run specific test) |
-| `podium cleanup-test-environment` | Clean up test resources (containers, networks, files) |
-
-**Test Suite Features:**
-- Tests all JSON commands for proper output format
-- Validates project creation, setup, cloning, removal
-- Tests different frameworks (Laravel, WordPress, PHP)
-- Tests different PHP versions and database engines
-- Isolated test environment using `podium_test_` prefix
-- Comprehensive cleanup of all test resources
-- Visual test reports with pass/fail status
-- Debug logging for troubleshooting failures
-
-**Run specific tests for debugging:**
-```bash
-# Run all tests
-podium test-json-output
-
-# Run specific test only
-podium test-json-output new_laravel_latest
-podium test-json-output remove_project
-podium test-json-output clone_project
-
-# Clean up test resources manually
-podium cleanup-test-environment
-```
-
 ## 🎯 Command Options
 
 ### Global Options
@@ -325,7 +317,7 @@ podium cleanup-test-environment
 
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django` |
+| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node` |
 | `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework/PHP version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version<br/>**PHP:** `8` (default - PHP 8.3), `7` (PHP 7.4) |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
@@ -356,7 +348,7 @@ podium cleanup-test-environment
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--php-version <ver>` | Force specific PHP version | `7` or `8` |
-| `--framework <type>` | Force specific framework | `laravel`, `wordpress`, `php` |
+| `--framework <type>` | Force specific framework | `laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node` |
 
 ### Remove Project Options
 
@@ -379,12 +371,6 @@ podium cleanup-test-environment
 | `--git-name <name>` | Git user name |
 | `--git-email <email>` | Git user email |
 | `--projects-dir <dir>` | Custom projects directory |
-
-### Test Suite Options
-
-| Option | Description |
-|--------|-------------|
-| `[test_name]` | Run specific test only (e.g., `new_laravel_latest`) |
 
 ## 💡 Usage Examples
 
@@ -459,19 +445,30 @@ podium supervisor restart all
 
 #### Containerized Development Commands
 
-**All `podium composer`, `podium art`, and `podium php` commands run inside your project's container** with the correct PHP environment:
+**PHP projects** — `podium composer`, `podium art`, `podium php`, and `podium wp` run inside your project's container with the correct PHP environment:
 
 ```bash
-# These commands run inside the container with project-specific PHP/extensions
 cd ~/podium-projects/my-laravel-app
 podium composer install        # Uses container's PHP 8.2
-podium art migrate            # Runs with container's Laravel setup
-podium php script.php         # Executes with project's PHP configuration
+podium art migrate             # Runs with container's Laravel setup
+podium php script.php          # Executes with project's PHP configuration
+```
 
-# Switch to different project with different PHP version
-cd ~/podium-projects/legacy-app  
-podium composer install        # Uses container's PHP 7.4
-podium php old-script.php     # Runs with PHP 7.4 environment
+**Node.js projects** — `podium npm`, `podium npx`, and `podium node` run inside your project's container with Node 22:
+
+```bash
+cd ~/podium-projects/my-express-app
+podium npm install             # Installs packages inside container
+podium npx tsc --init         # Run any npx command inside container
+podium node script.js         # Execute a script with project's Node environment
+```
+
+**Python projects** — `podium python` runs inside your project's container:
+
+```bash
+cd ~/podium-projects/my-fastapi-app
+podium python manage.py shell  # Django shell
+podium python -c "import sys; print(sys.version)"
 ```
 
 
@@ -516,6 +513,10 @@ const data = JSON.parse(result.stdout);
 - `podium art` - Runs inside container
 - `podium wp` - Runs inside container
 - `podium php` - Runs inside container
+- `podium npm` - Runs inside container
+- `podium npx` - Runs inside container
+- `podium node` - Runs inside container
+- `podium python` - Runs inside container
 - `podium exec` - Runs inside container
 - `podium exec-root` - Runs inside container
 - `podium supervisor` - Runs inside container
@@ -625,7 +626,7 @@ podium configure
 
 ## 📝 Important Notes
 
-- **Directory Requirements**: Development tools (`composer`, `art`, `wp`, `php`, `exec`, `supervisor`) must be run from within a project directory
+- **Directory Requirements**: Development tools (`composer`, `art`, `wp`, `php`, `npm`, `npx`, `node`, `python`, `exec`, `supervisor`) must be run from within a project directory
 - **JSON Output**: Use `--json-output` for programmatic integration (GUI, scripts, automation)
 - **Non-Interactive Mode**: Use `--non-interactive` with sensible defaults for automated deployment
 - **Database Creation**: Databases are automatically created and configured for each project
@@ -692,4 +693,4 @@ tail -f /tmp/podium-cli-debug.log
 
 ---
 
-**Podium** - Streamlined PHP development with Docker 🐳
+**Podium** - Streamlined web development with Docker 🐳
