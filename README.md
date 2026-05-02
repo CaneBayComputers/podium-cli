@@ -184,6 +184,8 @@ podium down
 | `podium npx <args>` | Run npx commands inside container |
 | `podium node <args>` | Run Node.js inside container |
 | `podium python <args>` | Run Python inside container |
+| `podium pip <args>` | Run pip inside container |
+| `podium shell` | Open framework-aware interactive shell or REPL |
 
 ### ✅ Static Analysis & Linting
 *Run from project directory; paths are relative to the project root (for example `app/Console/Commands/Foo.php`)*
@@ -214,6 +216,14 @@ podium down
 |---------|-------------|
 | `podium db-refresh` | Fresh migration + seed |
 | `podium cache-refresh` | Clear all Laravel caches |
+
+### 🐍 Enhanced Django Commands
+*Run from project directory*
+
+| Command | Description |
+|---------|-------------|
+| `podium django manage <args>` | Run `manage.py` with arguments |
+| `podium django shell` | Open Django interactive shell |
 
 ### 🔧 Service Management
 *Run from anywhere*
@@ -467,13 +477,49 @@ podium npx tsc --init         # Run any npx command inside container
 podium node script.js         # Execute a script with project's Node environment
 ```
 
-**Python projects** — `podium python` runs inside your project's container:
+**Python projects** — `podium python` and `podium pip` run inside your project's container:
 
 ```bash
 cd ~/podium-projects/my-fastapi-app
-podium python manage.py shell  # Django shell
 podium python -c "import sys; print(sys.version)"
+podium pip install httpx              # Install a package inside the container
+podium pip list                       # Show installed packages
 ```
+
+**Django projects** — use the `podium django` wrappers for manage.py operations:
+
+```bash
+cd ~/podium-projects/my-django-app
+podium django manage migrate          # Run migrations
+podium django manage createsuperuser  # Create admin user
+podium django manage collectstatic    # Collect static files
+podium django manage makemigrations myapp
+```
+
+#### Interactive Shells & REPLs
+
+`podium shell` opens the right interactive environment for the current project automatically:
+
+```bash
+# Laravel — opens php artisan tinker
+cd ~/podium-projects/my-laravel-app && podium shell
+
+# Django — opens python manage.py shell (Django ORM and apps loaded)
+cd ~/podium-projects/my-django-app && podium shell
+
+# FastAPI / plain Python — opens python3 REPL
+cd ~/podium-projects/my-fastapi-app && podium shell
+
+# Express / Fastify / plain Node.js — opens node REPL
+cd ~/podium-projects/my-express-app && podium shell
+
+# NestJS — opens node REPL; or the NestJS REPL if src/repl.ts exists
+cd ~/podium-projects/my-nest-app && podium shell
+```
+
+`podium tinker` remains available as the explicit Laravel-only alias.
+
+The NestJS REPL (`src/repl.ts`) is not scaffolded by default. Create it per the [NestJS REPL docs](https://docs.nestjs.com/recipes/repl), then `podium shell` will use it automatically.
 
 
 ## 🔌 JSON API Integration
@@ -521,6 +567,9 @@ const data = JSON.parse(result.stdout);
 - `podium npx` - Runs inside container
 - `podium node` - Runs inside container
 - `podium python` - Runs inside container
+- `podium pip` - Runs inside container
+- `podium shell` - Runs inside container
+- `podium django` - Runs inside container
 - `podium exec` - Runs inside container
 - `podium exec-root` - Runs inside container
 - `podium supervisor` - Runs inside container

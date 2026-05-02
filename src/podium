@@ -46,6 +46,8 @@ show_help() {
     echo "  podium npx <args>         - Run npx inside container"
     echo "  podium node <args>        - Run Node.js inside container"
     echo "  podium python <args>      - Run Python inside container"
+    echo "  podium pip <args>         - Run pip inside container"
+    echo "  podium shell              - Open framework-aware interactive shell or REPL"
     echo
     echo-white "STATIC ANALYSIS: (Run from project directory; paths relative to project root)"
     echo "  podium phpcs <path>       - Run PHPCS with default ruleset"
@@ -63,6 +65,10 @@ show_help() {
     echo-white "ENHANCED LARAVEL COMMANDS: (Run from project directory)"
     echo "  podium db-refresh         - Fresh migration + seed"
     echo "  podium cache-refresh      - Clear all Laravel caches"
+    echo
+    echo-white "ENHANCED DJANGO COMMANDS: (Run from project directory)"
+    echo "  podium django manage <args> - Run manage.py with arguments"
+    echo "  podium django shell         - Open Django interactive shell"
     echo
     echo-white "SERVICE MANAGEMENT:"
     echo "  podium mysql <args>       - Run MySQL client inside mariadb container"
@@ -153,7 +159,7 @@ show_help() {
     echo-white "NOTES:"
     echo "  • 'podium up' without project name starts EVERYTHING - services + all projects (perfect for daily startup)"
     echo "  • 'podium down' without project name stops EVERYTHING - all projects + services (perfect for shutdown)"
-    echo "  • Project-specific tools (composer, art, wp, php, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
+    echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"
     echo "  • Non-interactive mode uses sensible defaults for automated deployment"
@@ -244,6 +250,27 @@ docker_exec_notty() {
     fi
 }
 
+# Detect project framework from files present in the current directory
+detect_project_framework() {
+    if [ -f "artisan" ]; then
+        echo "laravel"
+    elif [ -f "manage.py" ]; then
+        echo "django"
+    elif [ -f "package.json" ]; then
+        if grep -q '"@nestjs/core"' package.json 2>/dev/null; then
+            echo "nestjs"
+        else
+            echo "node"
+        fi
+    elif [ -f "requirements.txt" ] || [ -f "main.py" ] || [ -f "app.py" ]; then
+        echo "python"
+    elif [ -f "composer.json" ]; then
+        echo "php"
+    else
+        echo "unknown"
+    fi
+}
+
 # Main command dispatcher
 case "$1" in
     # Containerized development tools
@@ -286,6 +313,74 @@ case "$1" in
         validate_project_context || exit 1
         shift
         docker_exec developer python3 "$@"
+        ;;
+    "pip"|"pip3")
+        validate_project_context || exit 1
+        shift
+        docker_exec_notty developer pip3 "$@"
+        ;;
+    "shell")
+        validate_project_context || exit 1
+        local _framework
+        _framework=$(detect_project_framework)
+        case "$_framework" in
+            "laravel")
+                docker_exec developer php /usr/share/nginx/html/artisan tinker
+                ;;
+            "django")
+                docker_exec developer python3 /usr/share/nginx/html/manage.py shell
+                ;;
+            "nestjs")
+                if [ -f "src/repl.ts" ]; then
+                    docker_exec developer npm run start -- --entryFile repl
+                else
+                    docker_exec developer node
+                fi
+                ;;
+            "node")
+                docker_exec developer node
+                ;;
+            "python")
+                docker_exec developer python3
+                ;;
+            *)
+                echo-yellow "Could not detect framework. Opening bash shell."
+                docker_exec developer bash
+                ;;
+        esac
+        ;;
+    "django")
+        validate_project_context || exit 1
+        shift
+        case "$1" in
+            "manage")
+                if [ ! -f "manage.py" ]; then
+                    echo-red "No manage.py found. Are you in a Django project directory?"
+                    exit 1
+                fi
+                shift
+                docker_exec developer python3 /usr/share/nginx/html/manage.py "$@"
+                ;;
+            "shell")
+                if [ ! -f "manage.py" ]; then
+                    echo-red "No manage.py found. Are you in a Django project directory?"
+                    exit 1
+                fi
+                docker_exec developer python3 /usr/share/nginx/html/manage.py shell
+                ;;
+            "")
+                echo-yellow "Usage: podium django <subcommand>"
+                echo "  podium django manage <args>  - Run manage.py with arguments"
+                echo "  podium django shell          - Open Django interactive shell"
+                exit 1
+                ;;
+            *)
+                echo-red "Unknown django subcommand: $1"
+                echo "  podium django manage <args>  - Run manage.py with arguments"
+                echo "  podium django shell          - Open Django interactive shell"
+                exit 1
+                ;;
+        esac
         ;;
     "phpcs")
         validate_project_context || exit 1
