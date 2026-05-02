@@ -86,10 +86,6 @@ show_help() {
     echo "  podium projects-dir       - Show projects directory path"
     echo "  podium gui                - Launch desktop GUI interface"
     echo
-    echo-white "TESTING:"
-    echo "  podium test-interactive   - Run interactive test suite"
-    echo "  podium test-json-output   - Run JSON output test suite"
-    echo
     echo-white "GLOBAL OPTIONS:"
     echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
     echo "  --no-colors               - Disable colored output"
@@ -512,20 +508,6 @@ case "$1" in
     "projects-dir")
         # Helper command to show projects directory path
         echo "$(get_projects_dir)"
-        ;;
-    
-    # Testing
-    "test-interactive")
-        (
-            cd "$(get_projects_dir)"
-            "$SCRIPT_DIR/scripts/test_interactive.sh"
-        )
-        ;;
-    "test-json-output")
-        (
-            cd "$(get_projects_dir)"
-            "$SCRIPT_DIR/scripts/test_json_output.sh"
-        )
         ;;
     
     # GUI Interface

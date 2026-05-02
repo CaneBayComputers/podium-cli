@@ -464,31 +464,15 @@ debug "Returning to project directory: $PROJECT_DIR"
 cd "$PROJECT_DIR"
 debug "Current directory after returning: $(pwd)"
 
-# Django scaffolding: run django-admin startproject inside the container
-if [ "$FRAMEWORK" = "django" ] && [ ! -f "manage.py" ]; then
-    echo-cyan "Scaffolding Django project inside container..."; echo-white
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && django-admin startproject ${PROJECT_NAME_SNAKE} ." > /dev/null 2>&1
-    else
-        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && django-admin startproject ${PROJECT_NAME_SNAKE} ."
-    fi
-    # Fix ownership of files created by root inside the container
-    sudo chown -R "$(id -u):$(id -g)" .
-    echo-green "Django project scaffolded!"; echo-white
-fi
-
-# Patch Django settings.py to use environment variables (idempotent)
+# Patch Django settings.py for cloned projects that haven't been patched yet (idempotent)
 SETTINGS_FILE="${PROJECT_NAME_SNAKE}/settings.py"
 if [ -f "manage.py" ] && [ -f "$SETTINGS_FILE" ] && ! grep -q "load_dotenv" "$SETTINGS_FILE"; then
     echo-cyan "Patching Django settings.py ..."; echo-white
 
-    # Prepend dotenv imports and pymysql shim before existing content
     printf 'from dotenv import load_dotenv\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv()\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
 
-    # Replace ALLOWED_HOSTS line
     podium-sed "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
 
-    # Replace the DATABASES block
     python3 - "$SETTINGS_FILE" << 'PYEOF'
 import re, sys
 path = sys.argv[1]
@@ -764,7 +748,7 @@ elif [ -f "config.example.inc.php" ]; then
 
     cp -f config.example.inc.php config.inc.php
 
-    podium-sed "s/DB_HOSTNAME/mariadb/" config.inc.php
+    podium-sed "s/DB_HOSTNAME/$MARIADB_CONTAINER_NAME/" config.inc.php
     podium-sed "s/DB_USERNAME/root/" config.inc.php
     podium-sed "s/DB_PASSWORD//" config.inc.php
     podium-sed "s/DB_NAME/$PROJECT_NAME_SNAKE/" config.inc.php
@@ -780,7 +764,7 @@ elif [ -f "wp-config-sample.php" ]; then
         DATABASE_ENGINE="mariadb"
     fi
     
-    DB_HOST_VALUE="mariadb"
+    DB_HOST_VALUE="$MARIADB_CONTAINER_NAME"
     
     # Create wp-config.php with database connection
     cat > wp-config.php << EOF

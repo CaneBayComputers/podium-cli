@@ -213,7 +213,7 @@ parse_docker_compose_services() {
         # Extract the service section
         local service_section=$(sed -n "${service_start},${next_service}p" "$compose_file")
         
-        local container_name=$(echo "$service_section" | grep -E "^\s+container_name:" | head -1 | sed 's/.*container_name: *\(.*\)/\1/')
+        local container_name=$(echo "$service_section" | grep -E "^\s+container_name:" | head -1 | sed 's/.*container_name: *\(.*\)/\1/' | tr -d '"'"'" | sed 's/\${[^}]*:-\([^}]*\)}/\1/g')
         local image_name=$(echo "$service_section" | grep -E "^\s+image:" | head -1 | sed 's/.*image: *\(.*\)/\1/')
         local ip_suffix=$(echo "$service_section" | grep -E "^\s+ipv4_address:" | head -1 | sed 's/.*\${VPC_SUBNET}\.\([0-9]*\).*/\1/')
         local port=$(echo "$service_section" | grep -A 5 "expose:" | grep -E "^\s+- " | head -1 | grep -o '[0-9]\+' | head -1)

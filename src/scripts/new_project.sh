@@ -879,15 +879,62 @@ EOF
 
 elif [ "$FRAMEWORK" = "django" ]; then
     echo-return; echo-cyan "Django project selected!"
-    echo-green "Django project will be scaffolded inside the container during setup."
+
+    PROJECT_NAME_SNAKE=$(echo "$PROJECT_NAME" | sed 's/-/_/g')
+
+    if ! command -v django-admin >/dev/null 2>&1; then
+        pip3 install django --break-system-packages > /dev/null 2>&1
+    fi
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        django-admin startproject "$PROJECT_NAME_SNAKE" . > /dev/null 2>&1
+    else
+        django-admin startproject "$PROJECT_NAME_SNAKE" .
+    fi
+
+    cat > requirements.txt << 'EOF'
+django
+gunicorn
+python-dotenv
+pymysql
+psycopg2-binary
+pymongo
+redis
+EOF
+
+    # Patch settings.py: prepend dotenv + pymysql shim, fix ALLOWED_HOSTS and DATABASES
+    SETTINGS_FILE="${PROJECT_NAME_SNAKE}/settings.py"
+    printf 'from dotenv import load_dotenv\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv()\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
+    sed -i "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
+    python3 - "$SETTINGS_FILE" << 'PYEOF'
+import re, sys
+path = sys.argv[1]
+content = open(path).read()
+new_db = """DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.' + os.getenv('DB_CONNECTION', 'mysql'),
+        'NAME': os.getenv('DB_DATABASE', ''),
+        'USER': os.getenv('DB_USERNAME', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '3306'),
+    }
+}"""
+content = re.sub(r'DATABASES\s*=\s*\{[^}]*\{[^}]*\}[^}]*\}', new_db, content, flags=re.DOTALL)
+open(path, 'w').write(content)
+PYEOF
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         git init > /dev/null 2>&1
-        git commit --allow-empty -m "Initial Django project setup" > /dev/null 2>&1
+        git add . > /dev/null 2>&1
+        git commit -m "Initial Django project setup" > /dev/null 2>&1
     else
         git init
-        git commit --allow-empty -m "Initial Django project setup"
+        git add .
+        git commit -m "Initial Django project setup"
     fi
+
+    echo-green "Django project structure created!"
 fi
 
 
