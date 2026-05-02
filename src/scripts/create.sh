@@ -46,8 +46,8 @@ if [[ -z "$USER_IDEA" ]]; then
 fi
 
 # Build the full prompt by substituting the user's idea into the prepend template.
-# The heredoc is single-quoted so no variable expansion happens inside it.
-read -r -d '' PREPEND << 'PREPEND_EOF'
+# cat + $() avoids the read -d '' + set -e silent-exit trap (read returns 1 on EOF).
+PREPEND=$(cat << 'PREPEND_EOF'
 You are creating a new local project using Podium.
 
 Podium is a Docker based local development environment manager.
@@ -85,6 +85,7 @@ User project idea:
 
 <USER_PROJECT_IDEA>
 PREPEND_EOF
+)
 
 FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
 
