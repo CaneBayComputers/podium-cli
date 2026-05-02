@@ -243,7 +243,9 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
+| `podium laravel <name> [options]` | Create a new Laravel project (GitHub fork) |
 | `podium clone <repo>` | Clone existing project |
+| `podium setup <project> [options]` | Set up an existing project directory |
 | `podium remove <project> [options]` | Remove project |
 
 ### ⚙️ System Management
@@ -251,8 +253,10 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium configure` | Configure Podium environment |
+| `podium ai "<prompt>"` | Start AI agent session with initial prompt |
 | `podium ai-set [options]` | Configure global AI agent, model, and API key |
 | `podium update` | Update Podium CLI and base Docker images |
+| `podium start-services` | Start shared services |
 | `podium stop-services` | Stop shared services |
 | `podium uninstall` | Remove all Podium Docker resources |
 | `podium projects-dir` | Show projects directory path |
@@ -628,7 +632,7 @@ podium configure
 
 - **Directory Requirements**: Development tools (`composer`, `art`, `wp`, `php`, `npm`, `npx`, `node`, `python`, `exec`, `supervisor`) must be run from within a project directory
 - **JSON Output**: Use `--json-output` for programmatic integration (GUI, scripts, automation)
-- **Non-Interactive Mode**: Use `--non-interactive` with sensible defaults for automated deployment
+- **Non-Interactive Mode**: Use `--json-output` for fully non-interactive automated deployment
 - **Database Creation**: Databases are automatically created and configured for each project
 - **Host Entries**: Local DNS entries are automatically managed in `/etc/hosts`
 

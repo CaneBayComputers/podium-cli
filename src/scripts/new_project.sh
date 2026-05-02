@@ -135,6 +135,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_STORAGE_SYMLINK=1
             shift
             ;;
+        --no-github)
+            # No-op: not creating a GitHub repo is the default; flag exists for explicitness in scripts
+            shift
+            ;;
         --github)
             CREATE_GITHUB="yes"
             shift
