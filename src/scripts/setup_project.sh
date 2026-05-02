@@ -570,6 +570,12 @@ if [ "$FRAMEWORK_IS_NODE" = "1" ] && [ -f "package.json" ]; then
         docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install"
     fi
     echo-green "Node dependencies installed!"; echo-white
+    # Restart the node-app supervisor program so it picks up the freshly installed packages
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker exec "$PROJECT_NAME" supervisorctl restart node-app > /dev/null 2>&1
+    else
+        docker exec "$PROJECT_NAME" supervisorctl restart node-app
+    fi
 fi
 
 # Install and build front-end assets when Vite/Laravel is detected (host-side Node)
