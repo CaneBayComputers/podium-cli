@@ -84,7 +84,6 @@ show_help() {
     echo "  podium stop-services      - Stop shared services"
     echo "  podium uninstall          - Remove Podium Docker resources"
     echo "  podium projects-dir       - Show projects directory path"
-    echo "  podium gui                - Launch desktop GUI interface"
     echo
     echo-white "GLOBAL OPTIONS:"
     echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
@@ -144,7 +143,7 @@ show_help() {
     echo "  • 'podium down' without project name stops EVERYTHING - all projects + services (perfect for shutdown)"
     echo "  • Project-specific tools (composer, art, wp, php, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
-    echo "  • Use --json-output for programmatic integration (GUI, scripts, automation)"
+    echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"
     echo "  • Non-interactive mode uses sensible defaults for automated deployment"
 }
 
@@ -509,25 +508,6 @@ case "$1" in
         # Helper command to show projects directory path
         echo "$(get_projects_dir)"
         ;;
-    
-    # GUI Interface
-    "gui")
-        # Check if GUI is available (in .deb install it will be in /usr/local/share/podium-gui)
-        if [ -x "/usr/local/share/podium-gui/podium-gui" ]; then
-            # Production: Use installed GUI
-            exec /usr/local/share/podium-gui/podium-gui "$@"
-        elif [ -f "$SCRIPT_DIR/../gui/package.json" ]; then
-            # Development: Use source GUI
-            echo-cyan "🚀 Starting Podium GUI (development mode)..."
-            cd "$SCRIPT_DIR/../gui"
-            npm run dev
-        else
-            echo-red "Podium GUI is not available!"
-            echo-white "Install Podium via .deb package to get the GUI, or run from development environment."
-            exit 1
-        fi
-        ;;
-    
     
     # Help and default
     "help"|"-h"|"--help"|"")

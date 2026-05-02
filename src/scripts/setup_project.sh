@@ -205,6 +205,26 @@ fi
 PROJECTS_DIR="$PROJECTS_DIR_PATH"
 PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
+# Cleanup state flags — set as operations complete so trap can undo them
+_hosts_entry_added=0
+_compose_file_created=0
+_container_started=0
+
+_setup_cleanup() {
+    local code=$?
+    [ $code -eq 0 ] && return
+    echo-red "Setup failed — cleaning up partial state..."
+    if [ "$_container_started" = "1" ] && [ -f "$PROJECT_DIR/docker-compose.yaml" ]; then
+        (cd "$PROJECTS_DIR_PATH" && docker compose -f "$PROJECT_DIR/docker-compose.yaml" down --remove-orphans 2>/dev/null) || true
+    fi
+    if [ "$_hosts_entry_added" = "1" ]; then
+        sudo sed -i "/ $PROJECT_NAME$/d" /etc/hosts 2>/dev/null || true
+    fi
+    if [ "$_compose_file_created" = "1" ]; then
+        rm -f "$PROJECT_DIR/docker-compose.yaml"
+    fi
+}
+trap _setup_cleanup ERR
 
 # Check for project folder existence
 if ! [ -d "$PROJECT_DIR" ]; then
@@ -241,6 +261,28 @@ fi
 
 # Enter into project and get PHP version
 cd "$PROJECT_DIR"
+
+# Resolve FRAMEWORK if not already set (e.g. when setup_project.sh is called directly)
+if [ -z "$FRAMEWORK" ]; then
+    if [ -n "$FORCED_FRAMEWORK" ]; then
+        FRAMEWORK="$FORCED_FRAMEWORK"
+    elif [ -f "main.py" ]; then
+        FRAMEWORK="fastapi"
+    elif [ -f "manage.py" ]; then
+        FRAMEWORK="django"
+    elif [ -f "wp-config-sample.php" ] || [ -f "wp-config.php" ]; then
+        FRAMEWORK="wordpress"
+    elif [ -f "artisan" ]; then
+        FRAMEWORK="laravel"
+    elif [ -f "config.example.inc.php" ]; then
+        FRAMEWORK="kavera"
+    else
+        FRAMEWORK="php"
+    fi
+fi
+
+# Load framework registry
+source "$DEV_DIR/frameworks/${FRAMEWORK}.sh"
 
 echo-return "$(pwd)"; echo-return
 
@@ -355,6 +397,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     else
         echo "$IP_ADDRESS      $PROJECT_NAME" | sudo tee -a /etc/hosts
     fi
+_hosts_entry_added=1
 
 echo-return
 
@@ -378,17 +421,18 @@ fi
 
 # Use absolute path to docker-stack directory
 PODIUM_DIR="$DEV_DIR"
-if [ -f "main.py" ] || [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
+if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
     cp -f "$PODIUM_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
 else
     cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
 fi
+_compose_file_created=1
 
 podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
 
-if [ ! -f "main.py" ] && [ ! -f "manage.py" ] && [ "$FRAMEWORK" != "django" ]; then
+if [ "$FRAMEWORK_IS_PYTHON" != "1" ]; then
     podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
 fi
 
@@ -407,24 +451,18 @@ PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION_SAFE//\"/\\\"}"
 
 # Use a delimiter that's very unlikely to appear in the replacement text
 podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
-podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml  
+podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml
 podium-sed "s#PROJECT_DESCRIPTION#$PROJECT_DESCRIPTION_SAFE#g" docker-compose.yaml
 
-if [ -d "public" ] || [ -f "main.py" ] || [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
-
+if [ -d "public" ] || [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
     podium-sed "s/PUBLIC//g" docker-compose.yaml
-
 else
-
     podium-sed "s/PUBLIC/\/public/g" docker-compose.yaml
-
 fi
 
 # Set start command for Python projects
-if [ -f "main.py" ]; then
-    podium-sed "s|PYTHON_START_COMMAND|uvicorn main:app --host 127.0.0.1 --port 8000|g" docker-compose.yaml
-elif [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
-    podium-sed "s|PYTHON_START_COMMAND|gunicorn ${PROJECT_NAME_SNAKE}.wsgi:application --bind 127.0.0.1:8000 --workers 2|g" docker-compose.yaml
+if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
+    podium-sed "s|PYTHON_START_COMMAND|$(framework_python_start_command)|g" docker-compose.yaml
 fi
 
 # Start the project container before composer installation
@@ -458,6 +496,7 @@ if [ $STARTUP_EXIT_CODE -ne 0 ]; then
     error "Failed to start project container"
 fi
 debug "Project container started successfully"
+_container_started=1
 
 # Return to project directory after startup (startup.sh may have changed working directory)
 debug "Returning to project directory: $PROJECT_DIR"
@@ -544,266 +583,9 @@ if [ -f "package.json" ]; then
 fi
 
 
-# Install and setup .env file
+# Install and setup .env / config file
 unalias cp 2>/dev/null || true
-
-if [ -f "main.py" ]; then
-
-    echo-cyan "Setting up .env file ..."; echo-white
-
-    case $DATABASE_ENGINE in
-        "postgresql")
-            PYTHON_DB_CONNECTION="pgsql"
-            PYTHON_DB_HOST="$POSTGRES_CONTAINER_NAME"
-            PYTHON_DB_PORT="5432"
-            ;;
-        "mongodb")
-            PYTHON_DB_CONNECTION="mongodb"
-            PYTHON_DB_HOST="$MONGO_CONTAINER_NAME"
-            PYTHON_DB_PORT="27017"
-            ;;
-        *)
-            PYTHON_DB_CONNECTION="mysql"
-            PYTHON_DB_HOST="$MARIADB_CONTAINER_NAME"
-            PYTHON_DB_PORT="3306"
-            ;;
-    esac
-
-    cat > .env << EOF
-APP_NAME=$PROJECT_NAME
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://$PROJECT_NAME
-DB_CONNECTION=$PYTHON_DB_CONNECTION
-DB_HOST=$PYTHON_DB_HOST
-DB_PORT=$PYTHON_DB_PORT
-DB_DATABASE=$PROJECT_NAME_SNAKE
-DB_USERNAME=root
-DB_PASSWORD=
-REDIS_HOST=$REDIS_CONTAINER_NAME
-REDIS_PORT=6379
-MAIL_HOST=$MAILHOG_CONTAINER_NAME
-MAIL_PORT=1025
-EOF
-
-    echo-green "The .env file has been created!"; echo-white
-
-elif [ -f "manage.py" ] && [ ! -f ".env" ]; then
-
-    echo-cyan "Setting up .env file ..."; echo-white
-
-    case $DATABASE_ENGINE in
-        "postgresql")
-            PYTHON_DB_CONNECTION="pgsql"
-            PYTHON_DB_HOST="$POSTGRES_CONTAINER_NAME"
-            PYTHON_DB_PORT="5432"
-            ;;
-        "mongodb")
-            PYTHON_DB_CONNECTION="mongodb"
-            PYTHON_DB_HOST="$MONGO_CONTAINER_NAME"
-            PYTHON_DB_PORT="27017"
-            ;;
-        *)
-            PYTHON_DB_CONNECTION="mysql"
-            PYTHON_DB_HOST="$MARIADB_CONTAINER_NAME"
-            PYTHON_DB_PORT="3306"
-            ;;
-    esac
-
-    cat > .env << EOF
-APP_NAME=$PROJECT_NAME
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://$PROJECT_NAME
-DB_CONNECTION=$PYTHON_DB_CONNECTION
-DB_HOST=$PYTHON_DB_HOST
-DB_PORT=$PYTHON_DB_PORT
-DB_DATABASE=$PROJECT_NAME_SNAKE
-DB_USERNAME=root
-DB_PASSWORD=
-REDIS_HOST=$REDIS_CONTAINER_NAME
-REDIS_PORT=6379
-MAIL_HOST=$MAILHOG_CONTAINER_NAME
-MAIL_PORT=1025
-EOF
-
-    echo-green "The .env file has been created!"; echo-white
-
-elif [ -f ".env.example" ]; then
-
-    echo-cyan "Setting up .env file ..."; echo-white
-
-    cp -f .env.example .env
-
-    if [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
-        podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
-        podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
-        podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
-        podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
-        case $DATABASE_ENGINE in
-            "postgresql")
-                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
-                ;;
-            "mongodb")
-                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
-                ;;
-            *)
-                podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
-                ;;
-        esac
-        podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
-        podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
-    else
-
-    APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
-
-    podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
-    podium-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
-    podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
-    podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
-    podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
-    # Configure database connection based on selected engine
-    case $DATABASE_ENGINE in
-        "postgresql")
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=postgres" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=postgres" .env
-            ;;
-        "mongodb")
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=root" .env
-            ;;
-        *)
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
-            ;;
-    esac
-    podium-sed-change "/^#*\s*CACHE_DRIVER=/" "CACHE_DRIVER=redis" .env
-    podium-sed-change "/^#*\s*SESSION_DRIVER=/" "SESSION_DRIVER=redis" .env
-    podium-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
-    podium-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
-    podium-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
-    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=$MEMCACHED_CONTAINER_NAME" .env
-    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
-    # Configure MailHog for development email testing
-    podium-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
-    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
-    podium-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
-    podium-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
-    podium-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
-    podium-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
-    podium-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
-    podium-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
-    # Optionally propagate AWS credentials into project .env if available
-    AWS_ACCESS_KEY_FROM_CLI=""
-    AWS_SECRET_KEY_FROM_CLI=""
-    AWS_REGION_FROM_CLI=""
-    if command -v aws >/dev/null 2>&1; then
-        AWS_ACCESS_KEY_FROM_CLI=$(aws configure get aws_access_key_id 2>/dev/null || echo "")
-        AWS_SECRET_KEY_FROM_CLI=$(aws configure get aws_secret_access_key 2>/dev/null || echo "")
-        AWS_REGION_FROM_CLI=$(aws configure get region 2>/dev/null || echo "")
-    fi
-    if [[ -z "$AWS_ACCESS_KEY_FROM_CLI" || -z "$AWS_SECRET_KEY_FROM_CLI" ]]; then
-        AWS_CREDENTIALS_FILE="$HOME/.aws/credentials"
-        if [[ -f "$AWS_CREDENTIALS_FILE" ]]; then
-            AWS_ACCESS_KEY_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*aws_access_key_id[[:space:]]*=/{print $3}' "$AWS_CREDENTIALS_FILE" 2>/dev/null | head -n1 || echo "")
-            AWS_SECRET_KEY_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*aws_secret_access_key[[:space:]]*=/{print $3}' "$AWS_CREDENTIALS_FILE" 2>/dev/null | head -n1 || echo "")
-        fi
-    fi
-    if [[ -z "$AWS_REGION_FROM_CLI" ]]; then
-        AWS_CONFIG_FILE_LOCAL="$HOME/.aws/config"
-        if [[ -f "$AWS_CONFIG_FILE_LOCAL" ]]; then
-            AWS_REGION_FROM_CLI=$(awk '/^\[default\]/{flag=1;next}/^\[/{flag=0}flag && /^[[:space:]]*region[[:space:]]*=/{print $3}' "$AWS_CONFIG_FILE_LOCAL" 2>/dev/null | head -n1 || echo "")
-        fi
-    fi
-    if [[ -n "$AWS_ACCESS_KEY_FROM_CLI" ]]; then
-        podium-sed-change "/^#*\s*AWS_ACCESS_KEY_ID=/" "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_FROM_CLI" .env
-    fi
-    if [[ -n "$AWS_SECRET_KEY_FROM_CLI" ]]; then
-        podium-sed-change "/^#*\s*AWS_SECRET_ACCESS_KEY=/" "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY_FROM_CLI" .env
-    fi
-    if [[ -n "$AWS_REGION_FROM_CLI" ]]; then
-        podium-sed-change "/^#*\s*AWS_DEFAULT_REGION=/" "AWS_DEFAULT_REGION=$AWS_REGION_FROM_CLI" .env
-    fi
-    echo "" >> .env
-    echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
-
-    fi
-
-    echo-green "The .env file has been created!"; echo-white
-
-# Install config.inc file
-elif [ -f "config.example.inc.php" ]; then
-
-    cp -f config.example.inc.php config.inc.php
-
-    podium-sed "s/DB_HOSTNAME/$MARIADB_CONTAINER_NAME/" config.inc.php
-    podium-sed "s/DB_USERNAME/root/" config.inc.php
-    podium-sed "s/DB_PASSWORD//" config.inc.php
-    podium-sed "s/DB_NAME/$PROJECT_NAME_SNAKE/" config.inc.php
-
-# Install wp-config file
-elif [ -f "wp-config-sample.php" ]; then
-
-    echo-cyan "Configuring WordPress for containerized setup..."
-    
-    # WordPress only supports MySQL/MariaDB - force to mariadb if anything else is specified
-    if [[ "$DATABASE_ENGINE" != "mysql" && "$DATABASE_ENGINE" != "mariadb" ]]; then
-        echo-yellow "Warning: WordPress only supports MySQL/MariaDB. Switching to MariaDB."
-        DATABASE_ENGINE="mariadb"
-    fi
-    
-    DB_HOST_VALUE="$MARIADB_CONTAINER_NAME"
-    
-    # Create wp-config.php with database connection
-    cat > wp-config.php << EOF
-<?php
-define('DB_NAME', '$PROJECT_NAME_SNAKE');
-define('DB_USER', 'root');
-define('DB_PASSWORD', '');
-define('DB_HOST', '$DB_HOST_VALUE');
-define('DB_CHARSET', 'utf8mb4');
-define('DB_COLLATE', '');
-
-define('AUTH_KEY',         '$(openssl rand -base64 32)');
-define('SECURE_AUTH_KEY',  '$(openssl rand -base64 32)');
-define('LOGGED_IN_KEY',    '$(openssl rand -base64 32)');
-define('NONCE_KEY',        '$(openssl rand -base64 32)');
-define('AUTH_SALT',        '$(openssl rand -base64 32)');
-define('SECURE_AUTH_SALT', '$(openssl rand -base64 32)');
-define('LOGGED_IN_SALT',   '$(openssl rand -base64 32)');
-define('NONCE_SALT',       '$(openssl rand -base64 32)');
-
-\$table_prefix = 'wp_';
-
-define('WP_DEBUG', true);
-define('WP_DEBUG_LOG', true);
-define('WP_DEBUG_DISPLAY', false);
-
-if ( ! defined( 'ABSPATH' ) ) {
-    define( 'ABSPATH', __DIR__ . '/' );
-}
-
-require_once ABSPATH . 'wp-settings.php';
-EOF
-    
-    echo-green "WordPress configuration created!"
-    echo-white
-    echo-cyan "WordPress will be automatically set up when the container starts."
-    echo-white "After setup completes, visit http://$PROJECT_NAME to complete the WordPress installation."
-
-fi
+framework_setup_env
 
 echo-return; echo-return
 
@@ -844,218 +626,13 @@ json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
 
 echo-green 'Database created!'; echo-white
 
-if [ -f "artisan" ]; then
-
-    echo-cyan 'Running migrations ...'; echo-white
-
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        art-docker migrate:fresh > /dev/null 2>&1
-        MIGRATE_SUCCESS=$?
-    else
-        art-docker migrate:fresh
-        MIGRATE_SUCCESS=$?
-    fi
-    
-    if [ $MIGRATE_SUCCESS -eq 0 ]; then
-
-        echo-green 'Migrations successful'; echo-white
-
-        echo-cyan 'Seeding database ...'; echo-white
-
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            art-docker db:seed > /dev/null 2>&1
-            SEED_SUCCESS=$?
-        else
-            art-docker db:seed
-            SEED_SUCCESS=$?
-        fi
-        
-        if [ $SEED_SUCCESS -eq 0 ]; then
-
-            echo-green 'Database seeded!'; echo-white
-
-        fi
-
-    fi
-
-elif [ "$FRAMEWORK" = "django" ] && [ -f "manage.py" ]; then
-
-    echo-cyan 'Running Django initial migrations ...'; echo-white
-
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && python3 manage.py migrate" > /dev/null 2>&1
-    else
-        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && python3 manage.py migrate"
-    fi
-
-    echo-green 'Django migrations complete!'; echo-white
-
-elif [ -f "create_tables.sql" ]; then
-
-    echo-cyan 'Creating tables ...'; echo-white
-
-    docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$PROJECT_NAME_SNAKE" < create_tables.sql
-
-fi
+framework_run_migrations
 
 echo-return; echo-return
 
 
-# Setup gitignore if not already present
-setup_gitignore() {
-    local framework_type=""
-    
-    # Detect framework type
-    if [ -f "main.py" ]; then
-        framework_type="fastapi"
-    elif [ -f "manage.py" ] || [ "$FRAMEWORK" = "django" ]; then
-        framework_type="django"
-    elif [ -f "artisan" ]; then
-        framework_type="laravel"
-    elif [ -f "wp-config-sample.php" ] || [ -f "wp-config.php" ]; then
-        framework_type="wordpress"
-    else
-        framework_type="php"
-    fi
-    
-    # Create index.php if it's a PHP framework project and no entry point exists
-    if [ "$framework_type" = "php" ]; then
-        if [ ! -f "index.php" ] && [ ! -f "public/index.php" ]; then
-            echo-cyan "Creating PHP project entry point..."
-            
-            # Create public directory if it doesn't exist
-            mkdir -p public
-            
-            # Create index.php in public directory
-            cat > public/index.php << 'EOF'
-<?php
-echo "Hello, World! This is your PHP project.";
-?>
-EOF
-            
-            if [[ "$JSON_OUTPUT" != "1" ]]; then
-                echo-green "Created public/index.php entry point!"
-            fi
-        fi
-    fi
-    
-    # Only create .gitignore if it doesn't exist
-    if [ ! -f ".gitignore" ]; then
-        case $framework_type in
-            "fastapi")
-                cat > .gitignore << 'EOF'
-docker-compose.yaml
-__pycache__/
-*.py[cod]
-*.egg-info/
-.env
-.venv/
-venv/
-*.log
-.DS_Store
-EOF
-                ;;
-            "django")
-                cat > .gitignore << 'EOF'
-docker-compose.yaml
-__pycache__/
-*.py[cod]
-*.egg-info/
-.env
-.venv/
-venv/
-*.log
-.DS_Store
-staticfiles/
-media/
-EOF
-                ;;
-            "laravel")
-                # Laravel should already have .gitignore, but add docker-compose.yaml if missing
-                if ! grep -q "docker-compose.yaml" .gitignore 2>/dev/null; then
-                    echo "" >> .gitignore
-                    echo "# Docker infrastructure" >> .gitignore
-                    echo "docker-compose.yaml" >> .gitignore
-                fi
-                ;;
-            "wordpress")
-                cat > .gitignore << 'EOF'
-# Docker infrastructure
-docker-compose.yaml
-
-# WordPress core files
-wp-config.php
-wp-content/uploads/
-wp-content/cache/
-wp-content/backup-db/
-wp-content/advanced-cache.php
-wp-content/wp-cache-config.php
-wp-content/plugins/hello.php
-wp-content/plugins/akismet/
-wp-content/upgrade/
-wp-content/debug.log
-
-# Environment files
-.env
-.env.local
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-EOF
-                ;;
-            "php")
-                cat > .gitignore << 'EOF'
-# Docker infrastructure
-docker-compose.yaml
-
-# Dependencies
-vendor/
-node_modules/
-
-# Environment files
-.env
-.env.local
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-EOF
-                ;;
-        esac
-        
-        if [[ "$JSON_OUTPUT" != "1" ]]; then
-            echo-green ".gitignore file created for $framework_type project!"
-        fi
-    else
-        # Ensure docker-compose.yaml is in existing .gitignore
-        if ! grep -q "docker-compose.yaml" .gitignore; then
-            echo "" >> .gitignore
-            echo "# Docker infrastructure" >> .gitignore
-            echo "docker-compose.yaml" >> .gitignore
-            echo-green "Added docker-compose.yaml to existing .gitignore"
-        fi
-    fi
-}
-
 # Setup gitignore
-setup_gitignore
+framework_setup_gitignore
 
 # Setup completed
 if [[ "$JSON_OUTPUT" == "1" ]]; then

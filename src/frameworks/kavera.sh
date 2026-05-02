@@ -1,0 +1,198 @@
+#!/bin/bash
+# Kavera framework hooks
+
+FRAMEWORK_IS_PYTHON=0
+FRAMEWORK_DOCKER_TEMPLATE="project"
+
+framework_scaffold() {
+    if [[ "$NEW_PROJECT_FORCE_FORK" == "1" && -n "$KAVERA_REPOSITORY_URL" ]]; then
+        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+            echo-return; echo-cyan "Forking Kavera starter repository on GitHub and cloning your fork..."
+
+            cd "$PROJECTS_DIR"
+            if [ -d "$PROJECT_NAME" ] && [ -z "$(ls -A "$PROJECT_NAME" 2>/dev/null)" ]; then
+                rmdir "$PROJECT_NAME" 2>/dev/null || rm -rf "$PROJECT_NAME"
+            fi
+
+            if [[ "$JSON_OUTPUT" == "1" ]]; then
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone > /dev/null 2>&1; then FORK_USED=1
+                else echo-yellow "GitHub fork failed; falling back to cloning starter repository."; fi
+            else
+                if gh repo fork "$KAVERA_REPOSITORY_URL" --clone; then FORK_USED=1
+                else echo-yellow "GitHub fork failed; falling back to cloning starter repository."; fi
+            fi
+
+            if [[ "$FORK_USED" -eq 1 ]]; then
+                FORK_DIR_NAME=$(basename -s .git "$KAVERA_REPOSITORY_URL")
+                [ -z "$FORK_DIR_NAME" ] && FORK_DIR_NAME="$PROJECT_NAME"
+                [ "$FORK_DIR_NAME" != "$PROJECT_NAME" ] && [ -d "$FORK_DIR_NAME" ] && mv "$FORK_DIR_NAME" "$PROJECT_NAME"
+
+                if [ -d "$PROJECT_NAME/.git" ]; then
+                    cd "$PROJECT_NAME"
+                    ORIGINAL_REMOTE_NAME=$(basename -s .git "$KAVERA_REPOSITORY_URL")
+                    if [[ "$OSTYPE" == "darwin"* ]]; then
+                        ORIGINAL_REMOTE_NAME=$(echo "$ORIGINAL_REMOTE_NAME" | LC_ALL=C tr '[:upper:]' '[:lower:]' | LC_ALL=C tr ' ' '-' | LC_ALL=C tr -cd 'a-z0-9-_.')
+                    else
+                        ORIGINAL_REMOTE_NAME=$(echo "$ORIGINAL_REMOTE_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-_.')
+                    fi
+                    [ -z "$ORIGINAL_REMOTE_NAME" ] && ORIGINAL_REMOTE_NAME="upstream"
+                    if git remote get-url upstream >/dev/null 2>&1; then
+                        if ! git remote get-url "$ORIGINAL_REMOTE_NAME" >/dev/null 2>&1; then
+                            git remote rename upstream "$ORIGINAL_REMOTE_NAME" >/dev/null 2>&1 || true
+                        fi
+                    fi
+                    cd "$PROJECTS_DIR"
+                    [[ "$JSON_OUTPUT" != "1" ]] && echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
+                fi
+            fi
+
+            cd "$PROJECTS_DIR/$PROJECT_NAME"
+        else
+            [[ "$JSON_OUTPUT" != "1" ]] && echo-yellow "GitHub CLI not available. Cloning Kavera starter repository without forking."
+        fi
+    fi
+
+    if [[ "$FORK_USED" -ne 1 ]]; then
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            if ! git clone "$KAVERA_REPOSITORY_URL" . > /dev/null 2>&1; then
+                echo "{\"action\":\"new_project\",\"project_name\":\"$PROJECT_NAME\",\"framework\":\"kavera\",\"status\":\"error\",\"error\":\"clone_failed\",\"details\":\"Failed to clone Kavera repository from $KAVERA_REPOSITORY_URL\"}"
+                exit 1
+            fi
+        else
+            if ! git clone "$KAVERA_REPOSITORY_URL" .; then
+                error "Failed to clone Kavera repository from $KAVERA_REPOSITORY_URL"
+            fi
+        fi
+    fi
+
+    echo-green "Kavera project structure created!"
+}
+
+framework_python_start_command() { echo ""; }
+
+# Kavera shares Laravel's env, migration, and gitignore logic
+framework_setup_env() {
+    [ ! -f ".env.example" ] && return
+    echo-cyan "Setting up .env file ..."; echo-white
+    cp -f .env.example .env
+
+    APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
+    podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
+    podium-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
+    podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
+    podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
+    podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
+
+    case $DATABASE_ENGINE in
+        "postgresql")
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=postgres" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=postgres" .env
+            ;;
+        "mongodb")
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=root" .env
+            ;;
+        *)
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$PROJECT_NAME_SNAKE" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
+            ;;
+    esac
+
+    podium-sed-change "/^#*\s*CACHE_DRIVER=/" "CACHE_DRIVER=redis" .env
+    podium-sed-change "/^#*\s*SESSION_DRIVER=/" "SESSION_DRIVER=redis" .env
+    podium-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
+    podium-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
+    podium-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
+    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=$MEMCACHED_CONTAINER_NAME" .env
+    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
+    podium-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
+    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
+    podium-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
+    podium-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
+    podium-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
+    podium-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
+    podium-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
+    podium-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
+
+    local aws_key="" aws_secret="" aws_region=""
+    if command -v aws >/dev/null 2>&1; then
+        aws_key=$(aws configure get aws_access_key_id 2>/dev/null || true)
+        aws_secret=$(aws configure get aws_secret_access_key 2>/dev/null || true)
+        aws_region=$(aws configure get region 2>/dev/null || true)
+    fi
+    if [[ -z "$aws_key" || -z "$aws_secret" ]] && [[ -f "$HOME/.aws/credentials" ]]; then
+        aws_key=$(awk '/^\[default\]/{f=1;next}/^\[/{f=0}f && /aws_access_key_id/{print $3}' "$HOME/.aws/credentials" 2>/dev/null | head -1 || true)
+        aws_secret=$(awk '/^\[default\]/{f=1;next}/^\[/{f=0}f && /aws_secret_access_key/{print $3}' "$HOME/.aws/credentials" 2>/dev/null | head -1 || true)
+    fi
+    if [[ -z "$aws_region" ]] && [[ -f "$HOME/.aws/config" ]]; then
+        aws_region=$(awk '/^\[default\]/{f=1;next}/^\[/{f=0}f && /region/{print $3}' "$HOME/.aws/config" 2>/dev/null | head -1 || true)
+    fi
+    [[ -n "$aws_key" ]]    && podium-sed-change "/^#*\s*AWS_ACCESS_KEY_ID=/" "AWS_ACCESS_KEY_ID=$aws_key" .env
+    [[ -n "$aws_secret" ]] && podium-sed-change "/^#*\s*AWS_SECRET_ACCESS_KEY=/" "AWS_SECRET_ACCESS_KEY=$aws_secret" .env
+    [[ -n "$aws_region" ]] && podium-sed-change "/^#*\s*AWS_DEFAULT_REGION=/" "AWS_DEFAULT_REGION=$aws_region" .env
+    echo "" >> .env
+    echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
+
+    echo-green "The .env file has been created!"; echo-white
+}
+
+framework_run_migrations() {
+    [ ! -f "artisan" ] && return
+    echo-cyan 'Running migrations ...'; echo-white
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        art-docker migrate:fresh > /dev/null 2>&1 && MIGRATE_SUCCESS=0 || MIGRATE_SUCCESS=$?
+    else
+        art-docker migrate:fresh; MIGRATE_SUCCESS=$?
+    fi
+
+    if [ $MIGRATE_SUCCESS -eq 0 ]; then
+        echo-green 'Migrations successful'; echo-white
+        echo-cyan 'Seeding database ...'; echo-white
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            art-docker db:seed > /dev/null 2>&1 || true
+        else
+            art-docker db:seed || true
+        fi
+        echo-green 'Database seeded!'; echo-white
+    fi
+}
+
+framework_setup_gitignore() {
+    if [ ! -f ".gitignore" ]; then
+        cat > .gitignore << 'GITEOF'
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+GITEOF
+    fi
+    if ! grep -q "docker-compose.yaml" .gitignore; then
+        printf '\n# Docker infrastructure\ndocker-compose.yaml\n' >> .gitignore
+        [[ "$JSON_OUTPUT" != "1" ]] && echo-green "Added docker-compose.yaml to .gitignore"
+    fi
+}
