@@ -253,6 +253,7 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
+| `podium create ["idea"]` | Create a project from a plain English description (AI) |
 | `podium laravel <name> [options]` | Create a new Laravel project (GitHub fork) |
 | `podium clone <repo>` | Clone existing project |
 | `podium setup <project> [options]` | Set up an existing project directory |
@@ -296,6 +297,28 @@ Examples:
   - `podium ai-set --agent grok --model grok-beta`
 - Configure Claude with a model:
   - `podium ai-set --agent claude --model claude-3.7-sonnet`
+
+### 🤖 AI-assisted project creation
+
+`podium create` turns a plain English description into a working Podium-managed project using your configured AI agent:
+
+```bash
+# Interactive — AI will ask for clarification if the stack is unclear
+podium create
+
+# With idea inline
+podium create "A task tracker with user auth and tagging"
+
+# Clone and set up an existing open-source project
+podium create "https://github.com/monicahq/monica"
+```
+
+The AI will:
+1. Ask which framework to use if the stack is ambiguous.
+2. Run `podium new` (or `podium clone`) to create the project.
+3. Read the generated `.env` file to understand database, cache, and mail configuration.
+4. Build the app using framework-native conventions (migrations, models, seeders).
+5. Update the project `README` with the local URL, useful commands, and default credentials.
 
 ### 🤖 One-off AI prompts
 

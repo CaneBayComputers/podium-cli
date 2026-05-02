@@ -85,6 +85,7 @@ show_help() {
     echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
+    echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
     echo "  podium laravel <name> [options] - Create a new Laravel project from laravel/laravel (GitHub fork)"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
@@ -577,6 +578,9 @@ case "$1" in
         ;;
     "new")
         "$SCRIPT_DIR/scripts/new_project.sh" "${@:2}"
+        ;;
+    "create")
+        "$SCRIPT_DIR/scripts/create.sh" "${@:2}"
         ;;
     "laravel")
         "$SCRIPT_DIR/scripts/laravel_project.sh" "${@:2}"
