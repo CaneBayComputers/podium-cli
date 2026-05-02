@@ -274,6 +274,16 @@ if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="wordpress"
     elif [ -f "artisan" ]; then
         FRAMEWORK="laravel"
+    elif [ -f "package.json" ] && [ ! -f "composer.json" ] && [ ! -f "artisan" ]; then
+        if grep -q '"@nestjs/core"' package.json 2>/dev/null; then
+            FRAMEWORK="nestjs"
+        elif grep -q '"fastify"' package.json 2>/dev/null; then
+            FRAMEWORK="fastify"
+        elif grep -q '"express"' package.json 2>/dev/null; then
+            FRAMEWORK="express"
+        else
+            FRAMEWORK="node"
+        fi
     else
         FRAMEWORK="php"
     fi
@@ -421,6 +431,8 @@ fi
 PODIUM_DIR="$DEV_DIR"
 if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
     cp -f "$PODIUM_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
+elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
+    cp -f "$PODIUM_DIR/docker-stack/docker-compose.node-project.yaml" docker-compose.yaml
 else
     cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
 fi
@@ -430,7 +442,7 @@ podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
 
-if [ "$FRAMEWORK_IS_PYTHON" != "1" ]; then
+if [ "$FRAMEWORK_IS_PYTHON" != "1" ] && [ "$FRAMEWORK_IS_NODE" != "1" ]; then
     podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
 fi
 
@@ -452,15 +464,17 @@ podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
 podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml
 podium-sed "s#PROJECT_DESCRIPTION#$PROJECT_DESCRIPTION_SAFE#g" docker-compose.yaml
 
-if [ -d "public" ] || [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
+if [ -d "public" ] || [ "$FRAMEWORK_IS_PYTHON" = "1" ] || [ "$FRAMEWORK_IS_NODE" = "1" ]; then
     podium-sed "s/PUBLIC//g" docker-compose.yaml
 else
     podium-sed "s/PUBLIC/\/public/g" docker-compose.yaml
 fi
 
-# Set start command for Python projects
+# Set start command for Python or Node projects
 if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
     podium-sed "s|PYTHON_START_COMMAND|$(framework_python_start_command)|g" docker-compose.yaml
+elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
+    podium-sed "s|NODE_START_COMMAND|$(framework_node_start_command)|g" docker-compose.yaml
 fi
 
 # Start the project container before composer installation
@@ -545,6 +559,17 @@ if [ -f "composer.json" ]; then
     echo-green "Vendor libs installed!"; echo-white
 else
     debug "No composer.json found"
+fi
+
+# Install npm dependencies for Node projects
+if [ "$FRAMEWORK_IS_NODE" = "1" ] && [ -f "package.json" ]; then
+    echo-cyan "Installing Node dependencies with npm ..."; echo-white
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install" > /dev/null 2>&1
+    else
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install"
+    fi
+    echo-green "Node dependencies installed!"; echo-white
 fi
 
 # Install and build front-end assets when Vite/Laravel is detected (host-side Node)

@@ -57,7 +57,7 @@ validate_wordpress_version() {
 # Function to display usage
 usage() {
     echo-white "Usage: $0 <project_name> [organization] [version] [options]"
-    echo-white "Creates a new Laravel, WordPress, PHP, FastAPI, or Django project"
+    echo-white "Creates a new Laravel, WordPress, PHP, FastAPI, Django, Express, NestJS, Fastify, or Node project"
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name    Name of the project to create"
@@ -65,7 +65,7 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
@@ -222,11 +222,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php"|"fastapi"|"django")
+        "laravel"|"wordpress"|"php"|"fastapi"|"django"|"express"|"nestjs"|"fastify"|"node")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, or django)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, django, express, nestjs, fastify, or node)"
             ;;
     esac
 
@@ -326,7 +326,11 @@ if [ -z "$FRAMEWORK" ]; then
     echo-white "3) PHP (Plain PHP project)"
     echo-white "4) FastAPI (Python Framework)"
     echo-white "5) Django (Python Framework)"
-    echo-return; echo-yellow -n "Enter your choice (1-5): "
+    echo-white "6) Express (Node.js Framework)"
+    echo-white "7) NestJS (Node.js Framework)"
+    echo-white "8) Fastify (Node.js Framework)"
+    echo-white "9) Node.js (Plain Node.js)"
+    echo-return; echo-yellow -n "Enter your choice (1-9): "
     read FRAMEWORK_CHOICE
 
     case $FRAMEWORK_CHOICE in
@@ -344,6 +348,18 @@ if [ -z "$FRAMEWORK" ]; then
             ;;
         5)
             FRAMEWORK="django"
+            ;;
+        6)
+            FRAMEWORK="express"
+            ;;
+        7)
+            FRAMEWORK="nestjs"
+            ;;
+        8)
+            FRAMEWORK="fastify"
+            ;;
+        9)
+            FRAMEWORK="node"
             ;;
         *)
             error "Invalid choice. Exiting..."
@@ -474,6 +490,22 @@ case $FRAMEWORK in
     django)
         echo-return; echo-cyan "Django project selected!"
         echo-green "Django project will be scaffolded on the host."
+        ;;
+    express)
+        echo-return; echo-cyan "Express project selected!"
+        echo-green "Express project will be created with basic structure"
+        ;;
+    nestjs)
+        echo-return; echo-cyan "NestJS project selected!"
+        echo-green "NestJS project will be created with basic structure"
+        ;;
+    fastify)
+        echo-return; echo-cyan "Fastify project selected!"
+        echo-green "Fastify project will be created with basic structure"
+        ;;
+    node)
+        echo-return; echo-cyan "Node.js project selected!"
+        echo-green "Node.js project will be created with basic structure"
         ;;
     *)
         error "Unknown framework '$FRAMEWORK'. Exiting..."

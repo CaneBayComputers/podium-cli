@@ -42,6 +42,10 @@ show_help() {
     echo "  podium art <args>         - Run Laravel Artisan inside container"
     echo "  podium wp <args>          - Run WP-CLI inside container"
     echo "  podium php <args>         - Run PHP inside container"
+    echo "  podium npm <args>         - Run npm inside container"
+    echo "  podium npx <args>         - Run npx inside container"
+    echo "  podium node <args>        - Run Node.js inside container"
+    echo "  podium python <args>      - Run Python inside container"
     echo
     echo-white "CONTAINER EXECUTION: (Run from project directory)"
     echo "  podium exec <cmd>         - Execute command as developer user (no TTY, great for automation/CI)"
@@ -253,6 +257,26 @@ case "$1" in
         validate_project_context || exit 1
         shift
         docker_exec developer php "$@"
+        ;;
+    "npm")
+        validate_project_context || exit 1
+        shift
+        docker_exec_notty developer npm "$@"
+        ;;
+    "npx")
+        validate_project_context || exit 1
+        shift
+        docker_exec_notty developer npx "$@"
+        ;;
+    "node")
+        validate_project_context || exit 1
+        shift
+        docker_exec developer node "$@"
+        ;;
+    "python"|"python3")
+        validate_project_context || exit 1
+        shift
+        docker_exec developer python3 "$@"
         ;;
     "phpcs")
         validate_project_context || exit 1

@@ -16,3 +16,5 @@ gui/dist/
 # Backup Files
 backups/
 
+# AI build instructions
+INSTRUCTIONS.md
