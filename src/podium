@@ -71,7 +71,6 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium laravel <name> [options] - Create a new Laravel project from laravel/laravel (GitHub fork)"
-    echo "  podium kavera <name> [options] - Create and initialize a new Kavera site"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
@@ -90,7 +89,7 @@ show_help() {
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --framework <name>        - Framework: laravel (default), wordpress, php, kavera"
+    echo "  --framework <name>        - Framework: laravel (default), wordpress, php, fastapi, django"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb"
     echo "  --github                  - Create GitHub repository in user account"
@@ -453,9 +452,6 @@ case "$1" in
         ;;
     "laravel")
         "$SCRIPT_DIR/scripts/laravel_project.sh" "${@:2}"
-        ;;
-    "kavera")
-        "$SCRIPT_DIR/scripts/kavera_project.sh" "${@:2}"
         ;;
     "clone")
         if [ -z "$2" ]; then

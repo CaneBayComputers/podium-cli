@@ -102,27 +102,19 @@ cd podium-cli
 podium new
 ```
 
-## Kavera AI-Ready Website
-```bash
-# Create a new Kavera website project (AI website creation platform)
-podium kavera my-kavera-site
-```
-
-Kavera (https://github.com/CaneBayComputers/kavera) is an AI‑agent‑first Laravel website framework: pages are flat-file Blade templates on purpose so agents can safely read, edit, and rearrange content without fighting a CMS, while service-driven integrations (Blogger, Eventbrite, Flickr, webhooks, etc.) stream dynamic data into the site. Paired with Podium, it lets you spin up agent-managed, production-ready marketing sites in minutes instead of weeks.
-
-Other common project types:
+Common project types:
 
 - Laravel API / app:
   ```bash
   podium new my-laravel-app --framework laravel
   ```
-- Kavera site without auto prompts:
-  ```bash
-  podium new my-kavera-site --framework kavera
-  ```
 - WordPress site:
   ```bash
   podium new my-wp-site --framework wordpress
+  ```
+- FastAPI project:
+  ```bash
+  podium new my-api --framework fastapi
   ```
 - Empty PHP project:
   ```bash
@@ -227,7 +219,6 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
-| `podium kavera <name> [options]` | Create and initialize a new Kavera flat-file site |
 | `podium clone <repo>` | Clone existing project |
 | `podium remove <project> [options]` | Remove project |
 
@@ -236,7 +227,7 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium configure` | Configure Podium environment |
-| `podium ai-set [options]` | Configure global AI agent, model, and API key (for Kavera and tooling) |
+| `podium ai-set [options]` | Configure global AI agent, model, and API key |
 | `podium update` | Update Podium CLI and base Docker images |
 | `podium stop-services` | Stop shared services |
 | `podium uninstall` | Remove all Podium Docker resources |
@@ -245,7 +236,7 @@ podium down
 
 #### `podium ai-set` options
 
-`podium ai-set` manages the global AI agent CLI, model, and API key used by Podium (for example by `podium kavera` when bootstrapping a Kavera site).
+`podium ai-set` manages the global AI agent CLI, model, and API key used by Podium.
 
 ```bash
 podium ai-set --agent ollama --model llama3.1
@@ -288,8 +279,6 @@ podium ai "Build a unique homepage hero section."
   - Claude: `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
   - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
   - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
-
-When you run `podium kavera`, Podium automatically generates a Kavera-specific initial prompt and calls `podium ai "<that prompt>"` from the new project directory.
 
 ### 🧪 Testing & Utilities
 
@@ -336,7 +325,7 @@ podium cleanup-test-environment
 
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `kavera` |
+| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django` |
 | `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework/PHP version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version<br/>**PHP:** `8` (default - PHP 8.3), `7` (PHP 7.4) |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
@@ -345,7 +334,7 @@ podium cleanup-test-environment
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
-| `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel/Kavera only) |
+| `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel only) |
 
 ### Clone Project Options
 

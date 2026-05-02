@@ -57,7 +57,7 @@ validate_wordpress_version() {
 # Function to display usage
 usage() {
     echo-white "Usage: $0 <project_name> [organization] [version] [options]"
-    echo-white "Creates a new Laravel, WordPress, PHP, or Kavera project"
+    echo-white "Creates a new Laravel, WordPress, PHP, FastAPI, or Django project"
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name    Name of the project to create"
@@ -65,13 +65,13 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, kavera, fastapi, django (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django (required with --json-output)"
     echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --description TEXT      Project description (optional)"
     echo-white "  --emoji EMOJI           Project emoji (will prompt if not provided)"
-    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel/Kavera)"
+    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
@@ -81,14 +81,9 @@ usage() {
     echo-white "Examples:"
     echo-white "  $0 my-app --framework laravel --display-name \"My App\" --database postgres --github"
     echo-white "  $0 my-blog --framework wordpress --display-name \"My Blog\" --github-org myorg"
-    echo-white "  $0 my-site --framework kavera --display-name \"My Flat Site\" --database mysql"
+    echo-white "  $0 my-api --framework fastapi --display-name \"My API\""
     error "usage" 1
 }
-
-# Resolve Kavera repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
-if [ -z "$KAVERA_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
-    KAVERA_REPOSITORY_URL=$(grep "^KAVERA_REPOSITORY_URL=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2-)
-fi
 
 # Resolve Laravel repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
 if [ -z "$LARAVEL_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
@@ -227,11 +222,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php"|"kavera"|"fastapi"|"django")
+        "laravel"|"wordpress"|"php"|"fastapi"|"django")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, kavera, fastapi, or django)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, or django)"
             ;;
     esac
 
@@ -329,10 +324,9 @@ if [ -z "$FRAMEWORK" ]; then
     echo-white "1) Laravel (PHP Framework)"
     echo-white "2) WordPress (CMS)"
     echo-white "3) PHP (Plain PHP project)"
-    echo-white "4) Kavera (Laravel flat-file site for AI agents)"
-    echo-white "5) FastAPI (Python Framework)"
-    echo-white "6) Django (Python Framework)"
-    echo-return; echo-yellow -n "Enter your choice (1-6): "
+    echo-white "4) FastAPI (Python Framework)"
+    echo-white "5) Django (Python Framework)"
+    echo-return; echo-yellow -n "Enter your choice (1-5): "
     read FRAMEWORK_CHOICE
 
     case $FRAMEWORK_CHOICE in
@@ -346,12 +340,9 @@ if [ -z "$FRAMEWORK" ]; then
             FRAMEWORK="php"
             ;;
         4)
-            FRAMEWORK="kavera"
-            ;;
-        5)
             FRAMEWORK="fastapi"
             ;;
-        6)
+        5)
             FRAMEWORK="django"
             ;;
         *)
@@ -476,11 +467,6 @@ case $FRAMEWORK in
         # PHP projects don't need version validation
         echo-green "PHP project will be created with basic structure"
         ;;
-    kavera)
-        echo-return; echo-cyan "Kavera flat-file project selected!"
-        # Kavera uses the starter repo; no version selection required.
-        echo-green "Kavera starter will be cloned from: $KAVERA_REPOSITORY_URL"
-        ;;
     fastapi)
         echo-return; echo-cyan "FastAPI project selected!"
         echo-green "FastAPI project will be created with basic structure"
@@ -600,12 +586,7 @@ if [[ "$FORK_USED" -ne 1 ]]; then
     
     # Create GitHub repository if requested
     if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
-        if [ "$FRAMEWORK" = "kavera" ]; then
-            # For Kavera projects, we cloned from a starter repository; pass that URL
-            create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$KAVERA_REPOSITORY_URL"
-        else
-            create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
-        fi
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
     fi
 fi
 

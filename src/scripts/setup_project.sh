@@ -41,7 +41,7 @@ usage() {
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php)"
-    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel/Kavera)"
+    echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
     echo-white "  $0 my-project mysql"
@@ -274,8 +274,6 @@ if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="wordpress"
     elif [ -f "artisan" ]; then
         FRAMEWORK="laravel"
-    elif [ -f "config.example.inc.php" ]; then
-        FRAMEWORK="kavera"
     else
         FRAMEWORK="php"
     fi
@@ -601,7 +599,7 @@ if [ -d "storage" ]; then
 
     echo-green 'Storage folder permissions set!'; echo-white
 
-    # Create storage symlink for Laravel/Kavera unless disabled
+    # Create storage symlink for Laravel unless disabled
     if [ "$SKIP_STORAGE_SYMLINK" != "true" ] && [ -f "artisan" ]; then
         if [ -d "public" ] && [ -d "storage/app/public" ]; then
             if [ -L "public/storage" ]; then
