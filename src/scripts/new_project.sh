@@ -904,7 +904,7 @@ EOF
 
     # Patch settings.py: prepend dotenv + pymysql shim, fix ALLOWED_HOSTS and DATABASES
     SETTINGS_FILE="${PROJECT_NAME_SNAKE}/settings.py"
-    printf 'from dotenv import load_dotenv\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv()\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
+    printf 'from dotenv import load_dotenv\nfrom pathlib import Path\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv(Path(__file__).resolve().parent.parent / ".env")\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
     sed -i "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
     python3 - "$SETTINGS_FILE" << 'PYEOF'
 import re, sys
