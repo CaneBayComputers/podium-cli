@@ -136,7 +136,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --no-github)
-            # No-op: not creating a GitHub repo is the default; flag exists for explicitness in scripts
+            CREATE_GITHUB="no"
             shift
             ;;
         --github)

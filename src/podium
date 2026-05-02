@@ -522,7 +522,7 @@ case "$1" in
     "supervisor")
         validate_project_context || exit 1
         shift
-        local project_name="$(get_project_name)"
+        project_name="$(get_project_name)"
         if [ $# -eq 0 ]; then
             echo-yellow "Available supervisorctl commands:"
             echo "  status          - Show process status"
@@ -540,7 +540,7 @@ case "$1" in
         ;;
     "supervisor-status")
         validate_project_context || exit 1
-        local project_name="$(get_project_name)"
+        project_name="$(get_project_name)"
         echo-cyan "Supervisor status in container: $project_name"
         docker container exec -it "$project_name" supervisorctl status
         ;;

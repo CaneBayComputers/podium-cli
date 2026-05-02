@@ -570,6 +570,8 @@ if [ "$FRAMEWORK_IS_NODE" = "1" ] && [ -f "package.json" ]; then
         docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install"
     fi
     echo-green "Node dependencies installed!"; echo-white
+    # Fix ownership so the host user can run podium npm install afterwards without EACCES
+    docker exec "$PROJECT_NAME" bash -c "chown -R $(id -u):$(id -g) /usr/share/nginx/html/node_modules /usr/share/nginx/html/package-lock.json 2>/dev/null || true"
     # Restart the node-app supervisor program so it picks up the freshly installed packages
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         docker exec "$PROJECT_NAME" supervisorctl restart node-app > /dev/null 2>&1
