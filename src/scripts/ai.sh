@@ -123,22 +123,21 @@ case "$AI_AGENT_CLI_NAME" in
         gemini "${gemini_args[@]}"
         ;;
     grok)
-        if [[ -z "$AI_API_KEY" ]]; then
-            echo-yellow "AI_API_KEY is not configured; grok CLI requires an API key."
-            echo-yellow "Run 'podium ai-set'"
-        else
-            grok_args=()
-            if [[ -n "$AI_MODEL" ]]; then
-                grok_args+=("--model" "$AI_MODEL")
-            fi
-            grok_args+=("--api-key" "$AI_API_KEY")
-            if [[ "$ONE_OFF" == "1" ]]; then
-                grok_args+=("--prompt" "$INIT_PROMPT")
-            else
-                grok_args+=("$INIT_PROMPT")
-            fi
-            grok "${grok_args[@]}"
+        grok_args=()
+        if [[ -n "$AI_MODEL" ]]; then
+            grok_args+=("--model" "$AI_MODEL")
         fi
+        # grok stores its API key in ~/.grok/user-settings.json; only pass --api-key
+        # if explicitly configured in podium (AI_API_KEY overrides the stored key)
+        if [[ -n "$AI_API_KEY" ]]; then
+            grok_args+=("--api-key" "$AI_API_KEY")
+        fi
+        if [[ "$ONE_OFF" == "1" ]]; then
+            grok_args+=("--prompt" "$INIT_PROMPT")
+        else
+            grok_args+=("$INIT_PROMPT")
+        fi
+        grok "${grok_args[@]}"
         ;;
     *)
         echo-yellow "Interactive session integration is not configured for '$AI_AGENT_CLI_NAME'."
