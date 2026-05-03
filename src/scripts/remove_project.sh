@@ -129,16 +129,25 @@ fi
 debug "Starting project removal for: $PROJECT_NAME"
 echo-cyan "Removing project '$PROJECT_NAME'..."
 
-# Detect database engine from project .env before we trash the directory
+# Detect database engine from project config before we trash the directory.
+# Check root .env first, then fall back to scanning all env files and docker-compose.yaml
+# (complex projects with adapted composes often have no root .env).
 DB_ENGINE="mysql"
+_DB_HINTS=""
 if [ -f "$PROJECT_DIR/.env" ]; then
-    ENV_DB_HOST=$(grep -E "^DB_HOST=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
-    ENV_DB_CONNECTION=$(grep -E "^DB_CONNECTION=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
-    if echo "$ENV_DB_HOST$ENV_DB_CONNECTION" | grep -qiE "postgres|pgsql|postgresql"; then
-        DB_ENGINE="postgres"
-    elif echo "$ENV_DB_HOST$ENV_DB_CONNECTION" | grep -qiE "mongo"; then
-        DB_ENGINE="mongo"
-    fi
+    _DB_HINTS=$(grep -E "^(DB_HOST|DB_CONNECTION)=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' | tr '\n' ' ')
+fi
+if [ -z "$_DB_HINTS" ]; then
+    # No root .env or no DB vars — scan env files and docker-compose.yaml for Podium shared service hostnames
+    _DB_HINTS=$(grep -rh "podium-postgres\|podium-mongo\|podium-mariadb" \
+        "$PROJECT_DIR"/*.env "$PROJECT_DIR"/.env.* "$PROJECT_DIR"/env/ \
+        "$PROJECT_DIR"/docker-compose.yaml "$PROJECT_DIR"/docker-compose.yml \
+        2>/dev/null | head -5 | tr '\n' ' ')
+fi
+if echo "$_DB_HINTS" | grep -qiE "postgres|pgsql|postgresql"; then
+    DB_ENGINE="postgres"
+elif echo "$_DB_HINTS" | grep -qiE "mongo"; then
+    DB_ENGINE="mongo"
 fi
 debug "Detected database engine: $DB_ENGINE"
 

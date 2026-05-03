@@ -116,12 +116,14 @@ show_help() {
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
     echo "  --framework NAME          - Force framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
     echo "  --no-github               - Skip GitHub repository creation (default)"
+    echo "  --no-startup              - Register project without starting the container (useful for verifying adapted docker-compose)"
     echo "  --json-output             - Output results in JSON format"
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "SETUP PROJECT OPTIONS:"
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
     echo "  --framework NAME          - Force framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
+    echo "  --no-startup              - Register project without starting the container"
     echo "  --json-output             - Output results in JSON format"
     echo "  --no-colors               - Disable colored output"
     echo
@@ -598,7 +600,7 @@ case "$1" in
     "clone")
         if [ -z "$2" ]; then
             echo-red "Usage: podium clone <repository-url> [project-name] [options]"
-            echo-white "Options: --overwrite-docker-compose, --no-github, --framework NAME, --php-version VERSION"
+            echo-white "Options: --overwrite-docker-compose, --no-github, --framework NAME, --no-startup"
             exit 1
         fi
         "$SCRIPT_DIR/scripts/clone_project.sh" "${@:2}"

@@ -403,10 +403,13 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github` | Create GitHub repository in user account |
 | `--github-org <org>` | Create GitHub repository in organization |
 | `--no-github` | Skip GitHub repository creation |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
+
+> **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Podium automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Podium's shared containers (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). The web-facing service gets a static VPC IP. Startup is deferred so you can verify the adapted compose before running `podium up <project>`.
 
 ### Setup Project Options
 
@@ -414,6 +417,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--no-startup` | Register and adapt project without starting the container |
 
 ### Remove Project Options
 

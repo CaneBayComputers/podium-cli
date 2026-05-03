@@ -117,9 +117,10 @@ case "$AI_AGENT_CLI_NAME" in
         gemini "${gemini_args[@]}"
         ;;
     *)
-        echo-yellow "Automatic integration is not configured for '$AI_AGENT_CLI_NAME'."
-        echo-yellow "Please start your AI agent CLI (codex, claude, or gemini) in this directory and use the following prompt:"
-        echo-white "$INIT_PROMPT"
+        echo-red "Unsupported AI agent: '$AI_AGENT_CLI_NAME'."
+        echo-white "Supported agents: codex, claude, gemini"
+        echo-white "Run 'podium ai-set' to choose a supported agent."
+        exit 1
         ;;
 esac
 

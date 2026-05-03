@@ -41,7 +41,7 @@ usage() {
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, or custom)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, or gemini)."
     echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini)."
     echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
@@ -114,9 +114,8 @@ select_ai_agent() {
         echo-white '  1) codex'
         echo-white '  2) claude'
         echo-white '  3) gemini'
-        echo-white '  4) other'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-4): '
+        echo-yellow -ne 'Enter your choice (1-3): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
@@ -137,21 +136,8 @@ select_ai_agent() {
                 sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
                 break
                 ;;
-            4)
-                echo-yellow -ne 'Enter the command name for your AI agent CLI: '
-                echo-white -ne
-                read CUSTOM_AI_AGENT
-                echo-return
-                if [[ -z "$CUSTOM_AI_AGENT" ]]; then
-                    echo-yellow "AI agent CLI command cannot be empty. Please try again."
-                    continue
-                fi
-                AI_AGENT="$CUSTOM_AI_AGENT"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
-                break
-                ;;
             *)
-                echo-yellow "Invalid selection. Please enter a number between 1 and 4."
+                echo-yellow "Invalid selection. Please enter 1, 2, or 3."
                 ;;
         esac
     done

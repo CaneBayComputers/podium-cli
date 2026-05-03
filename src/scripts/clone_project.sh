@@ -23,6 +23,7 @@ DATABASE_ENGINE=""
 CREATE_GITHUB=""
 ORGANIZATION=""
 NO_STORAGE_SYMLINK=0
+NO_STARTUP=0
 REQUEST_FORK=0
 FORK_USED=0
 GIT_CLONE_ARGS=()
@@ -47,6 +48,7 @@ usage() {
     echo-white "  --github-org ORG             Create GitHub repository in organization"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --framework FRAMEWORK        Force framework detection (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
+    echo-white "  --no-startup                 Clone and register project but do not start the container"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
@@ -124,6 +126,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --single-branch)
             GIT_CLONE_ARGS+=("--single-branch")
+            shift
+            ;;
+        --no-startup)
+            NO_STARTUP=1
             shift
             ;;
         --debug)
@@ -384,11 +390,14 @@ fi
 if [[ "$DEBUG" == "1" ]]; then
     SETUP_ARGS+=("--debug")
 fi
-if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
-    SETUP_ARGS+=("--overwrite-docker-compose")
-fi
+# podium clone always registers a project with Podium, so overwrite is implicit.
+# The flag is still forwarded if the user passed it explicitly.
+SETUP_ARGS+=("--overwrite-docker-compose")
 if [[ "$NO_STORAGE_SYMLINK" == "1" ]]; then
     SETUP_ARGS+=("--no-storage-symlink")
+fi
+if [[ "$NO_STARTUP" == "1" ]]; then
+    SETUP_ARGS+=("--no-startup")
 fi
 if [[ -n "$FORCED_FRAMEWORK" ]]; then
     SETUP_ARGS+=("--framework" "$FORCED_FRAMEWORK")
