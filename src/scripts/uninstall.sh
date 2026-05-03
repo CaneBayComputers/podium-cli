@@ -296,90 +296,9 @@ fi
 
 echo-return
 
-# 5. Remove service hosts file entries
-echo-white "📝 Removing hosts file entries..."
-
-HOSTS_FILE="/etc/hosts"
-REMOVED_HOSTS=0
-
-if [ -f "$COMPOSE_FILE" ] && [ -f "$HOSTS_FILE" ]; then
-    # Get container names from docker-compose file
-    CONTAINER_NAMES=$(grep -E "^\s*container_name:" "$COMPOSE_FILE" | sed 's/.*container_name:[[:space:]]*\([^[:space:]]*\).*/\1/' | tr '\n' ' ')
-    
-    if [ -n "$CONTAINER_NAMES" ]; then
-        for container_name in $CONTAINER_NAMES; do
-            # Check if container name exists in hosts file (more flexible matching)
-            if grep -q "${container_name}" "$HOSTS_FILE"; then
-                echo "Removing hosts entry: $container_name"
-                # Remove the line containing the container name
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS: BSD sed requires backup extension
-                    sudo sed -i '' "/${container_name}/d" "$HOSTS_FILE"
-                else
-                    # Linux: GNU sed
-                    sudo sed -i "/${container_name}/d" "$HOSTS_FILE"
-                fi
-                ((REMOVED_HOSTS++))
-            fi
-        done
-    fi
-fi
-
-if [ $REMOVED_HOSTS -gt 0 ]; then
-    echo-green "✅ Removed $REMOVED_HOSTS service hosts file entries"
-else
-    echo "No Podium service hosts entries found"
-fi
-
-echo-return
-
-# 6. Remove project hosts file entries
-echo-white "📝 Removing project hosts file entries..."
-
-# Load the get_projects_dir function
-source "$SCRIPT_DIR/functions.sh"
-
-PROJECT_HOSTS_REMOVED=0
-PROJECTS_DIR=""
-
-# Try to get projects directory
-if [ -f "/etc/podium-cli/.env" ]; then
-    PROJECTS_DIR=$(get_projects_dir 2>/dev/null || true)
-fi
-
-if [ -n "$PROJECTS_DIR" ] && [ -d "$PROJECTS_DIR" ]; then
-    echo "Checking projects directory: $PROJECTS_DIR"
-    
-    # Iterate through project folders
-    for project_dir in "$PROJECTS_DIR"/*; do
-        if [ -d "$project_dir" ]; then
-            PROJECT_NAME=$(basename "$project_dir")
-            
-            # Check if project name exists in hosts file
-            if grep -q "[[:space:]]${PROJECT_NAME}[[:space:]]*$" "$HOSTS_FILE" 2>/dev/null; then
-                echo "Removing project hosts entry: $PROJECT_NAME"
-                # Remove the line containing the project name
-                if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS: BSD sed requires backup extension
-                    sudo sed -i '' "/[[:space:]]${PROJECT_NAME}[[:space:]]*$/d" "$HOSTS_FILE"
-                else
-                    # Linux: GNU sed
-                    sudo sed -i "/[[:space:]]${PROJECT_NAME}[[:space:]]*$/d" "$HOSTS_FILE"
-                fi
-                ((PROJECT_HOSTS_REMOVED++))
-            fi
-        fi
-    done
-else
-    echo "Projects directory not found or not accessible"
-fi
-
-if [ $PROJECT_HOSTS_REMOVED -gt 0 ]; then
-    echo-green "✅ Removed $PROJECT_HOSTS_REMOVED project hosts file entries"
-else
-    echo "No project hosts entries found"
-fi
-
+# 5. Leave /etc/hosts entries in place
+echo-white "Leaving /etc/hosts entries in place."
+echo-white "  Project URLs will simply stop resolving until Podium is reinstalled."
 echo-return
 
 # 7. Backup project docker-compose.yaml files
@@ -438,31 +357,28 @@ echo "  • Individual project containers"
 if [ "$DELETE_IMAGES" = "yes" ]; then
     echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
 fi
-echo "  • Hosts file entries for Podium services"
-echo "  • Hosts file entries for individual projects"
 echo "  • Volumes with prefix: podium-cli_*"
 echo "  • Networks with prefix: podium-cli_*"
+echo "  • Podium CLI binary and source files"
 echo-return
-echo-white "What was backed up:"
-echo "  • Project docker-compose.yaml files → docker-compose.yaml.backup"
-echo "    (These won't work without Podium services - restore after reinstall)"
-echo-return
-echo-white "What was preserved:"
-echo "  • Your project files and code"
+echo-white "What was kept:"
+echo "  • Your projects folder and all project code"
+echo "  • /etc/podium-cli configuration (reinstall will pick it up automatically)"
+echo "  • /etc/hosts entries (project URLs simply won't resolve until reinstalled)"
 if [ "$DELETE_IMAGES" = "no" ]; then
-    echo "  • Podium Docker images (can be reused on reinstall)"
+    echo "  • Podium Docker images (will speed up reinstall)"
 fi
-echo "  • Other Docker images and containers"
 echo "  • Docker itself"
 echo-return
 echo-cyan "To reinstall Podium:"
 echo "  https://github.com/CaneBayComputers/podium-cli"
 echo-return
 
-# Remove CLI files last (script is already in memory so this is safe)
+# Remove CLI binary and source files last (script is already in memory so this is safe)
 echo-white "🗑️  Removing Podium CLI files..."
 sudo rm -f /usr/local/bin/podium
-sudo rm -rf /etc/podium-cli
 sudo rm -rf /usr/local/share/podium-cli
 echo-green "✅ Podium CLI removed"
+echo-white "  Your projects folder and /etc/podium-cli configuration have been kept."
+echo-white "  If you reinstall Podium your projects and settings will still be there."
 echo-return
