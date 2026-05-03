@@ -116,7 +116,8 @@ case "$AI_AGENT_CLI_NAME" in
             gemini_args+=("--model" "$AI_MODEL")
         fi
         if [[ "$ONE_OFF" == "1" ]]; then
-            gemini_args+=("--prompt" "$INIT_PROMPT")
+            # --output-format text suppresses the xterm.js TUI dump in headless mode
+            gemini_args+=(--output-format text --prompt "$INIT_PROMPT")
         else
             gemini_args+=("-i" "$INIT_PROMPT")
         fi
