@@ -371,7 +371,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 - Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
 - Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
   - DeepSeek: `deepseek --api-key "$AI_API_KEY" -q "<prompt>"`
-  - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+  - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
   - Claude: `claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"` (`-p` added for `--one-off`)
   - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
   - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`

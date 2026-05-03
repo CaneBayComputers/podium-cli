@@ -89,8 +89,12 @@ case "$AI_AGENT_CLI_NAME" in
         if [[ -n "$AI_API_KEY" ]]; then
             codex_args+=("--api-key" "$AI_API_KEY")
         fi
-        codex_args+=("--yolo" "$INIT_PROMPT")
-        codex "${codex_args[@]}"
+        codex_args+=(--dangerously-bypass-approvals-and-sandbox)
+        if [[ "$ONE_OFF" == "1" ]]; then
+            codex exec "${codex_args[@]}" "$INIT_PROMPT"
+        else
+            codex "${codex_args[@]}" "$INIT_PROMPT"
+        fi
         ;;
     claude)
         claude_args=(--dangerously-skip-permissions)

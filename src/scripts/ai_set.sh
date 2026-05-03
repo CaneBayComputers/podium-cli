@@ -34,7 +34,7 @@ NEW_API_KEY=""
 #       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `grok`)
 #
 # Initial-prompt behavior (driven by `podium ai "<prompt>"`):
-#   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
+#   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"`
 #   - claude : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
 #   - gemini : `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
 #   - grok   : `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
