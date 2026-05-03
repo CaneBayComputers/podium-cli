@@ -70,6 +70,7 @@ Important workflow:
 7. After the project exists, look for the generated project's .env file.
 8. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
 9. Build the app using framework-native conventions.
+10. After all code and migrations are in place, verify the site is actually responding. Run: `curl -sI --max-time 10 http://<project-name>/` and check for a 200 or 302 HTTP status code. If the response is not 2xx or 3xx, diagnose and fix the problem before reporting success. Do not tell the user the project is ready until this check passes.
 
 Rules:
 
@@ -91,6 +92,7 @@ Rules:
 16. Always pass --no-github to `podium new` and `podium clone` unless the user explicitly asks to create a GitHub repository.
 17. When cloning a project whose framework is known (e.g. a Django app, a Node app), pass --framework <name> to `podium clone` so Podium generates the correct docker-compose for that stack instead of falling back to PHP.
 18. Python containers provide `python3`, not `python`. Never run `podium exec python ...` — use `podium python <args>` or `podium exec python3 <args>` instead. For Django management commands, always use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`, `podium django manage createsuperuser`). This is shorter and more reliable than `podium exec python3 manage.py <args>`.
+19. The project is not done until the site responds with HTTP 2xx or 3xx. Always run the curl check from workflow step 10 as your final action. If it fails, check container logs (`docker logs <project-name>`), fix the issue, and re-verify before finishing.
 
 User project idea:
 
