@@ -548,14 +548,14 @@ case "$1" in
             echo-white "Usage: podium supervisor <command>"
             echo-white "Example: podium supervisor status"
         else
-            docker container exec -it "$project_name" supervisorctl "$@"
+            docker container exec -i "$project_name" supervisorctl "$@"
         fi
         ;;
     "supervisor-status")
         validate_project_context || exit 1
         project_name="$(get_project_name)"
         echo-cyan "Supervisor status in container: $project_name"
-        docker container exec -it "$project_name" supervisorctl status
+        docker container exec -i "$project_name" supervisorctl status
         ;;
     
     # Project management

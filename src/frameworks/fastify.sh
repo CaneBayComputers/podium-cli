@@ -39,7 +39,7 @@ fastify.get('/', async (request, reply) => {
 
 const start = async () => {
     try {
-        await fastify.listen({ port, host: '127.0.0.1' });
+        await fastify.listen({ port, host: '0.0.0.0' });
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);
