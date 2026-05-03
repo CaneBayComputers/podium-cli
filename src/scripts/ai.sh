@@ -111,7 +111,7 @@ case "$AI_AGENT_CLI_NAME" in
         claude "${claude_args[@]}"
         ;;
     gemini)
-        gemini_args=(--yolo)
+        gemini_args=(--yolo --skip-trust)
         if [[ -n "$AI_MODEL" ]]; then
             gemini_args+=("--model" "$AI_MODEL")
         fi
