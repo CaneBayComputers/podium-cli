@@ -86,8 +86,7 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
-    echo "  podium laravel <name> [options] - Create a new Laravel project from laravel/laravel (GitHub fork)"
-    echo "  podium clone <repo> [options] - Clone existing project"
+      echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
     echo
@@ -581,9 +580,6 @@ case "$1" in
         ;;
     "create")
         "$SCRIPT_DIR/scripts/create.sh" "${@:2}"
-        ;;
-    "laravel")
-        "$SCRIPT_DIR/scripts/laravel_project.sh" "${@:2}"
         ;;
     "clone")
         if [ -z "$2" ]; then

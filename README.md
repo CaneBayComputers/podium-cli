@@ -273,7 +273,6 @@ podium down
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
 | `podium create ["idea"]` | Create a project from a plain English description (AI) |
-| `podium laravel <name> [options]` | Create a new Laravel project (GitHub fork) |
 | `podium clone <repo>` | Clone existing project |
 | `podium setup <project> [options]` | Set up an existing project directory |
 | `podium remove <project> [options]` | Remove project |
