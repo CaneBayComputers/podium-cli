@@ -146,6 +146,26 @@ Common project types:
   podium new my-php-app --framework php
   ```
 
+### Or use an existing project
+
+Clone a Git repository and set it up automatically:
+
+```bash
+podium clone https://github.com/user/my-laravel-app
+podium clone owner/repo                              # GitHub shorthand
+```
+
+Already have a project folder in your projects directory? Just set it up:
+
+```bash
+podium setup my-project
+```
+
+Or point `podium create` at an existing GitHub repo and let the AI clone and configure it:
+
+```bash
+podium create "https://github.com/monicahq/monica"
+```
 
 
 ## 🪄 The Magic Commands - Daily Workflow
