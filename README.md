@@ -389,11 +389,8 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | Option | Description | Values |
 |--------|-------------|---------|
 | `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node` |
-| `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
-| `--description <text>` | Project description | Optional text description |
-| `--emoji <emoji>` | Project emoji | Will prompt if not provided |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
@@ -406,9 +403,6 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
-| `--display-name <name>` | Display name for project |
-| `--description <text>` | Project description |
-| `--emoji <emoji>` | Project emoji (default: 🚀) |
 | `--github` | Create GitHub repository in user account |
 | `--github-org <org>` | Create GitHub repository in organization |
 | `--no-github` | Skip GitHub repository creation |
