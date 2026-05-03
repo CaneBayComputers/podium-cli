@@ -5,10 +5,11 @@
 **Read the following files** in the given order to become acquainted with the project's architecture, dependencies, and conventions:
 
 1. `README.md` – Overall purpose, setup, and deployment notes.
-2. `src/podium`  – Entry script showing commands and options.
-3. `src/scripts/functions.sh` – Helper functions.
-4. `src/docker-stack/docker-compose.services.yaml` – Docker list of shared services used by projects.
-5. `src/scripts/configure.sh` – Sets up Podium and dev environment.
+2. `src/scripts/functions.sh` – Helper functions.
+3. `src/docker-stack/docker-compose.services.yaml` – Docker list of shared services used by projects.
+4. `src/scripts/configure.sh` – Sets up Podium and dev environment.
+
+Run `podium --help` for a live command listing. Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`); read the relevant script when working on a specific command.
 
 ## Project Structure & Module Organization
 - `src/podium` is the Bash entrypoint; it wires subcommands and shared helpers from `src/scripts/`.
