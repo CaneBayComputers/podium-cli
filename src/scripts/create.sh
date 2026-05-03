@@ -15,18 +15,32 @@ source scripts/pre_check.sh
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 usage() {
-    echo-white "Usage: podium create [\"project idea\"]"
+    echo-white "Usage: podium create [--one-off] [\"project idea\"]"
     echo-white ""
     echo-white "Describe a project in plain English and your configured AI agent will"
     echo-white "create a working Podium-managed project for you."
+    echo-white ""
+    echo-white "By default the AI agent runs interactively. Pass --one-off to run it"
+    echo-white "non-interactively (useful for automation or scripted pipelines)."
     echo-white ""
     echo-white "Examples:"
     echo-white "  podium create"
     echo-white "  podium create \"A task tracker with user auth\""
     echo-white "  podium create \"https://github.com/user/repo\""
+    echo-white "  podium create --one-off \"A notes app in Express with postgres\""
 }
 
-USER_IDEA="$*"
+ONE_OFF=0
+IDEA_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--one-off" ]]; then
+        ONE_OFF=1
+    else
+        IDEA_ARGS+=("$arg")
+    fi
+done
+
+USER_IDEA="${IDEA_ARGS[*]}"
 
 if [[ -z "$USER_IDEA" ]]; then
     echo-return
@@ -106,4 +120,8 @@ FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
 # Start in the podium-cli root so the AI can immediately read README.md and src/podium.
 cd "$DEV_DIR/.."
 
-exec "$SCRIPT_DIR/ai.sh" "$FULL_PROMPT"
+if [[ "$ONE_OFF" == "1" ]]; then
+    exec "$SCRIPT_DIR/ai.sh" --one-off "$FULL_PROMPT"
+else
+    exec "$SCRIPT_DIR/ai.sh" "$FULL_PROMPT"
+fi

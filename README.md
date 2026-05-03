@@ -278,7 +278,7 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
-| `podium create ["idea"]` | Create a project from a plain English description (AI) |
+| `podium create [--one-off] ["idea"]` | Create a project from a plain English description (AI) |
 | `podium clone <repo>` | Clone existing project |
 | `podium setup <project> [options]` | Set up an existing project directory |
 | `podium remove <project> [options]` | Remove project |
@@ -288,7 +288,7 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium configure` | Configure Podium environment |
-| `podium ai "<prompt>"` | Start AI agent session with initial prompt |
+| `podium ai [--one-off] "<prompt>"` | Start interactive AI agent session (or one-off with `--one-off`) |
 | `podium ai-set [options]` | Configure global AI agent, model, and API key |
 | `podium update` | Update Podium CLI and base Docker images |
 | `podium start-services` | Start shared services |
@@ -351,23 +351,28 @@ If your idea matches a mature open-source category such as a CRM, wiki, or helpd
 
 The AI CLI can be cloud-based or local depending on your configuration. Use `podium ai-set` to choose which agent is used.
 
-### 🤖 One-off AI prompts
+### 🤖 AI agent sessions
 
-Once you have set your global AI agent with `podium ai-set`, you can run a one-off AI prompt from any Podium project directory:
+Once you have set your global AI agent with `podium ai-set`, you can start an interactive AI session seeded with a prompt from any Podium project directory:
 
 ```bash
 cd /path/to/project
 podium ai "Build a unique homepage hero section."
 ```
 
-`podium ai "<one-off prompt>"`:
-`podium ai "<initial prompt>"`:
+By default `podium ai` launches an **interactive** session — the agent starts up, receives the prompt as its first message, and stays open so you can continue the conversation. Add `--one-off` to run a single non-interactive prompt and exit (useful for automation and scripted pipelines):
+
+```bash
+podium ai --one-off "Add a health-check endpoint at /ping"
+```
+
+`podium ai` / `podium create`:
 
 - Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
-- Starts an interactive AI agent session and seeds it with the initial prompt using safe, automation-friendly flags:
+- Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
   - DeepSeek: `deepseek --api-key "$AI_API_KEY" -q "<prompt>"`
   - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --yolo "<prompt>"`
-  - Claude: `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+  - Claude: `claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"` (`-p` added for `--one-off`)
   - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
   - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
 

@@ -18,13 +18,24 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 cd "$CALLER_DIR"
 
 usage() {
-    echo-white "Usage: podium ai \"<initial prompt>\""
+    echo-white "Usage: podium ai [--one-off] \"<initial prompt>\""
     echo-white ""
-    echo-white "Send an initial prompt into your configured AI agent CLI and drop into its interactive session."
+    echo-white "Start an interactive AI agent session seeded with the given prompt."
+    echo-white "Use --one-off to run a single non-interactive prompt and exit."
     echo-white "Must be run from a Podium project directory."
 }
 
-INIT_PROMPT="$*"
+ONE_OFF=0
+PROMPT_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--one-off" ]]; then
+        ONE_OFF=1
+    else
+        PROMPT_ARGS+=("$arg")
+    fi
+done
+
+INIT_PROMPT="${PROMPT_ARGS[*]}"
 
 if [[ -z "$INIT_PROMPT" ]]; then
     echo-return
@@ -83,6 +94,9 @@ case "$AI_AGENT_CLI_NAME" in
         ;;
     claude)
         claude_args=(--dangerously-skip-permissions)
+        if [[ "$ONE_OFF" == "1" ]]; then
+            claude_args+=(-p)
+        fi
         if [[ -n "$AI_MODEL" ]]; then
             claude_args+=("--model" "$AI_MODEL")
         fi
@@ -115,7 +129,7 @@ case "$AI_AGENT_CLI_NAME" in
         fi
         ;;
     *)
-        echo-yellow "Automatic one-off prompt integration is not configured for '$AI_AGENT_CLI_NAME'."
+        echo-yellow "Interactive session integration is not configured for '$AI_AGENT_CLI_NAME'."
         echo-yellow "Please start your AI agent CLI in this directory and use the following prompt:"
         echo-white "$INIT_PROMPT"
         ;;
