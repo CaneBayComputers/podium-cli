@@ -36,6 +36,9 @@
 - For non-interactive runs (CI, agents, scripts), prefer the non-TTY container execution commands:
   - `podium exec <cmd>` / `podium exec-root <cmd>` – run inside the project container without allocating a TTY.
   - Avoid interactive REPL-style commands (`podium bash`, `podium tinker`, `podium exec-tty*`) in agents; keep those for human-operated terminals.
+- `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`). Both forms work.
+- Python containers provide `python3`, not `python`. Use `podium python <args>` or `podium exec python3 <args>`. Never `podium exec python ...`.
+- For Django management commands use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`). This is the preferred shorthand over `podium exec python3 manage.py <args>`.
 
 ## Testing Guidelines
 - Add new coverage by extending `src/scripts/test_json_output.sh`; name scenarios after the command under test (`new_laravel_latest`).

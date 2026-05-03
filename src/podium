@@ -230,7 +230,11 @@ docker_exec() {
     local user="$1"
     shift
     local project_name="$(get_project_name)"
-    
+    # Wrap single quoted compound commands through bash so agents can pass
+    # "python3 manage.py foo" as one string without OCI exec errors
+    if [ $# -eq 1 ] && [[ "$1" == *" "* ]]; then
+        set -- bash -c "$1"
+    fi
     if [ "$user" = "root" ]; then
         docker container exec -it --user root -w /usr/share/nginx/html "$project_name" "$@"
     else
@@ -243,7 +247,11 @@ docker_exec_notty() {
     local user="$1"
     shift
     local project_name="$(get_project_name)"
-    
+    # Wrap single quoted compound commands through bash so agents can pass
+    # "python3 manage.py foo" as one string without OCI exec errors
+    if [ $# -eq 1 ] && [[ "$1" == *" "* ]]; then
+        set -- bash -c "$1"
+    fi
     if [ "$user" = "root" ]; then
         docker container exec -i --user root -w /usr/share/nginx/html "$project_name" "$@"
     else

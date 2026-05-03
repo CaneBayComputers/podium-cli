@@ -90,6 +90,7 @@ Rules:
 15. When running `podium clone` or `podium setup`, always pass --overwrite-docker-compose. Existing projects almost always have their own docker-compose.yaml and Podium must replace it with its own managed version.
 16. Always pass --no-github to `podium new` and `podium clone` unless the user explicitly asks to create a GitHub repository.
 17. When cloning a project whose framework is known (e.g. a Django app, a Node app), pass --framework <name> to `podium clone` so Podium generates the correct docker-compose for that stack instead of falling back to PHP.
+18. Python containers provide `python3`, not `python`. Never run `podium exec python ...` — use `podium python <args>` or `podium exec python3 <args>` instead. For Django management commands, always use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`, `podium django manage createsuperuser`). This is shorter and more reliable than `podium exec python3 manage.py <args>`.
 
 User project idea:
 
