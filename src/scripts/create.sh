@@ -60,10 +60,12 @@ Important workflow:
 
 1. Understand the user's project idea.
 2. If the framework or stack is unclear, ask the user which framework they want to use before continuing.
-3. Create or enter the Podium-managed project first.
-4. After the project exists, look for the generated project's .env file.
-5. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
-6. Build the app using framework-native conventions.
+3. If the user is cloning a GitHub URL, assume the repo may already contain a docker-compose.yaml. Inform the user that Podium will replace it with a managed version, then run `podium clone` with --overwrite-docker-compose.
+4. If the user is setting up an existing local project directory, check whether a docker-compose.yaml already exists in that directory. If it does, inform the user it will be replaced, then run `podium setup` with --overwrite-docker-compose.
+5. Create or enter the Podium-managed project first.
+6. After the project exists, look for the generated project's .env file.
+7. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
+8. Build the app using framework-native conventions.
 
 Rules:
 
@@ -79,6 +81,7 @@ Rules:
 10. If the app needs mail, cache, queues, sessions, or database access, use the available .env configuration when present.
 11. Update the generated project's README with startup instructions, local URL, useful commands, and default credentials if any.
 12. If the user provides a GitHub HTTPS URL, consider cloning or setting up that project using Podium conventions.
+15. When running `podium clone` or `podium setup`, always pass --overwrite-docker-compose. Existing projects almost always have their own docker-compose.yaml and Podium must replace it with its own managed version.
 13. If the user's request matches a mature existing open-source app category, it is acceptable to ask whether they want to use/adapt an existing project instead of building from scratch.
 14. Never use --json-output with `podium new`. That flag suppresses all output so you cannot tell if the command succeeded or failed. Without --json-output, success and errors are printed to stdout where you can read them.
 
