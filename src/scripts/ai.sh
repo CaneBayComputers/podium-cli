@@ -64,9 +64,10 @@ if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
 fi
 
 if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
-    echo-yellow "Configured AI agent CLI '$AI_AGENT_CLI_NAME' is not on PATH."
+    echo-red "Configured AI agent CLI '$AI_AGENT_CLI_NAME' is not on PATH."
+    echo-white "Run 'podium ai-set' to choose a different agent, or ensure $AI_AGENT_CLI_NAME is installed."
     cd "$CALLER_DIR"
-    exit 0
+    exit 1
 fi
 
 case "$AI_AGENT_CLI_NAME" in
