@@ -412,24 +412,6 @@ prompt_ai_model
 
 ensure_ai_agent_installed "$AI_AGENT"
 
-echo-return
-echo-yellow -ne "Set up authentication for '$AI_AGENT'? (y/N): "
-echo-white -ne
-read SETUP_AUTH
-echo-return
-if [[ "$SETUP_AUTH" =~ ^[Yy]$ ]]; then
-    if [[ "$AI_AGENT" == "codex" ]]; then
-        configure_codex_auth
-    elif [[ "$AI_AGENT" == "claude" ]]; then
-        configure_claude_auth
-    elif [[ "$AI_AGENT" == "gemini" ]]; then
-        configure_gemini_auth
-    fi
-else
-    echo-white "Skipping authentication setup. Run 'podium ai-set' again if you need to configure it later."
-    echo-return
-fi
-
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
     sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
@@ -446,6 +428,8 @@ fi
 echo-green "AI agent configuration complete."
 echo-white "  Agent: ${AI_AGENT:-<none>}"
 echo-white "  Model: ${AI_MODEL:-<none>}"
+echo-return
+echo-white "Authentication will happen automatically the first time you run 'podium create' or 'podium ai'."
 echo-return
 
 echo-yellow "IMPORTANT:"
