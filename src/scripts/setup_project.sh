@@ -8,10 +8,10 @@ ORIG_DIR=$(pwd)
 # Get the directory of this script, handling both direct execution and sourcing
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     # Script is being sourced
-    SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)"
 else
     # Script is being executed directly
-    SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+    SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd -P)"
 fi
 
 cd "$SCRIPT_DIR/.."
@@ -207,7 +207,7 @@ _setup_cleanup() {
         (cd "$PROJECTS_DIR_PATH" && docker compose -f "$PROJECT_DIR/docker-compose.yaml" down --remove-orphans 2>/dev/null) || true
     fi
     if [ "$_hosts_entry_added" = "1" ]; then
-        sudo sed -i "/ $PROJECT_NAME$/d" /etc/hosts 2>/dev/null || true
+        sudo-podium-sed "/ $PROJECT_NAME$/d" /etc/hosts 2>/dev/null || true
     fi
     if [ "$_compose_file_created" = "1" ]; then
         rm -f "$PROJECT_DIR/docker-compose.yaml"

@@ -5,7 +5,7 @@ set -e
 
 ORIG_DIR=$(pwd)
 
-cd "$(dirname "$(realpath "$0")")"
+cd "$(cd "$(dirname "$0")" 2>/dev/null && pwd -P)"
 
 cd ..
 
@@ -497,7 +497,7 @@ if [ -f "$COMPOSE_FILE" ]; then
         while IFS=':' read -r container_name ip_address; do
             hosts_entry="$ip_address        $container_name"
             # Always remove existing entries for this container and re-add the current mapping
-            sudo sed -i "/[[:space:]]${container_name}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
+            sudo-podium-sed "/[[:space:]]${container_name}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
             echo-white "Adding hosts entry: $hosts_entry"
             echo "$hosts_entry" | sudo tee -a /etc/hosts > /dev/null
         done < "$TEMP_MAPPING"

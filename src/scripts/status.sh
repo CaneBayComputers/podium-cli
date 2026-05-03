@@ -5,10 +5,10 @@ set -e
 # Get the directory of this script, handling both direct execution and sourcing
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     # Script is being sourced
-    SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)"
 else
     # Script is being executed directly
-    SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+    SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd -P)"
 fi
 
 cd "$SCRIPT_DIR/.."

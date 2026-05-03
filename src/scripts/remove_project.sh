@@ -4,7 +4,7 @@ set -e
 
 # Set up directories and aliases
 ORIG_DIR=$(pwd)
-cd "$(dirname "$(realpath "$0")")"
+cd "$(cd "$(dirname "$0")" 2>/dev/null && pwd -P)"
 cd ..
 DEV_DIR=$(pwd)
 source scripts/pre_check.sh
