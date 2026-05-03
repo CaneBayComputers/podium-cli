@@ -65,10 +65,11 @@ Important workflow:
    If the user wants an existing project, suggest two or three well-known open-source options for that category by name, and ask which one they want before proceeding.
 3. If the user is cloning a GitHub URL, assume the repo may already contain a docker-compose.yaml. Inform the user that Podium will replace it with a managed version, then run `podium clone` with --overwrite-docker-compose.
 4. If the user is setting up an existing local project directory, check whether a docker-compose.yaml already exists in that directory. If it does, inform the user it will be replaced, then run `podium setup` with --overwrite-docker-compose.
-5. Create or enter the Podium-managed project first.
-6. After the project exists, look for the generated project's .env file.
-7. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
-8. Build the app using framework-native conventions.
+5. Before running `podium new` or `podium clone`, check that the project directory does not already exist in the projects directory. If it does, stop and tell the user — do not attempt to reuse, repair, or work inside the existing directory. Ask the user if they want to remove it first before continuing.
+6. Create or enter the Podium-managed project first.
+7. After the project exists, look for the generated project's .env file.
+8. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
+9. Build the app using framework-native conventions.
 
 Rules:
 

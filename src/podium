@@ -317,7 +317,12 @@ case "$1" in
     "pip"|"pip3")
         validate_project_context || exit 1
         shift
-        docker_exec_notty developer pip3 "$@"
+        if [[ "$1" == "install" ]]; then
+            shift
+            docker_exec_notty developer pip3 install --break-system-packages "$@"
+        else
+            docker_exec_notty developer pip3 "$@"
+        fi
         ;;
     "shell")
         validate_project_context || exit 1

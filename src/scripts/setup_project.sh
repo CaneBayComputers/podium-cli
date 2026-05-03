@@ -142,8 +142,8 @@ fi
 # Initialize debug logging
 debug "Script started: setup_project.sh with args: $ORIGINAL_ARGS"
 
-# Interactive prompts for metadata (only in interactive mode)
-if [[ "$JSON_OUTPUT" != "1" ]]; then
+# Interactive prompts for metadata (only when stdout is a real terminal)
+if [[ "$JSON_OUTPUT" != "1" ]] && [ -t 0 ]; then
     # Prompt for display name if not provided
     if [ -z "$DISPLAY_NAME" ]; then
         echo-yellow -n "Enter project name [$PROJECT_NAME]: "
@@ -154,14 +154,14 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
             DISPLAY_NAME="$PROJECT_NAME"
         fi
     fi
-    
+
     # Prompt for description if not provided
     if [ -z "$PROJECT_DESCRIPTION" ]; then
         echo-yellow -n "Enter project description (optional): "
         read USER_DESCRIPTION
         PROJECT_DESCRIPTION="$USER_DESCRIPTION"
     fi
-    
+
     # Prompt for emoji if not provided
     if [ -z "$PROJECT_EMOJI" ] || [ "$PROJECT_EMOJI" = "🚀" ]; then
         echo-yellow "Choose project emoji:"
@@ -195,10 +195,9 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
         esac
     fi
 else
-    # Set default display name if not provided (JSON mode)
-    if [ -z "$DISPLAY_NAME" ]; then
-        DISPLAY_NAME="$PROJECT_NAME"
-    fi
+    # Non-interactive: apply defaults silently
+    [ -z "$DISPLAY_NAME" ] && DISPLAY_NAME="$PROJECT_NAME"
+    [ -z "$PROJECT_EMOJI" ]  && PROJECT_EMOJI="🚀"
 fi
 
 # Use the configured projects directory
@@ -578,6 +577,17 @@ if [ "$FRAMEWORK_IS_NODE" = "1" ] && [ -f "package.json" ]; then
     else
         docker exec "$PROJECT_NAME" supervisorctl restart node-app
     fi
+fi
+
+# Install Python dependencies for Python projects
+if [ "$FRAMEWORK_IS_PYTHON" = "1" ] && [ -f "requirements.txt" ]; then
+    echo-cyan "Installing Python dependencies ..."; echo-white
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && pip3 install --break-system-packages -r requirements.txt" > /dev/null 2>&1
+    else
+        docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && pip3 install --break-system-packages -r requirements.txt"
+    fi
+    echo-green "Python dependencies installed!"; echo-white
 fi
 
 # Install and build front-end assets when Vite/Laravel is detected (host-side Node)
