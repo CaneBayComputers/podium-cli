@@ -34,6 +34,13 @@ fi
 # Source the environment file
 source /etc/podium-cli/.env
 
+# Check Docker is accessible — catches both "not in docker group yet" and "Docker not running"
+if command -v docker >/dev/null 2>&1; then
+    if ! docker info >/dev/null 2>&1; then
+        error "Docker is not accessible. If you just installed Podium, log out and back in (SSH users: reconnect) so your Docker group permissions take effect. If Docker is already set up, make sure the Docker service is running." 0
+    fi
+fi
+
 # Set up projects directory path and validate it exists
 PROJECTS_DIR_PATH=$(get_projects_dir)
 if [ ! -d "$PROJECTS_DIR_PATH" ]; then
