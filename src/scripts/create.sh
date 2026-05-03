@@ -80,10 +80,11 @@ Rules:
 9. Do not require the user to manually create database tables.
 10. If the app needs mail, cache, queues, sessions, or database access, use the available .env configuration when present.
 11. Update the generated project's README with startup instructions, local URL, useful commands, and default credentials if any.
-12. If the user provides a GitHub HTTPS URL, consider cloning or setting up that project using Podium conventions.
-15. When running `podium clone` or `podium setup`, always pass --overwrite-docker-compose. Existing projects almost always have their own docker-compose.yaml and Podium must replace it with its own managed version.
+12. If the user provides a GitHub HTTPS URL, clone that repo using `podium clone` with --overwrite-docker-compose and --no-github. Do not fork it. The original repo remains the upstream so the user can pull future updates. Only create a new separate GitHub repo for the user if they explicitly ask for one.
 13. If the user's request matches a mature existing open-source app category, it is acceptable to ask whether they want to use/adapt an existing project instead of building from scratch.
 14. Never use --json-output with `podium new`. That flag suppresses all output so you cannot tell if the command succeeded or failed. Without --json-output, success and errors are printed to stdout where you can read them.
+15. When running `podium clone` or `podium setup`, always pass --overwrite-docker-compose. Existing projects almost always have their own docker-compose.yaml and Podium must replace it with its own managed version.
+16. Always pass --no-github to `podium new` and `podium clone` unless the user explicitly asks to create a GitHub repository.
 
 User project idea:
 
