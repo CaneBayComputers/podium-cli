@@ -1,10 +1,12 @@
 # Podium CLI
 
+Podium is a Docker based local development environment manager for PHP, Python, and Node projects. It gives AI coding agents a predictable local development environment so they can create and modify real apps without installing runtimes, databases, or services directly on your host machine.
+
 Every tutorial about coding with AI skips a step. They show you how to prompt. How to iterate. How to ship. They assume you already have a working local development environment. Most people don't. They get stuck installing Docker, fighting config files, Googling why their port isn't working. They give up before they write a single line of code.
 
 Podium is the missing first step.
 
-One command and you have a running project. A real URL. A real database. Everything wired together. No Docker knowledge required. No config files to wrestle with. No Googling why your port isn't working. Just a URL and a folder, ready for an AI to write code into.
+One command and you have a running project. A real URL. A real database. Everything wired together. No Docker knowledge required. No config files to wrestle with. Just a URL and a folder, ready for an AI to write code into.
 
 Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares the same database, Redis, and services automatically. A Laravel backend and a FastAPI service can talk to the same database on day one without any extra configuration. That is not a convenience feature. That is production parity on localhost, baked in from the start.
 
@@ -97,7 +99,24 @@ cd podium-cli
 
 ## Quick Start
 
-**Open a terminal and start your first Podium project:**
+### Let an AI build your first project
+
+```bash
+podium create
+```
+
+Describe what you want in plain English. Podium adds project creation instructions and sends your idea to your configured AI CLI. The AI creates the project, wires up the database and environment, builds the app using framework-native conventions, and updates the project README with the local URL and any default credentials.
+
+```bash
+podium create "A timeclock for employees in Django"
+podium create "A customer check-in system in Laravel"
+podium create "An inventory tracker in Express"
+```
+
+The AI CLI can be cloud-based or local depending on your configuration. See [AI-assisted project creation](#-ai-assisted-project-creation) and `podium ai-set` for setup details.
+
+### Or create a project manually
+
 ```bash
 podium new
 ```
@@ -300,25 +319,32 @@ Examples:
 
 ### 🤖 AI-assisted project creation
 
-`podium create` turns a plain English description into a working Podium-managed project using your configured AI agent:
+`podium create` collects your project idea, adds Podium-specific instructions, and hands the combined prompt to your configured AI CLI. Podium sets up the environment. The AI builds the app.
 
 ```bash
-# Interactive — AI will ask for clarification if the stack is unclear
+# Podium will prompt you for an idea
 podium create
 
-# With idea inline
-podium create "A task tracker with user auth and tagging"
+# Pass the idea directly
+podium create "A timeclock for employees in Django"
+podium create "A customer check-in system in Laravel"
+podium create "An inventory tracker in Express"
 
-# Clone and set up an existing open-source project
+# Point to an existing GitHub repo to clone and set it up
 podium create "https://github.com/monicahq/monica"
 ```
 
-The AI will:
-1. Ask which framework to use if the stack is ambiguous.
-2. Run `podium new` (or `podium clone`) to create the project.
-3. Read the generated `.env` file to understand database, cache, and mail configuration.
-4. Build the app using framework-native conventions (migrations, models, seeders).
-5. Update the project `README` with the local URL, useful commands, and default credentials.
+What the AI agent does:
+
+1. If the framework or stack is unclear, asks which one to use before continuing.
+2. Runs `podium new` to create the project and start its containers.
+3. Reads the generated `.env` file to understand database, cache, and mail configuration.
+4. Builds the app using framework-native conventions: migrations, models, seeders, routes, controllers, templates.
+5. Updates the project README with the local URL, useful commands, and default credentials if any.
+
+If your idea matches a mature open-source category such as a CRM, wiki, or helpdesk, the AI may suggest using or adapting an existing project rather than building from scratch.
+
+The AI CLI can be cloud-based or local depending on your configuration. Use `podium ai-set` to choose which agent is used.
 
 ### 🤖 One-off AI prompts
 
