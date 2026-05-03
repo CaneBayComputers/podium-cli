@@ -117,6 +117,12 @@ PREPEND_EOF
 
 FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
 
+if [[ "$ONE_OFF" == "1" ]]; then
+    FULL_PROMPT="${FULL_PROMPT}
+
+NON-INTERACTIVE MODE: You cannot ask the user any questions. Make all decisions autonomously using sensible defaults derived from the project idea. Derive the project name directly from the idea (e.g. 'recipe-book' for a recipe app). If the framework is stated, use it. If not, pick the most appropriate one. If a project directory already exists, stop and report it — do not proceed. Do not wait for confirmation at any step."
+fi
+
 # Start in the podium-cli root so the AI can immediately read README.md and src/podium.
 cd "$DEV_DIR/.."
 
