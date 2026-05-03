@@ -296,71 +296,74 @@ echo-return "$(pwd)"; echo-return
 # Determine PHP version
 PHP_VERSION=""
 
-# Use forced version if provided
-if [ -n "$FORCED_PHP_VERSION" ]; then
-    if [[ "$FORCED_PHP_VERSION" == "7" || "$FORCED_PHP_VERSION" == "8" ]]; then
-        PHP_VERSION="$FORCED_PHP_VERSION"
-    else
-        error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
-    fi
-fi
+# PHP version detection is only relevant for PHP-based frameworks
+if [ "$FRAMEWORK_IS_PYTHON" != "1" ] && [ "$FRAMEWORK_IS_NODE" != "1" ]; then
 
-# If not forced, try to detect from existing files
-if [ -z "$PHP_VERSION" ]; then
-    # Check composer.json first
-    if [ -f "composer.json" ]; then
-        if grep -q '"php":\s*"^7' composer.json; then
-            PHP_VERSION="7"
-        elif grep -q '"php":\s*"^8' composer.json; then
-            PHP_VERSION="8"
-        fi
-    fi
-    
-    # Check for WordPress readme.html if still not determined
-    if [ -z "$PHP_VERSION" ] && [ -f "readme.html" ]; then
-        if grep -q '<strong>8\.[0-9]\+</strong>' readme.html; then
-            PHP_VERSION="8"
-        elif grep -q '<strong>7\.[0-9]\+</strong>' readme.html; then
-            PHP_VERSION="7"
-        fi
-    fi
-    
-    # If still not determined, handle based on mode and project type
-    if [ -z "$PHP_VERSION" ]; then
-        if [[ "$JSON_OUTPUT" != "1" ]]; then
-            # Check if this looks like a new project (minimal files)
-            FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
-            if [ "$FILE_COUNT" -le 3 ]; then  # Likely just index.php, maybe .gitignore, etc.
-                PHP_VERSION="8"
-            else
-                # For existing projects with many files, ask the user
-                echo-yellow "Could not determine PHP version automatically."
-                echo-yellow -n "Which PHP version would you like to use? (7/8) [8]: "
-                read USER_PHP_VERSION
-                if [ -z "$USER_PHP_VERSION" ]; then
-                    PHP_VERSION="8"
-                elif [[ "$USER_PHP_VERSION" == "7" || "$USER_PHP_VERSION" == "8" ]]; then
-                    PHP_VERSION="$USER_PHP_VERSION"
-                else
-                    echo-red "Invalid PHP version. Defaulting to 8."
-                    PHP_VERSION="8"
-                fi
-            fi
+    # Use forced version if provided
+    if [ -n "$FORCED_PHP_VERSION" ]; then
+        if [[ "$FORCED_PHP_VERSION" == "7" || "$FORCED_PHP_VERSION" == "8" ]]; then
+            PHP_VERSION="$FORCED_PHP_VERSION"
         else
-            # JSON mode - default to 8
-            PHP_VERSION="8"
+            error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
         fi
     fi
+
+    # If not forced, try to detect from existing files
+    if [ -z "$PHP_VERSION" ]; then
+        # Check composer.json first
+        if [ -f "composer.json" ]; then
+            if grep -q '"php":\s*"^7' composer.json; then
+                PHP_VERSION="7"
+            elif grep -q '"php":\s*"^8' composer.json; then
+                PHP_VERSION="8"
+            fi
+        fi
+
+        # Check for WordPress readme.html if still not determined
+        if [ -z "$PHP_VERSION" ] && [ -f "readme.html" ]; then
+            if grep -q '<strong>8\.[0-9]\+</strong>' readme.html; then
+                PHP_VERSION="8"
+            elif grep -q '<strong>7\.[0-9]\+</strong>' readme.html; then
+                PHP_VERSION="7"
+            fi
+        fi
+
+        # If still not determined, handle based on mode and project type
+        if [ -z "$PHP_VERSION" ]; then
+            if [[ "$JSON_OUTPUT" != "1" ]] && [ -t 0 ]; then
+                # Check if this looks like a new project (minimal files)
+                FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
+                if [ "$FILE_COUNT" -le 3 ]; then
+                    PHP_VERSION="8"
+                else
+                    # For existing projects with many files, ask the user
+                    echo-yellow "Could not determine PHP version automatically."
+                    echo-yellow -n "Which PHP version would you like to use? (7/8) [8]: "
+                    read USER_PHP_VERSION
+                    if [ -z "$USER_PHP_VERSION" ]; then
+                        PHP_VERSION="8"
+                    elif [[ "$USER_PHP_VERSION" == "7" || "$USER_PHP_VERSION" == "8" ]]; then
+                        PHP_VERSION="$USER_PHP_VERSION"
+                    else
+                        echo-red "Invalid PHP version. Defaulting to 8."
+                        PHP_VERSION="8"
+                    fi
+                fi
+            else
+                PHP_VERSION="8"
+            fi
+        fi
+    fi
+
+    # Display appropriate message based on how PHP version was determined
+    FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
+    if [[ "$JSON_OUTPUT" != "1" ]] && [ "$FILE_COUNT" -le 3 ] && [ -z "$FORCED_PHP_VERSION" ]; then
+        echo-green "New project detected. Defaulting to PHP $PHP_VERSION."
+    fi
+
+    echo-green "Using PHP version: $PHP_VERSION"
+
 fi
-
-
-# Display appropriate message based on how PHP version was determined
-FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
-if [[ "$JSON_OUTPUT" != "1" ]] && [ "$FILE_COUNT" -le 3 ] && [ -z "$FORCED_PHP_VERSION" ]; then
-    echo-green "New project detected. Defaulting to PHP $PHP_VERSION."
-fi
-
-echo-green "Using PHP version: $PHP_VERSION"
 
 
 # Convert dashes to underscores

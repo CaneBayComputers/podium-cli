@@ -589,7 +589,7 @@ case "$1" in
     "clone")
         if [ -z "$2" ]; then
             echo-red "Usage: podium clone <repository-url> [project-name] [options]"
-            echo-white "Options: --overwrite-docker-compose, --php-version VERSION"
+            echo-white "Options: --overwrite-docker-compose, --no-github, --framework NAME, --php-version VERSION"
             exit 1
         fi
         "$SCRIPT_DIR/scripts/clone_project.sh" "${@:2}"
