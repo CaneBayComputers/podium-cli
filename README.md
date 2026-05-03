@@ -8,7 +8,20 @@ Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, a
 
 Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
-[Install](#-installation) · [Quick Start](#quick-start) · [Commands](#-commands-overview) · [AI Create](#-ai-assisted-project-creation) · [JSON API](#-json-api-integration) · [Uninstall](#uninstallation)
+---
+
+**Why developers reach for Podium:**
+
+- **No ports to memorize.** Every project lives at `http://project-name` — automatically. No `localhost:3001` vs `localhost:3002` confusion.
+- **One database server for everything.** All your projects share a single MariaDB, PostgreSQL, and Redis instance. Spin up ten projects. They all just work.
+- **`podium up` / `podium down`. That's your entire environment.** One command starts everything — all shared services, all project containers. One command stops it all. Come back tomorrow and run `podium up` again.
+- **Build custom apps from a sentence.** `podium create "A customer portal in Laravel with subscription billing"` — the AI scaffolds it end to end. Database, models, routes, UI, seeds.
+- **Install 24+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
+- **AI that knows what to do.** Tell Podium to "set up n8n" and it installs it. Tell it to "set up n8n and add a Slack webhook" and it installs it first, then customizes it. The AI reaches for the right tool automatically.
+
+---
+
+[Install](#-installation) · [Quick Start](#quick-start) · [One-Command App Library](#-one-command-app-library) · [Commands](#-commands-overview) · [AI Create](#-ai-assisted-project-creation) · [JSON API](#-json-api-integration) · [Uninstall](#uninstallation)
 
 
 ## 💾 Installation
@@ -168,6 +181,77 @@ podium create "https://github.com/monicahq/monica"
 ```
 
 
+## ⚡ One-Command App Library
+
+Stop copy-pasting docker-compose files from GitHub. Podium ships with battle-tested installers for the most popular self-hosted apps. One command. Fully configured. Running at a local URL in under two minutes.
+
+```bash
+podium install portainer     # Docker management UI
+podium install grafana       # Monitoring dashboards
+podium install gitea         # Self-hosted Git server
+podium install n8n           # Workflow automation
+podium install nextcloud     # File hosting
+podium install wikijs        # Team wiki
+podium install paperless     # Document management
+podium install jellyfin      # Media server
+```
+
+See everything available:
+
+```bash
+podium install --list
+```
+
+Each installer handles the entire setup: creates the right databases, generates secrets, writes the compose file, assigns a VPC IP, starts the container, and waits for HTTP 200. No YAML. No env wrangling. No docs to read.
+
+### AI installs it for you too
+
+The `podium create` AI agent knows about every installer. When you describe a known app, it reaches for the installer automatically — then continues with any customization you asked for:
+
+```bash
+# Agent sees "n8n", runs `podium install n8n`, then sets up the webhook
+podium create "Set up n8n and configure a webhook that posts to Slack"
+
+# Agent installs Gitea, then creates the org and configures SSH
+podium create "I need a private Git server called dev-forge, set it up and create a DevOps org"
+
+# Just install — no customization prompt needed
+podium create "New Grafana"
+```
+
+The installed app lands at `http://<app-name>/` immediately. From there, `podium ai` can continue customizing it in an interactive session.
+
+### Available apps
+
+| App | One-liner | Category |
+|-----|-----------|----------|
+| Changedetection.io | `podium install changedetection` | Monitoring |
+| Dashy | `podium install dashy` | Dashboard |
+| Flame | `podium install flame` | Dashboard |
+| FreshRSS | `podium install freshrss` | RSS |
+| Grafana | `podium install grafana` | Monitoring |
+| Grocy | `podium install grocy` | Home |
+| Heimdall | `podium install heimdall` | Dashboard |
+| IT Tools | `podium install it-tools` | Utilities |
+| Kanboard | `podium install kanboard` | Project Mgmt |
+| Kimai | `podium install kimai` | Time Tracking |
+| LimeSurvey | `podium install limesurvey` | Surveys |
+| Lychee | `podium install lychee` | Photos |
+| Mealie | `podium install mealie` | Recipes |
+| Memos | `podium install memos` | Notes |
+| Miniflux | `podium install miniflux` | RSS |
+| Netdata | `podium install netdata` | Monitoring |
+| Portainer | `podium install portainer` | Docker UI |
+| Redmine | `podium install redmine` | Project Mgmt |
+| Snipe-IT | `podium install snipe-it` | Asset Mgmt |
+| Stirling PDF | `podium install stirling-pdf` | Utilities |
+| Umami | `podium install umami` | Analytics |
+| Vaultwarden | `podium install vaultwarden` | Passwords |
+| Vikunja | `podium install vikunja` | Task Mgmt |
+| Wallabag | `podium install wallabag` | Read Later |
+
+---
+
 ## 🪄 The Magic Commands - Daily Workflow
 
 Podium is designed around two magic commands that handle your entire development environment:
@@ -279,6 +363,7 @@ podium down
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
 | `podium create [--one-off] ["idea"]` | Create a project from a plain English description (AI) |
+| `podium install <app>` | Install a popular OSS app in one command (`--list` to see all) |
 | `podium clone <repo>` | Clone existing project |
 | `podium setup <project> [options]` | Set up an existing project directory |
 | `podium remove <project> [options]` | Remove project |
@@ -347,7 +432,7 @@ What the AI agent does:
 4. Builds the app using framework-native conventions: migrations, models, seeders, routes, controllers, templates.
 5. Updates the project README with the local URL, useful commands, and default credentials if any.
 
-If your idea matches a mature open-source category such as a CRM, wiki, or helpdesk, the AI may suggest using or adapting an existing project rather than building from scratch.
+If your idea matches a known app that has a Podium installer (Grafana, Gitea, n8n, Portainer, etc.), the agent runs `podium install <name>` first — getting it live in seconds — then applies any additional customization from your prompt. You never have to write a docker-compose file or know which port the app listens on.
 
 The AI CLI can be cloud-based or local depending on your configuration. Use `podium ai-set` to choose which agent is used.
 
