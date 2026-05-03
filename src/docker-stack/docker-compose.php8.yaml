@@ -1,6 +1,6 @@
 services:
   server:
-    image: canebaycomputers/cbc:nginx-phpPHP_VERSION
+    image: canebaycomputers/cbc:nginx-php8
     container_name: CONTAINER_NAME
     ports:
       - "PROJECT_PORT:80"

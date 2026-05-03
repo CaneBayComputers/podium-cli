@@ -39,7 +39,6 @@ usage() {
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
@@ -58,7 +57,6 @@ DISPLAY_NAME=""
 PROJECT_DESCRIPTION=""
 PROJECT_EMOJI="🚀"
 OVERWRITE_DOCKER_COMPOSE=""
-FORCED_PHP_VERSION=""
 SKIP_STORAGE_SYMLINK=false
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
@@ -81,14 +79,6 @@ while [[ $# -gt 0 ]]; do
         --overwrite-docker-compose)
             OVERWRITE_DOCKER_COMPOSE=1
             shift
-            ;;
-        --php-version)
-            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
-                FORCED_PHP_VERSION="$2"
-                shift 2
-            else
-                error "Error: --php-version requires a version number"
-            fi
             ;;
         --framework)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
@@ -294,76 +284,6 @@ source "$DEV_DIR/frameworks/${FRAMEWORK}.sh"
 echo-return "$(pwd)"; echo-return
 
 # Determine PHP version
-PHP_VERSION=""
-
-# PHP version detection is only relevant for PHP-based frameworks
-if [ "$FRAMEWORK_IS_PYTHON" != "1" ] && [ "$FRAMEWORK_IS_NODE" != "1" ]; then
-
-    # Use forced version if provided
-    if [ -n "$FORCED_PHP_VERSION" ]; then
-        if [[ "$FORCED_PHP_VERSION" == "7" || "$FORCED_PHP_VERSION" == "8" ]]; then
-            PHP_VERSION="$FORCED_PHP_VERSION"
-        else
-            error "ERROR: Invalid PHP version '$FORCED_PHP_VERSION'. Must be 7 or 8."
-        fi
-    fi
-
-    # If not forced, try to detect from existing files
-    if [ -z "$PHP_VERSION" ]; then
-        # Check composer.json first
-        if [ -f "composer.json" ]; then
-            if grep -q '"php":\s*"^7' composer.json; then
-                PHP_VERSION="7"
-            elif grep -q '"php":\s*"^8' composer.json; then
-                PHP_VERSION="8"
-            fi
-        fi
-
-        # Check for WordPress readme.html if still not determined
-        if [ -z "$PHP_VERSION" ] && [ -f "readme.html" ]; then
-            if grep -q '<strong>8\.[0-9]\+</strong>' readme.html; then
-                PHP_VERSION="8"
-            elif grep -q '<strong>7\.[0-9]\+</strong>' readme.html; then
-                PHP_VERSION="7"
-            fi
-        fi
-
-        # If still not determined, handle based on mode and project type
-        if [ -z "$PHP_VERSION" ]; then
-            if [[ "$JSON_OUTPUT" != "1" ]] && [ -t 0 ]; then
-                # Check if this looks like a new project (minimal files)
-                FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
-                if [ "$FILE_COUNT" -le 3 ]; then
-                    PHP_VERSION="8"
-                else
-                    # For existing projects with many files, ask the user
-                    echo-yellow "Could not determine PHP version automatically."
-                    echo-yellow -n "Which PHP version would you like to use? (7/8) [8]: "
-                    read USER_PHP_VERSION
-                    if [ -z "$USER_PHP_VERSION" ]; then
-                        PHP_VERSION="8"
-                    elif [[ "$USER_PHP_VERSION" == "7" || "$USER_PHP_VERSION" == "8" ]]; then
-                        PHP_VERSION="$USER_PHP_VERSION"
-                    else
-                        echo-red "Invalid PHP version. Defaulting to 8."
-                        PHP_VERSION="8"
-                    fi
-                fi
-            else
-                PHP_VERSION="8"
-            fi
-        fi
-    fi
-
-    # Display appropriate message based on how PHP version was determined
-    FILE_COUNT=$(find . -maxdepth 1 -type f | wc -l)
-    if [[ "$JSON_OUTPUT" != "1" ]] && [ "$FILE_COUNT" -le 3 ] && [ -z "$FORCED_PHP_VERSION" ]; then
-        echo-green "New project detected. Defaulting to PHP $PHP_VERSION."
-    fi
-
-    echo-green "Using PHP version: $PHP_VERSION"
-
-fi
 
 
 # Convert dashes to underscores
@@ -436,17 +356,13 @@ if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
 elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
     cp -f "$PODIUM_DIR/docker-stack/docker-compose.node-project.yaml" docker-compose.yaml
 else
-    cp -f "$PODIUM_DIR/docker-stack/docker-compose.project.yaml" docker-compose.yaml
+    cp -f "$PODIUM_DIR/docker-stack/docker-compose.php8.yaml" docker-compose.yaml
 fi
 _compose_file_created=1
 
 podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
-
-if [ "$FRAMEWORK_IS_PYTHON" != "1" ] && [ "$FRAMEWORK_IS_NODE" != "1" ]; then
-    podium-sed "s/PHP_VERSION/$PHP_VERSION/g" docker-compose.yaml
-fi
 
 podium-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
 
@@ -681,7 +597,7 @@ framework_setup_gitignore
 # Setup completed
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Build JSON response with optional fields
-    JSON_RESPONSE="{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"php_version\": \"$PHP_VERSION\", \"status\": \"success\""
+    JSON_RESPONSE="{\"action\": \"setup_project\", \"project_name\": \"$PROJECT_NAME\", \"database\": \"$DATABASE_ENGINE\", \"status\": \"success\""
     
     # Add shutdown result if captured
     if [ -n "$SHUTDOWN_OUTPUT" ]; then
@@ -699,7 +615,6 @@ else
     echo-return; echo-return
     echo-green "Setup completed for project: $PROJECT_NAME"
     echo-white "Database: $DATABASE_ENGINE"
-    echo-white "PHP Version: $PHP_VERSION"
     echo-return
 
     # Build status options

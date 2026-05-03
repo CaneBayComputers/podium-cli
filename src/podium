@@ -114,13 +114,14 @@ show_help() {
     echo
     echo-white "CLONE PROJECT OPTIONS:"
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
-    echo "  --php-version VERSION     - Force specific PHP version (7 or 8)"
+    echo "  --framework NAME          - Force framework (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
+    echo "  --no-github               - Skip GitHub repository creation (default)"
     echo "  --json-output             - Output results in JSON format"
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "SETUP PROJECT OPTIONS:"
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
-    echo "  --php-version VERSION     - Force specific PHP version (7 or 8)"
+    echo "  --framework NAME          - Force framework (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo "  --json-output             - Output results in JSON format"
     echo "  --no-colors               - Disable colored output"
     echo

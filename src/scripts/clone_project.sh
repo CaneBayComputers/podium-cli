@@ -19,7 +19,6 @@ NO_COLOR="${NO_COLOR:-}"
 REPOSITORY=""
 PROJECT_NAME=""
 OVERWRITE_DOCKER_COMPOSE=""
-PHP_VERSION=""
 DATABASE_ENGINE=""
 DISPLAY_NAME=""
 PROJECT_DESCRIPTION=""
@@ -45,7 +44,6 @@ usage() {
     echo-white "  --no-colors                  Disable colored output"
     echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --php-version VERSION        Force specific PHP version (7 or 8)"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --display-name NAME          Display name for project (optional)"
     echo-white "  --description TEXT           Project description (optional)"
@@ -80,14 +78,6 @@ while [[ $# -gt 0 ]]; do
         --overwrite-docker-compose)
             OVERWRITE_DOCKER_COMPOSE=1
             shift
-            ;;
-        --php-version)
-            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
-                PHP_VERSION="$2"
-                shift 2
-            else
-                error "Error: --php-version requires a version number"
-            fi
             ;;
         --database)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
@@ -438,9 +428,6 @@ if [[ "$DEBUG" == "1" ]]; then
 fi
 if [[ "$OVERWRITE_DOCKER_COMPOSE" == "1" ]]; then
     SETUP_ARGS+=("--overwrite-docker-compose")
-fi
-if [[ -n "$PHP_VERSION" ]]; then
-    SETUP_ARGS+=("--php-version" "$PHP_VERSION")
 fi
 if [[ "$NO_STORAGE_SYMLINK" == "1" ]]; then
     SETUP_ARGS+=("--no-storage-symlink")

@@ -641,9 +641,6 @@ fi
 if [[ "$DEBUG" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --debug"
 fi
-if [[ "$FRAMEWORK" == "php" && "$VERSION" != "8" && "$VERSION" != "latest" ]]; then
-    SETUP_OPTIONS="$SETUP_OPTIONS --php-version $VERSION"
-fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # In JSON mode, capture setup output and combine with new_project info

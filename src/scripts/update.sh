@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
             echo "Update Podium CLI and its base Docker images."
             echo
             echo "This command:"
-            echo "  - Updates canebaycomputers/cbc:nginx-php8 and nginx-php7 Docker images (best-effort)."
+            echo "  - Updates canebaycomputers/cbc:nginx-php8 Docker image (best-effort)."
             echo "  - Re-runs the Podium CLI install script for your platform from GitHub."
             echo
             echo "Options:"
@@ -98,7 +98,6 @@ else
 
     BASE_IMAGES=(
         "canebaycomputers/cbc:nginx-php8"
-        "canebaycomputers/cbc:nginx-php7"
     )
 
     for image in "${BASE_IMAGES[@]}"; do

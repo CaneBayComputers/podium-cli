@@ -381,7 +381,7 @@ podium ai "Build a unique homepage hero section."
 |--------|-------------|---------|
 | `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node` |
 | `--display-name <name>` | Display name for project | Required with `--json-output` |
-| `--version <ver>` | Framework/PHP version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version<br/>**PHP:** `8` (default - PHP 8.3), `7` (PHP 7.4) |
+| `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
 | `--description <text>` | Project description | Optional text description |
 | `--emoji <emoji>` | Project emoji | Will prompt if not provided |
