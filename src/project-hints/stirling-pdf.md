@@ -21,6 +21,7 @@ services:
     restart: unless-stopped
     environment:
       DOCKER_ENABLE_SECURITY: "false"
+      SECURITY_ENABLE_LOGIN: "false"
     volumes:
       - stirling-training:/usr/share/tesseract-ocr/5/tessdata
     networks:

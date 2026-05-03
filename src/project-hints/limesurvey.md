@@ -2,11 +2,15 @@
 
 LimeSurvey is distributed as `martialblog/limesurvey:latest`. It is an online survey platform that listens on port **8080**. Use an nginx reverse proxy to expose it at port 80.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB, but create a dedicated user — the `martialblog/limesurvey` image requires a **non-empty** database password and will fail with an empty root password:
+```bash
+docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS limesurvey; CREATE USER IF NOT EXISTS 'limesurvey'@'%' IDENTIFIED BY 'limesurvey'; GRANT ALL PRIVILEGES ON limesurvey.* TO 'limesurvey'@'%'; FLUSH PRIVILEGES;"
+```
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/limesurvey`
+1. Create DB user: `docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS limesurvey; CREATE USER IF NOT EXISTS 'limesurvey'@'%' IDENTIFIED BY 'limesurvey'; GRANT ALL PRIVILEGES ON limesurvey.* TO 'limesurvey'@'%'; FLUSH PRIVILEGES;"`
+2. `mkdir -p ~/podium-projects/limesurvey`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
 3. `cd ~/podium-projects/limesurvey && podium setup limesurvey --no-startup`
 4. `podium up limesurvey`
@@ -24,8 +28,8 @@ services:
       DB_HOST: podium-mariadb
       DB_PORT: 3306
       DB_NAME: limesurvey
-      DB_USERNAME: root
-      DB_PASSWORD: ""
+      DB_USERNAME: limesurvey
+      DB_PASSWORD: "limesurvey"
       ADMIN_USER: admin
       ADMIN_NAME: Administrator
       ADMIN_EMAIL: admin@example.com
