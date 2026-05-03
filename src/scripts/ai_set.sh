@@ -27,17 +27,13 @@ NEW_API_KEY=""
 #       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `claude`)
 #       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `claude`)
 #   - gemini
-#       * AI_MODEL: ignored for now
-#       * AI_API_KEY: OPTIONAL (when set, passed as `--api-key "$AI_API_KEY"` to `gemini`)
-#   - grok
-#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `grok`)
-#       * AI_API_KEY: REQUIRED (passed as `--api-key "$AI_API_KEY"` to `grok`)
+#       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `gemini`)
+#       * AI_API_KEY: not used (gemini uses Google account auth or GEMINI_API_KEY env var)
 #
 # Initial-prompt behavior (driven by `podium ai "<prompt>"`):
 #   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"`
 #   - claude : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
-#   - gemini : `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
-#   - grok   : `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
+#   - gemini : `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"`
 
 usage() {
     echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--json-output]"
@@ -45,15 +41,14 @@ usage() {
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, grok, or custom)."
-    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, grok; ignored for gemini)."
-    echo-white "  --api-key KEY      Set the AI API key (required by grok; optional for codex, claude, gemini)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, or custom)."
+    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini)."
+    echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
     echo-white "Notes:"
     echo-white "  - When --json-output is used, no interactive prompts are shown."
     echo-white "  - If called with only --json-output, the current configuration is returned as JSON."
-    echo-white "  - Gemini does not currently use AI_MODEL."
 }
 
 # Parse arguments
@@ -119,10 +114,9 @@ select_ai_agent() {
         echo-white '  1) codex'
         echo-white '  2) claude'
         echo-white '  3) gemini'
-        echo-white '  4) grok'
-        echo-white '  5) other'
+        echo-white '  4) other'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-5): '
+        echo-yellow -ne 'Enter your choice (1-4): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
@@ -144,11 +138,6 @@ select_ai_agent() {
                 break
                 ;;
             4)
-                AI_AGENT="grok"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
-                break
-                ;;
-            5)
                 echo-yellow -ne 'Enter the command name for your AI agent CLI: '
                 echo-white -ne
                 read CUSTOM_AI_AGENT
@@ -162,7 +151,7 @@ select_ai_agent() {
                 break
                 ;;
             *)
-                echo-yellow "Invalid selection. Please enter a number between 1 and 5."
+                echo-yellow "Invalid selection. Please enter a number between 1 and 4."
                 ;;
         esac
     done
@@ -204,34 +193,6 @@ configure_ai_api_key() {
     if [[ -n "$NEW_AI_API_KEY" ]]; then
         AI_API_KEY="$NEW_AI_API_KEY"
     fi
-}
-
-configure_grok_api_key_required() {
-    while true; do
-        echo-return
-        echo-cyan "Grok API key (required)"; echo-white
-        echo-white "Grok requires an API key before it can run."
-        echo-white "You can create a key here: https://docs.x.ai/docs/overview"
-        if [[ -n "$AI_API_KEY" ]]; then
-            echo-yellow "Press Enter to keep the existing key, or enter a new one."
-        fi
-        echo-yellow -ne 'Enter Grok API key: '
-        echo-white -ne
-        read -r NEW_AI_API_KEY
-        echo-return
-
-        if [[ -z "$NEW_AI_API_KEY" && -n "$AI_API_KEY" ]]; then
-            # Keep existing
-            return 0
-        fi
-
-        if [[ -n "$NEW_AI_API_KEY" ]]; then
-            AI_API_KEY="$NEW_AI_API_KEY"
-            return 0
-        fi
-
-        echo-yellow "Grok API key cannot be empty."; echo-white
-    done
 }
 
 configure_codex_auth() {
@@ -393,9 +354,6 @@ ensure_ai_agent_installed() {
         claude)
             curl -fsSL https://claude.ai/install.sh | bash
             ;;
-        grok)
-            npm install -g @vibe-kit/grok-cli
-            ;;
         *)
             echo-yellow "Automatic installation for '$cli_command' is not configured. Please install it manually."
             ;;
@@ -413,9 +371,6 @@ ensure_ai_agent_installed() {
 }
 
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
-    # Validation for non-interactive mode
-    # grok stores its own API key in ~/.grok/user-settings.json — AI_API_KEY is optional
-
     ensure_ai_agent_installed "$AI_AGENT"
 
     # Persist configuration
@@ -468,8 +423,6 @@ else
 fi
 
 prompt_ai_model
-
-# grok uses ~/.grok/user-settings.json for auth; no mandatory key check needed
 
 ensure_ai_agent_installed "$AI_AGENT"
 

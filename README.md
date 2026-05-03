@@ -308,19 +308,19 @@ podium ai-set --json-output
 
 Supported flags:
 
-- `--agent <name>` – Set the AI agent CLI (for example: `codex`, `claude`, `gemini`, `deepseek`, `grok`, or a custom command).
-- `--model <name>` – Set the model name; optional for `codex`, `claude`, and `grok`. Ignored for `gemini` and `deepseek` in the current flow.
-- `--api-key <key>` – Set the AI API key, required by DeepSeek and Grok, optional for Codex, Claude, and Gemini.
+- `--agent <name>` – Set the AI agent CLI (`codex`, `claude`, `gemini`, or a custom command name).
+- `--model <name>` – Set the model name (optional for all supported agents).
+- `--api-key <key>` – Set the AI API key (optional for Codex and Claude; not used by Gemini which uses Google account auth).
 - `--json-output` – Return the current configuration or update result as JSON (non-interactive).
 
 Examples:
 
 - Inspect current AI settings:
   - `podium ai-set --json-output`
-- Configure Grok with an explicit model:
-  - `podium ai-set --agent grok --model grok-beta`
+- Configure Codex with a model:
+  - `podium ai-set --agent codex --model gpt-4.1`
 - Configure Claude with a model:
-  - `podium ai-set --agent claude --model claude-3.7-sonnet`
+  - `podium ai-set --agent claude --model claude-opus-4-7`
 
 ### 🤖 AI-assisted project creation
 
@@ -370,11 +370,9 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 
 - Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
 - Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
-  - DeepSeek: `deepseek --api-key "$AI_API_KEY" -q "<prompt>"`
   - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
   - Claude: `claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"` (`-p` added for `--one-off`)
-  - Gemini: `gemini [--api-key "$AI_API_KEY"] -i "<prompt>"`
-  - Grok: `grok [--model "$AI_MODEL"] --api-key "$AI_API_KEY" "<prompt>"`
+  - Gemini: `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"` (interactive) / `... --output-format text --prompt ...` (one-off)
 
 ## 🎯 Command Options
 

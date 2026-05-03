@@ -70,17 +70,6 @@ if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
 fi
 
 case "$AI_AGENT_CLI_NAME" in
-    deepseek)
-        if [[ -z "$AI_API_KEY" ]]; then
-            echo-yellow "AI_API_KEY is not configured; cannot call DeepSeek CLI."
-            echo-yellow "Run 'podium ai-set"
-        else
-            deepseek_args=()
-            deepseek_args+=("--api-key" "$AI_API_KEY")
-            deepseek_args+=("-q" "$INIT_PROMPT")
-            deepseek "${deepseek_args[@]}"
-        fi
-        ;;
     codex)
         codex_args=()
         if [[ -n "$AI_MODEL" ]]; then
@@ -123,26 +112,9 @@ case "$AI_AGENT_CLI_NAME" in
         fi
         gemini "${gemini_args[@]}"
         ;;
-    grok)
-        grok_args=()
-        if [[ -n "$AI_MODEL" ]]; then
-            grok_args+=("--model" "$AI_MODEL")
-        fi
-        # grok stores its API key in ~/.grok/user-settings.json; only pass --api-key
-        # if explicitly configured in podium (AI_API_KEY overrides the stored key)
-        if [[ -n "$AI_API_KEY" ]]; then
-            grok_args+=("--api-key" "$AI_API_KEY")
-        fi
-        if [[ "$ONE_OFF" == "1" ]]; then
-            grok_args+=("--prompt" "$INIT_PROMPT")
-        else
-            grok_args+=("$INIT_PROMPT")
-        fi
-        grok "${grok_args[@]}"
-        ;;
     *)
-        echo-yellow "Interactive session integration is not configured for '$AI_AGENT_CLI_NAME'."
-        echo-yellow "Please start your AI agent CLI in this directory and use the following prompt:"
+        echo-yellow "Automatic integration is not configured for '$AI_AGENT_CLI_NAME'."
+        echo-yellow "Please start your AI agent CLI (codex, claude, or gemini) in this directory and use the following prompt:"
         echo-white "$INIT_PROMPT"
         ;;
 esac
