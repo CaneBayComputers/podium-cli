@@ -125,3 +125,68 @@ This logic lives in `src/scripts/setup_project.sh`. The adaptation is a Python s
 **What belongs in a hints file**: only non-obvious things that an agent would reliably get wrong without guidance. Keep them short. Do not duplicate information already in the agent prompt or the project's own README.
 
 **What does NOT belong**: framework-general advice (already in `create.sh`), steps the agent can infer from the project docs, or workarounds for bugs that have since been fixed in the cbc images or Podium core.
+
+---
+
+## OSS Project Testing
+
+Podium is validated against real open-source apps by deploying them end-to-end using AI agents across multiple machines. The workflow is:
+
+1. Write a `tests/oss-<machine>.sh` harness — one `run_project()` call per app, all run in parallel via `&` + `wait`.
+2. Each `run_project` call runs `podium create --one-off "<idea>"` and curls the result. Each idea prompt includes a `SUMMARY_SUFFIX` instructing the agent to write `SETUP_SUMMARY.md` in the project dir.
+3. After runs complete, read the master log (`/tmp/podium-tests/oss-master.log`) and `SETUP_SUMMARY.md` files to assess results.
+4. For any app that failed or needed agent workarounds, create or update a `src/project-hints/<slug>.md` file so future runs succeed first-try.
+
+### Test machines and agents
+
+See `machines.local` in the repo root for the current machine list. The canonical setup is:
+
+| Machine | Agent | Test scripts |
+|---------|-------|-------------|
+| dingdong | claude | `tests/oss-dingdong.sh`, `tests/custom-dingdong.sh` |
+| cami | codex | `tests/oss-cami.sh`, `tests/custom-cami.sh` |
+| cassie | gemini | `tests/oss-cassie.sh`, `tests/custom-cassie.sh` |
+
+SSH access: `ssh cami@cami`, `ssh cassie@cassie`. Pull repo on remotes: `ssh cami@cami "sudo git -C /usr/local/share/podium-cli pull"`.
+
+### OSS apps already tested and hinted
+
+The following apps have been deployed successfully and have `src/project-hints/` files validated by real test runs:
+
+| App | Image | Notes |
+|-----|-------|-------|
+| FreshRSS | `freshrss/freshrss:latest` | Port 80 direct, SQLite |
+| Memos | `neosmemo/memos:stable` | Port 5230 → nginx |
+| Grocy | `lscr.io/linuxserver/grocy:latest` | Port 80 direct |
+| Snipe-IT | `snipe/snipe-it:latest` | Needs generated APP_KEY, MariaDB |
+| Kimai | `kimai/kimai2:apache` | Port 8001 → nginx, MariaDB |
+| Redmine | `redmine:latest` | Port 3000 → nginx, MariaDB utf8mb4, wait 60s |
+| Lychee | `lycheeorg/lychee:latest` | Port 8000 → nginx, needs APP_KEY + dedicated DB user |
+| Wallabag | `wallabag/wallabag:latest` | Port 80 direct, MariaDB |
+| Stirling PDF | `frooodle/s-pdf:latest` | Port 8080 → nginx, needs SECURITY_ENABLE_LOGIN=false |
+| IT Tools | `corentinth/it-tools:latest` | Port 80 direct, no config |
+| Changedetection | `ghcr.io/dgtlmoon/changedetection.io` | Port 5000 → nginx, WebSocket headers |
+| Flame | `pawelmalak/flame:latest` | Port 5005 → nginx |
+| Heimdall | `lscr.io/linuxserver/heimdall:latest` | Port 80 direct |
+| Umami | `ghcr.io/umami-software/umami:postgresql-latest` | Port 3000 → nginx, **PostgreSQL only** |
+| Dashy | `lissy93/dashy:latest` | Port 8080 → nginx |
+| LimeSurvey | `martialblog/limesurvey:latest` | Port 8080 → nginx, needs dedicated DB user (empty password rejected) |
+| Miniflux | `miniflux/miniflux:latest` | Port 8080 → nginx, **PostgreSQL only**, RUN_MIGRATIONS=1 |
+| Grafana | `grafana/grafana:latest` | Port 3000 → nginx |
+| Vikunja | `vikunja/vikunja:latest` | Port 3456 → nginx, MariaDB, needs JWTSECRET |
+| Mealie | `ghcr.io/mealie-recipes/mealie:latest` | Port 9000 → nginx, SQLite |
+| Portainer | `portainer/portainer-ce:latest` | Port 9000 → nginx, needs docker.sock mount |
+| Netdata | `netdata/netdata:latest` | Port 19999 → nginx, needs cap_add + host bind mounts |
+| Vaultwarden | `vaultwarden/server:latest` | Port 80 direct |
+| Kanboard | `kanboard/kanboard:latest` | Port 80 direct |
+
+### Adding more OSS apps
+
+To add a new batch:
+1. Add `run_project "<name>" "$IDEA_<NAME>"` entries to the relevant `tests/oss-<machine>.sh`.
+2. Write the `IDEA_*` variable following the established pattern: exact project name, image, port, nginx or direct, DB requirements, step-by-step instructions, `$SUMMARY_SUFFIX`.
+3. Always spell out `mkdir -p ~/podium-projects/<name>` in the steps to prevent agent renaming.
+4. Run: `bash tests/oss-<machine>.sh`
+5. After completion, check `/tmp/podium-tests/oss-master.log` and `SETUP_SUMMARY.md` files.
+6. Create/update `src/project-hints/<slug>.md` for any app that needed workarounds.
+7. Commit updated hints and test scripts.
