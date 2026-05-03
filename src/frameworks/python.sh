@@ -8,16 +8,29 @@ framework_scaffold() {
     echo-return; echo-cyan "Python project selected!"
 
     cat > main.py << 'EOF'
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-def main():
-    print(f"Hello from {os.getenv('APP_NAME', 'my-project')}!")
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = f"<h1>Hello from {os.getenv('APP_NAME', 'Python Project')}!</h1>".encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, format, *args):
+        pass
 
 if __name__ == "__main__":
-    main()
+    port = int(os.getenv("PORT", 8000))
+    server = HTTPServer(("127.0.0.1", port), Handler)
+    print(f"Serving on port {port}", flush=True)
+    server.serve_forever()
 EOF
 
     cat > requirements.txt << 'EOF'
