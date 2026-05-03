@@ -136,9 +136,11 @@ PREPEND_EOF
 FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
 
 if [[ "$ONE_OFF" == "1" ]]; then
-    FULL_PROMPT="${FULL_PROMPT}
+    # Single-quoted so backticks and angle brackets are not interpreted by bash
+    ONE_OFF_SUFFIX='
 
-NON-INTERACTIVE MODE: You cannot ask the user any questions. Make all decisions autonomously using sensible defaults derived from the project idea. Derive the project name directly from the idea (e.g. 'recipe-book' for a recipe app). If the framework is stated, use it. If not, pick the most appropriate one. If a project directory already exists, remove it with `podium remove <name> --force-db-delete` and proceed. Do not wait for confirmation at any step."
+NON-INTERACTIVE MODE: You cannot ask the user any questions. Make all decisions autonomously using sensible defaults derived from the project idea. Derive the project name directly from the idea (e.g. '"'"'recipe-book'"'"' for a recipe app). If the framework is stated, use it. If not, pick the most appropriate one. If a project directory already exists, remove it with `podium remove <name> --force-db-delete` and proceed. Do not wait for confirmation at any step.'
+    FULL_PROMPT="${FULL_PROMPT}${ONE_OFF_SUFFIX}"
 fi
 
 # Start in the podium-cli root so the AI can immediately read README.md and src/podium.
