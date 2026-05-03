@@ -80,6 +80,7 @@ Rules:
 11. Update the generated project's README with startup instructions, local URL, useful commands, and default credentials if any.
 12. If the user provides a GitHub HTTPS URL, consider cloning or setting up that project using Podium conventions.
 13. If the user's request matches a mature existing open-source app category, it is acceptable to ask whether they want to use/adapt an existing project instead of building from scratch.
+14. Never use --json-output with `podium new`. That flag suppresses all output so you cannot tell if the command succeeded or failed. Without --json-output, success and errors are printed to stdout where you can read them.
 
 User project idea:
 
@@ -90,6 +91,6 @@ PREPEND_EOF
 FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
 
 # Start in the podium-cli root so the AI can immediately read README.md and src/podium.
-cd "$DEV_DIR"
+cd "$DEV_DIR/.."
 
 exec "$SCRIPT_DIR/ai.sh" "$FULL_PROMPT"
