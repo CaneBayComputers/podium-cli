@@ -412,12 +412,22 @@ prompt_ai_model
 
 ensure_ai_agent_installed "$AI_AGENT"
 
-if [[ "$AI_AGENT" == "codex" ]]; then
-    configure_codex_auth
-elif [[ "$AI_AGENT" == "claude" ]]; then
-    configure_claude_auth
-elif [[ "$AI_AGENT" == "gemini" ]]; then
-    configure_gemini_auth
+echo-return
+echo-yellow -ne "Set up authentication for '$AI_AGENT'? (y/N): "
+echo-white -ne
+read SETUP_AUTH
+echo-return
+if [[ "$SETUP_AUTH" =~ ^[Yy]$ ]]; then
+    if [[ "$AI_AGENT" == "codex" ]]; then
+        configure_codex_auth
+    elif [[ "$AI_AGENT" == "claude" ]]; then
+        configure_claude_auth
+    elif [[ "$AI_AGENT" == "gemini" ]]; then
+        configure_gemini_auth
+    fi
+else
+    echo-white "Skipping authentication setup. Run 'podium ai-set' again if you need to configure it later."
+    echo-return
 fi
 
 # Persist configuration
