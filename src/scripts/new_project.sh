@@ -280,7 +280,7 @@ fi
 
 # Check for duplicate project names
 while [ -d "$PROJECTS_DIR/$PROJECT_NAME" ]; do
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
+    if [[ "$JSON_OUTPUT" == "1" ]] || ! [ -t 0 ]; then
         json_error "project name '$PROJECT_NAME' already exists"
     else
         echo-red "Error: Project name '$PROJECT_NAME' already exists!"
@@ -377,26 +377,19 @@ case $FRAMEWORK in
                 fi
             fi
         else
-            # In interactive mode, ask for version first, then validate
-            echo-yellow -n "Enter Laravel version [latest]: "
-            read USER_VERSION
-            if [ -z "$USER_VERSION" ]; then
-                VERSION="latest"
-            else
-                VERSION="$USER_VERSION"
-            fi
-            
-            # Validate and loop if invalid
-            while ! validate_laravel_version "$VERSION"; do
-                echo-red "Invalid Laravel version: $VERSION"
+            # In interactive mode, ask for version — skip if stdin is not a TTY (background/pipe)
+            if [ -t 0 ]; then
                 echo-yellow -n "Enter Laravel version [latest]: "
                 read USER_VERSION
-                if [ -z "$USER_VERSION" ]; then
-                    VERSION="latest"
-                else
-                    VERSION="$USER_VERSION"
-                fi
-            done
+                if [ -n "$USER_VERSION" ]; then VERSION="$USER_VERSION"; fi
+                while ! validate_laravel_version "$VERSION"; do
+                    echo-red "Invalid Laravel version: $VERSION"
+                    echo-yellow -n "Enter Laravel version [latest]: "
+                    read USER_VERSION
+                    if [ -z "$USER_VERSION" ]; then VERSION="latest"; else VERSION="$USER_VERSION"; fi
+                done
+            fi
+            # VERSION stays "latest" (default) when not in a TTY
         fi
         
         # Set the version for download
@@ -424,26 +417,19 @@ case $FRAMEWORK in
                 json_error "invalid WordPress version: $VERSION"
             fi
         else
-            # In interactive mode, ask for version first, then validate
-            echo-yellow -n "Enter WordPress version [latest]: "
-            read USER_VERSION
-            if [ -z "$USER_VERSION" ]; then
-                VERSION="latest"
-            else
-                VERSION="$USER_VERSION"
-            fi
-            
-            # Validate and loop if invalid
-            while ! validate_wordpress_version "$VERSION"; do
-                echo-red "Invalid WordPress version: $VERSION"
+            # In interactive mode, ask for version — skip if stdin is not a TTY (background/pipe)
+            if [ -t 0 ]; then
                 echo-yellow -n "Enter WordPress version [latest]: "
                 read USER_VERSION
-                if [ -z "$USER_VERSION" ]; then
-                    VERSION="latest"
-                else
-                    VERSION="$USER_VERSION"
-                fi
-            done
+                if [ -n "$USER_VERSION" ]; then VERSION="$USER_VERSION"; fi
+                while ! validate_wordpress_version "$VERSION"; do
+                    echo-red "Invalid WordPress version: $VERSION"
+                    echo-yellow -n "Enter WordPress version [latest]: "
+                    read USER_VERSION
+                    if [ -z "$USER_VERSION" ]; then VERSION="latest"; else VERSION="$USER_VERSION"; fi
+                done
+            fi
+            # VERSION stays "latest" (default) when not in a TTY
         fi
         
         WP_VERSION="$VERSION"
