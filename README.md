@@ -1,18 +1,12 @@
 # Podium CLI
 
-Podium is a Docker based local development environment manager for PHP, Python, and Node projects. It gives AI coding agents a predictable local development environment so they can create and modify real apps without installing runtimes, databases, or services directly on your host machine.
+Podium is a Docker-based local development environment manager for PHP, Python, and Node projects.
 
-Every tutorial about coding with AI skips a step. They show you how to prompt. How to iterate. How to ship. They assume you already have a working local development environment. Most people don't. They get stuck installing Docker, fighting config files, Googling why their port isn't working. They give up before they write a single line of code.
+Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at a local URL with a live database. No Docker knowledge required. No config files to wrestle with.
 
-Podium is the missing first step.
+Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
 
-One command and you have a running project. A real URL. A real database. Everything wired together. No Docker knowledge required. No config files to wrestle with. Just a URL and a folder, ready for an AI to write code into.
-
-Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares the same database, Redis, and services automatically. A Laravel backend and a FastAPI service can talk to the same database on day one without any extra configuration. That is not a convenience feature. That is production parity on localhost, baked in from the start.
-
-Podium runs on Linux and Mac. It is open source. It is built for developers who want to spend their time building, not configuring.
-
-Stop configuring. Start building.
+Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
 
 ## 💾 Installation
@@ -395,22 +389,22 @@ podium ai "Build a unique homepage hero section."
 | Option | Description |
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
-| `--php-version <ver>` | Force specific PHP version | `7` or `8` |
-| `--database <type>` | Database type | `mysql`, `postgres`, `mongodb` |
-| `--display-name <name>` | Display name for project | Optional |
-| `--description <text>` | Project description | Optional |
-| `--emoji <emoji>` | Project emoji | Default: 🚀 |
-| `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
-| `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
-| `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel projects) |
+| `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
+| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node`) |
+| `--display-name <name>` | Display name for project |
+| `--description <text>` | Project description |
+| `--emoji <emoji>` | Project emoji (default: 🚀) |
+| `--github` | Create GitHub repository in user account |
+| `--github-org <org>` | Create GitHub repository in organization |
+| `--no-github` | Skip GitHub repository creation |
+| `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
 
 ### Setup Project Options
 
 | Option | Description |
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
-| `--php-version <ver>` | Force specific PHP version | `7` or `8` |
-| `--framework <type>` | Force specific framework | `laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node` |
+| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node`) |
 
 ### Remove Project Options
 
@@ -443,7 +437,7 @@ podium ai "Build a unique homepage hero section."
 podium clone https://github.com/user/my-laravel-app
 
 # Clone with custom name and options
-podium clone https://github.com/user/company-project my-local-name --php-version 8
+podium clone https://github.com/user/company-project my-local-name
 
 # Manual Git clone, then setup
 git clone https://github.com/user/company-project
@@ -476,8 +470,8 @@ podium wp plugin list --status=active
 # Get project status as JSON for scripts/GUI
 podium status --json-output
 
-# Create PHP 7.4 project with JSON response
-podium new legacy-api --framework php --version 7 --database postgres --no-github --json-output
+# Create project with JSON response
+podium new my-api --framework fastapi --database postgres --no-github --json-output
 
 # Check if services are running in a script
 if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep -q "RUNNING"; then
