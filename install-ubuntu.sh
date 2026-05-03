@@ -102,6 +102,9 @@ trap "kill \$SUDO_KEEPALIVE_PID 2>/dev/null; exit" INT TERM EXIT
 
 echo -e "${CYAN}Installing system dependencies...${NC}"
 
+# Remove any stale apt source files from previous failed runs
+sudo rm -f /etc/apt/sources.list.d/docker.list
+
 ###############################
 # Update package lists
 ###############################
