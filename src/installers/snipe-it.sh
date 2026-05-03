@@ -9,7 +9,7 @@ pre_install() {
         exit 1
     fi
     echo-green "  APP_KEY generated."
-    docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
+    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
 }
 
 write_files() {

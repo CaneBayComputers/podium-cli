@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Vikunja"
 INSTALL_NOTES="First user to register becomes admin."
 
 pre_install() {
-    docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
+    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
 }
 
 write_files() {

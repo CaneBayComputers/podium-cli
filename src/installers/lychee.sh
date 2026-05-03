@@ -4,7 +4,7 @@ INSTALL_NOTES="Install wizard appears on first visit at /install/admin — creat
 pre_install() {
     echo-white "  Generating Lychee APP_KEY..."
     LYCHEE_APP_KEY="base64:$(openssl rand -base64 32)"
-    docker exec podium-mariadb mysql -u root -e "
+    docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS lychee;
         CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass';
         GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%';

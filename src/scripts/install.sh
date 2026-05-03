@@ -76,7 +76,8 @@ RETRIES=0
 HTTP_CODE="000"
 while [ $RETRIES -lt 15 ]; do
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://$APP/" 2>/dev/null || echo "000")
-    if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+    first_digit="${HTTP_CODE:0:1}"
+    if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
         break
     fi
     RETRIES=$((RETRIES + 1))
@@ -84,7 +85,8 @@ while [ $RETRIES -lt 15 ]; do
 done
 
 echo-return
-if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+first_digit="${HTTP_CODE:0:1}"
+if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
     echo-green "$INSTALL_DISPLAY is ready! (HTTP $HTTP_CODE)"
     echo-return
     echo-white "  URL: http://$APP/"

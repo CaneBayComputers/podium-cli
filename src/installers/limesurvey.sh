@@ -2,7 +2,7 @@ INSTALL_DISPLAY="LimeSurvey"
 INSTALL_CREDENTIALS="admin / admin123"
 
 pre_install() {
-    docker exec podium-mariadb mysql -u root -e "
+    docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS limesurvey;
         CREATE USER IF NOT EXISTS 'limesurvey'@'%' IDENTIFIED BY 'limesurvey';
         GRANT ALL PRIVILEGES ON limesurvey.* TO 'limesurvey'@'%';

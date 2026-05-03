@@ -143,9 +143,9 @@ See `machines.local` in the repo root for the current machine list. The canonica
 
 | Machine | Agent | Test scripts |
 |---------|-------|-------------|
-| dingdong | claude | `tests/oss-dingdong.sh`, `tests/custom-dingdong.sh` |
-| cami | codex | `tests/oss-cami.sh`, `tests/custom-cami.sh` |
-| cassie | gemini | `tests/oss-cassie.sh`, `tests/custom-cassie.sh` |
+| dingdong | claude | `tests/oss-dingdong.sh`, `tests/oss2-dingdong.sh`, `tests/custom-dingdong.sh`, `tests/installers-dingdong.sh`, `tests/installers2-dingdong.sh` |
+| cami | codex | `tests/oss-cami.sh`, `tests/oss2-cami.sh`, `tests/custom-cami.sh`, `tests/installers-cami.sh`, `tests/installers2-cami.sh` |
+| cassie | gemini/codex | `tests/oss-cassie.sh`, `tests/oss2-cassie.sh`, `tests/custom-cassie.sh`, `tests/installers-cassie.sh`, `tests/installers2-cassie.sh` |
 
 SSH access: `ssh cami@cami`, `ssh cassie@cassie`. Pull repo on remotes: `ssh cami@cami "sudo git -C /usr/local/share/podium-cli pull"`.
 
@@ -179,6 +179,30 @@ The following apps have been deployed successfully and have `src/project-hints/`
 | Netdata | `netdata/netdata:latest` | Port 19999 → nginx, needs cap_add + host bind mounts |
 | Vaultwarden | `vaultwarden/server:latest` | Port 80 direct |
 | Kanboard | `kanboard/kanboard:latest` | Port 80 direct |
+| Gitea | `gitea/gitea:latest` | Port 3000 → nginx, MariaDB, GITEA__ env prefix |
+| Wiki.js | `ghcr.io/requarks/wiki:2` | Port 3000 → nginx, PostgreSQL |
+| Jellyfin | `jellyfin/jellyfin:latest` | Port 8096 → nginx, no DB |
+| Paperless-ngx | `ghcr.io/paperless-ngx/paperless-ngx:latest` | Port 8000 → nginx, PostgreSQL + Redis |
+| Uptime Kuma | `louislam/uptime-kuma:1` | Port 3001 → nginx, SQLite, WebSocket |
+| Ghost | `ghost:latest` | Port 2368 → nginx, SQLite for dev |
+| BookStack | `lscr.io/linuxserver/bookstack:latest` | Port 80 direct, MariaDB, needs APP_KEY |
+| Homer | `b4bz/homer:latest` | Port 8080 → nginx, YAML config |
+| Monica | `monica:latest` | Port 80 direct, MariaDB + Redis, needs APP_KEY |
+| Listmonk | `listmonk/listmonk:latest` | Port 9000 → nginx, PostgreSQL, --install on start |
+| HedgeDoc | `quay.io/hedgedoc/hedgedoc:latest` | Port 3000 → nginx, PostgreSQL, WebSocket |
+| Linkwarden | `ghcr.io/linkwarden/linkwarden:latest` | Port 3000 → nginx, PostgreSQL, NEXTAUTH_URL path |
+| Tandoor | `vabene1111/recipes:latest` | Port 8080 → nginx, PostgreSQL, static/media volumes |
+| n8n | `n8nio/n8n:latest` | Port 5678 → nginx, SQLite, WebSocket |
+| Actual Budget | `actualbudget/actual-server:latest` | Port 5006 → nginx, no DB |
+| Nextcloud | `nextcloud:latest` | Port 80 direct, MariaDB + Redis |
+| PhotoPrism | `photoprism/photoprism:latest` | Port 2342 → nginx, MariaDB, large client_max_body_size |
+| Immich | `ghcr.io/immich-app/immich-server:release` | Port 2283 → nginx, dedicated pgvecto-rs DB + shared Redis |
+| Trilium Notes | `zadam/trilium:latest` | Port 8080 → nginx, SQLite |
+| SearXNG | `searxng/searxng:latest` | Port 8080 → nginx, no DB |
+| Glances | `nicolargo/glances:latest-full` | Port 61208 → nginx, pid:host + docker.sock |
+| wger | `wger/server:latest` | Port 80 direct + celery workers, PostgreSQL + Redis, config/prod.env |
+| Mattermost | `mattermost/mattermost-team-edition:latest` | Port 8065 → nginx, PostgreSQL, WebSocket |
+| Outline | `outlinewiki/outline:latest` | Port 3000 → nginx, PostgreSQL + Redis, needs auth provider |
 
 ### Adding more OSS apps
 

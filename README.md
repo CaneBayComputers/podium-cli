@@ -16,7 +16,7 @@ Podium runs on Linux and Mac. It is open source. Stop configuring. Start buildin
 - **One database server for everything.** All your projects share a single MariaDB, PostgreSQL, and Redis instance. Spin up ten projects. They all just work.
 - **`podium up` / `podium down`. That's your entire environment.** One command starts everything — all shared services, all project containers. One command stops it all. Come back tomorrow and run `podium up` again.
 - **Build custom apps from a sentence.** `podium create "A customer portal in Laravel with subscription billing"` — the AI scaffolds it end to end. Database, models, routes, UI, seeds.
-- **Install 24+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
+- **Install 48+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
 - **AI that knows what to do.** Tell Podium to "set up n8n" and it installs it. Tell it to "set up n8n and add a Slack webhook" and it installs it first, then customizes it. The AI reaches for the right tool automatically.
 
 ---
@@ -225,30 +225,54 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 
 | App | One-liner | Category |
 |-----|-----------|----------|
+| Actual Budget | `podium install actual-budget` | Finance |
+| BookStack | `podium install bookstack` | Wiki |
 | Changedetection.io | `podium install changedetection` | Monitoring |
 | Dashy | `podium install dashy` | Dashboard |
 | Flame | `podium install flame` | Dashboard |
 | FreshRSS | `podium install freshrss` | RSS |
+| Ghost | `podium install ghost` | Blogging |
+| Gitea | `podium install gitea` | Git Server |
+| Glances | `podium install glances` | Monitoring |
 | Grafana | `podium install grafana` | Monitoring |
 | Grocy | `podium install grocy` | Home |
+| HedgeDoc | `podium install hedgedoc` | Docs |
 | Heimdall | `podium install heimdall` | Dashboard |
+| Homer | `podium install homer` | Dashboard |
+| Immich | `podium install immich` | Photos |
 | IT Tools | `podium install it-tools` | Utilities |
+| Jellyfin | `podium install jellyfin` | Media |
 | Kanboard | `podium install kanboard` | Project Mgmt |
 | Kimai | `podium install kimai` | Time Tracking |
 | LimeSurvey | `podium install limesurvey` | Surveys |
+| Linkwarden | `podium install linkwarden` | Bookmarks |
+| Listmonk | `podium install listmonk` | Newsletters |
 | Lychee | `podium install lychee` | Photos |
+| Mattermost | `podium install mattermost` | Team Chat |
 | Mealie | `podium install mealie` | Recipes |
 | Memos | `podium install memos` | Notes |
 | Miniflux | `podium install miniflux` | RSS |
+| Monica | `podium install monica` | CRM |
+| n8n | `podium install n8n` | Automation |
 | Netdata | `podium install netdata` | Monitoring |
+| Nextcloud | `podium install nextcloud` | File Hosting |
+| Outline | `podium install outline` | Wiki |
+| Paperless-ngx | `podium install paperless` | Documents |
+| PhotoPrism | `podium install photoprism` | Photos |
 | Portainer | `podium install portainer` | Docker UI |
 | Redmine | `podium install redmine` | Project Mgmt |
+| SearXNG | `podium install searxng` | Search |
 | Snipe-IT | `podium install snipe-it` | Asset Mgmt |
 | Stirling PDF | `podium install stirling-pdf` | Utilities |
+| Tandoor | `podium install tandoor` | Recipes |
+| Trilium Notes | `podium install trilium` | Notes |
 | Umami | `podium install umami` | Analytics |
+| Uptime Kuma | `podium install uptime-kuma` | Monitoring |
 | Vaultwarden | `podium install vaultwarden` | Passwords |
 | Vikunja | `podium install vikunja` | Task Mgmt |
 | Wallabag | `podium install wallabag` | Read Later |
+| wger | `podium install wger` | Fitness |
+| Wiki.js | `podium install wikijs` | Wiki |
 
 ---
 

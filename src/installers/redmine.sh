@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Redmine"
 INSTALL_CREDENTIALS="admin / admin (forced to change on first login)"
 
 pre_install() {
-    docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
+    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
 }
 
 write_files() {
