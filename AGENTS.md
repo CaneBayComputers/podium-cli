@@ -2,13 +2,14 @@
 
 ## Initial Context Acquisition
 
-**Read the following files** in the given order to become acquainted with the project's architecture, dependencies, and conventions:
+**Read the following files** to become acquainted with the codebase before making changes:
 
-1. `README.md` – Overall purpose, setup, and deployment notes.
-2. `src/scripts/functions.sh` – Helper functions.
-3. `src/scripts/configure.sh` – Sets up Podium and dev environment.
+1. `src/scripts/functions.sh` – Shared helpers used across all scripts (echo wrappers, JSON output, sudo helpers, etc.).
+2. `src/scripts/configure.sh` – Sets up Podium and the dev environment; good reference for conventions.
 
-Run `podium --help` for a live command listing. Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`); read the relevant script when working on a specific command.
+Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`). Read the relevant script when working on a specific command.
+
+> **Note**: `README.md` and `podium --help` are the user-facing docs — they describe how to *use* Podium, not how to develop it. Keep them in sync when adding or changing commands, but do not treat them as the primary source of architectural truth.
 
 ## Project Structure & Module Organization
 - `src/podium` is the Bash entrypoint; it wires subcommands and shared helpers from `src/scripts/`.
