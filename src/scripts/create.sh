@@ -54,7 +54,7 @@ Podium is a Docker based local development environment manager.
 
 Your job is to turn the user's plain English project idea into a working Podium managed project.
 
-Read README.md and src/podium to understand available Podium commands and workflow. Those two files are sufficient. Do not read other internal scripts.
+Read README.md and src/podium before doing anything else. Those two files are all you need. Do not read any other Podium files.
 
 Important workflow:
 
