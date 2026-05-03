@@ -529,31 +529,35 @@ source "$DEV_DIR/frameworks/${FRAMEWORK}.sh"
 
 # Database selection
 if [ -z "$DATABASE" ]; then
-    echo-return; echo-cyan "Which database would you like to use?"
-    echo-white "1) MySQL/MariaDB (Default)"
-    echo-white "2) PostgreSQL"
-    echo-white "3) MongoDB"
-    echo-return; echo-yellow -n "Enter your choice (1-3): "
-    read DB_CHOICE
-    
-    case $DB_CHOICE in
-        1)
-            DATABASE_TYPE="mysql"
-            echo-green "MySQL/MariaDB selected!"
-            ;;
-        2)
-            DATABASE_TYPE="postgres"
-            echo-green "PostgreSQL selected!"
-            ;;
-        3)
-            DATABASE_TYPE="mongo"
-            echo-green "MongoDB selected!"
-            ;;
-        *)
-            echo-yellow "Invalid choice. Defaulting to MySQL/MariaDB"
-            DATABASE_TYPE="mysql"
-            ;;
-    esac
+    if [[ "$JSON_OUTPUT" == "1" ]] || [ ! -t 0 ]; then
+        DATABASE_TYPE="mysql"
+    else
+        echo-return; echo-cyan "Which database would you like to use?"
+        echo-white "1) MySQL/MariaDB (Default)"
+        echo-white "2) PostgreSQL"
+        echo-white "3) MongoDB"
+        echo-return; echo-yellow -n "Enter your choice (1-3): "
+        read DB_CHOICE
+
+        case $DB_CHOICE in
+            1)
+                DATABASE_TYPE="mysql"
+                echo-green "MySQL/MariaDB selected!"
+                ;;
+            2)
+                DATABASE_TYPE="postgres"
+                echo-green "PostgreSQL selected!"
+                ;;
+            3)
+                DATABASE_TYPE="mongo"
+                echo-green "MongoDB selected!"
+                ;;
+            *)
+                echo-yellow "Invalid choice. Defaulting to MySQL/MariaDB"
+                DATABASE_TYPE="mysql"
+                ;;
+        esac
+    fi
 else
     case "$DATABASE" in
         mysql|mariadb)
