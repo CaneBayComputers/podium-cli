@@ -87,12 +87,18 @@ if ! command -v apt-get &> /dev/null; then
     exit 1
 fi
 
-# Request sudo access upfront
-echo -e "${YELLOW}This installer will install system packages and requires sudo access.${NC}"
+# Request sudo upfront with a clear explanation, then keep credentials alive
+echo
+echo -e "${YELLOW}Podium needs sudo to install system packages and configure Docker.${NC}"
+echo -e "${YELLOW}You'll be asked for your password once — it won't be asked again during the install.${NC}"
+echo
 if ! sudo -v; then
-    echo -e "${RED}Error: Sudo access required${NC}"
+    echo -e "${RED}Error: sudo access is required. Please run as a user with sudo privileges.${NC}"
     exit 1
 fi
+( while true; do sudo -n -v 2>/dev/null; sleep 50; done ) &
+SUDO_KEEPALIVE_PID=$!
+trap "kill \$SUDO_KEEPALIVE_PID 2>/dev/null; exit" INT TERM EXIT
 
 echo -e "${CYAN}Installing system dependencies...${NC}"
 
