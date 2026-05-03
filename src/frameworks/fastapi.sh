@@ -9,6 +9,7 @@ framework_scaffold() {
 
     cat > main.py << 'EOF'
 from fastapi import FastAPI
+from fastapi.responses import Response
 from dotenv import load_dotenv
 import os
 
@@ -19,6 +20,10 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"message": "Hello from FastAPI!", "project": os.getenv("APP_NAME", "my-project")}
+
+@app.head("/")
+def read_root_head():
+    return Response()
 EOF
 
     cat > requirements.txt << 'EOF'
