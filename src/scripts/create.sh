@@ -108,6 +108,7 @@ Rules:
 18. Python containers provide `python3`, not `python`. Never run `podium exec python ...` — use `podium python <args>` or `podium exec python3 <args>` instead. For Django management commands, always use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`, `podium django manage createsuperuser`). This is shorter and more reliable than `podium exec python3 manage.py <args>`.
 19. The project is not done until the site responds with HTTP 2xx or 3xx. Always run the curl check from workflow step 10 as your final action. If it fails, check container logs (`docker logs <project-name>`), fix the issue, and re-verify before finishing.
 20. To restart processes inside a running container use `podium supervisor restart all` (run from the project directory). Never use `podium exec supervisorctl ...` — that runs as the developer user and will get a permission denied error on the supervisor socket. If `podium supervisor` is not enough, restart the whole container with `podium down <name>` followed by `podium up <name>`.
+21. Always pass `--database <type>` to `podium new` when the user specifies a database. The default is MySQL even if the user asked for postgres or mongodb. Supported values: `mysql`, `postgres`, `mongodb`. Example: `podium new my-app --framework express --database postgres --no-github`. Skipping this flag will generate a MySQL .env regardless of what the user requested.
 
 User project idea:
 
