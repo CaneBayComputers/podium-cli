@@ -8,6 +8,8 @@ Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, a
 
 Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
+[Install](#-installation) · [Quick Start](#quick-start) · [Commands](#-commands-overview) · [AI Create](#-ai-assisted-project-creation) · [JSON API](#-json-api-integration) · [Uninstall](#-uninstallation)
+
 
 ## 💾 Installation
 
@@ -28,13 +30,6 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 # Configure your development environment post installation
 podium configure
 ```
-
-**What it installs:**
-- Docker CE with Compose plugin
-- Node.js 20 with NPM
-- GitHub CLI
-- jq, trash-cli
-- All system dependencies
 
 #### 🐧 Linux (Arch / Arch-based)
 
@@ -60,13 +55,6 @@ curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/
 # Configure your development environment post installation
 podium configure
 ```
-
-**What it installs:**
-- Homebrew (if not installed)
-- Docker Desktop
-- Node.js with NPM
-- GitHub CLI
-- Additional tools: jq, trash
 
 **Note:** You might need to start Docker Desktop manually after installation.
 
