@@ -9,15 +9,139 @@ framework_scaffold() {
 
     PROJECT_NAME_SNAKE=$(echo "$PROJECT_NAME" | sed 's/-/_/g')
 
-    if ! command -v django-admin >/dev/null 2>&1; then
-        pip3 install django --break-system-packages > /dev/null 2>&1
-    fi
+    mkdir -p "${PROJECT_NAME_SNAKE}"
 
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        django-admin startproject "$PROJECT_NAME_SNAKE" . > /dev/null 2>&1
-    else
-        django-admin startproject "$PROJECT_NAME_SNAKE" .
-    fi
+    cat > manage.py << PYEOF
+#!/usr/bin/env python3
+import os
+import sys
+
+def main():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', '${PROJECT_NAME_SNAKE}.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed?"
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+if __name__ == '__main__':
+    main()
+PYEOF
+    chmod +x manage.py
+
+    touch "${PROJECT_NAME_SNAKE}/__init__.py"
+
+    cat > "${PROJECT_NAME_SNAKE}/settings.py" << PYEOF
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+import pymysql
+pymysql.install_as_MySQLdb()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+SECRET_KEY = 'django-insecure-podium-dev-key-change-in-production'
+DEBUG = os.getenv('APP_DEBUG', 'true').lower() == 'true'
+ALLOWED_HOSTS = ['*']
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = '${PROJECT_NAME_SNAKE}.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = '${PROJECT_NAME_SNAKE}.wsgi.application'
+
+_db_engine = os.getenv('DB_CONNECTION', 'mysql')
+if _db_engine in ('postgresql', 'pgsql', 'postgres'):
+    _db_engine = 'postgresql'
+elif _db_engine == 'mongodb':
+    _db_engine = 'mysql'  # mongo not natively supported in DATABASES; use separate lib
+else:
+    _db_engine = 'mysql'
+
+DATABASES = {
+    'default': {
+        'ENGINE': f'django.db.backends.{_db_engine}',
+        'NAME': os.getenv('DB_DATABASE', '${PROJECT_NAME_SNAKE}'),
+        'USER': os.getenv('DB_USERNAME', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT', '3306'),
+    }
+}
+
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+PYEOF
+
+    cat > "${PROJECT_NAME_SNAKE}/urls.py" << 'PYEOF'
+from django.contrib import admin
+from django.urls import path
+from django.http import JsonResponse
+
+def home(request):
+    return JsonResponse({"message": "Hello from Django!", "status": "ok"})
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', home),
+]
+PYEOF
+
+    cat > "${PROJECT_NAME_SNAKE}/wsgi.py" << PYEOF
+import os
+from django.core.wsgi import get_wsgi_application
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '${PROJECT_NAME_SNAKE}.settings')
+application = get_wsgi_application()
+PYEOF
+
+    cat > "${PROJECT_NAME_SNAKE}/asgi.py" << PYEOF
+import os
+from django.core.asgi import get_asgi_application
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '${PROJECT_NAME_SNAKE}.settings')
+application = get_asgi_application()
+PYEOF
 
     cat > requirements.txt << 'EOF'
 django
@@ -28,31 +152,6 @@ psycopg2-binary
 pymongo
 redis
 EOF
-
-    # Patch settings.py: prepend dotenv + pymysql shim, fix ALLOWED_HOSTS and DATABASES
-    local settings_file="${PROJECT_NAME_SNAKE}/settings.py"
-    printf 'from dotenv import load_dotenv\nfrom pathlib import Path\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv(Path(__file__).resolve().parent.parent / ".env")\n\n' | \
-        cat - "$settings_file" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$settings_file"
-
-    podium-sed "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = ['*']|" "$settings_file"
-
-    python3 - "$settings_file" << 'PYEOF'
-import re, sys
-path = sys.argv[1]
-content = open(path).read()
-new_db = """DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.' + os.getenv('DB_CONNECTION', 'mysql'),
-        'NAME': os.getenv('DB_DATABASE', ''),
-        'USER': os.getenv('DB_USERNAME', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', '3306'),
-    }
-}"""
-content = re.sub(r'DATABASES\s*=\s*\{[^}]*\{[^}]*\}[^}]*\}', new_db, content, flags=re.DOTALL)
-open(path, 'w').write(content)
-PYEOF
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         git init > /dev/null 2>&1
