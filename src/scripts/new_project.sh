@@ -65,7 +65,7 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
@@ -226,11 +226,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php"|"fastapi"|"django"|"express"|"nestjs"|"fastify"|"node")
+        "laravel"|"wordpress"|"php"|"fastapi"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, django, express, nestjs, fastify, or node)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, or node)"
             ;;
     esac
 
@@ -330,11 +330,12 @@ if [ -z "$FRAMEWORK" ]; then
     echo-white "3) PHP (Plain PHP project)"
     echo-white "4) FastAPI (Python Framework)"
     echo-white "5) Django (Python Framework)"
-    echo-white "6) Express (Node.js Framework)"
-    echo-white "7) NestJS (Node.js Framework)"
-    echo-white "8) Fastify (Node.js Framework)"
-    echo-white "9) Node.js (Plain Node.js)"
-    echo-return; echo-yellow -n "Enter your choice (1-9): "
+    echo-white "6) Python (Plain Python project)"
+    echo-white "7) Express (Node.js Framework)"
+    echo-white "8) NestJS (Node.js Framework)"
+    echo-white "9) Fastify (Node.js Framework)"
+    echo-white "10) Node.js (Plain Node.js)"
+    echo-return; echo-yellow -n "Enter your choice (1-10): "
     read FRAMEWORK_CHOICE
 
     case $FRAMEWORK_CHOICE in
@@ -354,15 +355,18 @@ if [ -z "$FRAMEWORK" ]; then
             FRAMEWORK="django"
             ;;
         6)
-            FRAMEWORK="express"
+            FRAMEWORK="python"
             ;;
         7)
-            FRAMEWORK="nestjs"
+            FRAMEWORK="express"
             ;;
         8)
-            FRAMEWORK="fastify"
+            FRAMEWORK="nestjs"
             ;;
         9)
+            FRAMEWORK="fastify"
+            ;;
+        10)
             FRAMEWORK="node"
             ;;
         *)
@@ -494,6 +498,10 @@ case $FRAMEWORK in
     django)
         echo-return; echo-cyan "Django project selected!"
         echo-green "Django project will be scaffolded on the host."
+        ;;
+    python)
+        echo-return; echo-cyan "Python project selected!"
+        echo-green "Python project will be created with basic structure"
         ;;
     express)
         echo-return; echo-cyan "Express project selected!"
