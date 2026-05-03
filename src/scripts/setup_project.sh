@@ -24,15 +24,12 @@ source "$DEV_DIR/scripts/pre_check.sh"
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <project_name> [database_engine] [display_name] [description] [emoji] [options]"
+    echo-white "Usage: $0 <project_name> [database_engine] [options]"
     echo-white "Sets up a project in the projects directory"
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name     Name of the project to setup"
     echo-white "  database_engine  Database type: mysql, postgres, mongo (default: mysql)"
-    echo-white "  display_name     Display name for project (optional)"
-    echo-white "  description      Project description (optional)"
-    echo-white "  emoji            Project emoji (default: 🚀)"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
@@ -53,9 +50,6 @@ usage() {
 # Initialize variables
 PROJECT_NAME=""
 DATABASE_ENGINE="mariadb"
-DISPLAY_NAME=""
-PROJECT_DESCRIPTION=""
-PROJECT_EMOJI="🚀"
 OVERWRITE_DOCKER_COMPOSE=""
 SKIP_STORAGE_SYMLINK=false
 JSON_OUTPUT="${JSON_OUTPUT:-}"
@@ -119,76 +113,10 @@ PROJECT_NAME="${POSITIONAL_ARGS[0]}"
 if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
     DATABASE_ENGINE="${POSITIONAL_ARGS[1]}"
 fi
-if [ ${#POSITIONAL_ARGS[@]} -gt 2 ]; then
-    DISPLAY_NAME="${POSITIONAL_ARGS[2]}"
-fi
-if [ ${#POSITIONAL_ARGS[@]} -gt 3 ]; then
-    PROJECT_DESCRIPTION="${POSITIONAL_ARGS[3]}"
-fi
-if [ ${#POSITIONAL_ARGS[@]} -gt 4 ]; then
-    PROJECT_EMOJI="${POSITIONAL_ARGS[4]}"
-fi
 
 # Initialize debug logging
 debug "Script started: setup_project.sh with args: $ORIGINAL_ARGS"
 
-# Interactive prompts for metadata (only when stdout is a real terminal)
-if [[ "$JSON_OUTPUT" != "1" ]] && [ -t 0 ]; then
-    # Prompt for display name if not provided
-    if [ -z "$DISPLAY_NAME" ]; then
-        echo-yellow -n "Enter project name [$PROJECT_NAME]: "
-        read USER_DISPLAY_NAME
-        if [ -n "$USER_DISPLAY_NAME" ]; then
-            DISPLAY_NAME="$USER_DISPLAY_NAME"
-        else
-            DISPLAY_NAME="$PROJECT_NAME"
-        fi
-    fi
-
-    # Prompt for description if not provided
-    if [ -z "$PROJECT_DESCRIPTION" ]; then
-        echo-yellow -n "Enter project description (optional): "
-        read USER_DESCRIPTION
-        PROJECT_DESCRIPTION="$USER_DESCRIPTION"
-    fi
-
-    # Prompt for emoji if not provided
-    if [ -z "$PROJECT_EMOJI" ] || [ "$PROJECT_EMOJI" = "🚀" ]; then
-        echo-yellow "Choose project emoji:"
-        echo-white "1)  🚀 Rocket     2)  💻 Computer   3)  🌟 Star       4)  🔥 Fire"
-        echo-white "5)  ⚡ Lightning   6)  🎯 Target     7)  🏆 Trophy     8)  💎 Diamond"
-        echo-white "9)  🎨 Art        10) 🔧 Wrench     11) 📱 Mobile     12) 🌐 Globe"
-        echo-white "13) 🎮 Game       14) 📊 Chart      15) 🛡️ Shield"
-        echo-yellow -n "Select emoji (1-15) [1]: "
-        read USER_EMOJI_CHOICE
-        
-        case "${USER_EMOJI_CHOICE:-1}" in
-            1) PROJECT_EMOJI="🚀" ;;
-            2) PROJECT_EMOJI="💻" ;;
-            3) PROJECT_EMOJI="🌟" ;;
-            4) PROJECT_EMOJI="🔥" ;;
-            5) PROJECT_EMOJI="⚡" ;;
-            6) PROJECT_EMOJI="🎯" ;;
-            7) PROJECT_EMOJI="🏆" ;;
-            8) PROJECT_EMOJI="💎" ;;
-            9) PROJECT_EMOJI="🎨" ;;
-            10) PROJECT_EMOJI="🔧" ;;
-            11) PROJECT_EMOJI="📱" ;;
-            12) PROJECT_EMOJI="🌐" ;;
-            13) PROJECT_EMOJI="🎮" ;;
-            14) PROJECT_EMOJI="📊" ;;
-            15) PROJECT_EMOJI="🛡️" ;;
-            *) 
-                echo-yellow "Invalid choice. Defaulting to 🚀 Rocket."
-                PROJECT_EMOJI="🚀" 
-                ;;
-        esac
-    fi
-else
-    # Non-interactive: apply defaults silently
-    [ -z "$DISPLAY_NAME" ] && DISPLAY_NAME="$PROJECT_NAME"
-    [ -z "$PROJECT_EMOJI" ]  && PROJECT_EMOJI="🚀"
-fi
 
 # Use the configured projects directory
 PROJECTS_DIR="$PROJECTS_DIR_PATH"
@@ -365,22 +293,6 @@ podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
 podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
 
 podium-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
-
-# Replace metadata fields - use sed with proper UTF-8 handling
-# Ensure variables have default values to avoid issues with empty strings
-PROJECT_EMOJI_SAFE="${PROJECT_EMOJI:-🚀}"
-DISPLAY_NAME_SAFE="${DISPLAY_NAME:-$PROJECT_NAME}"
-PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION:-}"
-
-# Escape any embedded double quotes to keep YAML valid inside the surrounding quotes
-PROJECT_EMOJI_SAFE="${PROJECT_EMOJI_SAFE//\"/\\\"}"
-DISPLAY_NAME_SAFE="${DISPLAY_NAME_SAFE//\"/\\\"}"
-PROJECT_DESCRIPTION_SAFE="${PROJECT_DESCRIPTION_SAFE//\"/\\\"}"
-
-# Use a delimiter that's very unlikely to appear in the replacement text
-podium-sed "s#PROJECT_EMOJI#$PROJECT_EMOJI_SAFE#g" docker-compose.yaml
-podium-sed "s#PROJECT_NAME#$DISPLAY_NAME_SAFE#g" docker-compose.yaml
-podium-sed "s#PROJECT_DESCRIPTION#$PROJECT_DESCRIPTION_SAFE#g" docker-compose.yaml
 
 if [ -d "public" ] || [ "$FRAMEWORK_IS_PYTHON" = "1" ] || [ "$FRAMEWORK_IS_NODE" = "1" ]; then
     podium-sed "s/PUBLIC//g" docker-compose.yaml

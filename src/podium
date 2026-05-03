@@ -186,8 +186,8 @@ validate_project_context() {
         return 1
     fi
     
-    # Check if it's actually a Podium project by looking for x-metadata type
-    if ! grep -q "type.*podium-project" docker-compose.yaml 2>/dev/null; then
+    # Check if it's actually a Podium project by looking for the Podium VPC network
+    if ! grep -q "podium-cli_vpc" docker-compose.yaml 2>/dev/null; then
         echo-red "❌ Not a Podium project!"
         echo-white "Found docker-compose.yaml but it's not a Podium project."
         echo-white "Current directory: $(pwd)"

@@ -20,9 +20,6 @@ REPOSITORY=""
 PROJECT_NAME=""
 OVERWRITE_DOCKER_COMPOSE=""
 DATABASE_ENGINE=""
-DISPLAY_NAME=""
-PROJECT_DESCRIPTION=""
-PROJECT_EMOJI=""
 CREATE_GITHUB=""
 ORGANIZATION=""
 NO_STORAGE_SYMLINK=0
@@ -45,9 +42,6 @@ usage() {
     echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
-    echo-white "  --display-name NAME          Display name for project (optional)"
-    echo-white "  --description TEXT           Project description (optional)"
-    echo-white "  --emoji EMOJI                Project emoji (default: 🚀)"
     echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
@@ -85,30 +79,6 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --database requires a database type"
-            fi
-            ;;
-        --display-name)
-            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
-                DISPLAY_NAME="$2"
-                shift 2
-            else
-                error "Error: --display-name requires a name"
-            fi
-            ;;
-        --description)
-            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
-                PROJECT_DESCRIPTION="$2"
-                shift 2
-            else
-                error "Error: --description requires a description text"
-            fi
-            ;;
-        --emoji)
-            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
-                PROJECT_EMOJI="$2"
-                shift 2
-            else
-                error "Error: --emoji requires an emoji"
             fi
             ;;
         --no-storage-symlink)
@@ -402,18 +372,6 @@ if [[ -n "$DATABASE_ENGINE" ]]; then
     SETUP_ARGS+=("$DATABASE_ENGINE")
 else
     SETUP_ARGS+=("mysql")  # default
-fi
-
-if [[ -z "$DISPLAY_NAME" ]]; then
-    DISPLAY_NAME="$PROJECT_NAME"
-fi
-SETUP_ARGS+=("$DISPLAY_NAME")
-
-if [[ -n "$PROJECT_DESCRIPTION" ]]; then
-    SETUP_ARGS+=("$PROJECT_DESCRIPTION")
-fi
-if [[ -n "$PROJECT_EMOJI" ]]; then
-    SETUP_ARGS+=("$PROJECT_EMOJI")
 fi
 
 # Add flags

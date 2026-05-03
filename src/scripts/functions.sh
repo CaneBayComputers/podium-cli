@@ -270,7 +270,7 @@ check_docker_compose_type() {
     fi
     
     # Check if this is a Podium project
-    if grep -q "type: \"podium-project\"" "$compose_file" 2>/dev/null; then
+    if grep -q "podium-cli_vpc" "$compose_file" 2>/dev/null; then
         echo "podium-project"
         return 0
     fi

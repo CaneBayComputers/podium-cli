@@ -66,11 +66,8 @@ usage() {
     echo-white ""
     echo-white "Options:"
     echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node (required with --json-output)"
-    echo-white "  --display-name NAME     Display name for project (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
-    echo-white "  --description TEXT      Project description (optional)"
-    echo-white "  --emoji EMOJI           Project emoji (will prompt if not provided)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
@@ -79,9 +76,9 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 my-app --framework laravel --display-name \"My App\" --database postgres --github"
-    echo-white "  $0 my-blog --framework wordpress --display-name \"My Blog\" --github-org myorg"
-    echo-white "  $0 my-api --framework fastapi --display-name \"My API\""
+    echo-white "  $0 my-app --framework laravel --database postgres --github"
+    echo-white "  $0 my-blog --framework wordpress --github-org myorg"
+    echo-white "  $0 my-api --framework fastapi"
     error "usage" 1
 }
 
@@ -91,9 +88,6 @@ if [ -z "$LARAVEL_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
 fi
 # Initialize variables
 PROJECT_NAME=""
-DISPLAY_NAME=""
-PROJECT_DESCRIPTION=""
-PROJECT_EMOJI=""
 ORGANIZATION=""
 VERSION="latest"
 FRAMEWORK=""
@@ -117,18 +111,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --database)
             DATABASE="$2"
-            shift 2
-            ;;
-        --display-name)
-            DISPLAY_NAME="$2"
-            shift 2
-            ;;
-        --description)
-            PROJECT_DESCRIPTION="$2"
-            shift 2
-            ;;
-        --emoji)
-            PROJECT_EMOJI="$2"
             shift 2
             ;;
         --no-storage-symlink)
@@ -198,10 +180,6 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Set defaults for JSON mode
     if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="laravel"
-    fi
-    
-    if [ -z "$DISPLAY_NAME" ]; then
-        DISPLAY_NAME="$PROJECT_NAME"
     fi
     
     # Set version defaults based on framework
@@ -659,7 +637,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     if [[ "$SKIP_STORAGE_SYMLINK" == "1" ]]; then
         SETUP_OPTIONS="$SETUP_OPTIONS --no-storage-symlink"
     fi
-    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS 2>&1)
+    SETUP_OUTPUT=$(source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" $SETUP_OPTIONS 2>&1)
     SETUP_EXIT_CODE=$?
     
     if [ $SETUP_EXIT_CODE -ne 0 ]; then
@@ -675,7 +653,7 @@ else
     if [[ "$SKIP_STORAGE_SYMLINK" == "1" ]]; then
         SETUP_OPTIONS="$SETUP_OPTIONS --no-storage-symlink"
     fi
-    source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" "$DISPLAY_NAME" "$PROJECT_DESCRIPTION" "$PROJECT_EMOJI" $SETUP_OPTIONS
+    source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" $SETUP_OPTIONS
 fi
 
 cd "$ORIG_DIR"

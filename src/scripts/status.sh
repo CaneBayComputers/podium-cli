@@ -255,22 +255,8 @@ get_project_status() {
     if [ -d "$proj_name" ]; then
         project_data=$(echo "$project_data" | jq --arg name "$proj_name" '. + {name: $name, folder_exists: true}')
         
-        # Parse metadata from docker-compose.yaml if it exists
-        local compose_file="$proj_name/docker-compose.yaml"
-        if [ -f "$compose_file" ]; then
-            # Extract metadata using grep and sed
-            local emoji=$(grep -A 4 "x-metadata:" "$compose_file" | grep "emoji:" | sed 's/.*emoji: *"\(.*\)".*/\1/' 2>/dev/null || echo "🚀")
-            local display_name=$(grep -A 4 "x-metadata:" "$compose_file" | grep "name:" | sed 's/.*name: *"\(.*\)".*/\1/' 2>/dev/null || echo "$proj_name")
-            local description=$(grep -A 4 "x-metadata:" "$compose_file" | grep "description:" | sed 's/.*description: *"\(.*\)".*/\1/' 2>/dev/null || echo "")
-            
-            # Add metadata to project data
-            project_data=$(echo "$project_data" | jq --arg emoji "$emoji" --arg display_name "$display_name" --arg description "$description" '. + {emoji: $emoji, display_name: $display_name, description: $description}')
-        else
-            # No compose file, use project name as display name
-            project_data=$(echo "$project_data" | jq --arg emoji "🚀" --arg display_name "$proj_name" '. + {emoji: $emoji, display_name: $display_name, description: ""}')
-        fi
     else
-        project_data=$(echo "$project_data" | jq --arg name "$proj_name" --arg emoji "🚀" '. + {name: $name, folder_exists: false, emoji: $emoji, display_name: $name, description: ""}')
+        project_data=$(echo "$project_data" | jq --arg name "$proj_name" '. + {name: $name, folder_exists: false}')
     fi
     
     # Host entry check
