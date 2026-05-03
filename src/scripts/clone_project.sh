@@ -50,9 +50,11 @@ usage() {
     echo-white "  --display-name NAME          Display name for project (optional)"
     echo-white "  --description TEXT           Project description (optional)"
     echo-white "  --emoji EMOJI                Project emoji (default: 🚀)"
+    echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
+    echo-white "  --framework FRAMEWORK        Force framework detection (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
@@ -123,6 +125,10 @@ while [[ $# -gt 0 ]]; do
             NO_STORAGE_SYMLINK=1
             shift
             ;;
+        --no-github)
+            CREATE_GITHUB="no"
+            shift
+            ;;
         --github)
             CREATE_GITHUB="yes"
             shift
@@ -134,6 +140,14 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --github-org requires an organization name"
+            fi
+            ;;
+        --framework)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                FORCED_FRAMEWORK="$2"
+                shift 2
+            else
+                error "Error: --framework requires a framework name"
             fi
             ;;
         --fork)
@@ -430,6 +444,9 @@ if [[ -n "$PHP_VERSION" ]]; then
 fi
 if [[ "$NO_STORAGE_SYMLINK" == "1" ]]; then
     SETUP_ARGS+=("--no-storage-symlink")
+fi
+if [[ -n "$FORCED_FRAMEWORK" ]]; then
+    SETUP_ARGS+=("--framework" "$FORCED_FRAMEWORK")
 fi
 
 # Setup project

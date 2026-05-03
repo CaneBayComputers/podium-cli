@@ -40,7 +40,7 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --php-version VERSION   Force specific PHP version (7 or 8)"
-    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
