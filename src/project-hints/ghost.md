@@ -3,9 +3,10 @@
 Ghost 5 does **not** support MariaDB. Use SQLite (development) or PostgreSQL (production).
 Podium's shared database is MariaDB, so always set `database__client: sqlite3` for local dev.
 
-Ghost's official Docker image listens on port **2368**, not port 80. To make it accessible
-via the standard Podium URL (`http://ghost/`), add an nginx reverse-proxy service to the
-docker-compose, or document that the local URL is `http://ghost:2368/`.
+Ghost's official Docker image listens on port **2368**, not port 80. The Podium URL MUST be
+`http://ghost/` (port 80). You MUST add an nginx reverse-proxy service that owns the static
+VPC IP and proxies port 80 → Ghost port 2368. Do NOT give Ghost the static VPC IP directly.
+Do NOT use `http://ghost:2368/` as the URL — `podium create` always verifies on port 80.
 
 ## Recommended docker-compose structure
 

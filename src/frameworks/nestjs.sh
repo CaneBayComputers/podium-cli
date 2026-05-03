@@ -137,7 +137,7 @@ EOF
 framework_python_start_command() { echo ""; }
 
 framework_node_start_command() {
-    echo "npm run start"
+    echo "sh -c '[ -d node_modules ] || npm install; npm run start'"
 }
 
 framework_setup_env() {
