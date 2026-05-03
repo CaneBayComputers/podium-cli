@@ -6,8 +6,7 @@
 
 1. `README.md` – Overall purpose, setup, and deployment notes.
 2. `src/scripts/functions.sh` – Helper functions.
-3. `src/docker-stack/docker-compose.services.yaml` – Docker list of shared services used by projects.
-4. `src/scripts/configure.sh` – Sets up Podium and dev environment.
+3. `src/scripts/configure.sh` – Sets up Podium and dev environment.
 
 Run `podium --help` for a live command listing. Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`); read the relevant script when working on a specific command.
 
