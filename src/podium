@@ -86,6 +86,7 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
+    echo "  podium install <app>      - Install a known open-source app (podium install --list)"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
@@ -598,6 +599,9 @@ case "$1" in
         ;;
     "create")
         "$SCRIPT_DIR/scripts/create.sh" "${@:2}"
+        ;;
+    "install")
+        "$SCRIPT_DIR/scripts/install.sh" "${@:2}"
         ;;
     "clone")
         if [ -z "$2" ]; then
