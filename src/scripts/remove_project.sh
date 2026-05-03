@@ -129,6 +129,19 @@ fi
 debug "Starting project removal for: $PROJECT_NAME"
 echo-cyan "Removing project '$PROJECT_NAME'..."
 
+# Detect database engine from project .env before we trash the directory
+DB_ENGINE="mysql"
+if [ -f "$PROJECT_DIR/.env" ]; then
+    ENV_DB_HOST=$(grep -E "^DB_HOST=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+    ENV_DB_CONNECTION=$(grep -E "^DB_CONNECTION=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+    if echo "$ENV_DB_HOST$ENV_DB_CONNECTION" | grep -qiE "postgres|pgsql|postgresql"; then
+        DB_ENGINE="postgres"
+    elif echo "$ENV_DB_HOST$ENV_DB_CONNECTION" | grep -qiE "mongo"; then
+        DB_ENGINE="mongo"
+    fi
+fi
+debug "Detected database engine: $DB_ENGINE"
+
 # 1. Run shutdown.sh to stop the project and remove iptables rules
 debug "Starting step 1: Shutting down project"
 echo-return
@@ -225,27 +238,55 @@ fi
 
 if [[ "$DELETE_DB_CONFIRM" == "y" ]]; then
 
-    # Start services including mariadb
+    # Start services
     "$DEV_DIR/scripts/start_services.sh"
 
     # Check if db exists
-    echo-cyan "Checking if database '$DB_NAME' exists..."
+    echo-cyan "Checking if database '$DB_NAME' exists in $DB_ENGINE..."
     echo-white
-    
-    # Check database existence from inside the mariadb container
-    DB_EXISTS=$(docker container exec "$MARIADB_CONTAINER_NAME" mariadb -u root -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME" || true)
 
-    if [ -n "$DB_EXISTS" ]; then
-        # If the database exists, proceed with deletion
-        echo-cyan "Deleting database '$DB_NAME'..."
-        echo-white
-        json-mysql -u root -e "DROP DATABASE \`$DB_NAME\`;" && echo-green "Database '$DB_NAME' deleted." || echo-yellow "Database deletion failed."
-        echo-white
-    else
-        # If the database does not exist, display a warning message
-        echo-yellow "Database '$DB_NAME' not found. Skipping deletion."
-        echo-white
-    fi
+    case "$DB_ENGINE" in
+        postgres)
+            DB_EXISTS=$(docker container exec -e PGPASSWORD=password "$POSTGRES_CONTAINER_NAME" psql -U root -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" 2>/dev/null || true)
+            if [ -n "$DB_EXISTS" ]; then
+                echo-cyan "Deleting database '$DB_NAME' from PostgreSQL..."
+                echo-white
+                docker container exec -e PGPASSWORD=password "$POSTGRES_CONTAINER_NAME" psql -U root -d postgres -c "DROP DATABASE \"$DB_NAME\";" >/dev/null 2>&1 \
+                    && echo-green "Database '$DB_NAME' deleted." \
+                    || echo-yellow "Database deletion failed."
+                echo-white
+            else
+                echo-yellow "Database '$DB_NAME' not found in PostgreSQL. Skipping deletion."
+                echo-white
+            fi
+            ;;
+        mongo)
+            DB_EXISTS=$(docker container exec "$MONGO_CONTAINER_NAME" mongosh --quiet --eval "db.getMongo().getDBNames().indexOf('$DB_NAME') >= 0 ? '1' : ''" 2>/dev/null || true)
+            if [ "$DB_EXISTS" = "1" ]; then
+                echo-cyan "Deleting database '$DB_NAME' from MongoDB..."
+                echo-white
+                docker container exec "$MONGO_CONTAINER_NAME" mongosh --quiet --eval "db.getSiblingDB('$DB_NAME').dropDatabase();" >/dev/null 2>&1 \
+                    && echo-green "Database '$DB_NAME' deleted." \
+                    || echo-yellow "Database deletion failed."
+                echo-white
+            else
+                echo-yellow "Database '$DB_NAME' not found in MongoDB. Skipping deletion."
+                echo-white
+            fi
+            ;;
+        *)
+            DB_EXISTS=$(docker container exec "$MARIADB_CONTAINER_NAME" mariadb -u root -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME" || true)
+            if [ -n "$DB_EXISTS" ]; then
+                echo-cyan "Deleting database '$DB_NAME' from MariaDB..."
+                echo-white
+                json-mysql -u root -e "DROP DATABASE \`$DB_NAME\`;" && echo-green "Database '$DB_NAME' deleted." || echo-yellow "Database deletion failed."
+                echo-white
+            else
+                echo-yellow "Database '$DB_NAME' not found in MariaDB. Skipping deletion."
+                echo-white
+            fi
+            ;;
+    esac
 
 else
     echo-yellow "Database deletion skipped."
