@@ -5,7 +5,6 @@
 **Read the following files** to become acquainted with the codebase before making changes:
 
 1. `src/scripts/functions.sh` – Shared helpers used across all scripts (echo wrappers, JSON output, sudo helpers, etc.).
-2. `src/scripts/configure.sh` – Sets up Podium and the dev environment; good reference for conventions.
 
 Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`). Read the relevant script when working on a specific command.
 
