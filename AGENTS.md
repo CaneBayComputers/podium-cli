@@ -9,7 +9,7 @@
 
 Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`). Read the relevant script when working on a specific command.
 
-> **Note**: `README.md` and `podium --help` are the user-facing docs — they describe how to *use* Podium, not how to develop it. Keep them in sync when adding or changing commands, but do not treat them as the primary source of architectural truth.
+> **Note**: `README.md` and `podium --help` are the user-facing docs — they describe how to *use* Podium, not how to develop it. Keep them in sync when adding or changing commands, but do not treat them as the primary source of architectural truth. That said, use `podium` commands freely when testing or validating changes — spinning up a project, running exec commands, checking output — just as a user would.
 
 ## Project Structure & Module Organization
 - `src/podium` is the Bash entrypoint; it wires subcommands and shared helpers from `src/scripts/`.
