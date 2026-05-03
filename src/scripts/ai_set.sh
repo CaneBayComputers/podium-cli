@@ -414,18 +414,7 @@ ensure_ai_agent_installed() {
 
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     # Validation for non-interactive mode
-    if [[ "$AI_AGENT" == "grok" && "$JSON_OUTPUT" != "1" && -z "$AI_API_KEY" ]]; then
-        echo-red "Error: AI_API_KEY is required when using grok as the AI agent."
-        echo-white "Grok will not start without an API key. See https://docs.x.ai/docs/overview"
-        cd "$ORIG_DIR"
-        exit 1
-    fi
-
-    if [[ "$AI_AGENT" == "grok" && "$JSON_OUTPUT" == "1" && -z "$AI_API_KEY" ]]; then
-        echo "{\"action\": \"ai_set\", \"status\": \"error\", \"error\": \"missing_api_key\", \"details\": \"AI_API_KEY is required when AI_AGENT=grok. See https://docs.x.ai/docs/overview\"}"
-        cd "$ORIG_DIR"
-        exit 1
-    fi
+    # grok stores its own API key in ~/.grok/user-settings.json — AI_API_KEY is optional
 
     ensure_ai_agent_installed "$AI_AGENT"
 
@@ -480,9 +469,7 @@ fi
 
 prompt_ai_model
 
-if [[ "$AI_AGENT" == "grok" ]]; then
-    configure_grok_api_key_required
-fi
+# grok uses ~/.grok/user-settings.json for auth; no mandatory key check needed
 
 ensure_ai_agent_installed "$AI_AGENT"
 
