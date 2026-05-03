@@ -281,7 +281,12 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     ORIGINAL_COMPOSE_IS_COMPLEX=$(python3 - "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null << 'PYEOF'
 import sys, yaml, re
 try:
-    doc = yaml.safe_load(open(sys.argv[1]).read()) or {}
+    raw = open(sys.argv[1]).read()
+    # Laravel Sail composes require vendor/ to exist before the container can build —
+    # adaptation is impossible. Treat as non-complex so Podium uses its own template.
+    if 'laravel/sail' in raw:
+        print(0); sys.exit(0)
+    doc = yaml.safe_load(raw) or {}
     services = doc.get('services') or {}
     if len(services) > 1:
         print(1); sys.exit(0)
