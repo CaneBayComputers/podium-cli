@@ -8,7 +8,7 @@ Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, a
 
 Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
-[Install](#-installation) · [Quick Start](#quick-start) · [Commands](#-commands-overview) · [AI Create](#-ai-assisted-project-creation) · [JSON API](#-json-api-integration) · [Uninstall](#-uninstallation)
+[Install](#-installation) · [Quick Start](#quick-start) · [Commands](#-commands-overview) · [AI Create](#-ai-assisted-project-creation) · [JSON API](#-json-api-integration) · [Uninstall](#uninstallation)
 
 
 ## 💾 Installation
@@ -664,7 +664,7 @@ Each project gets:
 - LAN URL: `http://your-ip:port`
 
 
-## 🗑️ Uninstallation
+## Uninstallation
 
 
 ### Platform-Specific Uninstall
