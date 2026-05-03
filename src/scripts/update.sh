@@ -98,6 +98,8 @@ else
 
     BASE_IMAGES=(
         "canebaycomputers/cbc:nginx-php8"
+        "canebaycomputers/cbc:nginx-node"
+        "canebaycomputers/cbc:nginx-python3"
     )
 
     for image in "${BASE_IMAGES[@]}"; do
