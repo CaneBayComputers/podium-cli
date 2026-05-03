@@ -188,9 +188,11 @@ brew install jq trash >/dev/null 2>&1 && echo -e "${GREEN}✓ Additional tools i
 # Ensure local bin directory and PATH
 ###############################
 mkdir -p "$HOME/.local/bin"
-if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" 2>/dev/null; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-fi
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    if [[ -f "$rc" ]] && ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' "$rc" 2>/dev/null; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$rc"
+    fi
+done
 
 # Install GitHub CLI (optional but recommended)
 if ! command -v gh &> /dev/null; then
@@ -200,24 +202,6 @@ else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
 
-# Install pipx
-echo -e "${BLUE}Installing pipx...${NC}"
-brew install pipx >/dev/null 2>&1 || echo -e "${YELLOW}⚠️ pipx installation may have failed${NC}"
-
-# Install AWS CLI (if not present)
-if ! command -v aws &> /dev/null; then
-    echo -e "${BLUE}Installing AWS CLI...${NC}"
-    if [ "$DRY_RUN" = "1" ]; then
-        echo "  [DRY RUN] Would download and install AWS CLI from AWSCLIV2.pkg"
-    else
-        curl -fsSL "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-        sudo installer -pkg "AWSCLIV2.pkg" -target /
-        rm -f "AWSCLIV2.pkg"
-    fi
-    echo -e "${GREEN}✓ AWS CLI installed (or installation attempted)${NC}"
-else
-    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
-fi
 
 
 ###############################
@@ -386,7 +370,7 @@ if command -v podium &> /dev/null; then
     echo "   Contact: canebaycomputers@gmail.com for the premium desktop interface"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
-    echo "   https://podiumdev.io"
+    echo "   https://github.com/CaneBayComputers/podium-cli"
     echo
     echo -e "${YELLOW}IMPORTANT:${NC} If you just installed Docker Desktop or Homebrew, you may need to ${YELLOW}restart Docker Desktop and open a new terminal or reboot${NC} before using Podium (for example: ${BLUE}podium configure${NC} or ${BLUE}podium up${NC})."
 else

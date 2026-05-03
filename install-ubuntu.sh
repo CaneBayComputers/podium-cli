@@ -36,7 +36,7 @@ INSTALL_DIR="/usr/local/share/podium-cli"
 CONFIG_DIR="/etc/podium-cli"
 BIN_DIR="/usr/local/bin"
 REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
-NVM_FALLBACK_VERSION="v0.40.3"
+NVM_FALLBACK_VERSION="v0.40.1"
 
 get_latest_nvm_version() {
     local tag
@@ -114,7 +114,7 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git jq software-properties-common trash-cli pipx unzip
+    git jq software-properties-common trash-cli unzip
 
 ###############################
 # Ensure local bin directory and PATH
@@ -210,21 +210,6 @@ if ! command -v gh &> /dev/null; then
 else
     echo -e "${GREEN}✓ GitHub CLI already installed${NC}"
 fi
-
-###############################
-# Install AWS CLI (if not present)
-###############################
-if ! command -v aws &> /dev/null; then
-    echo -e "${BLUE}Installing AWS CLI...${NC}"
-    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    sudo ./aws/install
-    rm -rf awscliv2.zip aws
-    echo -e "${GREEN}✓ AWS CLI installed${NC}"
-else
-    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
-fi
-
 
 ###############################
 # Clean up

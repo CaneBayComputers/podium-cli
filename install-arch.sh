@@ -140,20 +140,6 @@ else
 fi
 
 ###############################
-# Install AWS CLI (if not present)
-###############################
-if ! command -v aws &> /dev/null; then
-    echo -e "${BLUE}Installing AWS CLI...${NC}"
-    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    sudo ./aws/install
-    rm -rf awscliv2.zip aws
-    echo -e "${GREEN}✓ AWS CLI installed${NC}"
-else
-    echo -e "${GREEN}✓ AWS CLI already installed${NC}"
-fi
-
-###############################
 # Install GitHub CLI (optional but recommended)
 ###############################
 if ! command -v gh >/dev/null 2>&1; then

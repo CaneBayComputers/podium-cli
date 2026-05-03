@@ -86,7 +86,7 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
-      echo "  podium clone <repo> [options] - Clone existing project"
+    echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
     echo
