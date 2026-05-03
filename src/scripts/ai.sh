@@ -111,24 +111,32 @@ case "$AI_AGENT_CLI_NAME" in
         claude "${claude_args[@]}"
         ;;
     gemini)
-        gemini_args=()
-        if [[ -n "$AI_API_KEY" ]]; then
-            gemini_args+=("--api-key" "$AI_API_KEY")
+        gemini_args=(--yolo)
+        if [[ -n "$AI_MODEL" ]]; then
+            gemini_args+=("--model" "$AI_MODEL")
         fi
-        gemini_args+=("-i" "$INIT_PROMPT")
+        if [[ "$ONE_OFF" == "1" ]]; then
+            gemini_args+=("--prompt" "$INIT_PROMPT")
+        else
+            gemini_args+=("-i" "$INIT_PROMPT")
+        fi
         gemini "${gemini_args[@]}"
         ;;
     grok)
         if [[ -z "$AI_API_KEY" ]]; then
             echo-yellow "AI_API_KEY is not configured; grok CLI requires an API key."
-            echo-yellow "Run 'podium ai-set"
+            echo-yellow "Run 'podium ai-set'"
         else
             grok_args=()
             if [[ -n "$AI_MODEL" ]]; then
                 grok_args+=("--model" "$AI_MODEL")
             fi
             grok_args+=("--api-key" "$AI_API_KEY")
-            grok_args+=("$INIT_PROMPT")
+            if [[ "$ONE_OFF" == "1" ]]; then
+                grok_args+=("--prompt" "$INIT_PROMPT")
+            else
+                grok_args+=("$INIT_PROMPT")
+            fi
             grok "${grok_args[@]}"
         fi
         ;;
