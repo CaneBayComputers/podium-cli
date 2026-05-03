@@ -133,6 +133,10 @@ Common project types:
   ```bash
   podium new my-django-app --framework django
   ```
+- Plain Python project:
+  ```bash
+  podium new my-script --framework python
+  ```
 - Express project:
   ```bash
   podium new my-express-app --framework express
@@ -373,7 +377,7 @@ podium ai "Build a unique homepage hero section."
 
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node` |
+| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node` |
 | `--display-name <name>` | Display name for project | Required with `--json-output` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
@@ -390,7 +394,7 @@ podium ai "Build a unique homepage hero section."
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
-| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--display-name <name>` | Display name for project |
 | `--description <text>` | Project description |
 | `--emoji <emoji>` | Project emoji (default: 🚀) |
@@ -404,7 +408,7 @@ podium ai "Build a unique homepage hero section."
 | Option | Description |
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
-| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 
 ### Remove Project Options
 
@@ -519,7 +523,7 @@ podium npx tsc --init         # Run any npx command inside container
 podium node script.js         # Execute a script with project's Node environment
 ```
 
-**Python projects** — `podium python` and `podium pip` run inside your project's container:
+**Python projects** (FastAPI, Django, plain Python) — `podium python` and `podium pip` run inside your project's container:
 
 ```bash
 cd ~/podium-projects/my-fastapi-app
@@ -549,7 +553,7 @@ cd ~/podium-projects/my-laravel-app && podium shell
 # Django — opens python manage.py shell (Django ORM and apps loaded)
 cd ~/podium-projects/my-django-app && podium shell
 
-# FastAPI / plain Python — opens python3 REPL
+# FastAPI / plain Python / Python script — opens python3 REPL
 cd ~/podium-projects/my-fastapi-app && podium shell
 
 # Express / Fastify / plain Node.js — opens node REPL
