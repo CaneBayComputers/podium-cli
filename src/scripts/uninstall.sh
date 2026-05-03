@@ -456,5 +456,13 @@ echo "  • Other Docker images and containers"
 echo "  • Docker itself"
 echo-return
 echo-cyan "To reinstall Podium:"
-echo "  podium config"
+echo "  https://github.com/CaneBayComputers/podium-cli"
+echo-return
+
+# Remove CLI files last (script is already in memory so this is safe)
+echo-white "🗑️  Removing Podium CLI files..."
+sudo rm -f /usr/local/bin/podium
+sudo rm -rf /etc/podium-cli
+sudo rm -rf /usr/local/share/podium-cli
+echo-green "✅ Podium CLI removed"
 echo-return

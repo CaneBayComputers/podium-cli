@@ -367,28 +367,21 @@ if command -v podium &> /dev/null; then
     
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "  1. ${BLUE}podium configure${NC} - Configure your development environment"
-    echo -e "  2. ${BLUE}podium new my-project${NC} - Create your first project"
-    echo -e "  3. ${BLUE}podium status${NC}     - Check system status"
-    echo -e "  4. ${BLUE}podium help${NC}       - Show all available commands"
-    echo
-    echo -e "${CYAN}🗑️  To Uninstall Later:${NC}"
-    echo -e "  ${BLUE}podium uninstall${NC}     - Remove all Docker resources"
-    echo -e "  ${BLUE}sudo rm -f /usr/local/bin/podium${NC} - Remove CLI binary"
-    echo -e "  ${BLUE}sudo rm -rf /usr/local/share/podium-cli${NC} - Remove CLI files"
-    echo -e "  ${BLUE}sudo rm -rf /etc/podium-cli${NC} - Remove config directory"
-    echo
-    echo -e "${CYAN}📱 Want a GUI?${NC}"
-    echo "   Contact: Cane Bay Computers for the premium desktop interface"
+    echo -e "  1. ${YELLOW}Reboot your computer${NC} so Docker group permissions take effect"
+    echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
+    echo -e "  3. Create your first project:"
+    echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""
+    echo -e "     or use a specific framework:"
+    echo -e "       ${BLUE}podium new my-project --framework laravel${NC}"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
     echo "   https://github.com/CaneBayComputers/podium-cli"
+    echo
+    echo -e "${CYAN}🗑️  To Uninstall:${NC}"
+    echo -e "  ${BLUE}podium uninstall${NC}"
     echo
 else
     echo -e "${RED}✗ Installation failed${NC}"
     echo "The podium command is not available in PATH."
     exit 1
 fi
-
-echo
-echo -e "${YELLOW}IMPORTANT:${NC} For Docker permissions to work correctly, please ${YELLOW}log out and back in or reboot your system${NC} before using Podium (including running ${BLUE}podium configure${NC} or ${BLUE}podium up${NC})."
