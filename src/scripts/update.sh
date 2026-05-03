@@ -140,7 +140,9 @@ fi
 if [[ -n "$INSTALL_SCRIPT" ]]; then
     UPDATE_URL="https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/$INSTALL_SCRIPT"
     echo-white "Running remote installer: $INSTALL_SCRIPT"
-    if curl -fsSL "$UPDATE_URL" | bash; then
+    # cd to /tmp before running the installer — it removes and re-clones /usr/local/share/podium-cli,
+    # which would invalidate the CWD if we stayed inside it.
+    if cd /tmp && curl -fsSL "$UPDATE_URL" | bash; then
         echo-green "Podium CLI updated via $INSTALL_SCRIPT."
     else
         echo-yellow "Failed to run remote installer: $INSTALL_SCRIPT"
