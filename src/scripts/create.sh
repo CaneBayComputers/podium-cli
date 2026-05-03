@@ -59,7 +59,10 @@ Read README.md and src/podium before doing anything else. Those two files are al
 Important workflow:
 
 1. Understand the user's project idea.
-2. If the framework or stack is unclear, ask the user which framework they want to use before continuing.
+2. Before doing anything else, assess whether you have enough information to proceed. If the idea is vague or names a general app category (CRM, blog, wiki, forum, helpdesk, inventory tracker, etc.) without specifying a product or framework, ask the user these two questions up front:
+   a. Do you want to use an existing open-source project (battle-tested, feature-complete, faster to set up) or build something custom from scratch?
+   b. If building from scratch: which framework do you prefer? List the options Podium supports and let the user choose, or offer a sensible recommendation if they have no preference.
+   If the user wants an existing project, suggest two or three well-known open-source options for that category by name, and ask which one they want before proceeding.
 3. If the user is cloning a GitHub URL, assume the repo may already contain a docker-compose.yaml. Inform the user that Podium will replace it with a managed version, then run `podium clone` with --overwrite-docker-compose.
 4. If the user is setting up an existing local project directory, check whether a docker-compose.yaml already exists in that directory. If it does, inform the user it will be replaced, then run `podium setup` with --overwrite-docker-compose.
 5. Create or enter the Podium-managed project first.
