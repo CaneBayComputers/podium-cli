@@ -104,6 +104,10 @@ case "$AI_AGENT_CLI_NAME" in
         if [[ -n "$AI_MODEL" ]]; then
             gemini_args+=("--model" "$AI_MODEL")
         fi
+        # Add projects directory to workspace so gemini's file tools can reach it
+        if [[ -n "$PROJECTS_DIR_PATH" ]]; then
+            gemini_args+=(--include-directories "$PROJECTS_DIR_PATH")
+        fi
         if [[ "$ONE_OFF" == "1" ]]; then
             # --output-format text suppresses the xterm.js TUI dump in headless mode
             gemini_args+=(--output-format text --prompt "$INIT_PROMPT")
