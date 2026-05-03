@@ -367,7 +367,7 @@ if command -v podium &> /dev/null; then
     
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "  1. ${YELLOW}Reboot your computer${NC} so Docker group permissions take effect"
+    echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect (SSH users: just reconnect)"
     echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
     echo -e "  3. Create your first project:"
     echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""
