@@ -102,8 +102,14 @@ trap "kill \$SUDO_KEEPALIVE_PID 2>/dev/null; exit" INT TERM EXIT
 
 echo -e "${CYAN}Installing system dependencies...${NC}"
 
-# Remove any stale apt source files from previous failed runs
-sudo rm -f /etc/apt/sources.list.d/docker.list
+# If a docker.list from a previous run uses the wrong codename, fix it before apt-get update
+if [ -f /etc/apt/sources.list.d/docker.list ]; then
+    UBUNTU_BASE_CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+    if ! grep -q "$UBUNTU_BASE_CODENAME" /etc/apt/sources.list.d/docker.list; then
+        echo -e "${YELLOW}Fixing incorrect Docker apt source from a previous install attempt...${NC}"
+        sudo rm -f /etc/apt/sources.list.d/docker.list
+    fi
+fi
 
 ###############################
 # Update package lists
@@ -154,13 +160,20 @@ elif ! command -v docker &> /dev/null; then
     done
     
     # Add Docker's official GPG key and repository
+    UBUNTU_BASE_CODENAME=$(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
     sudo install -m 0755 -d /etc/apt/keyrings
     sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
     sudo chmod a+r /etc/apt/keyrings/docker.asc
-    
+
+    # If a docker.list already exists but uses the wrong codename, replace it
+    if [ -f /etc/apt/sources.list.d/docker.list ] && ! grep -q "$UBUNTU_BASE_CODENAME" /etc/apt/sources.list.d/docker.list; then
+        echo -e "${YELLOW}Replacing incorrect Docker apt source (wrong distro codename detected)...${NC}"
+        sudo rm -f /etc/apt/sources.list.d/docker.list
+    fi
+
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-      $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+      $UBUNTU_BASE_CODENAME stable" | \
       sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     
     sudo apt-get update -y -q
