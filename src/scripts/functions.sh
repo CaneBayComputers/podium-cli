@@ -101,6 +101,14 @@ json-mysql() {
     fi
 }
 
+json-postgres() {
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        docker container exec -e PGPASSWORD=password "$POSTGRES_CONTAINER_NAME" psql -U root "$@" > /dev/null 2>&1
+    else
+        docker container exec -e PGPASSWORD=password -i "$POSTGRES_CONTAINER_NAME" psql -U root "$@"
+    fi
+}
+
 json-composer() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         if [[ "$DEBUG" == "1" ]]; then

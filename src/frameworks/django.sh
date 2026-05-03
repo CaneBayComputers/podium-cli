@@ -75,11 +75,20 @@ framework_setup_env() {
     [ -f ".env" ] && return  # already exists (e.g. cloned project)
     echo-cyan "Setting up .env file ..."; echo-white
 
-    local db_connection db_host db_port
+    local db_connection db_host db_port db_username db_password
     case $DATABASE_ENGINE in
-        "postgresql") db_connection="pgsql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432" ;;
-        "mongodb")    db_connection="mongodb"; db_host="$MONGO_CONTAINER_NAME"; db_port="27017" ;;
-        *)            db_connection="mysql"; db_host="$MARIADB_CONTAINER_NAME"; db_port="3306" ;;
+        "postgres"|"postgresql"|"pgsql")
+            db_connection="postgresql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432"
+            db_username="root"; db_password="password"
+            ;;
+        "mongo"|"mongodb")
+            db_connection="mongodb"; db_host="$MONGO_CONTAINER_NAME"; db_port="27017"
+            db_username="root"; db_password=""
+            ;;
+        *)
+            db_connection="mysql"; db_host="$MARIADB_CONTAINER_NAME"; db_port="3306"
+            db_username="root"; db_password=""
+            ;;
     esac
 
     cat > .env << EOF
@@ -91,8 +100,8 @@ DB_CONNECTION=$db_connection
 DB_HOST=$db_host
 DB_PORT=$db_port
 DB_DATABASE=$PROJECT_NAME_SNAKE
-DB_USERNAME=root
-DB_PASSWORD=
+DB_USERNAME=$db_username
+DB_PASSWORD=$db_password
 REDIS_HOST=$REDIS_CONTAINER_NAME
 REDIS_PORT=6379
 MAIL_HOST=$MAILHOG_CONTAINER_NAME

@@ -373,7 +373,7 @@ case "$1" in
                     exit 1
                 fi
                 shift
-                docker_exec developer python3 /usr/share/nginx/html/manage.py "$@"
+                docker_exec_notty developer python3 /usr/share/nginx/html/manage.py "$@"
                 ;;
             "shell")
                 if [ ! -f "manage.py" ]; then

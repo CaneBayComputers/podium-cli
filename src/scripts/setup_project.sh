@@ -582,7 +582,18 @@ fi
 # Create new database, run migration and seed
 echo-cyan "Creating database $PROJECT_NAME_SNAKE ..."; echo-white
 
-json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
+case "$DATABASE_ENGINE" in
+    postgres|postgresql|pgsql)
+        # PostgreSQL has no IF NOT EXISTS on CREATE DATABASE; suppress "already exists" error
+        json-postgres -d postgres -c "CREATE DATABASE \"$PROJECT_NAME_SNAKE\";" 2>/dev/null || true
+        ;;
+    mongo|mongodb)
+        : # MongoDB creates databases on first write — nothing to do here
+        ;;
+    *)
+        json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
+        ;;
+esac
 
 echo-green 'Database created!'; echo-white
 

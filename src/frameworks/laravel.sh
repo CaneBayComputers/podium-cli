@@ -84,7 +84,7 @@ framework_setup_env() {
     podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
 
     case $DATABASE_ENGINE in
-        "postgresql")
+        "postgres"|"postgresql"|"pgsql")
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
             podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env

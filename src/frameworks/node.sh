@@ -69,8 +69,8 @@ framework_setup_env() {
 
     local db_connection db_host db_port
     case $DATABASE_ENGINE in
-        "postgresql") db_connection="pgsql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432" ;;
-        "mongodb")    db_connection="mongodb"; db_host="$MONGO_CONTAINER_NAME"; db_port="27017" ;;
+        "postgres"|"postgresql"|"pgsql") db_connection="postgresql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432" ;;
+        "mongo"|"mongodb")    db_connection="mongodb"; db_host="$MONGO_CONTAINER_NAME"; db_port="27017" ;;
         *)            db_connection="mysql"; db_host="$MARIADB_CONTAINER_NAME"; db_port="3306" ;;
     esac
 
