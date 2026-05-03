@@ -123,6 +123,13 @@ export class AppService {
 }
 EOF
 
+    cat > start.sh << 'EOF'
+#!/bin/sh
+[ -d node_modules ] || npm install
+npm run start
+EOF
+    chmod +x start.sh
+
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         git init > /dev/null 2>&1
         git add . > /dev/null 2>&1
@@ -137,7 +144,7 @@ EOF
 framework_python_start_command() { echo ""; }
 
 framework_node_start_command() {
-    echo "sh -c '[ -d node_modules ] || npm install; npm run start'"
+    echo "sh start.sh"
 }
 
 framework_setup_env() {

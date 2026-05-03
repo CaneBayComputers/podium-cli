@@ -237,10 +237,12 @@ docker_exec() {
     if [ $# -eq 1 ] && [[ "$1" == *" "* ]]; then
         set -- bash -c "$1"
     fi
+    local tty_flags="-it"
+    [ -t 0 ] || tty_flags="-i"
     if [ "$user" = "root" ]; then
-        docker container exec -it --user root -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec $tty_flags --user root -w /usr/share/nginx/html "$project_name" "$@"
     else
-        docker container exec -it --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec $tty_flags --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
     fi
 }
 
