@@ -19,6 +19,7 @@ services:
       IS_HTTPS_ENABLED: "false"
       SKIP_INITIAL_GEOLITE_DOWNLOAD: "true"
       INITIAL_API_KEY: $api_key
+      DEFAULT_BASE_URL_REDIRECT: http://shlink/rest/v3/health
       DB_DRIVER: maria
       DB_NAME: shlink
       DB_USER: root

@@ -16,7 +16,7 @@ Podium runs on Linux and Mac. It is open source. Stop configuring. Start buildin
 - **One database server for everything.** All your projects share a single MariaDB, PostgreSQL, and Redis instance. Spin up ten projects. They all just work.
 - **`podium up` / `podium down`. That's your entire environment.** One command starts everything — all shared services, all project containers. One command stops it all. Come back tomorrow and run `podium up` again.
 - **Build custom apps from a sentence.** `podium create "A customer portal in Laravel with subscription billing"` — the AI scaffolds it end to end. Database, models, routes, UI, seeds.
-- **Install 72+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, Metabase, Directus, NetBox, Superset, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
+- **Install 71+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, Metabase, Directus, NetBox, Superset, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
 - **AI that knows what to do.** Tell Podium to "set up n8n" and it installs it. Tell it to "set up n8n and add a Slack webhook" and it installs it first, then customizes it. The AI reaches for the right tool automatically.
 
 ---
@@ -287,7 +287,6 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | Shlink | `podium install shlink` | URL Shortener |
 | Snipe-IT | `podium install snipe-it` | Asset Mgmt |
 | Stirling PDF | `podium install stirling-pdf` | Utilities |
-| Strapi | `podium install strapi` | CMS |
 | Tandoor | `podium install tandoor` | Recipes |
 | Trilium Notes | `podium install trilium` | Notes |
 | Umami | `podium install umami` | Analytics |
