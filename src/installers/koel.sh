@@ -10,7 +10,7 @@ write_files() {
     local app_key
     app_key="base64:$(openssl rand -base64 32)"
 
-    # Koel reads /var/www/html/.env directly — env vars alone are not enough
+    # Koel init writes back to .env (to persist APP_KEY) — must be world-writable
     cat > .env << ENV
 APP_KEY=$app_key
 APP_URL=http://koel
@@ -26,6 +26,7 @@ ADMIN_NAME=Admin
 ADMIN_PASSWORD=KoelAdmin123
 MEMORY_LIMIT=512
 ENV
+    chmod 666 .env
 
     cat > docker-compose.yaml << 'EOF'
 services:
