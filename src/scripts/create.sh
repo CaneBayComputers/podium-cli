@@ -170,7 +170,7 @@ if [[ -n "$NEW_PROJECT" ]] && [[ -d "$PROJECTS_DIR_PATH/$NEW_PROJECT" ]]; then
     echo-cyan "Project ready. Starting interactive session in $NEW_PROJECT..."
     echo-return
     cd "$PROJECTS_DIR_PATH/$NEW_PROJECT"
-    exec "$SCRIPT_DIR/ai.sh" "The '$NEW_PROJECT' project was just created and is running at http://$NEW_PROJECT/. You are now in its project directory. Start an interactive development session — introduce yourself briefly and wait for the user's next instruction."
+    exec "$SCRIPT_DIR/ai.sh" "Read README.md to understand the project. It is running at http://$NEW_PROJECT/. You are the developer. Wait for the user's first instruction."
 else
     echo-yellow "Could not detect the project directory. Navigate to your project and run 'podium ai' to continue."
 fi
