@@ -38,14 +38,16 @@ while [[ $# -gt 0 ]]; do
             echo
             echo "Update Podium CLI from GitHub."
             echo
-            echo "By default this only re-runs the Podium CLI install script for your"
-            echo "platform — Docker images are not touched and running projects keep going."
+            echo "By default this only does a 'git pull' on the Podium CLI install"
+            echo "directory — no system packages are updated, no Docker images are"
+            echo "touched, and running projects keep going."
             echo
-            echo "Pass --full to also stop all projects, remove the Podium shared service"
-            echo "and base images, and re-pull them."
+            echo "Pass --full to also run the platform install script (apt-get update,"
+            echo "Docker / dependency refresh) and remove/re-pull the Podium shared"
+            echo "service and base Docker images. This will stop running projects."
             echo
             echo "Options:"
-            echo "  --full            Also stop projects, remove and re-pull Docker images"
+            echo "  --full            Run platform installer and re-pull Docker images"
             echo "  --json-output     Reserved for future JSON output support"
             echo "  --no-colors       Disable colored output"
             echo "  -h, --help        Show this help message"
@@ -123,44 +125,72 @@ if [[ "$FULL_UPDATE" == "1" ]]; then
     fi
 fi
 
-echo-return
-echo-cyan "Updating Podium CLI from GitHub install script ..."; echo-white
+if [[ "$FULL_UPDATE" == "1" ]]; then
+    echo-return
+    echo-cyan "Running platform install script ..."; echo-white
 
-INSTALL_SCRIPT=""
+    INSTALL_SCRIPT=""
 
-# Detect platform to choose the correct installer
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    INSTALL_SCRIPT="install-mac.sh"
-elif [[ -f /etc/os-release ]]; then
-    # shellcheck disable=SC1091
-    . /etc/os-release
-    case "$ID" in
-        arch|manjaro|endeavouros)
-            INSTALL_SCRIPT="install-arch.sh"
-            ;;
-        ubuntu|debian|linuxmint|pop)
-            INSTALL_SCRIPT="install-ubuntu.sh"
-            ;;
-        *)
-            INSTALL_SCRIPT=""
-            ;;
-    esac
-fi
+    # Detect platform to choose the correct installer
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        INSTALL_SCRIPT="install-mac.sh"
+    elif [[ -f /etc/os-release ]]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        case "$ID" in
+            arch|manjaro|endeavouros)
+                INSTALL_SCRIPT="install-arch.sh"
+                ;;
+            ubuntu|debian|linuxmint|pop)
+                INSTALL_SCRIPT="install-ubuntu.sh"
+                ;;
+            *)
+                INSTALL_SCRIPT=""
+                ;;
+        esac
+    fi
 
-if [[ -n "$INSTALL_SCRIPT" ]]; then
-    UPDATE_URL="https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/$INSTALL_SCRIPT"
-    echo-white "Running remote installer: $INSTALL_SCRIPT"
-    # cd to /tmp before running the installer — it removes and re-clones /usr/local/share/podium-cli,
-    # which would invalidate the CWD if we stayed inside it.
-    if cd /tmp && curl -fsSL "$UPDATE_URL" | bash; then
-        echo-green "Podium CLI updated via $INSTALL_SCRIPT."
+    if [[ -n "$INSTALL_SCRIPT" ]]; then
+        UPDATE_URL="https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/$INSTALL_SCRIPT"
+        echo-white "Running remote installer: $INSTALL_SCRIPT"
+        # cd to /tmp before running the installer — it removes and re-clones /usr/local/share/podium-cli,
+        # which would invalidate the CWD if we stayed inside it.
+        if cd /tmp && curl -fsSL "$UPDATE_URL" | bash; then
+            echo-green "Podium CLI updated via $INSTALL_SCRIPT."
+        else
+            echo-yellow "Failed to run remote installer: $INSTALL_SCRIPT"
+            echo-yellow "Please check your network connection or run the appropriate install script manually."
+        fi
     else
-        echo-yellow "Failed to run remote installer: $INSTALL_SCRIPT"
-        echo-yellow "Please check your network connection or run the appropriate install script manually."
+        echo-yellow "Could not detect a supported platform (ubuntu/arch/mac) for automatic CLI update."
+        echo-yellow "Please update Podium CLI manually using the install scripts from the repository."
     fi
 else
-    echo-yellow "Could not detect a supported platform (ubuntu/arch/mac) for automatic CLI update."
-    echo-yellow "Please update Podium CLI manually using the install scripts from the repository."
+    echo-return
+    echo-cyan "Pulling latest Podium CLI from GitHub ..."; echo-white
+
+    # DEV_DIR is .../podium-cli/src — the install dir is its parent.
+    INSTALL_DIR="$(dirname "$DEV_DIR")"
+
+    if [[ ! -d "$INSTALL_DIR/.git" ]]; then
+        echo-yellow "Podium CLI install dir is not a git checkout: $INSTALL_DIR"
+        echo-yellow "Run 'podium update --full' to reinstall via the platform installer."
+    else
+        # Use sudo if the checkout isn't writable by the current user
+        if [[ -w "$INSTALL_DIR/.git" ]]; then
+            GIT_PULL=(git -C "$INSTALL_DIR" pull --ff-only)
+        else
+            GIT_PULL=(sudo git -C "$INSTALL_DIR" pull --ff-only)
+        fi
+
+        if "${GIT_PULL[@]}"; then
+            echo-green "Podium CLI code updated."
+        else
+            echo-yellow "git pull failed in $INSTALL_DIR."
+            echo-yellow "If the working tree has local changes or has diverged, resolve them"
+            echo-yellow "or run 'podium update --full' to reinstall from scratch."
+        fi
+    fi
 fi
 
 echo-return
