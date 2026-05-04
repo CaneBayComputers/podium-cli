@@ -165,11 +165,16 @@ if ! [ -z "$PROJECT_NAME" ]; then
 else
     debug "Starting all projects"
   
-    # Only iterate directories; avoid literal '*' / '*/' with nullglob
+    # Only iterate directories; avoid literal '*' / '*/' with nullglob.
+    # Skip files and any directory whose name starts with a dot.
     shopt -s nullglob
 
     for PROJECT_FOLDER_NAME in */ ; do
         PROJECT_FOLDER_NAME=${PROJECT_FOLDER_NAME%/}
+
+        # Skip non-directories and hidden directories
+        [[ -d "$PROJECT_FOLDER_NAME" ]] || continue
+        [[ "$PROJECT_FOLDER_NAME" == .* ]] && continue
 
         debug "Attempting to start project: $PROJECT_FOLDER_NAME"
         start_project "$PROJECT_FOLDER_NAME" || true

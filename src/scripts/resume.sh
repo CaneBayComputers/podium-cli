@@ -13,8 +13,8 @@ source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
-# Build sorted list of project directories
-mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d | xargs -I{} basename {} | sort)
+# Build sorted list of project directories (skip files and hidden dirs)
+mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
 
 if [[ ${#PROJECTS[@]} -eq 0 ]]; then
     echo-yellow "No projects found in $PROJECTS_DIR_PATH."
@@ -84,37 +84,52 @@ if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
     exit 1
 fi
 
+notify_resume_fallback() {
+    echo-return
+    echo-yellow "Could not resume previous session. Starting a new session..."
+    echo-return
+}
+
 case "$AI_AGENT_CLI_NAME" in
     codex)
-        resume_args=()
+        common_args=()
         if [[ -n "$AI_MODEL" ]]; then
-            resume_args+=("--model" "$AI_MODEL")
+            common_args+=("--model" "$AI_MODEL")
         fi
         if [[ -n "$AI_API_KEY" ]]; then
-            resume_args+=("--api-key" "$AI_API_KEY")
+            common_args+=("--api-key" "$AI_API_KEY")
         fi
-        resume_args+=(--dangerously-bypass-approvals-and-sandbox)
-        exec codex resume --last "${resume_args[@]}"
+        common_args+=(--dangerously-bypass-approvals-and-sandbox)
+        if ! codex resume --last "${common_args[@]}"; then
+            notify_resume_fallback
+            exec codex "${common_args[@]}"
+        fi
         ;;
     claude)
-        resume_args=(--dangerously-skip-permissions --continue)
+        common_args=(--dangerously-skip-permissions)
         if [[ -n "$AI_MODEL" ]]; then
-            resume_args+=("--model" "$AI_MODEL")
+            common_args+=("--model" "$AI_MODEL")
         fi
         if [[ -n "$AI_API_KEY" ]]; then
-            resume_args+=("--api-key" "$AI_API_KEY")
+            common_args+=("--api-key" "$AI_API_KEY")
         fi
-        exec claude "${resume_args[@]}"
+        if ! claude --continue "${common_args[@]}"; then
+            notify_resume_fallback
+            exec claude "${common_args[@]}"
+        fi
         ;;
     gemini)
-        resume_args=(--yolo --skip-trust --resume latest)
+        common_args=(--yolo --skip-trust)
         if [[ -n "$AI_MODEL" ]]; then
-            resume_args+=("--model" "$AI_MODEL")
+            common_args+=("--model" "$AI_MODEL")
         fi
         if [[ -n "$PROJECTS_DIR_PATH" ]]; then
-            resume_args+=(--include-directories "$PROJECTS_DIR_PATH")
+            common_args+=(--include-directories "$PROJECTS_DIR_PATH")
         fi
-        exec gemini "${resume_args[@]}"
+        if ! gemini --resume latest "${common_args[@]}"; then
+            notify_resume_fallback
+            exec gemini "${common_args[@]}"
+        fi
         ;;
     *)
         echo-red "Unsupported AI agent: '$AI_AGENT_CLI_NAME'."
