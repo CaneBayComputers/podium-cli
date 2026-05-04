@@ -176,7 +176,7 @@ fi
 # Add user to docker group
 if ! id -nG "$USER" | grep -q "\bdocker\b"; then
     sudo usermod -aG docker "$USER"
-    echo -e "${YELLOW}You were added to the 'docker' group. You may need to log out and back in for this to take effect.${NC}"
+    echo -e "${YELLOW}You were added to the 'docker' group. You may need to log out and back in for this to take effect. Desktop users: if logging out does not work, a full reboot is required.${NC}"
 fi
 
 ###############################
@@ -272,7 +272,7 @@ if command -v podium >/dev/null 2>&1; then
     echo -e "${GREEN}✓ Podium CLI installed successfully${NC}"
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect (SSH users: just reconnect)"
+    echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect — SSH users: just reconnect; desktop users: reboot if a re-login does not work"
     echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
     echo -e "  3. Create your first project:"
     echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""

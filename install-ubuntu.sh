@@ -187,7 +187,7 @@ fi
 
 # Add user to docker group even if docker is already installed
 sudo usermod -aG docker "$USER"
-echo -e "${YELLOW}Note: You may need to log out and back in (or start a new shell with 'newgrp docker') for Docker group changes to take effect.${NC}"
+echo -e "${YELLOW}Note: You may need to log out and back in for Docker group changes to take effect. Desktop users: if logging out does not work, a full reboot is required.${NC}"
 
 ###############################
 # Install Node.js and NPM via NVM
@@ -367,7 +367,7 @@ if command -v podium &> /dev/null; then
     
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
-    echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect (SSH users: just reconnect)"
+    echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect — SSH users: just reconnect; desktop users: reboot if a re-login does not work"
     echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
     echo -e "  3. Create your first project:"
     echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""
