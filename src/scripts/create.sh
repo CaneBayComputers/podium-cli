@@ -20,8 +20,11 @@ usage() {
     echo-white "Describe a project in plain English and your configured AI agent will"
     echo-white "create a working Podium-managed project for you."
     echo-white ""
-    echo-white "By default the AI agent runs interactively. Pass --one-off to run it"
-    echo-white "non-interactively (useful for automation or scripted pipelines)."
+    echo-white "The AI creates the project non-interactively, then drops you into an"
+    echo-white "interactive session inside the new project directory."
+    echo-white ""
+    echo-white "Pass --one-off to skip the interactive follow-up (useful for automation"
+    echo-white "or scripted pipelines)."
     echo-white ""
     echo-white "Examples:"
     echo-white "  podium create"
@@ -30,11 +33,11 @@ usage() {
     echo-white "  podium create --one-off \"A notes app in Express with postgres\""
 }
 
-ONE_OFF=0
+SKIP_INTERACTIVE=0
 IDEA_ARGS=()
 for arg in "$@"; do
     if [[ "$arg" == "--one-off" ]]; then
-        ONE_OFF=1
+        SKIP_INTERACTIVE=1
     else
         IDEA_ARGS+=("$arg")
     fi
@@ -134,21 +137,40 @@ User project idea:
 PREPEND_EOF
 )
 
-FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}"
-
-if [[ "$ONE_OFF" == "1" ]]; then
-    # Single-quoted so backticks and angle brackets are not interpreted by bash
-    ONE_OFF_SUFFIX='
+# Creation always runs non-interactively — the agent makes all decisions autonomously.
+# Single-quoted so backticks and angle brackets inside are not expanded by bash.
+ONE_OFF_SUFFIX='
 
 NON-INTERACTIVE MODE: You cannot ask the user any questions. Make all decisions autonomously using sensible defaults derived from the project idea. Derive the project name directly from the idea (e.g. '"'"'recipe-book'"'"' for a recipe app). If the framework is stated, use it. If not, pick the most appropriate one. If a project directory already exists, remove it with `podium remove <name> --force-db-delete` and proceed. Do not wait for confirmation at any step.'
-    FULL_PROMPT="${FULL_PROMPT}${ONE_OFF_SUFFIX}"
-fi
 
-# Start in the podium-cli root so the AI can immediately read README.md and src/podium.
+FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}${ONE_OFF_SUFFIX}"
+
+# Start in the podium-cli root so the agent can read README.md.
 cd "$DEV_DIR/.."
 
-if [[ "$ONE_OFF" == "1" ]]; then
-    exec "$SCRIPT_DIR/ai.sh" --one-off "$FULL_PROMPT"
+# Mark time before creation so we can detect the new project directory afterward.
+TIMESTAMP_FILE=$(mktemp)
+
+# Phase 1: create the project non-interactively.
+"$SCRIPT_DIR/ai.sh" --one-off "$FULL_PROMPT" || true
+
+# --one-off flag: skip the interactive follow-up (useful for automation/scripted pipelines).
+if [[ "$SKIP_INTERACTIVE" == "1" ]]; then
+    rm -f "$TIMESTAMP_FILE"
+    exit 0
+fi
+
+# Phase 2: find the project that was just created or replaced, then start an interactive
+# session inside it so the user is in the right directory for continued development.
+NEW_PROJECT=$(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d -newer "$TIMESTAMP_FILE" 2>/dev/null | xargs -I{} basename {} 2>/dev/null | head -1)
+rm -f "$TIMESTAMP_FILE"
+
+if [[ -n "$NEW_PROJECT" ]] && [[ -d "$PROJECTS_DIR_PATH/$NEW_PROJECT" ]]; then
+    echo-return
+    echo-cyan "Project ready. Starting interactive session in $NEW_PROJECT..."
+    echo-return
+    cd "$PROJECTS_DIR_PATH/$NEW_PROJECT"
+    exec "$SCRIPT_DIR/ai.sh" "The '$NEW_PROJECT' project was just created and is running at http://$NEW_PROJECT/. You are now in its project directory. Start an interactive development session — introduce yourself briefly and wait for the user's next instruction."
 else
-    exec "$SCRIPT_DIR/ai.sh" "$FULL_PROMPT"
+    echo-yellow "Could not detect the project directory. Navigate to your project and run 'podium ai' to continue."
 fi
