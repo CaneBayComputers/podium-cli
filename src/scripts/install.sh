@@ -37,11 +37,13 @@ fi
 PROJECTS_DIR="$(get_projects_dir)"
 PROJECT_DIR="$PROJECTS_DIR/$APP"
 
-# Already installed?
+# Already installed? (only skip if actually running)
 if grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[[:space:]]+${APP}$" /etc/hosts 2>/dev/null; then
-    echo-yellow "$APP is already installed."
-    echo-white "Visit: http://$APP/"
-    exit 0
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${APP}$"; then
+        echo-yellow "$APP is already installed and running."
+        echo-white "Visit: http://$APP/"
+        exit 0
+    fi
 fi
 
 # Defaults (overridable by installer)

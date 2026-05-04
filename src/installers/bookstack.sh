@@ -3,6 +3,7 @@ INSTALL_CREDENTIALS="admin@admin.com / password"
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS bookstack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker volume rm bookstack_bookstack-config 2>/dev/null || true
 }
 
 write_files() {

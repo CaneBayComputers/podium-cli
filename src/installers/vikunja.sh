@@ -6,8 +6,8 @@ pre_install() {
 }
 
 write_files() {
-    local jwt_secret
-    jwt_secret=$(openssl rand -hex 32)
+    local secret
+    secret=$(openssl rand -hex 32)
 
     cat > docker-compose.yaml << EOF
 services:
@@ -20,7 +20,8 @@ services:
       VIKUNJA_DATABASE_USER: root
       VIKUNJA_DATABASE_PASSWORD: ""
       VIKUNJA_DATABASE_DATABASE: vikunja
-      VIKUNJA_SERVICE_JWTSECRET: "$jwt_secret"
+      VIKUNJA_SERVICE_SECRET: "$secret"
+      VIKUNJA_SERVICE_PUBLICURL: http://vikunja/
       VIKUNJA_SERVICE_FRONTENDURL: http://vikunja/
     volumes:
       - vikunja-files:/app/vikunja/files
