@@ -10,6 +10,20 @@ write_files() {
     local app_key
     app_key="base64:$(openssl rand -base64 32)"
 
+    # Write .env directly — the linuxserver/bookstack image copies a template .env with
+    # placeholder values that Laravel reads instead of the container env vars.
+    mkdir -p bookstack-config/www
+    cat > bookstack-config/www/.env << ENV
+APP_KEY=$app_key
+APP_URL=http://bookstack
+DB_HOST=podium-mariadb
+DB_PORT=3306
+DB_DATABASE=bookstack
+DB_USERNAME=root
+DB_PASSWORD=
+MAIL_DRIVER=log
+ENV
+
     cat > docker-compose.yaml << EOF
 services:
   bookstack-app:
@@ -19,17 +33,7 @@ services:
       PUID: 1000
       PGID: 1000
       TZ: UTC
-      APP_URL: http://bookstack
-      APP_KEY: "$app_key"
-      DB_HOST: podium-mariadb
-      DB_PORT: 3306
-      DB_DATABASE: bookstack
-      DB_USERNAME: root
-      DB_PASSWORD: ""
     volumes:
-      - bookstack-config:/config
-
-volumes:
-  bookstack-config:
+      - ./bookstack-config:/config
 EOF
 }
