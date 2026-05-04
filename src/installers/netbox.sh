@@ -8,7 +8,8 @@ pre_install() {
 
 write_files() {
     local secret_key
-    secret_key=$(openssl rand -base64 37 | tr -d "=+/" | head -c 50)
+    # SECRET_KEY must be at least 50 chars; use hex (only alphanumeric, never stripped)
+    secret_key=$(openssl rand -hex 32)
 
     cat > docker-compose.yaml << EOF
 services:
