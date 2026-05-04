@@ -33,7 +33,7 @@ services:
     image: phanan/koel:latest
     restart: unless-stopped
     volumes:
-      - ./.env:/var/www/html/.env:ro
+      - ./.env:/var/www/html/.env
       - koel-music:/music
       - koel-search-indexes:/var/www/html/storage/search-indexes
 
