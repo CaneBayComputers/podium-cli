@@ -16,7 +16,7 @@ Podium runs on Linux and Mac. It is open source. Stop configuring. Start buildin
 - **One database server for everything.** All your projects share a single MariaDB, PostgreSQL, and Redis instance. Spin up ten projects. They all just work.
 - **`podium up` / `podium down`. That's your entire environment.** One command starts everything — all shared services, all project containers. One command stops it all. Come back tomorrow and run `podium up` again.
 - **Build custom apps from a sentence.** `podium create "A customer portal in Laravel with subscription billing"` — the AI scaffolds it end to end. Database, models, routes, UI, seeds.
-- **Install 71+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, Metabase, Directus, NetBox, Superset, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
+- **Install 101+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, Metabase, Directus, NetBox, Superset, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
 - **AI that knows what to do.** Tell Podium to "set up n8n" and it installs it. Tell it to "set up n8n and add a Slack webhook" and it installs it first, then customizes it. The AI reaches for the right tool automatically.
 
 ---
@@ -226,17 +226,25 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | App | One-liner | Category |
 |-----|-----------|----------|
 | Actual Budget | `podium install actual-budget` | Finance |
+| Appsmith | `podium install appsmith` | Low-code |
+| Appwrite | `podium install appwrite` | Backend |
 | Apache Superset | `podium install superset` | Analytics |
 | ArchiveBox | `podium install archivebox` | Archiving |
 | Audiobookshelf | `podium install audiobookshelf` | Media |
 | Baby Buddy | `podium install babybuddy` | Health |
 | BookStack | `podium install bookstack` | Wiki |
+| Budibase | `podium install budibase` | Low-code |
 | Cachet | `podium install cachet` | Status Page |
+| Cal.com | `podium install cal-com` | Scheduling |
 | Changedetection.io | `podium install changedetection` | Monitoring |
+| Code-Server | `podium install code-server` | Dev Tools |
+| Coolify | `podium install coolify` | DevOps |
 | Dashy | `podium install dashy` | Dashboard |
+| Dify | `podium install dify` | AI / LLM |
 | Directus | `podium install directus` | CMS |
 | Excalidraw | `podium install excalidraw` | Diagramming |
 | Firefly III | `podium install firefly-iii` | Finance |
+| Flowise | `podium install flowise` | AI / LLM |
 | Flarum | `podium install flarum` | Forum |
 | Flame | `podium install flame` | Dashboard |
 | FreeScout | `podium install freescout` | Help Desk |
@@ -246,10 +254,12 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | Glances | `podium install glances` | Monitoring |
 | Grafana | `podium install grafana` | Monitoring |
 | Grocy | `podium install grocy` | Home |
+| Graylog | `podium install graylog` | Logging |
 | Healthchecks | `podium install healthchecks` | Monitoring |
 | HedgeDoc | `podium install hedgedoc` | Docs |
 | Heimdall | `podium install heimdall` | Dashboard |
 | Homer | `podium install homer` | Dashboard |
+| Home Assistant | `podium install home-assistant` | Smart Home |
 | Immich | `podium install immich` | Photos |
 | Invoice Ninja | `podium install invoice-ninja` | Invoicing |
 | IT Tools | `podium install it-tools` | Utilities |
@@ -260,35 +270,52 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | Koel | `podium install koel` | Music |
 | Label Studio | `podium install label-studio` | ML / AI |
 | Leantime | `podium install leantime` | Project Mgmt |
+| Lemmy | `podium install lemmy` | Social |
 | LimeSurvey | `podium install limesurvey` | Surveys |
 | Linkwarden | `podium install linkwarden` | Bookmarks |
 | Listmonk | `podium install listmonk` | Newsletters |
+| LocalStack | `podium install localstack` | Dev Tools |
 | Lychee | `podium install lychee` | Photos |
+| Mastodon | `podium install mastodon` | Social |
+| Matomo | `podium install matomo` | Analytics |
 | Mattermost | `podium install mattermost` | Team Chat |
+| Mautic | `podium install mautic` | Marketing |
 | Mealie | `podium install mealie` | Recipes |
 | Meilisearch | `podium install meilisearch` | Search |
 | Memos | `podium install memos` | Notes |
 | Metabase | `podium install metabase` | Analytics |
 | Miniflux | `podium install miniflux` | RSS |
+| MinIO | `podium install minio` | Storage |
 | Monica | `podium install monica` | CRM |
 | n8n | `podium install n8n` | Automation |
 | Netdata | `podium install netdata` | Monitoring |
 | NetBox | `podium install netbox` | Networking |
 | Nextcloud | `podium install nextcloud` | File Hosting |
 | Nginx Proxy Manager | `podium install nginx-proxy-manager` | Networking |
+| NocoDB | `podium install nocodb` | Database |
+| Open WebUI | `podium install open-webui` | AI / LLM |
 | Outline | `podium install outline` | Wiki |
 | Paperless-ngx | `podium install paperless` | Documents |
+| Penpot | `podium install penpot` | Design |
 | PhotoPrism | `podium install photoprism` | Photos |
+| Pixelfed | `podium install pixelfed` | Social |
+| Plane | `podium install plane` | Project Mgmt |
+| Plausible | `podium install plausible` | Analytics |
 | Portainer | `podium install portainer` | Docker UI |
 | Redash | `podium install redash` | Analytics |
 | Redmine | `podium install redmine` | Project Mgmt |
 | Roundcube | `podium install roundcube` | Webmail |
 | SearXNG | `podium install searxng` | Search |
 | Shlink | `podium install shlink` | URL Shortener |
+| Snappymail | `podium install snappymail` | Webmail |
 | Snipe-IT | `podium install snipe-it` | Asset Mgmt |
+| Standard Notes | `podium install standard-notes` | Notes |
 | Stirling PDF | `podium install stirling-pdf` | Utilities |
+| Taiga | `podium install taiga` | Project Mgmt |
 | Tandoor | `podium install tandoor` | Recipes |
+| Tooljet | `podium install tooljet` | Low-code |
 | Trilium Notes | `podium install trilium` | Notes |
+| Typebot | `podium install typebot` | Forms |
 | Umami | `podium install umami` | Analytics |
 | Uptime Kuma | `podium install uptime-kuma` | Monitoring |
 | Vaultwarden | `podium install vaultwarden` | Passwords |
@@ -296,6 +323,9 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | Wallabag | `podium install wallabag` | Read Later |
 | wger | `podium install wger` | Fitness |
 | Wiki.js | `podium install wikijs` | Wiki |
+| Yourls | `podium install yourls` | URL Shortener |
+| Zabbix | `podium install zabbix` | Monitoring |
+| Zulip | `podium install zulip` | Team Chat |
 
 ---
 
@@ -409,7 +439,8 @@ podium down
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
-| `podium create [--one-off] ["idea"]` | Create a project from a plain English description (AI) |
+| `podium create ["idea"]` | Create a project non-interactively, then start interactive session in the project dir (AI) |
+| `podium resume [project]` | Resume the last AI session for a project (interactive picker if no arg) |
 | `podium install <app>` | Install a popular OSS app in one command (`--list` to see all) |
 | `podium clone <repo>` | Clone existing project |
 | `podium setup <project> [options]` | Set up an existing project directory |
