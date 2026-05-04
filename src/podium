@@ -96,7 +96,7 @@ show_help() {
     echo "  podium configure          - Configure Podium environment"
     echo "  podium ai \"<prompt>\"      - Start AI agent session with initial prompt"
     echo "  podium ai-set             - Configure AI agent and model"
-    echo "  podium update             - Update Podium CLI and base Docker images"
+    echo "  podium update [--full]    - Update Podium CLI (--full also re-pulls Docker images)"
     echo "  podium start-services     - Start shared services"
     echo "  podium stop-services      - Stop shared services"
     echo "  podium uninstall          - Remove Podium Docker resources"
