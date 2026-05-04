@@ -86,6 +86,7 @@ show_help() {
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
+    echo "  podium resume [project]   - Resume AI session for a project (interactive picker if no arg)"
     echo "  podium install <app>      - Install a known open-source app (podium install --list)"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
@@ -631,6 +632,9 @@ case "$1" in
     # System management
     "configure")
         "$SCRIPT_DIR/scripts/configure.sh" "${@:2}"
+        ;;
+    "resume")
+        "$SCRIPT_DIR/scripts/resume.sh" "${@:2}"
         ;;
     "ai")
         "$SCRIPT_DIR/scripts/ai.sh" "${@:2}"
