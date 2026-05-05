@@ -4,12 +4,13 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   heimdall:
-    image: lscr.io/linuxserver/heimdall:latest
+    image: lscr.io/linuxserver/heimdall:2.7.6
     restart: unless-stopped
     environment:
       PUID: 1000
       PGID: 1000
-      TZ: UTC
+      TZ: Etc/UTC
+      ALLOW_INTERNAL_REQUESTS: "true"
     volumes:
       - heimdall-config:/config
 
