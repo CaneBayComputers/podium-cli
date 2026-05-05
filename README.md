@@ -1,10 +1,12 @@
 # Podium CLI
 
-Podium is a Docker-based local development environment for devs running multiple projects on one machine — and for AI agents that need a stable platform to operate inside.
+Podium is a Docker-based local development environment manager for PHP, Python, and Node projects.
 
-Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at `http://timeclock/` with a live database. Or `podium install grafana` and Grafana is up at `http://grafana/` in 90 seconds. No Docker knowledge required. No config files to wrestle with.
+Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at a local URL with a live database. No Docker knowledge required. No config files to wrestle with.
 
-Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js, plus 100+ curated OSS app installers. It runs on Linux and Mac. It is open source. Stop configuring. Start building.
+Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
+
+Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
 ---
 
