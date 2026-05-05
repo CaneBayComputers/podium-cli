@@ -1,23 +1,45 @@
 # Podium CLI
 
-Podium is a Docker-based local development environment manager for PHP, Python, and Node projects.
+Podium is a Docker-based local development environment for devs running multiple projects on one machine — and for AI agents that need a stable platform to operate inside.
 
-Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at a local URL with a live database. No Docker knowledge required. No config files to wrestle with.
+Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at `http://timeclock/` with a live database. Or `podium install grafana` and Grafana is up at `http://grafana/` in 90 seconds. No Docker knowledge required. No config files to wrestle with.
 
-Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
-
-Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
+Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js, plus 100+ curated OSS app installers. It runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
 ---
 
-**Why developers reach for Podium:**
+## What Podium is
 
-- **No ports to memorize.** Every project lives at `http://project-name` — automatically. No `localhost:3001` vs `localhost:3002` confusion.
-- **One database server for everything.** All your projects share a single MariaDB, PostgreSQL, and Redis instance. Spin up ten projects. They all just work.
-- **`podium up` / `podium down`. That's your entire environment.** One command starts everything — all shared services, all project containers. One command stops it all. Come back tomorrow and run `podium up` again.
-- **Build custom apps from a sentence.** `podium create "A customer portal in Laravel with subscription billing"` — the AI scaffolds it end to end. Database, models, routes, UI, seeds.
-- **Install 101+ popular OSS apps in seconds.** Grafana, Gitea, n8n, Portainer, Nextcloud, Immich, Ghost, Mattermost, Metabase, Directus, NetBox, Superset, and more — fully configured, running, and reachable at their local URL in under two minutes. No YAML to write.
-- **AI that knows what to do.** Tell Podium to "set up n8n" and it installs it. Tell it to "set up n8n and add a Slack webhook" and it installs it first, then customizes it. The AI reaches for the right tool automatically.
+Podium does three things, and they reinforce each other:
+
+### 🔗 Shares resources across every project
+
+One `podium-postgres`, one `podium-mariadb`, one `podium-redis`, one `podium-mongo`, one `podium-memcached` — used by every Podium project on the machine. Run ten projects, you've still got one of each.
+
+- **Projects talk to each other for free.** Same hostnames resolve from your browser (`http://typebot/`) and from inside containers (`fetch('http://python-api/')`, `psql -h podium-postgres`). A Laravel app can read another project's database with zero networking setup.
+- **No port roulette.** Every project lives at `http://project-name`. No `localhost:3001` vs `:3002` vs `:3003` mental load. No `host.docker.internal` hacks.
+- **Resource consolidation.** Seven duplicate postgres containers eating ~700MB of RAM becomes one eating ~100MB. Matters once you've got a client gig, a side project, a self-hosted Mastodon, and a Plausible instance all on the same laptop.
+- **No conflicts.** Upstream `docker-compose.yml` files binding `5432:5432` or `80:80` get auto-rewired to the shared services and a hostname. Bundled DBs from two different repos stop fighting.
+- **`podium up` / `podium down`. That's your entire environment.** One command starts every shared service and every project. One command stops it all.
+
+### ⚡ Installs frameworks and 100+ OSS apps in one command
+
+`podium install <app>` — fully configured, running, reachable at `http://<app>/` in under two minutes. Grafana, Gitea, Ghost, Nextcloud, Immich, Mattermost, Mastodon, Plane, Zulip, n8n, Outline, Paperless-ngx — and ~90 more. Or `podium new --framework laravel` / `--framework fastapi` / `--framework express` for a fresh greenfield project.
+
+- **Saves AI tokens.** Each curated installer captures upstream quirks (Mastodon's VAPID keys, Zulip's HTTPS-redirect-by-default, plane's YAML anchors, Mastodon's separate db-migrate service) once. An AI agent doesn't re-derive them every "yo install minio" session.
+- **Saves headaches.** No env-var spelunking. No "wait, why isn't `db:5432` resolving" debugging sessions. No first-run setup wizards to navigate twice. The shared-services rewrite handles bundled DB conflicts automatically.
+- **Quick.** Most apps are reachable inside two minutes. Greenfield framework scaffolding is similar.
+- **Reliable.** Image tags are pinned to specific versions, not `:latest`, so yesterday's install works the same today and bumps are intentional events. Each installer is verified end-to-end on the test fleet before shipping.
+- **Self-maintaining.** When upstream drifts, `podium update-installer <app>` (or `--all`) refreshes against current upstream via AI agent. `podium create-installer "<idea>"` writes a new installer for an app we don't ship yet — agent identifies the project, writes the installer + hint, runs it, commits when verified.
+
+### 🤖 Built for AI agents
+
+`podium create`, `podium ai`, `podium resume` — Podium's command surface is shaped around AI-driven development. The agent gets a stable platform (shared services, hostname routing, `/etc/hosts` wired up, three known cbc runtime images) so it can focus on the actual app instead of reinventing the runtime.
+
+- **Solid bootstrapping foundation.** Three cbc base images (PHP 8.3, Node 22, Python 3) handle nginx + supervisor + framework runtimes consistently. The agent jumps straight to "what does the user want to build" instead of "how do I wire up nginx + php-fpm + a queue worker."
+- **Cross-platform integration.** Same hostnames, same credentials, same mental model on every machine — your laptop, test machines, teammates' laptops. AI sessions transfer cleanly between machines.
+- **Resumable AI sessions.** `podium resume` picks any project's last agent session back up. Context survives reboots, disconnects, and switching between agents (Claude, Codex, Gemini all supported).
+- **AI tells the AI what to do.** Pre-built prompts in `podium create-installer` / `podium update-installer` instruct an agent to read `AGENTS.md`, fetch upstream, regenerate, verify end-to-end, commit. The platform maintains itself.
 
 ---
 
