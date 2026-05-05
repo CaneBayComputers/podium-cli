@@ -32,6 +32,7 @@ Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone`
 - Author scripts with `#!/bin/bash`, `set -e`, four-space indentation, and snake_case helpers (`init_projects_dir`).
 - Prefer extending the shared utilities in `functions.sh` so color handling, JSON quiet mode, and logging stay consistent.
 - New commands should follow the existing verb-first naming (`podium cleanup-test-environment`) and reuse the echo wrappers instead of raw `echo`.
+- `set -e` is mandatory but watch for surprise aborts from commands that fail in non-obvious environments. Known traps: `tput` exits non-zero when `$TERM` is unset (plain `ssh host cmd` without `-t`) — `functions.sh` auto-detects this and forces `NO_COLOR=1`; `trash-put` refuses to overwrite an existing trash entry — `remove_project.sh` renames with a timestamp suffix to avoid collisions. When using a command that can fail this way, wrap in `if !` / `|| true` or detect the failure mode upfront.
 
 ## AI / Automation Usage Notes
 - For non-interactive runs (CI, agents, scripts), prefer the non-TTY container execution commands:
@@ -49,6 +50,20 @@ Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone`
 ## Configuration & Security Notes
 - Document new environment variables in `src/docker-stack/env.example` and keep defaults non-sensitive.
 - Any credentials belong in `/etc/podium-cli/.env` or developer-specific overrides, never in tracked files or example data.
+
+---
+
+## Design Context: What Podium Optimizes For
+
+Podium is infrastructure for **multi-project local dev** and **AI-driven workflows**, not a single-app framework. The codebase makes design decisions on those terms — when adding or refactoring features, ask whether the change preserves these properties:
+
+- **Shared services over bundled**. One `podium-postgres` / `podium-mariadb` / `podium-redis` / `podium-mongo` / `podium-memcached` serves N projects instead of N projects each spinning up their own. Cuts RAM from ~700MB of redundant DB containers down to ~100MB and eliminates port collisions.
+- **Hostname-based routing, both layers**. The host's `/etc/hosts` resolves `http://<project>/` for browsers; Docker's embedded DNS resolves `podium-postgres`/`podium-redis`/sibling-project names from inside containers. Both layers share one naming scheme so frameworks see a consistent hostname regardless of which side they're on.
+- **Stable platform for AI agents**. Each "yo install <app>" session that has to rediscover networking, ports, secret generation, and shared services from scratch burns tokens reinventing what Podium already encodes. The installer + `setup_project.sh` adaptation logic captures that knowledge once so the agent can focus on the actual app.
+
+**When Podium does not add value**: single-project devs. Upstream `docker compose up` works fine for them — bundled DBs, host port binds, no need for shared resources. Don't pitch Podium to that audience.
+
+The cross-project communication side effect (project A `fetch('http://project-b/api')` directly) is a real but secondary benefit. The headline win is resource consolidation + a consistent mental model across machines (dingdong / cami / cassie).
 
 ---
 
@@ -92,6 +107,26 @@ Podium project containers are built from one of three cbc base images hosted on 
 
 ---
 
+## VPC Networking & IP Allocation
+
+All Podium containers attach to the `podium-cli_vpc` Docker network (subnet `${VPC_SUBNET}.0/24`, configured per machine in `/etc/podium-cli/.env`). The address space is partitioned to keep static IPs (shared services, project entry-points) from colliding with dynamic allocations (helper containers in multi-service projects):
+
+| Range | Purpose | Allocation |
+|---|---|---|
+| `.2`–`.8` | Shared services (`podium-mariadb`, `podium-phpmyadmin`, `podium-mongo`, `podium-redis`, `podium-postgres`, `podium-memcached`, `podium-mailhog`) | Static via `ipv4_address` in `src/docker-stack/docker-compose.services.yaml` |
+| `.32`–`.63` | Helper containers in multi-service projects (workers, schedulers, internal services) | Dynamic via `ip_range: ${VPC_SUBNET}.32/27` |
+| `.100`–`.250` | Project entry-points (the web-facing service, addressable as `http://<project>/`) | Static, randomly assigned per project (`D_CLASS=$((RANDOM % 151 + 100))` in `setup_project.sh`) |
+
+The `ip_range` on the network is critical. Without it, Docker hands out dynamic IPs starting at `.2` and helper containers squat on `podium-mariadb`/`podium-postgres`/etc. whenever the shared services are temporarily down — blocking those services from coming back up. If you edit `src/docker-stack/docker-compose.services.yaml`, preserve the `ip_range` block.
+
+Two-layer hostname resolution:
+- **Host → project**: `/etc/hosts` entries written by `setup_project.sh` (`10.x.x.219    typebot`). Browsers and host-side tooling use this.
+- **Container → container**: Docker's embedded DNS resolves container names automatically as long as both ends are on `podium-cli_vpc`. Frameworks inside a project container can `psql -h podium-postgres` or `fetch('http://other-project/')` without any extra config.
+
+`/etc/podium-cli/docker-compose.yaml` is the deployed copy of `src/docker-stack/docker-compose.services.yaml`, copied once on first `podium configure`. It does not auto-resync on `podium update` — when you change the source, existing installs need a manual `sudo cp` and `docker network rm podium-cli_vpc` + `podium start-services` to pick up the new config.
+
+---
+
 ## Complex Compose Adaptation
 
 When `podium clone` or `podium setup` encounters an existing `docker-compose.yaml` that has more than one service or uses non-cbc images, it is considered a **complex project**. Podium automatically adapts the compose rather than replacing it:
@@ -103,6 +138,17 @@ When `podium clone` or `podium setup` encounters an existing `docker-compose.yam
 - The container is **not auto-started** after setup, so the generated `docker-compose.yaml` can be reviewed and corrected before first boot.
 
 This logic lives in `src/scripts/setup_project.sh`. The adaptation is a Python script embedded inline. If it fails (malformed YAML, edge case), it falls through silently and Podium generates a fresh cbc-template compose instead.
+
+### Upstream compose preservation
+
+Whenever the project already had a `docker-compose.yaml` (any complexity), `setup_project.sh`:
+- Copies the original to `docker-compose.upstream.yaml` (first run only — never overwrites a previous backup, so the true original survives across re-runs).
+- Appends `docker-compose.yaml` to the project's `.gitignore` (idempotent, with a comment pointing at the upstream sidecar). This keeps a Podium dev from accidentally committing the Podium-mangled compose back to a shared repo and breaking non-Podium teammates.
+- Does **not** auto-run `git rm --cached docker-compose.yaml` — if the upstream compose was already tracked, the user still sees modifications in `git status` and can untrack it themselves if desired.
+
+Greenfield projects (no existing compose, e.g. `podium new`) are unaffected — no `.upstream.yaml` and no `.gitignore` entry, since there's no team convention to preserve.
+
+This is the lightweight version of a full sidecar pattern (where Podium would write its config to `docker-compose.podium.yaml` and run with `-f`). The full sidecar would require threading an alternate filename through `dockerup`/`dockerdown`/`startup.sh`/`shutdown.sh`/`status.sh`/the compose-type detection helpers — a couple-day refactor with edge cases (`extends`, projects already using `-f` chains). Revisit if `podium clone` of upstream repos becomes a dominant workflow.
 
 **Shared service credentials** (use these when configuring projects — do not inspect containers):
 | Service | Host | Port | User | Password |
@@ -125,6 +171,20 @@ This logic lives in `src/scripts/setup_project.sh`. The adaptation is a Python s
 **What belongs in a hints file**: only non-obvious things that an agent would reliably get wrong without guidance. Keep them short. Do not duplicate information already in the agent prompt or the project's own README.
 
 **What does NOT belong**: framework-general advice (already in `create.sh`), steps the agent can infer from the project docs, or workarounds for bugs that have since been fixed in the cbc images or Podium core.
+
+---
+
+## Installer Maintenance Strategy
+
+Installers in `src/installers/` ship hand-written `docker-compose.yaml` snippets, env vars, secret-generation steps, and integration glue (Mastodon's `db-migrate` service, Zulip's `X-Forwarded-Proto`, plane's YAML anchors, etc.). Upstream apps drift over time — new required env vars, renamed config, image schema changes — and our installers can rot silently.
+
+The intended approach:
+
+1. **Pin image versions** in installers (`zulip/docker-zulip:8.0`, not `:latest`). Trades upstream-tracking for reproducibility — image bumps become intentional events instead of surprises.
+2. **Scheduled end-to-end test runs** on cami/cassie via `tests/installers-<machine>.sh` cron'd weekly. Loud signal when an installer + its pinned image stops working.
+3. **AI-assisted reconciliation** via `podium update-installer <app>` (or `--all`). The command emits a pre-built prompt that tells an AI agent: read `AGENTS.md`, fetch the upstream compose, diff against our installer, regenerate the installer + hint file, run `podium install <app>` end-to-end on the local machine (and remote test machines if available), confirm the deploy works. The structured installer format (`INSTALL_DISPLAY`, `INSTALL_CREDENTIALS`, `INSTALL_NOTES`, `pre_install()`, `write_files()`) is intentionally easy for an agent to regenerate.
+
+There's no clean fully-automated reconciliation path — installer YAML encodes integration decisions that don't fail loudly when upstream changes. End-to-end tests + AI/human judgment are what surface the subtler drifts.
 
 ---
 

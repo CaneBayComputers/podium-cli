@@ -88,6 +88,8 @@ show_help() {
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
     echo "  podium resume [project]   - Resume AI session for a project (interactive picker if no arg)"
     echo "  podium install <app>      - Install a known open-source app (podium install --list)"
+    echo "  podium create-installer \"<idea>\" - Generate a new installer + hint for an OSS app via AI"
+    echo "  podium update-installer <app>|--all - Refresh an installer (or all) against current upstream via AI"
     echo "  podium clone <repo> [options] - Clone existing project"
     echo "  podium setup <project> [options] - Set up existing project directory"
     echo "  podium remove <project> [options] - Remove project"
@@ -603,6 +605,12 @@ case "$1" in
         ;;
     "install")
         "$SCRIPT_DIR/scripts/install.sh" "${@:2}"
+        ;;
+    "update-installer")
+        "$SCRIPT_DIR/scripts/update_installer.sh" "${@:2}"
+        ;;
+    "create-installer")
+        "$SCRIPT_DIR/scripts/create_installer.sh" "${@:2}"
         ;;
     "clone")
         if [ -z "$2" ]; then
