@@ -109,8 +109,46 @@ debug "Force trash project: $FORCE_TRASH_PROJECT"
 debug "Force DB delete: $FORCE_DB_DELETE"
 debug "JSON output mode: $JSON_OUTPUT"
 
-# Project removal confirmation - only ask about database if needed
-if [ "$FORCE_DB_DELETE" = false ] && [[ "$JSON_OUTPUT" != "1" ]]; then
+# Detect database engine from project config before we trash the directory.
+# Check root .env first, then fall back to scanning all env files and docker-compose.yaml
+# (complex projects with adapted composes often have no root .env).
+DB_ENGINE="mysql"
+HAS_SHARED_DB=false
+_DB_HINTS=""
+if [ -f "$PROJECT_DIR/.env" ]; then
+    _DB_HINTS=$(grep -E "^(DB_HOST|DB_CONNECTION)=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' | tr '\n' ' ')
+fi
+if [ -z "$_DB_HINTS" ]; then
+    # No root .env or no DB vars — scan env files and docker-compose.yaml for Podium shared service hostnames
+    _DB_HINTS=$(grep -rh "podium-postgres\|podium-mongo\|podium-mariadb" \
+        "$PROJECT_DIR"/*.env "$PROJECT_DIR"/.env.* "$PROJECT_DIR"/env/ \
+        "$PROJECT_DIR"/docker-compose.yaml "$PROJECT_DIR"/docker-compose.yml \
+        2>/dev/null | head -5 | tr '\n' ' ')
+fi
+if echo "$_DB_HINTS" | grep -qiE "postgres|pgsql|postgresql"; then
+    DB_ENGINE="postgres"
+elif echo "$_DB_HINTS" | grep -qiE "mongo"; then
+    DB_ENGINE="mongo"
+fi
+
+# A project only uses a shared Podium DB if its config references one of the
+# podium-* hostnames. Bundled-DB projects (e.g. budibase) don't, so we should
+# skip the start-services + DROP DATABASE step entirely for those.
+if echo "$_DB_HINTS" | grep -q "podium-postgres\|podium-mongo\|podium-mariadb"; then
+    HAS_SHARED_DB=true
+fi
+debug "Detected database engine: $DB_ENGINE, uses shared DB: $HAS_SHARED_DB"
+
+# Project removal confirmation. Only prompt about the database when the project
+# actually uses a Podium shared DB; otherwise there is nothing for us to drop.
+if [ "$HAS_SHARED_DB" = false ]; then
+    debug "Skipping database confirmation (project uses bundled or no Podium-managed DB)"
+    if [[ "$JSON_OUTPUT" != "1" ]]; then
+        echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
+        echo-cyan "Project files will be moved to trash (recoverable)."
+        echo-white
+    fi
+elif [ "$FORCE_DB_DELETE" = false ] && [[ "$JSON_OUTPUT" != "1" ]]; then
     debug "Requesting database confirmation (non-JSON mode)"
     echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
     echo-cyan "Project files will be moved to trash (recoverable)."
@@ -128,28 +166,6 @@ fi
 
 debug "Starting project removal for: $PROJECT_NAME"
 echo-cyan "Removing project '$PROJECT_NAME'..."
-
-# Detect database engine from project config before we trash the directory.
-# Check root .env first, then fall back to scanning all env files and docker-compose.yaml
-# (complex projects with adapted composes often have no root .env).
-DB_ENGINE="mysql"
-_DB_HINTS=""
-if [ -f "$PROJECT_DIR/.env" ]; then
-    _DB_HINTS=$(grep -E "^(DB_HOST|DB_CONNECTION)=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' | tr '\n' ' ')
-fi
-if [ -z "$_DB_HINTS" ]; then
-    # No root .env or no DB vars — scan env files and docker-compose.yaml for Podium shared service hostnames
-    _DB_HINTS=$(grep -rh "podium-postgres\|podium-mongo\|podium-mariadb" \
-        "$PROJECT_DIR"/*.env "$PROJECT_DIR"/.env.* "$PROJECT_DIR"/env/ \
-        "$PROJECT_DIR"/docker-compose.yaml "$PROJECT_DIR"/docker-compose.yml \
-        2>/dev/null | head -5 | tr '\n' ' ')
-fi
-if echo "$_DB_HINTS" | grep -qiE "postgres|pgsql|postgresql"; then
-    DB_ENGINE="postgres"
-elif echo "$_DB_HINTS" | grep -qiE "mongo"; then
-    DB_ENGINE="mongo"
-fi
-debug "Detected database engine: $DB_ENGINE"
 
 # 1. Run shutdown.sh to stop the project and remove iptables rules
 debug "Starting step 1: Shutting down project"
@@ -231,6 +247,12 @@ DELETE_DB_CONFIRM="n"
 
 if [ "$PRESERVE_DATABASE" = true ]; then
     echo-cyan "Preserving database '$DB_NAME' (--preserve-database flag specified)"
+    echo-white
+    DELETE_DB_CONFIRM="n"
+elif [ "$HAS_SHARED_DB" = false ]; then
+    debug "Project has no shared Podium DB hostnames — skipping database step"
+    echo-cyan "Project '$PROJECT_NAME' does not use a Podium shared database (bundled DB or none)."
+    echo-cyan "Skipping database deletion step."
     echo-white
     DELETE_DB_CONFIRM="n"
 elif [ "$FORCE_DB_DELETE" = true ]; then

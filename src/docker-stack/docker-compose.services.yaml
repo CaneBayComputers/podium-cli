@@ -102,3 +102,10 @@ networks:
     ipam:
       config:
         - subnet: "${VPC_SUBNET}.0/24"
+          # Dynamic IPs come from .32-.63 only. Static IPs assigned via
+          # ipv4_address (.2-.8 shared services, .100-.250 project entry-points)
+          # are still allowed anywhere in the subnet — Docker honors them even
+          # when they sit outside ip_range. Helper containers in multi-service
+          # projects pick up dynamic addresses; without ip_range they would
+          # squat on .2-.8 whenever the shared services were down.
+          ip_range: "${VPC_SUBNET}.32/27"
