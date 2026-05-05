@@ -22,9 +22,55 @@ if [ "$APP" = "--list" ] || [ "$APP" = "-l" ]; then
 fi
 
 if [ -z "$APP" ]; then
-    echo-red "Usage: podium install <app-name>"
-    echo-white "       podium install --list"
-    exit 1
+    # Interactive picker — show numbered list and read selection.
+    INSTALLERS=()
+    for f in "$DEV_DIR/installers/"*.sh; do
+        [ -f "$f" ] && INSTALLERS+=("$(basename "$f" .sh)")
+    done
+
+    if [ ${#INSTALLERS[@]} -eq 0 ]; then
+        echo-red "No installers found in $DEV_DIR/installers/."
+        exit 1
+    fi
+
+    echo-return
+    echo-cyan "Available installers (${#INSTALLERS[@]} total):"
+    echo-return
+
+    # Render numbered list into multiple columns for compactness on terminals
+    # wide enough to fit them. Falls back to single column if `column` is
+    # missing or the terminal width can't be determined.
+    COLS=$(tput cols 2>/dev/null || echo 80)
+    if command -v column >/dev/null 2>&1; then
+        for i in "${!INSTALLERS[@]}"; do
+            printf "%3d) %s\n" "$((i + 1))" "${INSTALLERS[$i]}"
+        done | column -c "$COLS"
+    else
+        for i in "${!INSTALLERS[@]}"; do
+            printf "  %3d) %s\n" "$((i + 1))" "${INSTALLERS[$i]}"
+        done
+    fi
+
+    echo-return
+    echo-yellow -n "Enter number or app name (Ctrl+C to cancel): "
+    echo-white -ne
+    read -r SELECTION
+    echo-return
+
+    if [[ -z "$SELECTION" ]]; then
+        echo-yellow "No selection made. Aborting."
+        exit 1
+    fi
+
+    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
+        if (( SELECTION < 1 || SELECTION > ${#INSTALLERS[@]} )); then
+            echo-red "Invalid selection: $SELECTION (valid range: 1-${#INSTALLERS[@]})"
+            exit 1
+        fi
+        APP="${INSTALLERS[$((SELECTION - 1))]}"
+    else
+        APP="$SELECTION"
+    fi
 fi
 
 INSTALLER="$DEV_DIR/installers/$APP.sh"
