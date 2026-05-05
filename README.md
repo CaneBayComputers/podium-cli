@@ -4,6 +4,8 @@ Podium is a Docker-based local development environment manager for PHP, Python, 
 
 Type `podium create "A timeclock for employees in Django"` and an AI agent scaffolds the full app — migrations, models, routes, templates — running at a local URL with a live database. Or `podium install grafana` and Grafana is up at `http://grafana/` in 90 seconds. No Docker knowledge required. No config files to wrestle with.
 
+**Built to save AI tokens.** Framework scaffolding, container networking, shared services, secret generation, and 100+ OSS app installs are all pre-baked into Podium. Your agent doesn't burn tokens rediscovering how to wire nginx + php-fpm, what env vars Mastodon needs, or how to generate VAPID keys every session. It skips the platform plumbing and goes straight to the app you actually want built — faster results, cheaper bills, fewer "ugh, why isn't this working" loops.
+
 Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js, plus 100+ curated OSS app installers. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
 
 Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
