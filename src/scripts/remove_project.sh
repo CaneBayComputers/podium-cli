@@ -184,13 +184,24 @@ debug "Starting step 2: Moving project directory to trash"
 echo-cyan "Moving project directory to trash..."
 echo-white
 if [ -d "$PROJECT_DIR" ]; then
+    # If a previous removal already trashed a project with this name, trash-put
+    # refuses to overwrite. Rename to a timestamped path first so the trash
+    # entry is unique and the move always succeeds.
+    TRASH_TARGET="$PROJECT_DIR"
+    if command -v trash-put &> /dev/null || command -v trash &> /dev/null; then
+        if [ -e "$HOME/.local/share/Trash/files/$(basename "$PROJECT_DIR")" ]; then
+            TRASH_TARGET="${PROJECT_DIR}.$(date +%Y%m%d-%H%M%S)"
+            mv "$PROJECT_DIR" "$TRASH_TARGET"
+            debug "Renamed project dir to $TRASH_TARGET to avoid trash collision"
+        fi
+    fi
     # Function to move project to trash safely
     if command -v trash-put &> /dev/null; then
-        trash-put "$PROJECT_DIR"
+        trash-put "$TRASH_TARGET"
         echo-green "Project directory moved to trash (can be recovered)."
     elif command -v trash &> /dev/null; then
         # Alternative trash command (some systems)
-        trash "$PROJECT_DIR"
+        trash "$TRASH_TARGET"
         echo-green "Project directory moved to trash (can be recovered)."
     else
         # Fallback: ask user if they want permanent deletion

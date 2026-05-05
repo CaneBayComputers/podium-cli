@@ -56,6 +56,14 @@ init_projects_dir() {
     fi
 }
 
+# Detect terminal color support once. When stdout isn't a terminal or $TERM
+# is unset/invalid (e.g. plain `ssh host cmd` without -t), `tput` exits
+# non-zero — combined with `set -e` in the calling script, that would abort
+# the script silently. Force NO_COLOR=1 in that case so we skip tput entirely.
+if [[ -z "${NO_COLOR:-}" ]] && ! tput setaf 1 >/dev/null 2>&1; then
+    NO_COLOR=1
+fi
+
 # Color output functions (suppressed in JSON mode)
 echo-red() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 1 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
 echo-green() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 2 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
