@@ -319,6 +319,7 @@ The installed app lands at `http://<app-name>/` immediately. From there, `podium
 | Nextcloud | `podium install nextcloud` | File Hosting |
 | Nginx Proxy Manager | `podium install nginx-proxy-manager` | Networking |
 | NocoDB | `podium install nocodb` | Database |
+| October CMS | `podium install octobercms` | CMS |
 | Open WebUI | `podium install open-webui` | AI / LLM |
 | Outline | `podium install outline` | Wiki |
 | Paperless-ngx | `podium install paperless` | Documents |
