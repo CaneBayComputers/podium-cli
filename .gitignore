@@ -21,3 +21,8 @@ INSTRUCTIONS.md
 
 # Local machine config (not shared — each dev has their own)
 machines.local
+
+# AI folders
+.claude/
+.codex/
+.gemini/
