@@ -95,7 +95,7 @@ You will need to (1) figure out exactly which OSS project this refers to, (2) wr
 1. **Identify the project.** From the description "$DESCRIPTION", determine the canonical project name, official repository, official docker image(s), and current stable release. If genuinely ambiguous, pick the most likely candidate, state your reasoning, and proceed — don't stall asking for clarification.
 2. **Pick a slug.** Lowercase hyphenated (e.g. \`october-cms\`, \`discourse\`). The slug becomes the filename, the project URL (\`http://<slug>/\`), and the database name (with hyphens converted to underscores).
 3. **Read upstream's reference docker-compose / install docs.** Note: required services, env vars, secret-generation steps, ports, volumes, init/migration steps. Plan how to slot it into Podium:
-   - Replace bundled \`postgres\`/\`mysql\`/\`mariadb\`/\`redis\`/\`mongo\`/\`memcached\` services with the shared Podium hostnames (\`podium-postgres\` / \`podium-mariadb\` / \`podium-redis\` / \`podium-mongo\` / \`podium-memcached\`). Credentials are documented in AGENTS.md "Complex Compose Adaptation".
+   - Replace bundled \`postgres\`/\`mysql\`/\`mariadb\`/\`redis\`/\`mongo\`/\`memcached\` services with the shared Podium hostnames (\`podium-postgres\` / \`podium-mariadb\` / \`podium-redis\` / \`podium-mongo\` / \`podium-memcached\`). Credentials are documented in AGENTS.md "Shared Service Credentials".
    - Name the user-facing entry-point service so \`setup_project.sh\`'s web-service detection regex matches: one of \`nginx\`, \`web\`, \`app\`, \`api\`, \`server\`, \`frontend\`, \`backend\`, \`http\`. Setup will assign it the project's static IP and \`container_name\`.
    - If the upstream image's bundled HTTP listener can't be reconfigured to expose what we want on port 80, put a small \`nginx:alpine\` reverse proxy in front of it (see \`zulip.sh\`, \`mastodon.sh\` for reference patterns).
    - Helper services (workers, schedulers, sidekiq, etc.) get attached to the default network without static IPs — they'll land in .32-.63 dynamic range.
@@ -141,7 +141,7 @@ You will need to (1) figure out exactly which OSS project this refers to, (2) wr
 - If the project genuinely doesn't fit Podium (Kubernetes-only, requires kernel modules, demands a real domain + TLS to function at all), say so in your final message and **don't** commit a half-baked installer. Document why in the closing message so the user knows.
 - Once verified, commit with a clear message naming the slug and key facts (e.g. \`Add octobercms installer (PHP 8.2, MariaDB, port 80)\`). Push to origin/master.
 - Update the README.md install list if there's a curated list of supported apps there. Check first.
-- If \`set -e\` aborts mid-run because of \`tput\` (no TTY) or \`trash-put\` (collision), see AGENTS.md "Coding Style & Naming Conventions" for the established workarounds — don't disable \`set -e\`.
+- If \`set -e\` aborts mid-run because of \`tput\` (no TTY) or \`trash-put\` (collision), see AGENTS.md "Shell Script Gotchas" for the established workarounds — don't disable \`set -e\`.
 
 Begin by stating your interpretation of "$DESCRIPTION" (which project, why, what slug you'll use), then proceed.
 EOF

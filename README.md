@@ -491,7 +491,7 @@ podium down
 `podium ai-set` manages the global AI agent CLI, model, and API key used by Podium.
 
 ```bash
-podium ai-set --agent ollama --model llama3.1
+podium ai-set --agent claude --model claude-opus-4-7
 podium ai-set --agent codex --model gpt-4.1
 podium ai-set --json-output
 ```

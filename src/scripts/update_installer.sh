@@ -127,7 +127,7 @@ $TARGET_LINE
 - Never commit \`:latest\` tags — pin every image.
 - Never commit an installer that hasn't completed end-to-end verification.
 - Commit each app as its own commit with a clear message naming the app and what changed (e.g. \`zulip: bump to 8.0, rename SECRETS_* envs\`). Push to origin/master when finished.
-- If \`set -e\` aborts mid-run because of \`tput\` (no TTY) or \`trash-put\` (collision), see AGENTS.md "Coding Style & Naming Conventions" for the established workarounds — don't disable \`set -e\`.
+- If \`set -e\` aborts mid-run because of \`tput\` (no TTY) or \`trash-put\` (collision), see AGENTS.md "Shell Script Gotchas" for the established workarounds — don't disable \`set -e\`.
 
 Begin.
 EOF
