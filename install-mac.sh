@@ -190,8 +190,8 @@ if ! command -v git &> /dev/null; then
 fi
 
 # Install other useful tools
-echo -e "Installing: jq, trash ..."
-brew install jq trash >/dev/null 2>&1 && echo -e "${GREEN}✓ Additional tools installed${NC}" || echo -e "${YELLOW}⚠️ Some tools may have failed to install${NC}"
+echo -e "Installing: jq, trash, imagemagick, librsvg ..."
+brew install jq trash imagemagick librsvg >/dev/null 2>&1 && echo -e "${GREEN}✓ Additional tools installed${NC}" || echo -e "${YELLOW}⚠️ Some tools may have failed to install${NC}"
 
 ###############################
 # Ensure local bin directory and PATH

@@ -43,6 +43,31 @@ Never pass `--json-output` to `podium new` from an automation context — it sup
 
 ---
 
+## Graphics & Image Tools (host)
+
+The Podium installer ships two image utilities on the host so projects that need graphics work without external dependencies:
+
+- **ImageMagick** — `convert` and `magick`. Format conversion, procedural patterns (gradients, noise, plasma), text overlays, sprite-sheet manipulation, basic effects.
+- **`rsvg-convert`** (from librsvg) — best-in-class SVG → PNG converter, faster and higher-fidelity than ImageMagick for SVGs.
+
+When generating graphics for a project (game sprites, backgrounds, icons, banners), prefer writing **native SVG** — you can produce SVG markup directly and modern browsers render it perfectly. If the user explicitly needs PNG output, generate the SVG first and convert:
+
+```bash
+rsvg-convert sprite.svg -o sprite.png    # preferred for SVG → PNG
+convert sprite.svg sprite.png            # ImageMagick fallback
+```
+
+For procedural backgrounds, gradients, noise, or text-on-color, use ImageMagick directly:
+
+```bash
+convert -size 1200x800 gradient:'#1e3a8a-#04081d' bg.png
+convert -size 800x600 plasma:fractal -blur 0x4 -modulate 100,80 noise.png
+```
+
+These are host tools — run them via your Bash tool, not via `podium exec`.
+
+---
+
 ## Shared Service Credentials
 
 Use these hostnames + credentials when configuring projects. Do not inspect containers to derive them.

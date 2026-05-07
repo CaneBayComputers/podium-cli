@@ -129,7 +129,8 @@ sudo apt-get update -y -q
 ###############################
 echo -e "${BLUE}Installing basic packages...${NC}"
 sudo apt-get install -y ca-certificates curl gnupg lsb-release apt-transport-https \
-    git jq software-properties-common trash-cli unzip
+    git jq software-properties-common trash-cli unzip \
+    imagemagick librsvg2-bin
 
 ###############################
 # Ensure local bin directory and PATH

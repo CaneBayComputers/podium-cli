@@ -109,7 +109,8 @@ echo -e "${BLUE}Installing base packages...${NC}"
 sudo pacman -S --noconfirm --needed \
     git curl jq unzip \
     docker \
-    trash-cli
+    trash-cli \
+    imagemagick librsvg
 
 ###############################
 # Ensure local bin directory and PATH
