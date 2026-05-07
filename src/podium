@@ -81,7 +81,7 @@ show_help() {
     echo "  podium supervisor-status  - Show all supervised processes (Run from project directory)"
     echo
     echo-white "PROJECT MANAGEMENT:"
-    echo "  podium up [project]       - Start everything (or specific project)"
+    echo "  podium up [project|--all] - Start a project (interactive picker if omitted; --all for every project). Services always start."
     echo "  podium down [project]     - Stop everything (or specific project)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
@@ -164,7 +164,7 @@ show_help() {
     echo "  podium supervisor restart all              # Restart all supervised processes"
     echo
     echo-white "NOTES:"
-    echo "  • 'podium up' without project name starts EVERYTHING - services + all projects (perfect for daily startup)"
+    echo "  • 'podium up' without project name shows an interactive picker (services start regardless; use --all to start every project)"
     echo "  • 'podium down' without project name stops EVERYTHING - all projects + services (perfect for shutdown)"
     echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
@@ -568,23 +568,17 @@ case "$1" in
     
     # Project management
     "up")
+        shift
         (
             cd "$(get_projects_dir)"
-            if [ -n "$2" ]; then
-                "$SCRIPT_DIR/scripts/startup.sh" "$2"
-            else
-                "$SCRIPT_DIR/scripts/startup.sh"
-            fi
+            "$SCRIPT_DIR/scripts/startup.sh" "$@"
         )
         ;;
     "down")
+        shift
         (
             cd "$(get_projects_dir)"
-            if [ -n "$2" ]; then
-                "$SCRIPT_DIR/scripts/shutdown.sh" "$2"
-            else
-                "$SCRIPT_DIR/scripts/shutdown.sh"
-            fi
+            "$SCRIPT_DIR/scripts/shutdown.sh" "$@"
         )
         ;;
     "status")

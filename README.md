@@ -362,14 +362,16 @@ Podium is designed around two magic commands that handle your entire development
 
 ### ⚡ `podium up`
 ```bash
-podium up
+podium up                # Interactive picker — services start, then choose a project
+podium up --all          # Start every project in the projects directory
+podium up my-project     # Start a specific project
 ```
-**Starts everything:**
-- Starts all shared services (MariaDB, Redis, PostgreSQL, MongoDB, etc.)
-- Starts ALL your project containers automatically
-- Configures networking so all projects are accessible
-- Shows status of everything that's running
-- Makes all your projects available at `http://project-name`
+**Starts services + the project(s) you select:**
+- Always starts shared services (MariaDB, Redis, PostgreSQL, MongoDB, etc.) if not already up
+- With no argument: shows a numbered list of projects to pick from
+- With `--all`: starts every project in the projects directory
+- With a project name: starts just that one
+- Configures networking so all running projects are reachable at `http://project-name`
 
 ### 🛑 `podium down`
 ```bash
@@ -462,7 +464,7 @@ podium down
 
 | Command | Description |
 |---------|-------------|
-| `podium up [project]` | Start project containers |
+| `podium up [project\|--all]` | Start a project (interactive picker if omitted; `--all` for every project). Services start regardless. |
 | `podium down [project]` | Stop project containers |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
@@ -629,7 +631,10 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--git-name <name>` | Git user name |
 | `--git-email <email>` | Git user email |
-| `--projects-dir <dir>` | Custom projects directory |
+| `--projects-dir <dir>` | Projects directory (default: existing or `~/podium-projects`) |
+| `--vpc-subnet <A.B.C>` | Custom Docker VPC subnet (default: existing or random `10.x.x`) |
+
+Re-running `podium configure` is safe — values from `/etc/podium-cli/.env` are kept as defaults, and prompts let you change them. Hosts entries for shared services are verified rather than rebuilt, so unchanged installs stay quiet.
 
 ## 💡 Usage Examples
 

@@ -27,7 +27,8 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium new <name> --framework <type>` | Greenfield project on a cbc base image (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). |
 | `podium clone <repo>` | Clone a Git repo and adapt its compose to use Podium shared services. |
 | `podium setup <name>` | Adapt an already-cloned project directory in `~/podium-projects/`. |
-| `podium up [name]` / `podium down [name]` | Start/stop a project (or everything if no arg). |
+| `podium up [name\|--all]` | Start a project. With no arg: interactive picker. With `--all`: every project. Shared services always start. |
+| `podium down [name]` | Stop a project (or everything if no arg). |
 | `podium status [name]` | Show running state. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
 | `podium remove <name> --force-db-delete` | Tear down a project including its DB. |

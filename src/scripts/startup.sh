@@ -31,12 +31,17 @@ debug "Changed to projects directory: $(pwd)"
 
 # Initialize variables
 PROJECT_NAME=""
+START_ALL=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --all)
+            START_ALL=1
+            shift
+            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -51,22 +56,26 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --help)
             echo-white "Usage: $0 [OPTIONS] [project_name]"
-            echo-white "Start project containers or all projects"
+            echo-white "Start project containers (and shared services if not running)"
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Optional: Specific project to start"
+            echo-white "  project_name      Optional: specific project to start"
             echo-white ""
             echo-white "Options:"
+            echo-white "  --all             Start every project in the projects directory"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --help            Show this help message"
+            echo-white ""
+            echo-white "With no arguments, shows an interactive picker. Shared services always"
+            echo-white "start regardless of which mode is selected."
             exit 0
             ;;
-        -*) 
+        -*)
             error "Unknown option: $1. Use --help for usage information"
             ;;
-        *) 
+        *)
             if [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
             else
@@ -76,6 +85,10 @@ while [[ "$#" -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ "$START_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
+    error "Cannot combine --all with a project name."
+fi
 
 
 # Functions
@@ -155,16 +168,64 @@ fi
 # Ensure we're back in the projects directory after sourcing other scripts
 cd "$PROJECTS_DIR_PATH"
 
-# Start projects either just one by name or all in the projects directory
-# Note: We're in the projects directory
+# If no project name and no --all flag and not JSON mode, prompt the user
+# to pick a project from a numbered list (services have already been started).
+# JSON mode without explicit --all/project falls through to "all projects" for
+# backward compatibility with automation that relied on the old default.
+if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
+    mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
 
-if ! [ -z "$PROJECT_NAME" ]; then
+    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
+        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
+        echo-white "Shared services have been started. Create a project with 'podium new', 'podium clone', or 'podium install <app>'."
+    else
+        echo-return
+        echo-cyan "Select a project to start:"
+        echo-return
+
+        COLS=$(tput cols 2>/dev/null || echo 80)
+        if command -v column >/dev/null 2>&1; then
+            for i in "${!PROJECTS[@]}"; do
+                printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+            done | column -c "$COLS"
+        else
+            for i in "${!PROJECTS[@]}"; do
+                printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+            done
+        fi
+
+        echo-return
+        echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to start every project): "
+        echo-white -ne
+        read -r SELECTION
+        echo-return
+
+        if [[ -z "$SELECTION" ]]; then
+            echo-yellow "No selection made. Aborting."
+            exit 1
+        fi
+
+        if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
+            if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
+                echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
+                exit 1
+            fi
+            PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
+        else
+            PROJECT_NAME="$SELECTION"
+        fi
+    fi
+fi
+
+# Decide which projects to start.
+# Note: shared services have already been started above regardless of branch.
+if [[ -n "$PROJECT_NAME" ]]; then
     debug "Starting specific project: $PROJECT_NAME"
-    if start_project $PROJECT_NAME; then true; fi
+    if start_project "$PROJECT_NAME"; then true; fi
 
-else
-    debug "Starting all projects"
-  
+elif [[ "$START_ALL" == "1" || "$JSON_OUTPUT" == "1" ]]; then
+    debug "Starting all projects (START_ALL=$START_ALL JSON_OUTPUT=$JSON_OUTPUT)"
+
     # Only iterate directories; avoid literal '*' / '*/' with nullglob.
     # Skip files and any directory whose name starts with a dot.
     shopt -s nullglob
@@ -182,7 +243,6 @@ else
     done
 
     shopt -u nullglob
-
 fi
 
 

@@ -16,10 +16,12 @@ source scripts/functions.sh
 # Define SCRIPT_DIR for file operations
 SCRIPT_DIR="$DEV_DIR/scripts"
 
-# Parse arguments
+# Parse arguments. Track flag-supplied values separately so we can distinguish
+# "user explicitly passed this" from "value loaded from /etc/podium-cli/.env".
 GIT_NAME=""
 GIT_EMAIL=""
-PROJECTS_DIR=""
+FLAG_PROJECTS_DIR=""
+FLAG_VPC_SUBNET=""
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -39,7 +41,11 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --projects-dir)
-            PROJECTS_DIR="$2"
+            FLAG_PROJECTS_DIR="$2"
+            shift 2
+            ;;
+        --vpc-subnet)
+            FLAG_VPC_SUBNET="$2"
             shift 2
             ;;
         --debug)
@@ -49,14 +55,17 @@ while [[ $# -gt 0 ]]; do
         --help)
             echo "Usage: $0 [OPTIONS]"
             echo ""
-            echo "Configure Podium development environment"
+            echo "Configure Podium development environment. Re-running is safe — values"
+            echo "from /etc/podium-cli/.env are kept as defaults, and prompts let you"
+            echo "change them if you want."
             echo ""
             echo "Options:"
             echo "  --json-output           Output results in JSON format"
             echo "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
             echo "  --git-name NAME         Git user name"
             echo "  --git-email EMAIL       Git user email"
-            echo "  --projects-dir DIR      Custom projects directory"
+            echo "  --projects-dir DIR      Projects directory (default: existing or ~/podium-projects)"
+            echo "  --vpc-subnet A.B.C      Custom Docker VPC subnet (default: existing or random 10.x.x)"
             echo "  --help                  Show this help message"
             exit 0
             ;;
@@ -80,37 +89,63 @@ if ! [ -f /etc/podium-cli/.env ]; then
 
 	sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/podium-cli/.env
 
-	# Generate random numbers for B and C classes
+	# Generate a random subnet for the first run. Subsequent runs default to
+	# whatever's already in .env so re-running configure doesn't reshuffle IPs.
 	B_CLASS=$((RANDOM % 255 + 1))
 	C_CLASS=$((RANDOM % 256))
-
-	VPC_SUBNET="10.$B_CLASS.$C_CLASS"
-
-	# Cross-platform sed with proper c\ command handling
-	sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+	sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=10.$B_CLASS.$C_CLASS" /etc/podium-cli/.env
 
 fi
 
-# Load environment configuration (including AI agent defaults) after ensuring .env exists
-if [ -f /etc/podium-cli/.env ]; then
-    # shellcheck disable=SC1091
-    source /etc/podium-cli/.env
-fi
+# Load existing configuration so we can use current values as defaults below.
+# shellcheck disable=SC1091
+source /etc/podium-cli/.env
 
-
-# Check for and set up docker compose yaml
-if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
-
-	sudo cp docker-stack/docker-compose.services.yaml /etc/podium-cli/docker-compose.yaml
-
-	# Set projects directory if specified
-	if [ -n "$PROJECTS_DIR" ]; then
-		sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
+# Resolve VPC_SUBNET: explicit flag wins, otherwise prompt with current as default.
+if [[ -n "$FLAG_VPC_SUBNET" ]]; then
+	if [[ ! "$FLAG_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+		error "Invalid --vpc-subnet '$FLAG_VPC_SUBNET'. Format must be A.B.C (e.g. 10.247.177)."
 	fi
-	
-	
+	VPC_SUBNET="$FLAG_VPC_SUBNET"
+elif [[ "$JSON_OUTPUT" != "1" ]]; then
+	echo-return
+	echo-cyan 'Configuring Docker VPC subnet ...'; echo-white
+	echo-white "Podium uses a private /24 Docker network for shared services and projects."
+	echo-white "Format A.B.C (network will be A.B.C.0/24)."
+	echo-white "Current: $VPC_SUBNET"
+	echo-yellow -ne 'Enter subnet or press Enter to keep current: '
+	echo-white -ne
+	read USER_VPC_SUBNET
 	echo-return
 
+	if [[ -n "$USER_VPC_SUBNET" ]]; then
+		if [[ "$USER_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+			if [[ "$USER_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect podium-cli_vpc >/dev/null 2>&1; then
+				echo-yellow "The podium-cli_vpc Docker network already exists at $VPC_SUBNET."
+				echo-white "Changing the subnet requires recreating the network. Run 'podium uninstall'"
+				echo-white "first (preserves projects, removes containers/network), then re-run 'podium configure'."
+				echo-yellow -ne "Keep $VPC_SUBNET for now? [Y/n]: "
+				echo-white -ne
+				read KEEP_SUBNET
+				echo-return
+				if [[ ! "$KEEP_SUBNET" =~ ^[Nn]$ ]]; then
+					USER_VPC_SUBNET="$VPC_SUBNET"
+				fi
+			fi
+			VPC_SUBNET="$USER_VPC_SUBNET"
+		else
+			echo-yellow "Invalid format '$USER_VPC_SUBNET'. Keeping: $VPC_SUBNET"
+			echo-return
+		fi
+	fi
+fi
+
+sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+
+# Check for and set up docker compose yaml (idempotent — never overwrites)
+if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
+	sudo cp docker-stack/docker-compose.services.yaml /etc/podium-cli/docker-compose.yaml
+	echo-return
 fi
 
 # Check if running as root
@@ -337,29 +372,31 @@ fi
 ###############################
 # Set up projects directory
 ###############################
-echo-return; echo-cyan 'Setting up projects directory ...'; echo-white
+echo-return; echo-cyan 'Configuring projects directory ...'; echo-white
 
-# If not set via JSON mode or CLI argument, ask user
-if [[ "$JSON_OUTPUT" != "1" && -z "$PROJECTS_DIR" ]]; then
-    DEFAULT_PROJECTS_DIR="$HOME/podium-projects"
+# Resolve PROJECTS_DIR: explicit flag wins, otherwise prompt with current as default.
+# Current = whatever was sourced from .env, falling back to ~/podium-projects.
+CURRENT_PROJECTS_DIR="${PROJECTS_DIR:-$HOME/podium-projects}"
+# Expand ~ for display + use
+CURRENT_PROJECTS_DIR="${CURRENT_PROJECTS_DIR/#\~/$HOME}"
+
+if [[ -n "$FLAG_PROJECTS_DIR" ]]; then
+    PROJECTS_DIR="${FLAG_PROJECTS_DIR/#\~/$HOME}"
+elif [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-yellow "Where would you like to store your development projects?"
-    echo-white "Default: $DEFAULT_PROJECTS_DIR"
-    echo-yellow -ne 'Enter projects directory (or press Enter for default): '
+    echo-white "Current: $CURRENT_PROJECTS_DIR"
+    echo-yellow -ne 'Enter projects directory or press Enter to keep current: '
     echo-white -ne
     read USER_PROJECTS_DIR
-    
+
     if [[ -z "$USER_PROJECTS_DIR" ]]; then
-        PROJECTS_DIR="$DEFAULT_PROJECTS_DIR"
+        PROJECTS_DIR="$CURRENT_PROJECTS_DIR"
     else
-        # Expand ~ to home directory
         PROJECTS_DIR="${USER_PROJECTS_DIR/#\~/$HOME}"
     fi
-	echo-return
-fi
-
-# Set default if still empty
-if [[ -z "$PROJECTS_DIR" ]]; then
-    PROJECTS_DIR="$HOME/podium-projects"
+    echo-return
+else
+    PROJECTS_DIR="$CURRENT_PROJECTS_DIR"
 fi
 
 # Create projects directory if it doesn't exist
@@ -373,7 +410,7 @@ if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
     error "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
 fi
 
-# Update .env file with projects directory
+# Update .env file with projects directory (handles both commented and uncommented lines)
 sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 
@@ -455,15 +492,15 @@ echo-white
 ###############################
 # Hosts
 ###############################
-echo-cyan 'Writing domain names to hosts file ...'
-
+echo-cyan 'Verifying shared-service entries in /etc/hosts ...'
 echo-white
 
-# Dynamically get container names from docker-compose.yaml (rendered via docker compose config)
+# Dynamically get container names + IPs from docker-compose.yaml (rendered with env interp).
+# For each (name, ip) pair, only touch /etc/hosts if it's missing or wrong — so re-running
+# configure stays quiet when nothing has drifted.
 COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
 
 if [ -f "$COMPOSE_FILE" ]; then
-    # Render the docker-compose file with environment interpolation
     RENDERED_COMPOSE=$(mktemp)
     if docker compose -f "$COMPOSE_FILE" config > "$RENDERED_COMPOSE" 2>/dev/null; then
         SOURCE_FILE="$RENDERED_COMPOSE"
@@ -471,41 +508,58 @@ if [ -f "$COMPOSE_FILE" ]; then
         # Fallback to raw compose file if docker compose config fails
         SOURCE_FILE="$COMPOSE_FILE"
     fi
-    
-    # Extract container names and their IP addresses from the rendered compose file
-    # This creates a temporary file with container_name:ip_address pairs
+
     TEMP_MAPPING=$(mktemp)
-    
+
     awk -v subnet="$VPC_SUBNET" '
-    /container_name:/ { 
-        container = $2; 
+    /container_name:/ {
+        container = $2;
         gsub(/[[:space:]]/, "", container);
     }
-    /ipv4_address:/ { 
-        ip = $2; 
-        # Remove quotes and whitespace
+    /ipv4_address:/ {
+        ip = $2;
         gsub(/["[:space:]]/, "", ip);
-        # Replace ${VPC_SUBNET} with actual subnet value  
         gsub(/\$\{VPC_SUBNET\}/, subnet, ip);
         if (container != "") {
             print container ":" ip;
             container = "";
         }
     }' "$SOURCE_FILE" > "$TEMP_MAPPING"
-    
+
     if [ -s "$TEMP_MAPPING" ]; then
+        CHANGES=0
         while IFS=':' read -r container_name ip_address; do
-            hosts_entry="$ip_address        $container_name"
-            # Always remove existing entries for this container and re-add the current mapping
+            # Look for an existing entry for this hostname.
+            existing_ip=$(awk -v name="$container_name" '
+                $0 !~ /^[[:space:]]*#/ {
+                    for (i = 2; i <= NF; i++) {
+                        if ($i == name) { print $1; exit }
+                    }
+                }' /etc/hosts 2>/dev/null || true)
+
+            if [[ "$existing_ip" == "$ip_address" ]]; then
+                continue
+            fi
+
+            CHANGES=$((CHANGES + 1))
             sudo-podium-sed "/[[:space:]]${container_name}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
-            echo-white "Adding hosts entry: $hosts_entry"
-            echo "$hosts_entry" | sudo tee -a /etc/hosts > /dev/null
+            if [[ -z "$existing_ip" ]]; then
+                echo-white "Adding hosts entry: $ip_address $container_name"
+            else
+                echo-white "Updating hosts entry: $container_name $existing_ip -> $ip_address"
+            fi
+            echo "$ip_address        $container_name" | sudo tee -a /etc/hosts > /dev/null
         done < "$TEMP_MAPPING"
-        echo-green "Hosts file updated with container entries"
+
+        if [[ "$CHANGES" -eq 0 ]]; then
+            echo-green "Hosts file already has all shared-service entries (no changes)."
+        else
+            echo-green "Hosts file synced ($CHANGES change(s))."
+        fi
     else
         echo-yellow "No container names with IP addresses found in docker-compose file"
     fi
-    
+
     rm -f "$TEMP_MAPPING"
     rm -f "$RENDERED_COMPOSE"
 else
