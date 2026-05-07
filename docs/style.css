@@ -221,6 +221,111 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   border: 1px solid rgba(14, 165, 233, 0.18);
 }
 
+/* Why Podium — compare table */
+.why-podium {
+  background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.4));
+}
+.eyebrow.center { display: block; text-align: center; }
+
+.compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  max-width: 1080px; margin: 0 auto;
+}
+@media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+
+.compare-col {
+  position: relative;
+  background: linear-gradient(180deg, rgba(15, 26, 69, 0.55), rgba(10, 18, 50, 0.55));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px 28px;
+}
+.compare-col.cold {
+  border-color: rgba(244, 114, 182, 0.25);
+  background: linear-gradient(180deg, rgba(60, 22, 50, 0.35), rgba(10, 18, 50, 0.55));
+}
+.compare-col.hot {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: linear-gradient(180deg, rgba(15, 56, 90, 0.55), rgba(10, 18, 50, 0.7));
+  box-shadow: 0 12px 40px -16px rgba(14, 165, 233, 0.45);
+}
+
+.compare-tag {
+  position: absolute;
+  top: -12px; left: 22px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  background: #04081d;
+  color: #fb7185;
+  border: 1px solid rgba(244, 114, 182, 0.3);
+  padding: 4px 11px;
+  border-radius: 6px;
+}
+.compare-tag.accent {
+  color: var(--accent-2);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.compare-col h3 {
+  font-size: 1.15rem; font-weight: 700; color: #fff;
+  margin-bottom: 18px;
+}
+.compare-col ul {
+  list-style: none; padding: 0; margin: 0;
+}
+.compare-col ul li {
+  position: relative;
+  padding: 10px 0 10px 26px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.compare-col ul li:last-child { border-bottom: 0; }
+.compare-col ul li::before {
+  position: absolute;
+  left: 0; top: 14px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  content: '';
+}
+.compare-col.cold ul li::before {
+  background: rgba(244, 114, 182, 0.18);
+  border: 1px solid rgba(244, 114, 182, 0.5);
+}
+.compare-col.hot ul li::before {
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid var(--accent);
+}
+.compare-col.hot ul li::after {
+  position: absolute;
+  left: 3px; top: 17px;
+  content: '';
+  width: 8px; height: 4px;
+  border-left: 2px solid var(--accent-2);
+  border-bottom: 2px solid var(--accent-2);
+  transform: rotate(-45deg);
+}
+.compare-col code {
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.88em;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+.compare-col em { font-style: normal; color: var(--text); }
+
+.bottom-line {
+  margin: 38px auto 0;
+  text-align: center;
+  max-width: 70ch;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
 /* Tokens / terminal */
 .tokens {
   background: linear-gradient(180deg, rgba(15, 26, 69, 0.4), transparent);
@@ -299,39 +404,161 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
 
 /* Apps grid */
 .apps { background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.35)); }
+
+.install-preview {
+  max-width: 760px;
+  margin: 0 auto 32px;
+  background: linear-gradient(180deg, rgba(15, 26, 69, 0.5), rgba(10, 18, 50, 0.5));
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  padding: 22px 26px;
+  text-align: center;
+  transition: border-style .15s, background .15s;
+}
+.install-preview.has-cmd {
+  border-style: solid;
+  background: linear-gradient(180deg, rgba(15, 26, 69, 0.85), rgba(10, 18, 50, 0.85));
+  text-align: left;
+}
+.preview-empty {
+  color: var(--muted); font-size: 0.97rem;
+}
+.preview-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: nowrap;
+  background: #04081d;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.preview-prompt {
+  color: var(--accent); font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  user-select: none; flex: 0 0 auto;
+}
+.preview-cmd {
+  flex: 1 1 auto;
+  color: var(--accent-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 1rem;
+  background: transparent;
+  border: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.copy-btn {
+  flex: 0 0 auto;
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .12s, color .12s;
+}
+.copy-btn:hover { background: rgba(14, 165, 233, 0.25); color: #fff; }
+.preview-meta {
+  margin: 14px 0 0; color: var(--muted); font-size: 0.92rem;
+}
+.preview-meta strong { color: var(--text); font-weight: 600; }
+.preview-meta code {
+  background: rgba(14, 165, 233, 0.12);
+  color: var(--accent-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
 .app-grid {
   list-style: none; padding: 0; margin: 0;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
 }
-.app-grid li {
+.app-grid li { display: block; }
+.app-grid button {
+  width: 100%;
   background: rgba(15, 26, 69, 0.55);
   border: 1px solid var(--line);
-  padding: 14px 16px;
+  padding: 13px 14px;
   border-radius: 10px;
   text-align: center;
   font-weight: 500;
   color: #cbd5e1;
-  font-size: 0.95rem;
-  transition: border-color .15s, color .15s;
+  font-size: 0.93rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s, transform .12s;
 }
-.app-grid li:hover { border-color: var(--accent); color: #fff; }
-.and-more { text-align: center; color: var(--muted); margin-top: 28px; font-size: 1.05rem; }
+.app-grid button:hover {
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.app-grid button.active {
+  border-color: var(--accent);
+  background: rgba(14, 165, 233, 0.18);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+.app-grid button:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
 
-/* Final CTA */
+/* Final CTA — numbered steps */
 .cta-final { background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.55)); }
-.install-block { max-width: 760px; margin: 30px auto 36px; }
-.install-label { color: var(--muted); margin: 18px 0 8px; font-size: 0.95rem; font-weight: 500; }
+
+.steps {
+  list-style: none; padding: 0; margin: 0 auto 36px;
+  max-width: 820px;
+  display: grid; gap: 24px;
+}
+.steps li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 22px;
+  align-items: start;
+  background: linear-gradient(180deg, rgba(15, 26, 69, 0.55), rgba(10, 18, 50, 0.55));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 26px 28px;
+}
+@media (max-width: 600px) {
+  .steps li { grid-template-columns: 48px 1fr; gap: 16px; padding: 22px 20px; }
+}
+.step-num {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  color: #04081d;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: 1.5rem;
+  box-shadow: 0 8px 24px -8px rgba(14, 165, 233, 0.55);
+  flex-shrink: 0;
+}
+@media (max-width: 600px) { .step-num { width: 42px; height: 42px; font-size: 1.2rem; } }
+.step-body h3 {
+  font-size: 1.18rem; font-weight: 700; margin: 4px 0 6px; color: #fff;
+}
+.step-sub {
+  color: var(--muted); margin: 0 0 14px; font-size: 0.95rem;
+}
+.install-label { color: var(--muted); margin: 14px 0 6px; font-size: 0.88rem; font-weight: 500; }
 .install-label:first-child { margin-top: 0; }
 .install-cmd {
   background: #04081d;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   margin: 0;
   overflow-x: auto;
 }
-.install-cmd code { color: var(--accent-2); font-size: 0.92rem; }
+.install-cmd code { color: var(--accent-2); font-size: 0.9rem; line-height: 1.6; }
+.install-cmd .muted-cmd { color: #7a85a3; }
+.install-cmd .cmt { color: #5e6a85; }
 
 /* Footer */
 .site-footer {

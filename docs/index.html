@@ -215,6 +215,45 @@
       </div>
     </section>
 
+    <section class="why-podium" aria-labelledby="why-title">
+      <div class="wrap">
+        <p class="eyebrow accent center">WHY PODIUM</p>
+        <h2 id="why-title" class="section-title">&ldquo;Couldn't I just ask my AI agent to do all this?&rdquo;</h2>
+        <p class="section-sub">You can. It'll just do it slowly, expensively, and a little differently every time. Podium is the durable substrate underneath &mdash; with or without an agent driving it.</p>
+
+        <div class="compare">
+          <div class="compare-col cold">
+            <div class="compare-tag">Without Podium</div>
+            <h3>AI agent alone</h3>
+            <ul>
+              <li>Re-derives nginx + framework wiring every session.</li>
+              <li>Burns 10-15k tokens scaffolding a single OSS app &mdash; and gets it almost right.</li>
+              <li>Each project bundles its own Postgres / Redis. Ports collide, RAM melts as you add projects.</li>
+              <li>No cross-project hostnames. "How does my Express app talk to my Django app?" becomes a debugging session.</li>
+              <li>Different result on every machine. "Worked on my laptop" returns.</li>
+              <li>When upstream drifts, your AI rediscovers the breakage <em>inside your codebase</em>.</li>
+            </ul>
+          </div>
+          <div class="compare-col hot">
+            <div class="compare-tag accent">With Podium</div>
+            <h3>AI agent + Podium</h3>
+            <ul>
+              <li>Three tested runtime images. Agent skips the plumbing entirely.</li>
+              <li>~800 tokens to install a curated OSS app. Verified end-to-end on a real fleet.</li>
+              <li>One shared Postgres, Redis, MariaDB, Mongo for every project. ~700MB &rarr; ~100MB RAM.</li>
+              <li>Stable hostnames in both directions: <code>http://django-app/</code> from your browser <em>and</em> from your Express container.</li>
+              <li>Same hostnames, same credentials on every machine &mdash; laptop, teammate, VPS.</li>
+              <li><code>podium update-installer</code> regenerates installers when upstream drifts. The platform self-maintains.</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="bottom-line">
+          Podium isn't competing with your AI agent. It's the workshop your agent works in &mdash; tested tools, shared resources, predictable setup &mdash; so the agent (and you) skip rebuilding the workshop every time.
+        </p>
+      </div>
+    </section>
+
     <section class="tokens" aria-labelledby="tokens-title">
       <div class="wrap tokens-grid">
         <div>
@@ -288,42 +327,238 @@
       </div>
     </section>
 
-    <section class="apps" id="apps" aria-labelledby="apps-title">
-      <div class="wrap">
-        <h2 id="apps-title" class="section-title">A sample of what's one command away</h2>
-        <p class="section-sub">All wired to shared databases. All reachable at <code>http://&lt;app-name&gt;/</code>.</p>
-        <ul class="app-grid" role="list">
-          <li>Grafana</li><li>Gitea</li><li>Nextcloud</li><li>Mattermost</li>
-          <li>Plane</li><li>Mastodon</li><li>n8n</li><li>Outline</li>
-          <li>Paperless-ngx</li><li>Immich</li><li>Vaultwarden</li><li>Wiki.js</li>
-          <li>Ghost</li><li>Jellyfin</li><li>BookStack</li><li>NocoDB</li>
-          <li>Listmonk</li><li>HedgeDoc</li><li>Linkwarden</li><li>Portainer</li>
-          <li>Plausible</li><li>Umami</li><li>Matomo</li><li>Mautic</li>
-          <li>FreshRSS</li><li>SearXNG</li><li>Penpot</li><li>MinIO</li>
-          <li>Meilisearch</li><li>Appwrite</li><li>Directus</li><li>Budibase</li>
-        </ul>
-        <p class="and-more">&hellip; and 70+ more.</p>
-      </div>
-    </section>
-
     <section class="cta-final" aria-labelledby="cta-title">
       <div class="wrap">
-        <h2 id="cta-title" class="section-title">Get running in 60 seconds.</h2>
-        <div class="install-block">
-          <p class="install-label">Linux (Ubuntu / Debian)</p>
-          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
-          <p class="install-label">macOS</p>
-          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash</code></pre>
-          <p class="install-label">Arch Linux</p>
-          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash</code></pre>
-        </div>
+        <h2 id="cta-title" class="section-title">Get running in minutes.</h2>
+        <p class="section-sub">Four steps. From zero to a real app on a local URL.</p>
+
+        <ol class="steps" aria-label="Setup steps">
+          <li>
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h3>Install Podium</h3>
+              <p class="step-sub">Pick your platform &mdash; one curl, no manual setup.</p>
+              <p class="install-label">Linux (Ubuntu / Debian)</p>
+              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
+              <p class="install-label">macOS</p>
+              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash</code></pre>
+              <p class="install-label">Arch Linux</p>
+              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h3>Reboot</h3>
+              <p class="step-sub">Picks up Docker group membership and PATH changes from the installer.</p>
+              <pre class="install-cmd"><code>sudo reboot</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h3>Configure</h3>
+              <p class="step-sub">Sets up your projects directory, Docker network, hosts entries, and AI agent. Safe to re-run &mdash; existing values stay as defaults.</p>
+              <pre class="install-cmd"><code>podium configure</code></pre>
+            </div>
+          </li>
+
+          <li>
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h3>Build something</h3>
+              <p class="step-sub">Install a curated OSS app (pick one from the list below) <em>or</em> describe a custom project to your AI agent.</p>
+              <pre class="install-cmd"><code>podium install <span class="muted-cmd">&lt;app&gt;</span>          <span class="cmt"># click an app below for the exact command</span>
+podium create <span class="muted-cmd">"A timeclock for employees in Django"</span></code></pre>
+            </div>
+          </li>
+        </ol>
+
         <div class="cta center">
           <a class="btn primary" href="https://github.com/CaneBayComputers/podium-cli" target="_blank" rel="external noopener">View on GitHub</a>
           <a class="btn ghost" href="https://github.com/CaneBayComputers/podium-cli/blob/master/README.md" target="_blank" rel="external noopener">Read the docs</a>
         </div>
       </div>
     </section>
+
+    <section class="apps" id="apps" aria-labelledby="apps-title">
+      <div class="wrap">
+        <h2 id="apps-title" class="section-title">99 apps. One command each.</h2>
+        <p class="section-sub">Click an app to see the install command. All wired to shared databases. All reachable at <code>http://&lt;app-name&gt;/</code>.</p>
+
+        <div class="install-preview" id="installPreview" role="status" aria-live="polite">
+          <span class="preview-empty">Select an app below to see its install command.</span>
+        </div>
+
+        <ul class="app-grid" role="list">
+          <li><button type="button" data-slug="actual-budget">Actual Budget</button></li>
+          <li><button type="button" data-slug="appwrite">Appwrite</button></li>
+          <li><button type="button" data-slug="archivebox">ArchiveBox</button></li>
+          <li><button type="button" data-slug="audiobookshelf">Audiobookshelf</button></li>
+          <li><button type="button" data-slug="babybuddy">Baby Buddy</button></li>
+          <li><button type="button" data-slug="bookstack">BookStack</button></li>
+          <li><button type="button" data-slug="budibase">Budibase</button></li>
+          <li><button type="button" data-slug="cachet">Cachet</button></li>
+          <li><button type="button" data-slug="cal-com">Cal.com</button></li>
+          <li><button type="button" data-slug="changedetection">Changedetection.io</button></li>
+          <li><button type="button" data-slug="code-server">Code-Server</button></li>
+          <li><button type="button" data-slug="coolify">Coolify</button></li>
+          <li><button type="button" data-slug="dashy">Dashy</button></li>
+          <li><button type="button" data-slug="dify">Dify</button></li>
+          <li><button type="button" data-slug="directus">Directus</button></li>
+          <li><button type="button" data-slug="excalidraw">Excalidraw</button></li>
+          <li><button type="button" data-slug="firefly-iii">Firefly III</button></li>
+          <li><button type="button" data-slug="flame">Flame</button></li>
+          <li><button type="button" data-slug="flarum">Flarum</button></li>
+          <li><button type="button" data-slug="flowise">Flowise</button></li>
+          <li><button type="button" data-slug="freescout">FreeScout</button></li>
+          <li><button type="button" data-slug="freshrss">FreshRSS</button></li>
+          <li><button type="button" data-slug="ghost">Ghost</button></li>
+          <li><button type="button" data-slug="gitea">Gitea</button></li>
+          <li><button type="button" data-slug="glances">Glances</button></li>
+          <li><button type="button" data-slug="grafana">Grafana</button></li>
+          <li><button type="button" data-slug="graylog">Graylog</button></li>
+          <li><button type="button" data-slug="grocy">Grocy</button></li>
+          <li><button type="button" data-slug="healthchecks">Healthchecks</button></li>
+          <li><button type="button" data-slug="hedgedoc">HedgeDoc</button></li>
+          <li><button type="button" data-slug="heimdall">Heimdall</button></li>
+          <li><button type="button" data-slug="home-assistant">Home Assistant</button></li>
+          <li><button type="button" data-slug="homer">Homer</button></li>
+          <li><button type="button" data-slug="immich">Immich</button></li>
+          <li><button type="button" data-slug="invoice-ninja">Invoice Ninja</button></li>
+          <li><button type="button" data-slug="it-tools">IT Tools</button></li>
+          <li><button type="button" data-slug="jellyfin">Jellyfin</button></li>
+          <li><button type="button" data-slug="kanboard">Kanboard</button></li>
+          <li><button type="button" data-slug="kavita">Kavita</button></li>
+          <li><button type="button" data-slug="kimai">Kimai</button></li>
+          <li><button type="button" data-slug="koel">Koel</button></li>
+          <li><button type="button" data-slug="label-studio">Label Studio</button></li>
+          <li><button type="button" data-slug="leantime">Leantime</button></li>
+          <li><button type="button" data-slug="lemmy">Lemmy</button></li>
+          <li><button type="button" data-slug="limesurvey">LimeSurvey</button></li>
+          <li><button type="button" data-slug="linkwarden">Linkwarden</button></li>
+          <li><button type="button" data-slug="listmonk">Listmonk</button></li>
+          <li><button type="button" data-slug="lychee">Lychee</button></li>
+          <li><button type="button" data-slug="mastodon">Mastodon</button></li>
+          <li><button type="button" data-slug="matomo">Matomo</button></li>
+          <li><button type="button" data-slug="mattermost">Mattermost</button></li>
+          <li><button type="button" data-slug="mautic">Mautic</button></li>
+          <li><button type="button" data-slug="mealie">Mealie</button></li>
+          <li><button type="button" data-slug="meilisearch">Meilisearch</button></li>
+          <li><button type="button" data-slug="memos">Memos</button></li>
+          <li><button type="button" data-slug="metabase">Metabase</button></li>
+          <li><button type="button" data-slug="miniflux">Miniflux</button></li>
+          <li><button type="button" data-slug="minio">MinIO</button></li>
+          <li><button type="button" data-slug="monica">Monica CRM</button></li>
+          <li><button type="button" data-slug="n8n">n8n</button></li>
+          <li><button type="button" data-slug="netbox">NetBox</button></li>
+          <li><button type="button" data-slug="netdata">Netdata</button></li>
+          <li><button type="button" data-slug="nextcloud">Nextcloud</button></li>
+          <li><button type="button" data-slug="nginx-proxy-manager">Nginx Proxy Manager</button></li>
+          <li><button type="button" data-slug="nocodb">NocoDB</button></li>
+          <li><button type="button" data-slug="octobercms">October CMS</button></li>
+          <li><button type="button" data-slug="open-webui">Open WebUI</button></li>
+          <li><button type="button" data-slug="outline">Outline</button></li>
+          <li><button type="button" data-slug="paperless">Paperless-ngx</button></li>
+          <li><button type="button" data-slug="penpot">Penpot</button></li>
+          <li><button type="button" data-slug="photoprism">PhotoPrism</button></li>
+          <li><button type="button" data-slug="plane">Plane</button></li>
+          <li><button type="button" data-slug="plausible">Plausible Analytics</button></li>
+          <li><button type="button" data-slug="portainer">Portainer CE</button></li>
+          <li><button type="button" data-slug="redash">Redash</button></li>
+          <li><button type="button" data-slug="redmine">Redmine</button></li>
+          <li><button type="button" data-slug="roundcube">Roundcube</button></li>
+          <li><button type="button" data-slug="searxng">SearXNG</button></li>
+          <li><button type="button" data-slug="shlink">Shlink</button></li>
+          <li><button type="button" data-slug="snappymail">Snappymail</button></li>
+          <li><button type="button" data-slug="snipe-it">Snipe-IT</button></li>
+          <li><button type="button" data-slug="standard-notes">Standard Notes</button></li>
+          <li><button type="button" data-slug="stirling-pdf">Stirling PDF</button></li>
+          <li><button type="button" data-slug="superset">Apache Superset</button></li>
+          <li><button type="button" data-slug="taiga">Taiga</button></li>
+          <li><button type="button" data-slug="tandoor">Tandoor Recipes</button></li>
+          <li><button type="button" data-slug="tooljet">Tooljet</button></li>
+          <li><button type="button" data-slug="trilium">Trilium Notes</button></li>
+          <li><button type="button" data-slug="typebot">Typebot</button></li>
+          <li><button type="button" data-slug="umami">Umami</button></li>
+          <li><button type="button" data-slug="uptime-kuma">Uptime Kuma</button></li>
+          <li><button type="button" data-slug="vaultwarden">Vaultwarden</button></li>
+          <li><button type="button" data-slug="vikunja">Vikunja</button></li>
+          <li><button type="button" data-slug="wallabag">Wallabag</button></li>
+          <li><button type="button" data-slug="wger">wger</button></li>
+          <li><button type="button" data-slug="wikijs">Wiki.js</button></li>
+          <li><button type="button" data-slug="yourls">YOURLS</button></li>
+          <li><button type="button" data-slug="zabbix">Zabbix</button></li>
+          <li><button type="button" data-slug="zulip">Zulip</button></li>
+        </ul>
+      </div>
+    </section>
   </main>
+
+  <script>
+    (function () {
+      const preview = document.getElementById('installPreview');
+      const grid = document.querySelector('.app-grid');
+      if (!preview || !grid) return;
+
+      const buttons = grid.querySelectorAll('button[data-slug]');
+
+      function renderCommand(slug, label) {
+        const cmd = 'podium install ' + slug;
+        preview.classList.add('has-cmd');
+        preview.innerHTML =
+          '<div class="preview-row">' +
+            '<span class="preview-prompt">$</span>' +
+            '<code class="preview-cmd">' + cmd + '</code>' +
+            '<button type="button" class="copy-btn" data-cmd="' + cmd + '" aria-label="Copy command">Copy</button>' +
+          '</div>' +
+          '<p class="preview-meta">Run this in your terminal to install <strong>' + label + '</strong>. It will be reachable at <code>http://' + slug + '/</code>.</p>';
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          buttons.forEach(function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          renderCommand(btn.dataset.slug, btn.textContent.trim());
+        });
+      });
+
+      preview.addEventListener('click', function (e) {
+        if (!e.target.classList.contains('copy-btn')) return;
+        const cmd = e.target.dataset.cmd;
+        const label = e.target;
+        const original = label.textContent;
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(cmd).then(function () {
+            label.textContent = 'Copied!';
+            setTimeout(function () { label.textContent = original; }, 1500);
+          }).catch(function () {
+            fallbackCopy(cmd, label, original);
+          });
+        } else {
+          fallbackCopy(cmd, label, original);
+        }
+      });
+
+      function fallbackCopy(text, label, original) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          label.textContent = 'Copied!';
+          setTimeout(function () { label.textContent = original; }, 1500);
+        } catch (e) { /* noop */ }
+        document.body.removeChild(ta);
+      }
+    })();
+  </script>
 
   <footer class="site-footer" role="contentinfo">
     <div class="wrap footer-row">
