@@ -598,7 +598,7 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Framework chips under podium new */
+/* Framework chips under podium new — clickable */
 .framework-list {
   display: flex;
   flex-wrap: wrap;
@@ -615,6 +615,100 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s, transform .12s;
+}
+.fw-chip:hover {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.fw-chip.active {
+  background: rgba(14, 165, 233, 0.32);
+  border-color: var(--accent-2);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
+}
+.fw-chip:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.install-cmd .fw-value {
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+/* Foot note under an OR option (e.g. the "Pull in existing" explanation) */
+.option-foot {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 10px 0 0;
+  line-height: 1.55;
+}
+.option-foot code {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--accent-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+/* Copy-to-clipboard button on terminal-style code blocks */
+pre.has-copy {
+  position: relative;
+}
+.code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  color: var(--muted);
+  padding: 4px 9px 4px 7px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity .15s, background .12s, color .12s, border-color .12s;
+}
+pre.has-copy:hover .code-copy,
+pre.has-copy:focus-within .code-copy {
+  opacity: 1;
+}
+.code-copy:hover {
+  background: rgba(14, 165, 233, 0.22);
+  color: #fff;
+  border-color: var(--accent);
+}
+.code-copy:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.code-copy.copied {
+  background: rgba(52, 211, 153, 0.16);
+  border-color: rgba(52, 211, 153, 0.5);
+  color: #34d399;
+  opacity: 1;
+}
+.code-copy svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+.code-copy-label {
+  line-height: 1;
+}
+@media (max-width: 600px) {
+  .code-copy-label { display: none; }
+  .code-copy { padding: 5px; }
 }
 
 /* Footer */

@@ -386,19 +386,27 @@
               <div class="or-divider" aria-hidden="true"><span>OR</span></div>
 
               <div class="option">
+                <div class="option-label">Pull in a project you already have on GitHub</div>
+                <pre class="install-cmd"><code>podium create <span class="muted-cmd">"https://github.com/your-org/your-repo"</span></code></pre>
+                <p class="option-foot">Clones the repo, adapts its <code>docker-compose.yaml</code> to use Podium's shared databases, and starts everything. Your AI agent reads the project's README and picks up where the upstream left off.</p>
+              </div>
+
+              <div class="or-divider" aria-hidden="true"><span>OR</span></div>
+
+              <div class="option">
                 <div class="option-label">Start blank with a framework you already know</div>
-                <pre class="install-cmd"><code>podium new my-app --framework <span class="muted-cmd">&lt;type&gt;</span></code></pre>
-                <p class="framework-list" aria-label="Supported frameworks">
-                  <span class="fw-chip">laravel</span>
-                  <span class="fw-chip">wordpress</span>
-                  <span class="fw-chip">php</span>
-                  <span class="fw-chip">django</span>
-                  <span class="fw-chip">fastapi</span>
-                  <span class="fw-chip">python</span>
-                  <span class="fw-chip">express</span>
-                  <span class="fw-chip">nestjs</span>
-                  <span class="fw-chip">fastify</span>
-                  <span class="fw-chip">node</span>
+                <pre class="install-cmd"><code>podium new my-app --framework <span class="muted-cmd" id="frameworkType">&lt;type&gt;</span></code></pre>
+                <p class="framework-list" aria-label="Supported frameworks (click to fill in)">
+                  <button type="button" class="fw-chip" data-framework="laravel">laravel</button>
+                  <button type="button" class="fw-chip" data-framework="wordpress">wordpress</button>
+                  <button type="button" class="fw-chip" data-framework="php">php</button>
+                  <button type="button" class="fw-chip" data-framework="django">django</button>
+                  <button type="button" class="fw-chip" data-framework="fastapi">fastapi</button>
+                  <button type="button" class="fw-chip" data-framework="python">python</button>
+                  <button type="button" class="fw-chip" data-framework="express">express</button>
+                  <button type="button" class="fw-chip" data-framework="nestjs">nestjs</button>
+                  <button type="button" class="fw-chip" data-framework="fastify">fastify</button>
+                  <button type="button" class="fw-chip" data-framework="node">node</button>
                 </p>
               </div>
             </div>
@@ -591,6 +599,77 @@
         } catch (e) { /* noop */ }
         document.body.removeChild(ta);
       }
+    })();
+
+    /* Framework chip click -> update the example command */
+    (function () {
+      const slot = document.getElementById('frameworkType');
+      if (!slot) return;
+      const chips = document.querySelectorAll('.fw-chip[data-framework]');
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          slot.textContent = chip.dataset.framework;
+          slot.classList.remove('muted-cmd');
+          slot.classList.add('fw-value');
+        });
+      });
+    })();
+
+    /* Add a copy button to every terminal-style code block */
+    (function () {
+      const ICON =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<rect x="9" y="9" width="13" height="13" rx="2"/>' +
+          '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
+        '</svg>';
+      const CHECK =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<polyline points="20 6 9 17 4 12"/>' +
+        '</svg>';
+
+      function copy(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(text).catch(fallback.bind(null, text));
+        }
+        return Promise.resolve(fallback(text));
+      }
+      function fallback(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) { /* noop */ }
+        document.body.removeChild(ta);
+      }
+
+      const blocks = document.querySelectorAll('pre.install-cmd, .terminal pre, .snippet pre');
+      blocks.forEach(function (pre) {
+        const code = pre.querySelector('code');
+        if (!code) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'code-copy';
+        btn.setAttribute('aria-label', 'Copy code to clipboard');
+        btn.innerHTML = ICON + '<span class="code-copy-label">Copy</span>';
+        pre.classList.add('has-copy');
+        pre.appendChild(btn);
+
+        btn.addEventListener('click', function () {
+          copy(code.textContent).then(function () {
+            btn.classList.add('copied');
+            btn.innerHTML = CHECK + '<span class="code-copy-label">Copied</span>';
+            setTimeout(function () {
+              btn.classList.remove('copied');
+              btn.innerHTML = ICON + '<span class="code-copy-label">Copy</span>';
+            }, 1500);
+          });
+        });
+      });
     })();
   </script>
 
