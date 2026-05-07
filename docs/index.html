@@ -369,9 +369,28 @@
             <div class="step-num">4</div>
             <div class="step-body">
               <h3>Build something</h3>
-              <p class="step-sub">Install a curated OSS app (pick one from the list below) <em>or</em> describe a custom project to your AI agent.</p>
-              <pre class="install-cmd"><code>podium install <span class="muted-cmd">&lt;app&gt;</span>          <span class="cmt"># click an app below for the exact command</span>
-podium create <span class="muted-cmd">"A timeclock for employees in Django"</span></code></pre>
+              <p class="step-sub">Pick one of three paths &mdash; whichever fits the project you have in mind.</p>
+
+              <div class="option">
+                <div class="option-label">Install a curated OSS app</div>
+                <pre class="install-cmd"><code>podium install <span class="muted-cmd">&lt;app&gt;</span>      <span class="cmt"># click an app below for the exact command</span></code></pre>
+              </div>
+
+              <div class="or-divider" aria-hidden="true"><span>OR</span></div>
+
+              <div class="option">
+                <div class="option-label">Have an AI agent scaffold a custom project</div>
+                <pre class="install-cmd"><code>podium create <span class="muted-cmd">"A timeclock for employees in Django"</span></code></pre>
+              </div>
+
+              <div class="or-divider" aria-hidden="true"><span>OR</span></div>
+
+              <div class="option">
+                <div class="option-label">Start blank with a framework you already know</div>
+                <pre class="install-cmd"><code>podium new my-app  --framework laravel
+podium new my-api  --framework fastapi
+podium new my-site --framework express</code></pre>
+              </div>
             </div>
           </li>
         </ol>

@@ -560,6 +560,39 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
 .install-cmd .muted-cmd { color: #7a85a3; }
 .install-cmd .cmt { color: #5e6a85; }
 
+/* Three-option layout inside step 4 */
+.option-label {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+.option + .or-divider, .or-divider + .option { /* spacing handled below */ }
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 0;
+  color: var(--accent-2);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  user-select: none;
+}
+.or-divider::before, .or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(56, 189, 248, 0.45), transparent);
+}
+.or-divider span {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--line);
