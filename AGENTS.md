@@ -26,6 +26,8 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. |
 | `podium new <name> --framework <type>` | Greenfield project on a cbc base image (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). |
 | `podium clone <repo>` | Clone a Git repo and adapt its compose to use Podium shared services. |
+
+> **Heads up:** `podium create`, `podium new`, `podium clone`, and `podium install` all hand off to an interactive AI session inside the new project once setup completes. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip.
 | `podium up [name\|--all]` | Start a project. With no arg: interactive picker. With `--all`: every project. Shared services always start. |
 | `podium down [name\|--all]` | Stop a project. With no arg: interactive picker. With `--all`: every project. Shared services keep running — use `podium stop-services` for those. |
 | `podium setup [name]` | Adapt a project directory in `~/podium-projects/`. Interactive picker if name omitted. |

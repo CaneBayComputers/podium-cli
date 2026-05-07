@@ -71,6 +71,7 @@ usage() {
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
+    echo-white "  --one-off               Skip the interactive AI session at the end (for automation)"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
@@ -94,6 +95,7 @@ FRAMEWORK=""
 DATABASE=""
 CREATE_GITHUB=""
 SKIP_STORAGE_SYMLINK=0
+SKIP_INTERACTIVE=0
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -115,6 +117,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-storage-symlink)
             SKIP_STORAGE_SYMLINK=1
+            shift
+            ;;
+        --one-off)
+            SKIP_INTERACTIVE=1
             shift
             ;;
         --no-github)
@@ -641,5 +647,9 @@ else
     fi
     source "$DEV_DIR/scripts/setup_project.sh" "$PROJECT_NAME" "$DATABASE" $SETUP_OPTIONS
 fi
+
+# Drop into an interactive AI session inside the new project (skipped when
+# --one-off, JSON mode, non-TTY, or no AI agent configured).
+ai_handoff "$PROJECT_NAME"
 
 cd "$ORIG_DIR"

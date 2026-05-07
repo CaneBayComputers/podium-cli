@@ -528,6 +528,50 @@ debug() {
     fi
 }
 
+# After a project is created/cloned/installed, hand off to an interactive AI session
+# inside the project directory — same flow that podium create does in phase 2.
+#
+# Skipped (silently) when:
+#   - JSON_OUTPUT mode (automation context)
+#   - SKIP_INTERACTIVE=1 (caller passed --one-off)
+#   - stdin is not a TTY (piped/scripted invocation)
+#   - AI_AGENT is not configured
+#   - the project directory doesn't exist
+#
+# Args:
+#   $1  project name (required) — must be a directory in $PROJECTS_DIR_PATH
+#   $2  optional override for the seed prompt
+ai_handoff() {
+    local project_name="$1"
+    local seed_prompt="$2"
+
+    # Always-skip cases
+    [[ -z "$project_name" ]] && return 0
+    [[ "$JSON_OUTPUT" == "1" ]] && return 0
+    [[ "$SKIP_INTERACTIVE" == "1" ]] && return 0
+    [[ ! -t 0 ]] && return 0
+    [[ -z "$AI_AGENT" ]] && return 0
+
+    local project_dir="$PROJECTS_DIR_PATH/$project_name"
+    [[ ! -d "$project_dir" ]] && return 0
+
+    # Resolve ai.sh — DEV_DIR is set by the calling script's pre_check.sh
+    local ai_script="$DEV_DIR/scripts/ai.sh"
+    [[ ! -f "$ai_script" ]] && return 0
+
+    if [[ -z "$seed_prompt" ]]; then
+        seed_prompt="Read README.md to understand the project. It is running at http://$project_name/. You are the developer. Wait for the user's first instruction."
+    fi
+
+    echo-return
+    echo-cyan "Starting interactive AI session in $project_name..."
+    echo-white "(skip with --one-off; configure agent with 'podium ai-set')"
+    echo-return
+
+    cd "$project_dir"
+    exec "$ai_script" "$seed_prompt"
+}
+
 # Helper function to append JSON results to debug log
 debug_append_json() {
     if [[ "$DEBUG" == "1" && -n "$1" ]]; then

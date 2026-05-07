@@ -166,6 +166,7 @@ show_help() {
     echo-white "NOTES:"
     echo "  • 'podium up' without project name shows an interactive picker (services start regardless; use --all to start every project)"
     echo "  • 'podium down' without project name shows an interactive picker (--all stops every project; shared services stay up — use 'podium stop-services' for those)"
+    echo "  • 'podium create', 'podium new', 'podium clone', and 'podium install' all drop into an interactive AI session in the new project on completion. Pass --one-off to skip."
     echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"

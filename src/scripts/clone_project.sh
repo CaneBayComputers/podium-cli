@@ -26,6 +26,7 @@ NO_STORAGE_SYMLINK=0
 NO_STARTUP=0
 REQUEST_FORK=0
 FORK_USED=0
+SKIP_INTERACTIVE=0
 GIT_CLONE_ARGS=()
 
 # Function to display usage
@@ -49,6 +50,7 @@ usage() {
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --framework FRAMEWORK        Force framework detection (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --no-startup                 Clone and register project but do not start the container"
+    echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
@@ -85,6 +87,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-storage-symlink)
             NO_STORAGE_SYMLINK=1
+            shift
+            ;;
+        --one-off)
+            SKIP_INTERACTIVE=1
             shift
             ;;
         --no-github)
@@ -435,5 +441,9 @@ fi
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     echo "{\"action\": \"clone_project\", \"project_name\": \"$PROJECT_NAME\", \"repository\": \"$REPOSITORY\", \"setup_result\": $SETUP_OUTPUT, \"status\": \"success\"}"
 fi
+
+# Drop into an interactive AI session inside the cloned project (skipped when
+# --one-off, JSON mode, non-TTY, or no AI agent configured).
+ai_handoff "$PROJECT_NAME"
 
 cd "$ORIG_DIR"

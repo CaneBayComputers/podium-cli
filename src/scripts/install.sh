@@ -8,7 +8,18 @@ DEV_DIR=$(pwd)
 
 source scripts/pre_check.sh
 
-APP="${1:-}"
+SKIP_INTERACTIVE=0
+APP=""
+for arg in "$@"; do
+    case "$arg" in
+        --one-off) SKIP_INTERACTIVE=1 ;;
+        *)
+            if [ -z "$APP" ]; then
+                APP="$arg"
+            fi
+            ;;
+    esac
+done
 
 # List available installers
 if [ "$APP" = "--list" ] || [ "$APP" = "-l" ]; then
@@ -146,3 +157,7 @@ else
     echo-white "  Logs:  podium logs $APP"
 fi
 echo-return
+
+# Drop into an interactive AI session inside the project (skipped when --one-off,
+# JSON mode, non-TTY, or no AI agent configured).
+ai_handoff "$APP" "Read README.md to understand the project. $INSTALL_DISPLAY is running at http://$APP/. You are the developer. Wait for the user's first instruction."

@@ -253,7 +253,7 @@ podium create "I need a private Git server called dev-forge, set it up and creat
 podium create "New Grafana"
 ```
 
-The installed app lands at `http://<app-name>/` immediately. From there, `podium ai` can continue customizing it in an interactive session.
+The installed app lands at `http://<app-name>/` immediately, and `podium install` drops you into an interactive AI session inside the project directory so you can keep iterating on it. Pass `--one-off` to skip the AI hand-off (same applies to `podium create`, `podium new`, and `podium clone`).
 
 ### Available apps
 
