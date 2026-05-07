@@ -387,9 +387,19 @@
 
               <div class="option">
                 <div class="option-label">Start blank with a framework you already know</div>
-                <pre class="install-cmd"><code>podium new my-app  --framework laravel
-podium new my-api  --framework fastapi
-podium new my-site --framework express</code></pre>
+                <pre class="install-cmd"><code>podium new my-app --framework <span class="muted-cmd">&lt;type&gt;</span></code></pre>
+                <p class="framework-list" aria-label="Supported frameworks">
+                  <span class="fw-chip">laravel</span>
+                  <span class="fw-chip">wordpress</span>
+                  <span class="fw-chip">php</span>
+                  <span class="fw-chip">django</span>
+                  <span class="fw-chip">fastapi</span>
+                  <span class="fw-chip">python</span>
+                  <span class="fw-chip">express</span>
+                  <span class="fw-chip">nestjs</span>
+                  <span class="fw-chip">fastify</span>
+                  <span class="fw-chip">node</span>
+                </p>
               </div>
             </div>
           </li>
@@ -475,7 +485,7 @@ podium new my-site --framework express</code></pre>
           <li><button type="button" data-slug="netbox">NetBox</button></li>
           <li><button type="button" data-slug="netdata">Netdata</button></li>
           <li><button type="button" data-slug="nextcloud">Nextcloud</button></li>
-          <li><button type="button" data-slug="nginx-proxy-manager">Nginx Proxy Manager</button></li>
+          <li><button type="button" data-slug="nginx-proxy-manager">Nginx Proxy</button></li>
           <li><button type="button" data-slug="nocodb">NocoDB</button></li>
           <li><button type="button" data-slug="octobercms">October CMS</button></li>
           <li><button type="button" data-slug="open-webui">Open WebUI</button></li>
@@ -536,11 +546,16 @@ podium new my-site --framework express</code></pre>
           '<p class="preview-meta">Run this in your terminal to install <strong>' + label + '</strong>. It will be reachable at <code>http://' + slug + '/</code>.</p>';
       }
 
+      const appsSection = document.getElementById('apps');
+
       buttons.forEach(function (btn) {
         btn.addEventListener('click', function () {
           buttons.forEach(function (b) { b.classList.remove('active'); });
           btn.classList.add('active');
           renderCommand(btn.dataset.slug, btn.textContent.trim());
+          if (appsSection) {
+            appsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
         });
       });
 

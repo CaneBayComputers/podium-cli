@@ -403,7 +403,12 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
 .snippet .micro { color: #7a85a3; font-size: 0.85rem; margin-top: 0; }
 
 /* Apps grid */
-.apps { background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.35)); }
+.apps {
+  background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.35));
+  /* Offset for sticky header so JS-driven scrollIntoView lands the heading
+     fully in view instead of behind the nav. */
+  scroll-margin-top: 80px;
+}
 
 .install-preview {
   max-width: 760px;
@@ -591,6 +596,25 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   padding: 5px 14px;
   border-radius: 999px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Framework chips under podium new */
+.framework-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+.fw-chip {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--accent-2);
+  border: 1px solid rgba(14, 165, 233, 0.32);
+  padding: 4px 10px;
+  border-radius: 7px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 /* Footer */
