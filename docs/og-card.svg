@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1232"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.4" r="0.7">
+      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hexFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#162047"/>
+      <stop offset="100%" stop-color="#070d1f"/>
+    </linearGradient>
+    <linearGradient id="hexEdge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="pStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a5f3fc"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <pattern id="grid" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#1e3a8a" stroke-width="0.6" stroke-opacity="0.35"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Logo on the left, scaled up from 200x200 -->
+  <g transform="translate(80, 145) scale(1.7)">
+    <path d="M 100 14 L 174 56 L 174 144 L 100 186 L 26 144 L 26 56 Z"
+          fill="url(#hexFill)"
+          stroke="url(#hexEdge)"
+          stroke-width="3.5"
+          stroke-linejoin="round"/>
+    <path d="M 100 26 L 164 62 L 164 138 L 100 174 L 36 138 L 36 62 Z"
+          fill="none"
+          stroke="#1e40af"
+          stroke-width="1"
+          stroke-opacity="0.55"
+          stroke-linejoin="round"/>
+    <path d="M 72 158 L 72 56 L 118 56 A 28 28 0 0 1 118 112 L 72 112"
+          stroke="url(#pStroke)"
+          stroke-width="14"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+    <path d="M 87 70 L 107 84 L 87 98"
+          stroke="#67e8f9"
+          stroke-width="6.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          fill="none"/>
+  </g>
+
+  <!-- Right-side text -->
+  <g font-family="ui-sans-serif, system-ui, -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif">
+    <text x="500" y="220" fill="#ffffff" font-size="120" font-weight="800" letter-spacing="-3">Podium</text>
+    <text x="500" y="285" fill="#67e8f9" font-size="32" font-weight="600" letter-spacing="3">AI-FRIENDLY LOCAL DEV PLATFORM</text>
+    <text x="500" y="375" fill="#cbd5e1" font-size="32" font-weight="500">Docker, multi-project, shared services.</text>
+    <text x="500" y="420" fill="#cbd5e1" font-size="32" font-weight="500">100+ OSS apps in one command.</text>
+    <text x="500" y="465" fill="#cbd5e1" font-size="32" font-weight="500">Built to save AI tokens.</text>
+
+    <g transform="translate(500, 520)">
+      <rect x="0" y="0" width="540" height="62" rx="10" fill="#0c1838" stroke="#0ea5e9" stroke-width="1.5"/>
+      <text x="22" y="42" fill="#67e8f9" font-family="ui-monospace, 'JetBrains Mono', Menlo, monospace" font-size="26" font-weight="500">$ podium install grafana</text>
+    </g>
+  </g>
+</svg>

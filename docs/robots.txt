@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://canebaycomputers.github.io/podium-cli/sitemap.xml

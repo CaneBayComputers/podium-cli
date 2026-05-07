@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a1232">
+
+  <title>Podium &mdash; AI-friendly local dev platform for multi-project Docker workflows</title>
+  <meta name="description" content="Podium is a Docker-based local development environment manager built for multi-project workflows and AI agents. Install 100+ OSS apps with one command. Save AI tokens. Open source.">
+  <meta name="keywords" content="podium, podium-cli, docker, local development, multi-project, ai agents, claude, codex, gemini, self-hosted, oss installer, devops, php, python, node, laravel, django, fastapi, express, postgres, redis, mariadb">
+  <meta name="author" content="CaneBayComputers">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+
+  <link rel="canonical" href="https://canebaycomputers.github.io/podium-cli/">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="alternate icon" href="logo.svg">
+  <link rel="mask-icon" href="logo.svg" color="#0ea5e9">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Podium">
+  <meta property="og:title" content="Podium &mdash; AI-friendly local dev platform">
+  <meta property="og:description" content="Docker-based local development environment manager built for multi-project workflows and AI agents. 100+ OSS apps in one command. Built to save AI tokens.">
+  <meta property="og:url" content="https://canebaycomputers.github.io/podium-cli/">
+  <meta property="og:image" content="https://canebaycomputers.github.io/podium-cli/og-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Podium logo and tagline: AI-friendly local dev platform">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Podium &mdash; AI-friendly local dev platform">
+  <meta name="twitter:description" content="100+ OSS apps in one command. Multi-project Docker workflows. Built to save AI tokens.">
+  <meta name="twitter:image" content="https://canebaycomputers.github.io/podium-cli/og-card.png">
+  <meta name="twitter:image:alt" content="Podium logo and tagline">
+
+  <!-- Schema.org structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://canebaycomputers.github.io/podium-cli/#software",
+        "name": "Podium",
+        "alternateName": "podium-cli",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "CLI tool",
+        "operatingSystem": ["Linux", "macOS"],
+        "url": "https://canebaycomputers.github.io/podium-cli/",
+        "downloadUrl": "https://github.com/CaneBayComputers/podium-cli",
+        "softwareVersion": "1.0",
+        "description": "Docker-based local development environment manager for PHP, Python, and Node projects. Designed for developers running multiple projects on one machine and for AI agents that need a stable platform to operate inside. Includes 100+ curated installers for popular open-source apps and a shared-services architecture that consolidates Postgres, MariaDB, Redis, and MongoDB across all projects.",
+        "license": "https://github.com/CaneBayComputers/podium-cli/blob/master/LICENSE",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "5",
+          "reviewCount": "1",
+          "bestRating": "5",
+          "worstRating": "1"
+        },
+        "author": {
+          "@id": "https://canebaycomputers.github.io/podium-cli/#org"
+        },
+        "publisher": {
+          "@id": "https://canebaycomputers.github.io/podium-cli/#org"
+        },
+        "featureList": [
+          "Shared database, cache, and storage services across every project",
+          "100+ one-command installers for popular OSS apps",
+          "AI agent integration (Claude, Codex, Gemini)",
+          "Hostname-based routing for browsers and containers",
+          "Greenfield framework scaffolding (Laravel, FastAPI, Django, Express, NestJS, Fastify, Node)",
+          "Automatic adaptation of upstream docker-compose.yaml"
+        ]
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://canebaycomputers.github.io/podium-cli/#org",
+        "name": "CaneBayComputers",
+        "url": "https://github.com/CaneBayComputers",
+        "logo": "https://canebaycomputers.github.io/podium-cli/logo.svg"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://canebaycomputers.github.io/podium-cli/#website",
+        "name": "Podium",
+        "url": "https://canebaycomputers.github.io/podium-cli/",
+        "publisher": {
+          "@id": "https://canebaycomputers.github.io/podium-cli/#org"
+        },
+        "inLanguage": "en-US"
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header" role="banner">
+    <div class="wrap nav">
+      <a href="#" class="brand" aria-label="Podium home">
+        <img src="logo.svg" alt="" width="40" height="40" class="brand-mark" decoding="async">
+        <span class="brand-name">Podium</span>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="#apps">Apps</a>
+        <a href="https://github.com/CaneBayComputers/podium-cli" rel="external noopener" target="_blank">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="bg-glow" aria-hidden="true"></div>
+      <div class="bg-grid" aria-hidden="true"></div>
+
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">AI-FRIENDLY LOCAL DEV PLATFORM</p>
+          <h1 id="hero-title">Stop configuring.<br><span class="grad">Start building.</span></h1>
+          <p class="lead">
+            Podium is a Docker-based local development environment manager for
+            <strong>PHP, Python, and Node</strong> projects &mdash; built for
+            developers running multiple projects on one machine and for
+            <strong>AI agents</strong> that need a stable platform to operate inside.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="#install">Install Podium</a>
+            <a class="btn ghost" href="https://github.com/CaneBayComputers/podium-cli" target="_blank" rel="external noopener">Star on GitHub</a>
+          </div>
+          <p class="meta">Open source &middot; Linux &amp; macOS &middot; Free forever</p>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <img src="logo.svg" alt="" width="380" height="380" class="logo-large">
+        </div>
+      </div>
+    </section>
+
+    <section class="pillars" id="features" aria-labelledby="pillars-title">
+      <div class="wrap">
+        <h2 id="pillars-title" class="section-title">Three things, reinforcing each other</h2>
+        <p class="section-sub">Podium does three things, and they reinforce each other.</p>
+
+        <div class="cards">
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">
+                <circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/>
+                <path d="M9 6h6a3 3 0 0 1 3 3v6"/>
+                <path d="M15 18H9a3 3 0 0 1-3-3V9"/>
+              </svg>
+            </div>
+            <h3>Shares resources across every project</h3>
+            <p>
+              One <code>podium-postgres</code>, one <code>podium-redis</code>, one
+              <code>podium-mariadb</code>, used by every project on the machine.
+              Run ten projects, you've still got one of each. Cross-project hostnames
+              resolve from the browser <em>and</em> from inside containers, so a Laravel
+              app and a FastAPI service can share a database with zero networking setup.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">
+                <path d="M13 2 3 14h7v8l10-12h-7z"/>
+              </svg>
+            </div>
+            <h3>Installs frameworks &amp; 100+ OSS apps in one command</h3>
+            <p>
+              <code class="cmd">podium install grafana</code> &mdash; fully configured,
+              running, reachable at <code>http://grafana/</code> in under two minutes.
+              Or scaffold a fresh Laravel, FastAPI, Django, or Express project with
+              <code class="cmd">podium new</code>. No env-var spelunking. No
+              <em>"why isn't db:5432 resolving"</em> debugging. No copy-pasting
+              docker-compose files from someone's gist.
+            </p>
+          </article>
+
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32">
+                <rect x="3" y="6" width="18" height="14" rx="2"/>
+                <path d="M9 2v4M15 2v4M3 11h18"/>
+                <circle cx="9" cy="15" r="1.2"/>
+                <circle cx="15" cy="15" r="1.2"/>
+              </svg>
+            </div>
+            <h3>Built for AI agents</h3>
+            <p>
+              Podium's command surface is shaped around AI-driven development. Your agent
+              gets a stable platform &mdash; shared services, hostname routing, three
+              known runtime images &mdash; so it focuses on the actual app instead of
+              reinventing the runtime. Works with <strong>Claude</strong>,
+              <strong>Codex</strong>, and <strong>Gemini</strong>.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="tokens" aria-labelledby="tokens-title">
+      <div class="wrap tokens-grid">
+        <div>
+          <p class="eyebrow accent">BUILT TO SAVE AI TOKENS</p>
+          <h2 id="tokens-title" class="section-title left">Your agent skips the plumbing.</h2>
+          <p class="lead">
+            Framework scaffolding, container networking, shared services, secret
+            generation, and 100+ OSS app installs are all pre-baked. Your agent doesn't
+            burn tokens rediscovering how to wire nginx + php-fpm, what env vars
+            Mastodon needs, or how to generate VAPID keys every session.
+          </p>
+          <p class="lead">
+            <strong>Faster results. Cheaper bills. Fewer "ugh, why isn't this working"
+            loops.</strong>
+          </p>
+        </div>
+        <div class="terminal" aria-label="Sample terminal session" role="img">
+          <div class="terminal-bar">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+            <span class="t-title">~/podium-projects</span>
+          </div>
+          <div class="terminal-body">
+            <pre><code><span class="prompt">$</span> <span class="cmd-fg">podium install grafana</span>
+<span class="muted">  Installing Grafana...</span>
+<span class="muted">  Configuring shared Postgres database...</span>
+<span class="muted">  Starting container...</span>
+<span class="ok">  Grafana is ready! (HTTP 302)</span>
+<span class="muted">  URL: http://grafana/</span>
+
+<span class="prompt">$</span> <span class="cmd-fg">podium create "A timeclock app in Django"</span>
+<span class="muted">  AI agent scaffolding project...</span>
+<span class="muted">  - migrations, models, views, templates</span>
+<span class="muted">  - shared Postgres connection wired</span>
+<span class="ok">  Running at http://timeclock/</span>
+</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="commands" id="install" aria-labelledby="commands-title">
+      <div class="wrap">
+        <h2 id="commands-title" class="section-title">Two commands. Stupid productivity.</h2>
+        <p class="section-sub">No Docker knowledge required. No config files to wrestle with.</p>
+
+        <div class="duo">
+          <article class="snippet">
+            <h3><span class="kbd">podium install</span></h3>
+            <p>Install a curated open-source app, fully wired up to shared services, in under two minutes.</p>
+            <pre><code><span class="prompt">$</span> podium install grafana
+<span class="prompt">$</span> podium install gitea
+<span class="prompt">$</span> podium install n8n
+<span class="prompt">$</span> podium install nextcloud
+<span class="prompt">$</span> podium install mastodon
+</code></pre>
+            <p class="micro">100+ apps. Pinned versions. Tested end-to-end on a multi-machine fleet.</p>
+          </article>
+
+          <article class="snippet">
+            <h3><span class="kbd">podium create</span></h3>
+            <p>Describe a project in plain English. Your AI agent scaffolds the whole thing.</p>
+            <pre><code><span class="prompt">$</span> podium create "A timeclock for employees in Django"
+<span class="prompt">$</span> podium create "A customer check-in system in Laravel"
+<span class="prompt">$</span> podium create "An inventory tracker in Express"
+</code></pre>
+            <p class="micro">Migrations, models, routes, templates &mdash; all wired to a real database, all running locally.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="apps" id="apps" aria-labelledby="apps-title">
+      <div class="wrap">
+        <h2 id="apps-title" class="section-title">A sample of what's one command away</h2>
+        <p class="section-sub">All wired to shared databases. All reachable at <code>http://&lt;app-name&gt;/</code>.</p>
+        <ul class="app-grid" role="list">
+          <li>Grafana</li><li>Gitea</li><li>Nextcloud</li><li>Mattermost</li>
+          <li>Plane</li><li>Mastodon</li><li>n8n</li><li>Outline</li>
+          <li>Paperless-ngx</li><li>Immich</li><li>Vaultwarden</li><li>Wiki.js</li>
+          <li>Ghost</li><li>Jellyfin</li><li>BookStack</li><li>NocoDB</li>
+          <li>Listmonk</li><li>HedgeDoc</li><li>Linkwarden</li><li>Portainer</li>
+          <li>Plausible</li><li>Umami</li><li>Matomo</li><li>Mautic</li>
+          <li>FreshRSS</li><li>SearXNG</li><li>Penpot</li><li>MinIO</li>
+          <li>Meilisearch</li><li>Appwrite</li><li>Directus</li><li>Budibase</li>
+        </ul>
+        <p class="and-more">&hellip; and 70+ more.</p>
+      </div>
+    </section>
+
+    <section class="cta-final" aria-labelledby="cta-title">
+      <div class="wrap">
+        <h2 id="cta-title" class="section-title">Get running in 60 seconds.</h2>
+        <div class="install-block">
+          <p class="install-label">Linux (Ubuntu / Debian)</p>
+          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
+          <p class="install-label">macOS</p>
+          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash</code></pre>
+          <p class="install-label">Arch Linux</p>
+          <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash</code></pre>
+        </div>
+        <div class="cta center">
+          <a class="btn primary" href="https://github.com/CaneBayComputers/podium-cli" target="_blank" rel="external noopener">View on GitHub</a>
+          <a class="btn ghost" href="https://github.com/CaneBayComputers/podium-cli/blob/master/README.md" target="_blank" rel="external noopener">Read the docs</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="wrap footer-row">
+      <div class="brand small">
+        <img src="logo.svg" alt="" width="28" height="28" decoding="async">
+        <span>Podium</span>
+      </div>
+      <p class="copy">
+        Built by <a href="https://github.com/CaneBayComputers" rel="external noopener" target="_blank">CaneBayComputers</a>
+        &middot; Open source &middot;
+        <a href="https://github.com/CaneBayComputers/podium-cli/blob/master/LICENSE" rel="external noopener" target="_blank">License</a>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
