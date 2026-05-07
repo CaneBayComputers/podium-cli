@@ -26,12 +26,12 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. |
 | `podium new <name> --framework <type>` | Greenfield project on a cbc base image (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). |
 | `podium clone <repo>` | Clone a Git repo and adapt its compose to use Podium shared services. |
-| `podium setup <name>` | Adapt an already-cloned project directory in `~/podium-projects/`. |
 | `podium up [name\|--all]` | Start a project. With no arg: interactive picker. With `--all`: every project. Shared services always start. |
-| `podium down [name]` | Stop a project (or everything if no arg). |
+| `podium down [name\|--all]` | Stop a project. With no arg: interactive picker. With `--all`: every project + shared services. |
+| `podium setup [name]` | Adapt a project directory in `~/podium-projects/`. Interactive picker if name omitted. |
+| `podium remove [name] --force-db-delete` | Tear down a project including its DB. Interactive picker if name omitted. |
 | `podium status [name]` | Show running state. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
-| `podium remove <name> --force-db-delete` | Tear down a project including its DB. |
 
 For automation, prefer `podium exec` / `podium exec-root` over interactive variants (`podium bash`, `podium tinker`, `podium exec-tty*`) — those allocate a TTY and aren't agent-friendly. `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`).
 

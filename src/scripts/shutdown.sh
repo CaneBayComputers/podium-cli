@@ -27,6 +27,7 @@ echo-return; echo-return
 
 # Initialize variables
 PROJECT_NAME=""
+STOP_ALL=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -36,6 +37,10 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --all)
+            STOP_ALL=1
+            shift
+            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -50,16 +55,19 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             echo-white "Usage: $0 [OPTIONS] [project_name]"
-            echo-white "Shutdown project containers or all projects"
+            echo-white "Shutdown project containers (and shared services on --all)"
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Optional: Specific project to shutdown"
+            echo-white "  project_name      Optional: specific project to stop"
             echo-white ""
             echo-white "Options:"
+            echo-white "  --all             Stop every project and shared services"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
+            echo-white ""
+            echo-white "With no arguments, shows an interactive picker."
             exit 0
             ;;
         -*)
@@ -75,6 +83,57 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ "$STOP_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
+    error "Cannot combine --all with a project name."
+fi
+
+# If no project name and no --all and not JSON mode, prompt the user.
+# JSON mode without args falls through to "stop everything" for backward-compat.
+if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
+    mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
+
+    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
+        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
+        echo-white "Nothing to stop. (Use 'podium stop-services' to stop shared services.)"
+        exit 0
+    fi
+
+    echo-cyan "Select a project to stop:"
+    echo-return
+
+    COLS=$(tput cols 2>/dev/null || echo 80)
+    if command -v column >/dev/null 2>&1; then
+        for i in "${!PROJECTS[@]}"; do
+            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done | column -c "$COLS"
+    else
+        for i in "${!PROJECTS[@]}"; do
+            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done
+    fi
+
+    echo-return
+    echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to stop everything): "
+    echo-white -ne
+    read -r SELECTION
+    echo-return
+
+    if [[ -z "$SELECTION" ]]; then
+        echo-yellow "No selection made. Aborting."
+        exit 1
+    fi
+
+    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
+        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
+            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
+            exit 1
+        fi
+        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
+    else
+        PROJECT_NAME="$SELECTION"
+    fi
+fi
 
 # Initialize debug logging
 debug "Script started: shutdown.sh with args: $ORIGINAL_ARGS"

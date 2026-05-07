@@ -24,8 +24,10 @@ source "$DEV_DIR/scripts/pre_check.sh"
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <project_name> [database_engine] [options]"
+    echo-white "Usage: $0 [project_name] [database_engine] [options]"
     echo-white "Sets up a project in the projects directory"
+    echo-white ""
+    echo-white "With no project name, shows an interactive picker (skipped in --json-output mode)."
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name     Name of the project to setup"
@@ -109,12 +111,58 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Assign positional arguments
+# If no project name was provided, show an interactive picker (skip in JSON mode).
 if [ ${#POSITIONAL_ARGS[@]} -lt 1 ]; then
-    error "Error: Project name is required."
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        error "Error: Project name is required."
+    fi
+
+    mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
+
+    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
+        echo-yellow "No project directories found in $PROJECTS_DIR_PATH."
+        echo-white "Drop a project folder there (or 'podium clone <repo>') and re-run."
+        exit 1
+    fi
+
+    echo-cyan "Select a project to set up:"
+    echo-return
+
+    COLS=$(tput cols 2>/dev/null || echo 80)
+    if command -v column >/dev/null 2>&1; then
+        for i in "${!PROJECTS[@]}"; do
+            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done | column -c "$COLS"
+    else
+        for i in "${!PROJECTS[@]}"; do
+            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done
+    fi
+
+    echo-return
+    echo-yellow -n "Enter number or project name (Ctrl+C to cancel): "
+    echo-white -ne
+    read -r SELECTION
+    echo-return
+
+    if [[ -z "$SELECTION" ]]; then
+        echo-yellow "No selection made. Aborting."
+        exit 1
+    fi
+
+    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
+        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
+            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
+            exit 1
+        fi
+        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
+    else
+        PROJECT_NAME="$SELECTION"
+    fi
+else
+    PROJECT_NAME="${POSITIONAL_ARGS[0]}"
 fi
 
-PROJECT_NAME="${POSITIONAL_ARGS[0]}"
 if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
     DATABASE_ENGINE="${POSITIONAL_ARGS[1]}"
 fi

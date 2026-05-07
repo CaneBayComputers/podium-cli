@@ -82,7 +82,7 @@ show_help() {
     echo
     echo-white "PROJECT MANAGEMENT:"
     echo "  podium up [project|--all] - Start a project (interactive picker if omitted; --all for every project). Services always start."
-    echo "  podium down [project]     - Stop everything (or specific project)"
+    echo "  podium down [project|--all] - Stop a project (interactive picker if omitted; --all for everything + services)"
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
@@ -91,8 +91,8 @@ show_help() {
     echo "  podium create-installer \"<idea>\" - Generate a new installer + hint for an OSS app via AI"
     echo "  podium update-installer <app>|--all - Refresh an installer (or all) against current upstream via AI"
     echo "  podium clone <repo> [options] - Clone existing project"
-    echo "  podium setup <project> [options] - Set up existing project directory"
-    echo "  podium remove <project> [options] - Remove project"
+    echo "  podium setup [project] [options] - Set up an existing project directory (interactive picker if omitted)"
+    echo "  podium remove [project] [options] - Remove a project (interactive picker if omitted)"
     echo
     echo-white "SYSTEM MANAGEMENT:"
     echo "  podium configure          - Configure Podium environment"
@@ -165,7 +165,7 @@ show_help() {
     echo
     echo-white "NOTES:"
     echo "  • 'podium up' without project name shows an interactive picker (services start regardless; use --all to start every project)"
-    echo "  • 'podium down' without project name stops EVERYTHING - all projects + services (perfect for shutdown)"
+    echo "  • 'podium down' without project name shows an interactive picker (use --all to stop every project + services)"
     echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"
@@ -615,19 +615,9 @@ case "$1" in
         "$SCRIPT_DIR/scripts/clone_project.sh" "${@:2}"
         ;;
     "setup")
-        if [ -z "$2" ]; then
-            echo-red "Usage: podium setup <project-name> [database-engine] [display-name] [description] [emoji] [options]"
-            echo-white "Sets up an existing project directory as a Podium project"
-            exit 1
-        fi
         "$SCRIPT_DIR/scripts/setup_project.sh" "${@:2}"
         ;;
     "remove")
-        if [ -z "$2" ]; then
-            echo-red "Usage: podium remove <project-name> [options]"
-            echo-white "Options: --force-trash-project, --force-db-delete, --force"
-            exit 1
-        fi
         "$SCRIPT_DIR/scripts/remove_project.sh" "${@:2}"
         ;;
     

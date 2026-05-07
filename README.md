@@ -375,14 +375,15 @@ podium up my-project     # Start a specific project
 
 ### 🛑 `podium down`
 ```bash
-podium down
+podium down                # Interactive picker — choose a project to stop
+podium down --all          # Stop every project and shared services
+podium down my-project     # Stop just one project
 ```
-**Stops everything:**
-- Stops ALL running project containers
-- Stops all shared services (databases, caches, etc.)
-- Cleans up networking configurations
-- Frees up system resources
-- Preserves all your data and configurations
+**Stops the project(s) you select, optionally including shared services:**
+- With no argument: shows a numbered list of running/known projects
+- With `--all`: stops every project and the shared services (MariaDB, Redis, Postgres, Mongo, etc.)
+- With a project name: stops just that one
+- Preserves all your data and configurations either way
 
 ## 📋 Commands Overview
 
@@ -465,15 +466,15 @@ podium down
 | Command | Description |
 |---------|-------------|
 | `podium up [project\|--all]` | Start a project (interactive picker if omitted; `--all` for every project). Services start regardless. |
-| `podium down [project]` | Stop project containers |
+| `podium down [project\|--all]` | Stop a project (interactive picker if omitted; `--all` for every project + services) |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
 | `podium create ["idea"]` | Create a project non-interactively, then start interactive session in the project dir (AI) |
 | `podium resume [project]` | Resume the last AI session for a project (interactive picker if no arg) |
 | `podium install <app>` | Install a popular OSS app in one command (`--list` to see all) |
 | `podium clone <repo>` | Clone existing project |
-| `podium setup <project> [options]` | Set up an existing project directory |
-| `podium remove <project> [options]` | Remove project |
+| `podium setup [project] [options]` | Set up an existing project directory (interactive picker if omitted) |
+| `podium remove [project] [options]` | Remove a project (interactive picker if omitted) |
 
 ### ⚙️ System Management
 

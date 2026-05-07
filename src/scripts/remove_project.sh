@@ -13,8 +13,10 @@ echo-return; echo-return
 
 # Usage function to explain the script
 usage() {
-    echo-white "Usage: $0 <project_name> [options]"
+    echo-white "Usage: $0 [project_name] [options]"
     echo-white "Removes a project and associated settings"
+    echo-white ""
+    echo-white "With no project name, shows an interactive picker (skipped in --json-output mode)."
     echo-white ""
     echo-white "By default:"
     echo-white "  • Project files are moved to trash (recoverable)"
@@ -28,10 +30,11 @@ usage() {
     echo-white "  --no-colors              Disable colored output"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 my-project                    # Remove project, prompt for database"
-    echo-white "  $0 my-project --force-db-delete  # Remove project and database without prompting"
+    echo-white "  $0                                # Interactive picker, then remove"
+    echo-white "  $0 my-project                     # Remove project, prompt for database"
+    echo-white "  $0 my-project --force-db-delete   # Remove project and database without prompting"
     echo-white "  $0 my-project --preserve-database # Remove project, keep database"
-    echo-white "  $0 my-project --json-output      # Remove with JSON output"
+    echo-white "  $0 my-project --json-output       # Remove with JSON output"
     error "usage" 1
 }
 
@@ -96,11 +99,57 @@ done
 # Initialize debug logging
 debug "Script started: remove_project.sh with args: $ORIGINAL_ARGS"
 
-# Check if project name is provided
+# If no project name was provided, show an interactive picker (skip in JSON mode
+# since automation should always pass an explicit name).
 if [ -z "$PROJECT_NAME" ]; then
-    debug "No project name provided, showing usage"
-    usage
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        debug "No project name provided in JSON mode"
+        usage
+    fi
+
+    mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
+
+    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
+        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
+        exit 0
+    fi
+
+    echo-cyan "Select a project to remove:"
+    echo-return
+
+    COLS=$(tput cols 2>/dev/null || echo 80)
+    if command -v column >/dev/null 2>&1; then
+        for i in "${!PROJECTS[@]}"; do
+            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done | column -c "$COLS"
+    else
+        for i in "${!PROJECTS[@]}"; do
+            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
+        done
+    fi
+
+    echo-return
+    echo-yellow -n "Enter number or project name (Ctrl+C to cancel): "
+    echo-white -ne
+    read -r SELECTION
+    echo-return
+
+    if [[ -z "$SELECTION" ]]; then
+        echo-yellow "No selection made. Aborting."
+        exit 1
+    fi
+
+    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
+        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
+            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
+            exit 1
+        fi
+        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
+    else
+        PROJECT_NAME="$SELECTION"
+    fi
 fi
+
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
 HOSTS_FILE="/etc/hosts"
 
