@@ -376,14 +376,15 @@ podium up my-project     # Start a specific project
 ### 🛑 `podium down`
 ```bash
 podium down                # Interactive picker — choose a project to stop
-podium down --all          # Stop every project and shared services
+podium down --all          # Stop every project (services keep running)
 podium down my-project     # Stop just one project
 ```
-**Stops the project(s) you select, optionally including shared services:**
-- With no argument: shows a numbered list of running/known projects
-- With `--all`: stops every project and the shared services (MariaDB, Redis, Postgres, Mongo, etc.)
+**Stops the project(s) you select. Shared services keep running:**
+- With no argument: shows a numbered list of projects
+- With `--all`: stops every project (shared services stay up)
 - With a project name: stops just that one
-- Preserves all your data and configurations either way
+- Run `podium stop-services` separately when you want to stop MariaDB, Redis, Postgres, Mongo, etc.
+- All data and configurations are preserved either way
 
 ## 📋 Commands Overview
 
@@ -466,7 +467,7 @@ podium down my-project     # Stop just one project
 | Command | Description |
 |---------|-------------|
 | `podium up [project\|--all]` | Start a project (interactive picker if omitted; `--all` for every project). Services start regardless. |
-| `podium down [project\|--all]` | Stop a project (interactive picker if omitted; `--all` for every project + services) |
+| `podium down [project\|--all]` | Stop a project (interactive picker if omitted; `--all` for every project). Shared services stay up — use `podium stop-services` for those. |
 | `podium status [project]` | Show project status |
 | `podium new [options]` | Create new project |
 | `podium create ["idea"]` | Create a project non-interactively, then start interactive session in the project dir (AI) |

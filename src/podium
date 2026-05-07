@@ -82,7 +82,7 @@ show_help() {
     echo
     echo-white "PROJECT MANAGEMENT:"
     echo "  podium up [project|--all] - Start a project (interactive picker if omitted; --all for every project). Services always start."
-    echo "  podium down [project|--all] - Stop a project (interactive picker if omitted; --all for everything + services)"
+    echo "  podium down [project|--all] - Stop a project (interactive picker if omitted; --all for every project). Shared services keep running."
     echo "  podium status [project]   - Show project status"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
@@ -165,7 +165,7 @@ show_help() {
     echo
     echo-white "NOTES:"
     echo "  • 'podium up' without project name shows an interactive picker (services start regardless; use --all to start every project)"
-    echo "  • 'podium down' without project name shows an interactive picker (use --all to stop every project + services)"
+    echo "  • 'podium down' without project name shows an interactive picker (--all stops every project; shared services stay up — use 'podium stop-services' for those)"
     echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"

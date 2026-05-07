@@ -55,19 +55,20 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             echo-white "Usage: $0 [OPTIONS] [project_name]"
-            echo-white "Shutdown project containers (and shared services on --all)"
+            echo-white "Shut down project containers. Shared services keep running."
             echo-white ""
             echo-white "Arguments:"
             echo-white "  project_name      Optional: specific project to stop"
             echo-white ""
             echo-white "Options:"
-            echo-white "  --all             Stop every project and shared services"
+            echo-white "  --all             Stop every project (shared services keep running)"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
             echo-white ""
             echo-white "With no arguments, shows an interactive picker."
+            echo-white "Use 'podium stop-services' separately to stop the shared services."
             exit 0
             ;;
         -*)
@@ -114,7 +115,7 @@ if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
     fi
 
     echo-return
-    echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to stop everything): "
+    echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to stop every project): "
     echo-white -ne
     read -r SELECTION
     echo-return
@@ -198,25 +199,21 @@ if [ -z "$PROJECT_NAME" ]; then
 
     # Iterate through each folder in the projects directory (PROJECTS_DIR_PATH set by pre_check)
     for PROJECT_FOLDER in "$PROJECTS_DIR_PATH"/*; do
-        
+
         # Skip if not a directory
         if [ ! -d "$PROJECT_FOLDER" ]; then
             continue
         fi
-        
+
         # Get the project name (folder name)
         PROJECT_FOLDER_NAME=$(basename "$PROJECT_FOLDER")
-        
+
         # Use the reusable shutdown function (but don't exit on errors in loop)
         shutdown_project "$PROJECT_FOLDER_NAME" "$PROJECT_FOLDER" || true
     done
 
-    # Stop services using the dedicated script and capture output if needed
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        STOP_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/stop_services.sh" 2>&1)
-    else
-        source "$DEV_DIR/scripts/stop_services.sh"
-    fi
+    # Note: shared services are intentionally left running. Use 'podium stop-services'
+    # explicitly when you want to stop them.
 
 else
     # Shutdown specific project (PROJECTS_DIR_PATH set by pre_check)
@@ -230,22 +227,13 @@ fi
 # Final output
 if [[ "$JSON_OUTPUT" == "1" ]]; then
 
-    # JSON output for shutdown
     if [ -n "$PROJECT_NAME" ]; then
-
         echo "{\"action\": \"shutdown\", \"target\": \"project\", \"project_name\": \"$PROJECT_NAME\", \"status\": \"success\"}"
-
     else
-        # Include services output if captured
-        if [ -n "$STOP_SERVICES_OUTPUT" ]; then
-            echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\", \"services_result\": $STOP_SERVICES_OUTPUT}"
-        else
-            echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\"}"
-        fi
-
+        echo "{\"action\": \"shutdown\", \"target\": \"all_projects\", \"status\": \"success\"}"
     fi
 
 else
-    echo-return; echo-green "Docker containers shut down successfully!"; echo-white; echo-return
+    echo-return; echo-green "Project containers shut down. (Shared services are still running — use 'podium stop-services' to stop them.)"; echo-white; echo-return
 fi
 
