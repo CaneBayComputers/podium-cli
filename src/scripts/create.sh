@@ -151,8 +151,77 @@ cd "$DEV_DIR/.."
 # Mark time before creation so we can detect the new project directory afterward.
 TIMESTAMP_FILE=$(mktemp)
 
+# Phase 1 runs the AI agent in -p mode (no streaming output), so without a
+# progress indicator the terminal looks frozen for what can be 30+ minutes
+# on a complex prompt. Show a spinner + elapsed timer + names of files the
+# agent has just written to the project directory. TTY-only so we don't
+# corrupt piped output or JSON callers.
+SPINNER_PID=""
+SPINNER_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+
+show_progress() {
+    local start_ts=$(date +%s)
+    local last_check=$start_ts
+    local count=0
+    local frame=0
+    while true; do
+        local now=$(date +%s)
+        local elapsed=$(( now - start_ts ))
+        local mm=$(( elapsed / 60 ))
+        local ss=$(( elapsed % 60 ))
+        local timer
+        if (( mm > 0 )); then timer="${mm}m ${ss}s"; else timer="${ss}s"; fi
+
+        # Every couple of seconds, check the projects dir for newly-written files
+        # and announce them above the spinner line.
+        if (( now - last_check >= 2 )); then
+            while IFS= read -r f; do
+                [[ -z "$f" ]] && continue
+                local rel="${f#${PROJECTS_DIR_PATH}/}"
+                printf "\r\033[K  \033[36m+\033[0m %s\n" "$rel" >&2
+                count=$(( count + 1 ))
+            done < <(find "$PROJECTS_DIR_PATH" -mindepth 2 -type f \
+                -newermt "@$last_check" \
+                -not -path '*/node_modules/*' \
+                -not -path '*/.git/*' \
+                -not -path '*/vendor/*' \
+                -not -path '*/__pycache__/*' \
+                -not -name 'package-lock.json' \
+                -not -name 'composer.lock' \
+                -not -name 'yarn.lock' \
+                2>/dev/null | head -25)
+            last_check=$now
+        fi
+
+        printf "\r\033[K\033[36m%s\033[0m  AI agent working...  \033[2m%s  (%d files written)\033[0m" \
+            "${SPINNER_FRAMES[frame]}" "$timer" "$count" >&2
+        frame=$(( (frame + 1) % 10 ))
+        sleep 0.15
+    done
+}
+
+stop_progress() {
+    if [[ -n "$SPINNER_PID" ]] && kill -0 "$SPINNER_PID" 2>/dev/null; then
+        kill "$SPINNER_PID" 2>/dev/null
+        wait "$SPINNER_PID" 2>/dev/null || true
+    fi
+    SPINNER_PID=""
+    if [[ -t 2 ]]; then
+        printf "\r\033[K" >&2
+    fi
+}
+
+if [[ -t 2 ]]; then
+    show_progress &
+    SPINNER_PID=$!
+    trap 'stop_progress; rm -f "$TIMESTAMP_FILE" 2>/dev/null; exit 130' INT TERM
+fi
+
 # Phase 1: create the project non-interactively.
 "$SCRIPT_DIR/ai.sh" --one-off "$FULL_PROMPT" || true
+
+stop_progress
+trap - INT TERM
 
 # --one-off flag: skip the interactive follow-up (useful for automation/scripted pipelines).
 if [[ "$SKIP_INTERACTIVE" == "1" ]]; then
