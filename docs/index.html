@@ -647,7 +647,7 @@
         document.body.removeChild(ta);
       }
 
-      const blocks = document.querySelectorAll('pre.install-cmd, .terminal pre, .snippet pre');
+      const blocks = document.querySelectorAll('pre.install-cmd');
       blocks.forEach(function (pre) {
         const code = pre.querySelector('code');
         if (!code) return;
