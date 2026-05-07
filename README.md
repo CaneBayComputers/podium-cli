@@ -134,6 +134,14 @@ podium create "A customer check-in system in Laravel"
 podium create "An inventory tracker in Express"
 ```
 
+For long, detailed prompts that don't fit nicely on a command line, you can read the idea from a file or stdin instead:
+
+```bash
+podium create -f my-detailed-spec.md      # explicit --file flag
+podium create < my-detailed-spec.md       # stdin redirect
+cat my-detailed-spec.md | podium create   # pipe
+```
+
 The AI CLI can be cloud-based or local depending on your configuration. See [AI-assisted project creation](#-ai-assisted-project-creation) and `podium ai-set` for setup details.
 
 ### Or create a project manually

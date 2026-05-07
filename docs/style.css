@@ -563,7 +563,7 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
 }
 .install-cmd code { color: var(--accent-2); font-size: 0.9rem; line-height: 1.6; }
 .install-cmd .muted-cmd { color: #7a85a3; }
-.install-cmd .cmt { color: #5e6a85; }
+.install-cmd .cmt, .snippet .cmt { color: #5e6a85; font-style: italic; }
 
 /* Three-option layout inside step 4 */
 .option-label {
