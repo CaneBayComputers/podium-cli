@@ -15,7 +15,7 @@ source scripts/pre_check.sh
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 usage() {
-    echo-white "Usage: podium create [--one-off] [\"project idea\"]"
+    echo-white "Usage: podium create [--one-off] [-f|--file PATH] [\"project idea\"]"
     echo-white ""
     echo-white "Describe a project in plain English and your configured AI agent will"
     echo-white "create a working Podium-managed project for you."
@@ -23,29 +23,78 @@ usage() {
     echo-white "The AI creates the project non-interactively, then drops you into an"
     echo-white "interactive session inside the new project directory."
     echo-white ""
-    echo-white "Pass --one-off to skip the interactive follow-up (useful for automation"
-    echo-white "or scripted pipelines)."
+    echo-white "Options:"
+    echo-white "  --one-off       Skip the interactive follow-up (for automation)"
+    echo-white "  -f, --file PATH Read the project idea from a file instead of an argument"
+    echo-white ""
+    echo-white "If neither a positional idea nor --file is given, podium create reads"
+    echo-white "from stdin if it's piped or redirected. Falls back to an interactive"
+    echo-white "prompt only when stdin is a terminal."
     echo-white ""
     echo-white "Examples:"
     echo-white "  podium create"
     echo-white "  podium create \"A task tracker with user auth\""
     echo-white "  podium create \"https://github.com/user/repo\""
     echo-white "  podium create --one-off \"A notes app in Express with postgres\""
+    echo-white "  podium create -f big-prompt.md            # read idea from file"
+    echo-white "  podium create < big-prompt.md             # via redirection"
+    echo-white "  cat big-prompt.md | podium create         # via pipe"
+    echo-white "  podium create <<< \"\$(cat big-prompt.md)\"  # via here-string"
 }
 
 SKIP_INTERACTIVE=0
+PROMPT_FILE=""
 IDEA_ARGS=()
-for arg in "$@"; do
-    if [[ "$arg" == "--one-off" ]]; then
-        SKIP_INTERACTIVE=1
-    else
-        IDEA_ARGS+=("$arg")
-    fi
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --one-off)
+            SKIP_INTERACTIVE=1
+            shift
+            ;;
+        -f|--file|--prompt-file)
+            if [[ -z "$2" ]]; then
+                echo-red "Error: $1 requires a file path."
+                usage
+                exit 1
+            fi
+            PROMPT_FILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            IDEA_ARGS+=("$1")
+            shift
+            ;;
+    esac
 done
 
 USER_IDEA="${IDEA_ARGS[*]}"
+STDIN_CONSUMED=0
 
+# 1. --file takes precedence if no positional idea was provided
+if [[ -z "$USER_IDEA" && -n "$PROMPT_FILE" ]]; then
+    if [[ ! -f "$PROMPT_FILE" ]]; then
+        echo-red "Prompt file not found: $PROMPT_FILE"
+        exit 1
+    fi
+    USER_IDEA=$(cat "$PROMPT_FILE")
+fi
+
+# 2. If stdin is piped/redirected and we still have no idea, slurp it all
+if [[ -z "$USER_IDEA" && ! -t 0 ]]; then
+    USER_IDEA=$(cat)
+    STDIN_CONSUMED=1
+fi
+
+# 3. Otherwise prompt interactively (only if stdin is a TTY)
 if [[ -z "$USER_IDEA" ]]; then
+    if [[ ! -t 0 ]]; then
+        echo-red "No project idea provided and no TTY for interactive prompt."
+        exit 1
+    fi
     echo-return
     echo-cyan "What would you like to build?"; echo-white
     echo-white "Describe your project in plain English. The AI will create a Podium-managed project for you."
@@ -60,6 +109,17 @@ fi
 if [[ -z "$USER_IDEA" ]]; then
     echo-yellow "No project idea provided. Aborting."
     exit 1
+fi
+
+# If we slurped stdin from a pipe/redirect, the interactive Phase 2 won't have
+# a working stdin. Reattach it to the controlling terminal if there is one;
+# otherwise force --one-off so we don't drop into a broken interactive session.
+if [[ "$STDIN_CONSUMED" == "1" && "$SKIP_INTERACTIVE" == "0" ]]; then
+    if [[ -e /dev/tty ]]; then
+        exec </dev/tty
+    else
+        SKIP_INTERACTIVE=1
+    fi
 fi
 
 # Build the full prompt by substituting the user's idea into the prepend template.
