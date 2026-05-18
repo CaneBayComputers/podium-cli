@@ -596,6 +596,8 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
+| `--public` | Make the new GitHub repository public | Default is private when `--github`/`--github-org` is used |
+| `--private` | Make the new GitHub repository private | Default behavior when no visibility flag is set |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel only) |
 
 ### Clone Project Options
@@ -609,6 +611,8 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--github` | Create GitHub repository in user account |
 | `--github-org <org>` | Create GitHub repository in organization |
 | `--no-github` | Skip GitHub repository creation |
+| `--public` | Make the new GitHub repository public (default: private) |
+| `--private` | Make the new GitHub repository private |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
 
 > **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Podium automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Podium's shared containers (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). The web-facing service gets a static VPC IP. Startup is deferred so you can verify the adapted compose before running `podium up <project>`.

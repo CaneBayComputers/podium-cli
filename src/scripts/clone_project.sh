@@ -27,6 +27,7 @@ NO_STARTUP=0
 REQUEST_FORK=0
 FORK_USED=0
 SKIP_INTERACTIVE=0
+GITHUB_VISIBILITY=""
 GIT_CLONE_ARGS=()
 
 # Function to display usage
@@ -47,6 +48,8 @@ usage() {
     echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
+    echo-white "  --public                     Make the new GitHub repository public (default: private)"
+    echo-white "  --private                    Make the new GitHub repository private"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --framework FRAMEWORK        Force framework detection (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --no-startup                 Clone and register project but do not start the container"
@@ -109,6 +112,14 @@ while [[ $# -gt 0 ]]; do
             else
                 error "Error: --github-org requires an organization name"
             fi
+            ;;
+        --public)
+            GITHUB_VISIBILITY="public"
+            shift
+            ;;
+        --private)
+            GITHUB_VISIBILITY="private"
+            shift
             ;;
         --framework)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
@@ -433,7 +444,7 @@ if [[ "$FORK_USED" -ne 1 ]]; then
     # Create GitHub repository if requested
     if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
         cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
-        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY"
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY" "${GITHUB_VISIBILITY:-private}"
     fi
 fi
 

@@ -71,6 +71,8 @@ usage() {
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
+    echo-white "  --public                Make the new GitHub repository public (default: private)"
+    echo-white "  --private               Make the new GitHub repository private"
     echo-white "  --one-off               Skip the interactive AI session at the end (for automation)"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
@@ -94,6 +96,7 @@ VERSION="latest"
 FRAMEWORK=""
 DATABASE=""
 CREATE_GITHUB=""
+GITHUB_VISIBILITY=""
 SKIP_STORAGE_SYMLINK=0
 SKIP_INTERACTIVE=0
 
@@ -135,6 +138,14 @@ while [[ $# -gt 0 ]]; do
             CREATE_GITHUB="org"
             ORGANIZATION="$2"
             shift 2
+            ;;
+        --public)
+            GITHUB_VISIBILITY="public"
+            shift
+            ;;
+        --private)
+            GITHUB_VISIBILITY="private"
+            shift
             ;;
         --json-output)
             JSON_OUTPUT=1
@@ -604,7 +615,7 @@ if [[ "$FORK_USED" -ne 1 ]]; then
     
     # Create GitHub repository if requested
     if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
-        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION"
+        create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "" "${GITHUB_VISIBILITY:-private}"
     fi
 fi
 

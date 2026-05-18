@@ -328,14 +328,22 @@ handle_docker_compose_conflict() {
 }
 
 # GitHub repository creation function
-# Usage: create_github_repo PROJECT_NAME CREATE_GITHUB ORGANIZATION [EXISTING_REPO_URL]
+# Usage: create_github_repo PROJECT_NAME CREATE_GITHUB ORGANIZATION [EXISTING_REPO_URL] [VISIBILITY]
+# VISIBILITY defaults to "private". Falls back to $GITHUB_VISIBILITY if unset.
 # Returns 0 on success, 1 on failure
 create_github_repo() {
     local project_name="$1"
     local create_github="$2"
     local organization="$3"
     local existing_repo_url="$4"
+    local visibility="${5:-${GITHUB_VISIBILITY:-private}}"
     local existing_repo_name=""
+
+    # Normalize visibility — anything other than "public" → "private"
+    case "$visibility" in
+        public)  visibility="public" ;;
+        *)       visibility="private" ;;
+    esac
     
     # Skip if GitHub creation is disabled
     if [ "$create_github" = "no" ] || [ -z "$create_github" ]; then
@@ -360,7 +368,7 @@ create_github_repo() {
         repo_name="$organization/$project_name"
     fi
     
-    echo-cyan "Creating GitHub repository: $repo_name"
+    echo-cyan "Creating GitHub repository: $repo_name ($visibility)"
     
     # Derive existing repository name (if any) from the source URL
     if [ -n "$existing_repo_url" ]; then
@@ -379,7 +387,7 @@ create_github_repo() {
     
     # Create the repository first (without pushing)
     local repo_created=false
-    if gh repo create "$repo_name" --private --confirm >/dev/null 2>&1; then
+    if gh repo create "$repo_name" --"$visibility" --confirm >/dev/null 2>&1; then
         echo-green "GitHub repository created successfully: $repo_name"
         repo_created=true
     else
@@ -452,55 +460,90 @@ create_github_repo() {
     fi
 }
 
-# Prompt for GitHub repository creation in interactive mode
-# Usage: prompt_github_creation
-# Sets CREATE_GITHUB and ORGANIZATION variables
+# Prompt for GitHub repository creation in interactive mode.
+# Sets the following globals:
+#   CREATE_GITHUB        — "yes" | "org" | "no"
+#   ORGANIZATION         — org name when CREATE_GITHUB="org"
+#   GITHUB_VISIBILITY    — "private" (default) | "public"
 prompt_github_creation() {
     # Check GitHub CLI availability
     local gh_available=false
     if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
         gh_available=true
     fi
-    
-    if [ "$gh_available" = true ]; then
-        echo-cyan "Would you like to create a GitHub repository?"
-        echo-white "1) Yes, create GitHub repository"
-        echo-white "2) No, skip GitHub repository"
-        echo-yellow -n "Enter your choice (1-2): "
-        read GITHUB_CHOICE
-        
-        case $GITHUB_CHOICE in
-            1)
-                CREATE_GITHUB="yes"
-                # Prompt for organization
-                echo-cyan "GitHub repository will be created in your personal account."
-                echo-yellow -n "Would you like to create it in an organization instead? (y/N): "
-                read USE_ORG
-                if [[ "$USE_ORG" =~ ^[Yy]$ ]]; then
-                    echo-yellow -n "Enter organization name: "
-                    read ORGANIZATION
-                    if [ -n "$ORGANIZATION" ]; then
-                        CREATE_GITHUB="org"
-                        echo-green "Repository will be created in organization: $ORGANIZATION"
-                    else
-                        echo-yellow "No organization specified. Using personal account."
-                    fi
-                fi
-                ;;
-            2)
-                CREATE_GITHUB="no"
-                ;;
-            *)
-                echo-yellow "Invalid choice. Skipping GitHub repository creation"
-                CREATE_GITHUB="no"
-                ;;
-        esac
-    else
+
+    if [ "$gh_available" != true ]; then
         echo-yellow "GitHub CLI (gh) is not installed or not authenticated."
         echo-yellow "Skipping GitHub repository creation."
         echo-white "To enable GitHub integration, install gh CLI and run 'gh auth login'"
         CREATE_GITHUB="no"
+        return
     fi
+
+    echo-cyan "Would you like to create a GitHub repository?"
+    echo-white "1) Yes, create GitHub repository"
+    echo-white "2) No, skip GitHub repository"
+    echo-yellow -n "Enter your choice (1-2): "
+    read GITHUB_CHOICE
+
+    case "$GITHUB_CHOICE" in
+        1)
+            CREATE_GITHUB="yes"
+
+            # Pick personal account or an organization the user belongs to
+            echo-return
+            echo-cyan "Where should the repository live?"
+            echo-white "1) Personal account"
+            echo-white "2) Organization"
+            echo-yellow -n "Enter your choice (1-2): "
+            read OWNER_CHOICE
+
+            if [ "$OWNER_CHOICE" = "2" ]; then
+                mapfile -t ORGS < <(gh api user/orgs --jq '.[].login' 2>/dev/null | sort -f)
+
+                if [ "${#ORGS[@]}" -eq 0 ]; then
+                    echo-yellow "No organizations found on your GitHub account. Using personal account."
+                else
+                    echo-return
+                    echo-cyan "Select an organization:"
+                    local _i
+                    for _i in "${!ORGS[@]}"; do
+                        printf "  %2d) %s\n" "$((_i + 1))" "${ORGS[$_i]}"
+                    done
+                    echo-yellow -n "Enter number (1-${#ORGS[@]}, or Enter for personal): "
+                    read ORG_NUM
+                    if [[ "$ORG_NUM" =~ ^[0-9]+$ ]] \
+                            && (( ORG_NUM >= 1 && ORG_NUM <= ${#ORGS[@]} )); then
+                        ORGANIZATION="${ORGS[$((ORG_NUM - 1))]}"
+                        CREATE_GITHUB="org"
+                        echo-green "Repository will be created in organization: $ORGANIZATION"
+                    else
+                        echo-yellow "Invalid choice or empty input. Using personal account."
+                    fi
+                fi
+            fi
+
+            # Visibility (defaults to private if input is invalid/empty)
+            echo-return
+            echo-cyan "Repository visibility?"
+            echo-white "1) Private (recommended)"
+            echo-white "2) Public"
+            echo-yellow -n "Enter your choice (1-2): "
+            read VISIBILITY_CHOICE
+            case "$VISIBILITY_CHOICE" in
+                2) GITHUB_VISIBILITY="public" ;;
+                *) GITHUB_VISIBILITY="private" ;;
+            esac
+            echo-green "Visibility: $GITHUB_VISIBILITY"
+            ;;
+        2)
+            CREATE_GITHUB="no"
+            ;;
+        *)
+            echo-yellow "Invalid choice. Skipping GitHub repository creation"
+            CREATE_GITHUB="no"
+            ;;
+    esac
 }
 
 # Debug function - writes to log file when DEBUG=1
