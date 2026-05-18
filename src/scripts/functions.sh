@@ -603,7 +603,7 @@ ai_handoff() {
     [[ ! -f "$ai_script" ]] && return 0
 
     if [[ -z "$seed_prompt" ]]; then
-        seed_prompt="This project is managed by the Podium CLI — a Docker-based local development environment manager. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works (shared services, hostname routing, runtime images, command patterns); (2) run 'podium help' for the full command list. Then read this project's README.md. The project is running at http://$project_name/. Use Podium commands (podium exec, podium npm, podium python, podium status, podium logs, etc.) — do not run app commands directly on the host. You are the developer. Wait for the user's first instruction."
+        seed_prompt="This project is managed by the Podium CLI — a Docker-based local development environment manager. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works (shared services, hostname routing, runtime images, command patterns); (2) run 'podium help' for the full command list. Then read this project's README.md. The project is running at http://$project_name/. You are the developer."
     fi
 
     echo-return
