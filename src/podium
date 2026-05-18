@@ -35,7 +35,29 @@ init_projects_dir
 
 # Help text
 show_help() {
-    echo-cyan "Podium - Universal PHP Development Environment"
+    echo-cyan "Podium - AI-friendly local dev platform for multi-project Docker workflows"
+    echo
+    echo-white "WHAT IT IS:"
+    echo "  Podium is a Docker-based local development manager for PHP, Python, and Node"
+    echo "  projects, built for developers running multiple projects and for AI agents that"
+    echo "  need a stable platform to operate inside. Every project gets a stable hostname"
+    echo "  (http://<project-name>/, reachable from your browser and from inside containers)"
+    echo "  and connects to one set of SHARED services — one podium-postgres, one"
+    echo "  podium-mariadb, one podium-redis, one podium-mongo, one podium-memcached —"
+    echo "  used by all projects on the machine."
+    echo
+    echo "  Greenfield scaffolding (laravel/wordpress/php/fastapi/django/python/express/"
+    echo "  nestjs/fastify/node), 100+ one-command installers for popular OSS apps, AI-driven"
+    echo "  project creation (podium create), and an interactive AI session in every"
+    echo "  new/cloned/installed project are first-class."
+    echo
+    echo "  Project files live under ~/podium-projects/<name>/. Project containers attach to"
+    echo "  the podium-cli_vpc Docker network. Shared service hostnames: podium-postgres,"
+    echo "  podium-mariadb, podium-redis, podium-mongo, podium-memcached, podium-mailhog."
+    echo
+    echo-white "DOCS FOR AGENTS:"
+    echo "  /usr/local/share/podium-cli/AGENTS.md       — agent-facing reference (read first)"
+    echo "  /usr/local/share/podium-cli/DEVELOPMENT.md  — modifying Podium itself"
     echo
     echo-white "CONTAINERIZED DEVELOPMENT TOOLS: (Run from project directory)"
     echo "  podium composer <args>    - Run Composer inside container"

@@ -160,4 +160,4 @@ echo-return
 
 # Drop into an interactive AI session inside the project (skipped when --one-off,
 # JSON mode, non-TTY, or no AI agent configured).
-ai_handoff "$APP" "Read README.md to understand the project. $INSTALL_DISPLAY is running at http://$APP/. You are the developer. Wait for the user's first instruction."
+ai_handoff "$APP" "This project is managed by the Podium CLI — a Docker-based local development environment manager — and was created by running 'podium install $APP'. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works; (2) run 'podium help' for the full command list. $INSTALL_DISPLAY is running at http://$APP/. Use Podium commands (podium exec, podium status, podium logs, etc.) — do not run app commands directly on the host. You are the developer. Wait for the user's first instruction."
