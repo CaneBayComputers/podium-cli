@@ -602,7 +602,7 @@ case "$1" in
         shift
         (
             cd "$(get_projects_dir)"
-            "$SCRIPT_DIR/scripts/startup.sh" --all "$@"
+            START_ALL=1 "$SCRIPT_DIR/scripts/startup.sh" "$@"
         )
         ;;
     "down")
@@ -616,7 +616,7 @@ case "$1" in
         shift
         (
             cd "$(get_projects_dir)"
-            "$SCRIPT_DIR/scripts/shutdown.sh" --all "$@"
+            STOP_ALL=1 "$SCRIPT_DIR/scripts/shutdown.sh" "$@"
         )
         ;;
     "status")

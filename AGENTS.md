@@ -41,7 +41,7 @@ For automation, prefer `podium exec` / `podium exec-root` over interactive varia
 
 **Never pass `--json-output`.** It suppresses all human-readable output including the success/failure distinction, so you can't tell whether a command worked. It exists only for external scripts/GUIs. Always run commands plain and read the text output.
 
-**Always pass explicit arguments** (a project name, `--all`, framework flags, etc.). Several commands (`podium up`/`down`/`remove`/`setup` with no arg) show an interactive picker that needs a terminal — in a non-interactive context they'll error out rather than hang.
+**Always pass explicit arguments.** There are no interactive prompts or pickers — a missing required argument is a hard error with a usage hint, never a prompt. Use `podium up-all` / `podium down-all` to act on every project.
 
 For Django: prefer `podium django manage <args>` over `podium exec python3 manage.py <args>`. Python containers provide `python3`, not `python` — never `podium exec python …`.
 

@@ -29,19 +29,16 @@ cd "$PROJECTS_DIR"
 debug "Changed to projects directory: $(pwd)"
 
 
-# Initialize variables
+# Initialize variables. START_ALL is set to 1 by the 'podium up-all' dispatch
+# (via the environment), not by a user-facing flag.
 PROJECT_NAME=""
-START_ALL=0
+START_ALL="${START_ALL:-0}"
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
 # Parse command line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --all)
-            START_ALL=1
-            shift
-            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -55,21 +52,17 @@ while [[ "$#" -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: $0 [OPTIONS] [project_name]"
-            echo-white "Start project containers (and shared services if not running)"
+            echo-white "Usage: $0 [OPTIONS] <project_name>"
+            echo-white "Start a project container (and shared services if not running)"
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Optional: specific project to start"
+            echo-white "  project_name      Project to start (required; use 'podium up-all' for every project)"
             echo-white ""
             echo-white "Options:"
-            echo-white "  --all             Start every project in the projects directory"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --help            Show this help message"
-            echo-white ""
-            echo-white "With no arguments, shows an interactive picker. Shared services always"
-            echo-white "start regardless of which mode is selected."
             exit 0
             ;;
         -*)
@@ -87,7 +80,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [[ "$START_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
-    error "Cannot combine --all with a project name."
+    error "Cannot combine 'podium up-all' with a project name."
 fi
 
 
@@ -168,12 +161,8 @@ fi
 # Ensure we're back in the projects directory after sourcing other scripts
 cd "$PROJECTS_DIR_PATH"
 
-# If no project name and no --all flag and not JSON mode, prompt the user
-# to pick a project from a numbered list (services have already been started).
-# JSON mode without explicit --all/project falls through to "all projects" for
-# backward compatibility with automation that relied on the old default.
-# A project name (or --all) is required — no interactive picker. Shared services
-# have already been started above, which is the useful, non-destructive part.
+# A project name is required (or 'podium up-all', which sets START_ALL). Shared
+# services have already been started above — the useful, non-destructive part.
 if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
     echo-return
     echo-red "No project specified."
@@ -189,7 +178,7 @@ if [[ -n "$PROJECT_NAME" ]]; then
     if start_project "$PROJECT_NAME"; then true; fi
 
 elif [[ "$START_ALL" == "1" ]]; then
-    debug "Starting all projects (--all)"
+    debug "Starting all projects (up-all)"
 
     # Only iterate directories; avoid literal '*' / '*/' with nullglob.
     # Skip files and any directory whose name starts with a dot.

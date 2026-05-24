@@ -25,9 +25,10 @@ cd "$PROJECTS_DIR"
 echo-return; echo-return
 
 
-# Initialize variables
+# Initialize variables. STOP_ALL is set to 1 by the 'podium down-all' dispatch
+# (via the environment), not by a user-facing flag.
 PROJECT_NAME=""
-STOP_ALL=0
+STOP_ALL="${STOP_ALL:-0}"
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -37,10 +38,6 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --all)
-            STOP_ALL=1
-            shift
-            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -54,20 +51,18 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: $0 [OPTIONS] [project_name]"
-            echo-white "Shut down project containers. Shared services keep running."
+            echo-white "Usage: $0 [OPTIONS] <project_name>"
+            echo-white "Shut down a project container. Shared services keep running."
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Optional: specific project to stop"
+            echo-white "  project_name      Project to stop (required; use 'podium down-all' for every project)"
             echo-white ""
             echo-white "Options:"
-            echo-white "  --all             Stop every project (shared services keep running)"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
             echo-white ""
-            echo-white "With no arguments, shows an interactive picker."
             echo-white "Use 'podium stop-services' separately to stop the shared services."
             exit 0
             ;;
@@ -86,11 +81,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$STOP_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
-    error "Cannot combine --all with a project name."
+    error "Cannot combine 'podium down-all' with a project name."
 fi
 
-# If no project name and no --all and not JSON mode, prompt the user.
-# A project name (or --all) is required — no interactive picker.
+# A project name is required (or 'podium down-all', which sets STOP_ALL).
 if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" ]]; then
     echo-red "No project specified."
     echo-white "Usage: podium down <project>   # stop one project"
