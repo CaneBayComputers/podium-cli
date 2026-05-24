@@ -92,6 +92,12 @@ fi
 # If no project name and no --all and not JSON mode, prompt the user.
 # JSON mode without args falls through to "stop everything" for backward-compat.
 if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
+    if [[ ! -t 0 ]]; then
+        echo-red "No project specified and not running in an interactive terminal."
+        echo-white "Pass a project name (e.g. 'podium down <project>') or '--all' to stop every project."
+        exit 1
+    fi
+
     mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
 
     if [[ ${#PROJECTS[@]} -eq 0 ]]; then

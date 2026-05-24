@@ -480,6 +480,15 @@ prompt_github_creation() {
         return
     fi
 
+    # No interactive terminal — can't prompt. Default to skipping rather than
+    # blocking on read. Use --github / --github-org to create non-interactively.
+    if [[ ! -t 0 ]]; then
+        echo-yellow "Non-interactive context — skipping GitHub repository creation."
+        echo-white "Pass --github or --github-org <org> (with --public/--private) to create one non-interactively."
+        CREATE_GITHUB="no"
+        return
+    fi
+
     echo-cyan "Would you like to create a GitHub repository?"
     echo-white "1) Yes, create GitHub repository"
     echo-white "2) No, skip GitHub repository"

@@ -37,6 +37,10 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 
 For automation, prefer `podium exec` / `podium exec-root` over interactive variants (`podium bash`, `podium tinker`, `podium exec-tty*`) — those allocate a TTY and aren't agent-friendly. `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`).
 
+**Never pass `--json-output`.** It suppresses all human-readable output including the success/failure distinction, so you can't tell whether a command worked. It exists only for external scripts/GUIs. Always run commands plain and read the text output.
+
+**Always pass explicit arguments** (a project name, `--all`, framework flags, etc.). Several commands (`podium up`/`down`/`remove`/`setup` with no arg) show an interactive picker that needs a terminal — in a non-interactive context they'll error out rather than hang.
+
 For Django: prefer `podium django manage <args>` over `podium exec python3 manage.py <args>`. Python containers provide `python3`, not `python` — never `podium exec python …`.
 
 To restart processes inside a running container use `podium supervisor restart all` (run from the project directory). Never use `podium exec supervisorctl …` — that runs as the developer user and gets permission denied on the supervisor socket.

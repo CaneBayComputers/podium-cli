@@ -133,6 +133,12 @@ if [ ${#POSITIONAL_ARGS[@]} -lt 1 ]; then
         error "Error: Project name is required."
     fi
 
+    if [[ ! -t 0 ]]; then
+        echo-red "No project specified and not running in an interactive terminal."
+        echo-white "Pass a project name explicitly (e.g. 'podium setup <project>')."
+        exit 1
+    fi
+
     mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
 
     if [[ ${#PROJECTS[@]} -eq 0 ]]; then

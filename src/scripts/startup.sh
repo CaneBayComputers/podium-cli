@@ -173,6 +173,12 @@ cd "$PROJECTS_DIR_PATH"
 # JSON mode without explicit --all/project falls through to "all projects" for
 # backward compatibility with automation that relied on the old default.
 if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
+    if [[ ! -t 0 ]]; then
+        echo-red "No project specified and not running in an interactive terminal."
+        echo-white "Pass a project name (e.g. 'podium up <project>') or '--all' to start every project."
+        exit 1
+    fi
+
     mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
 
     if [[ ${#PROJECTS[@]} -eq 0 ]]; then
