@@ -574,14 +574,115 @@ debug() {
 # Decide whether a framework should (re)write its env/config file.
 # Returns 0 (proceed/write) when the file is absent or --overwrite-env was passed
 # (OVERWRITE_ENV=1); returns 1 (skip) when the file already exists and no override.
-# Usage: should_write_env ".env" || return
+# When overwriting an EXISTING file while adopting an existing project (an
+# upstream compose was present), the original is preserved once as <file>.upstream.
+# Usage: should_write_env ".env" || return 0
 should_write_env() {
     local config_file="$1"
     if [ -f "$config_file" ] && [ "${OVERWRITE_ENV:-0}" != "1" ]; then
         echo-yellow "Existing $config_file found — keeping it (pass --overwrite-env to regenerate)."
         return 1
     fi
+    # Preserve the original once when adopting an existing project (not greenfield).
+    if [ -f "$config_file" ] && [ -n "${EXISTING_COMPOSE_FILE:-}" ] && [ ! -f "${config_file}.upstream" ]; then
+        cp "$config_file" "${config_file}.upstream"
+        echo-cyan "Backed up existing $config_file to ${config_file}.upstream"
+    fi
     return 0
+}
+
+# Rewrite a single KEY=VALUE in .env, but only if the key already exists.
+# (podium-sed-change's c\ no-ops when the pattern doesn't match, but we guard
+# explicitly so we never append keys a non-Laravel .env never had.)
+_env_set_if_present() {
+    local key="$1" val="$2"
+    if grep -qE "^#*[[:space:]]*${key}=" .env 2>/dev/null; then
+        podium-sed-change "/^#*[[:space:]]*${key}=/" "${key}=${val}" .env
+    fi
+}
+
+# Rewrite an existing project's .env CONNECTION settings to point at Podium's
+# shared services, in place — for adopting an existing app (e.g. a complex/
+# adapted compose) without nuking its real config. Only rewrites keys that
+# already exist; APP_KEY and everything else are preserved. Backs the original
+# up to .env.upstream once. Does NOT run migrations (that's destructive on a
+# populated DB — left to the user).
+# Args: $1 = database name, $2 = database engine (mysql|postgres|mongo|"")
+rewrite_env_for_shared_services() {
+    local db_name="$1"
+    local engine="$2"
+
+    if [ ! -f ".env" ]; then
+        echo-yellow "No .env found — nothing to rewrite. (Configure connection settings manually if the app needs a database.)"
+        return 0
+    fi
+
+    # Preserve the original .env once (mirrors docker-compose.upstream.yaml).
+    if [ ! -f ".env.upstream" ]; then
+        cp .env .env.upstream
+        echo-cyan "Backed up original .env to .env.upstream"
+    fi
+
+    # If engine wasn't explicitly chosen, detect it from the existing .env.
+    if [ -z "$engine" ] || [ "$engine" = "mariadb" ]; then
+        local conn
+        conn=$(grep -E "^#*[[:space:]]*DB_CONNECTION=" .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d "\"' ")
+        case "$conn" in
+            pgsql|postgres|postgresql) engine="postgres" ;;
+            mongodb|mongo)             engine="mongo" ;;
+            *)                         engine="mysql" ;;
+        esac
+    fi
+
+    local db_host db_port db_user db_pass
+    case "$engine" in
+        postgres|postgresql|pgsql)
+            db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432"; db_user="root"; db_pass="password" ;;
+        mongo|mongodb)
+            db_host="$MONGO_CONTAINER_NAME";    db_port="27017"; db_user="root"; db_pass="password" ;;
+        *)
+            db_host="$MARIADB_CONTAINER_NAME";  db_port="3306";  db_user="root"; db_pass="" ;;
+    esac
+
+    echo-cyan "Rewriting .env connection settings for Podium shared services ..."
+    _env_set_if_present "DB_HOST"        "$db_host"
+    _env_set_if_present "DB_PORT"        "$db_port"
+    _env_set_if_present "DB_DATABASE"    "$db_name"
+    _env_set_if_present "DB_USERNAME"    "$db_user"
+    _env_set_if_present "DB_PASSWORD"    "$db_pass"
+    _env_set_if_present "REDIS_HOST"     "$REDIS_CONTAINER_NAME"
+    _env_set_if_present "MEMCACHED_HOST" "$MEMCACHED_CONTAINER_NAME"
+    _env_set_if_present "MAIL_HOST"      "$MAILHOG_CONTAINER_NAME"
+    echo-green ".env connection settings updated (APP_KEY and other settings preserved)."
+}
+
+# Idempotently ensure a database exists. Never errors if it already exists.
+# Args: $1 = database name, $2 = database engine (mysql|postgres|mongo|"")
+ensure_database() {
+    local db_name="$1"
+    local engine="$2"
+    echo-cyan "Ensuring database '$db_name' exists ..."; echo-white
+    case "$engine" in
+        postgres|postgresql|pgsql)
+            if json-postgres -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$db_name';" 2>/dev/null | grep -q 1; then
+                echo-yellow "Database '$db_name' already exists — continuing."
+            elif json-postgres -d postgres -c "CREATE DATABASE \"$db_name\";" 2>/dev/null; then
+                echo-green 'Database created!'; echo-white
+            else
+                echo-yellow "Could not create database '$db_name' (it may already exist, or shared services are down) — continuing."
+            fi
+            ;;
+        mongo|mongodb)
+            echo-white "MongoDB creates the database on first write — nothing to create."
+            ;;
+        *)
+            if json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS \`$db_name\`;"; then
+                echo-green 'Database ready!'; echo-white
+            else
+                echo-yellow "Could not create database '$db_name' (it may already exist, or shared services are down) — continuing."
+            fi
+            ;;
+    esac
 }
 
 # After a project is created/cloned/installed, hand off to an interactive AI session

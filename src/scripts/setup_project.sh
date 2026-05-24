@@ -585,6 +585,23 @@ cd "$PROJECT_DIR"
 
 echo-cyan "Current directory: $(pwd)"
 
+# Complex/adapted projects skip the framework env+DB step below (it lives in the
+# startup branch, which they bypass). When the user explicitly asks to (re)wire
+# the env with --overwrite-env, rewrite the existing .env's connection settings
+# to the shared services and ensure the database exists — without touching
+# APP_KEY or running migrations (destructive on a populated DB).
+if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ] && [ "$OVERWRITE_ENV" = "1" ]; then
+    echo-return
+    echo-cyan "Applying --overwrite-env to adapted project ..."
+    rewrite_env_for_shared_services "$DB_NAME" "$DATABASE_ENGINE"
+    # Shared services must be up to create the database. Start them in a subshell
+    # so their cd/output doesn't disturb this script's state.
+    ( cd "$PROJECTS_DIR_PATH" && source "$DEV_DIR/scripts/start_services.sh" ) >/dev/null 2>&1 || true
+    ensure_database "$DB_NAME" "$DATABASE_ENGINE"
+    echo-yellow "Note: migrations/seeds were NOT run. Run them yourself when ready (e.g. 'podium art migrate')."
+    echo-return
+fi
+
 if [ "$NO_STARTUP" = "1" ]; then
     echo-yellow "Container startup deferred — run 'podium up $PROJECT_NAME' after verifying docker-compose.yaml"
 else
@@ -768,32 +785,7 @@ PYEOF
     fi
 
     # Create new database (idempotent — if it already exists, just continue).
-    echo-cyan "Ensuring database '$DB_NAME' exists ..."; echo-white
-
-    case "$DATABASE_ENGINE" in
-        postgres|postgresql|pgsql)
-            # PostgreSQL has no IF NOT EXISTS for CREATE DATABASE — check first.
-            if json-postgres -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" 2>/dev/null | grep -q 1; then
-                echo-yellow "Database '$DB_NAME' already exists — continuing."
-            elif json-postgres -d postgres -c "CREATE DATABASE \"$DB_NAME\";" 2>/dev/null; then
-                echo-green 'Database created!'; echo-white
-            else
-                echo-yellow "Could not create database '$DB_NAME' (it may already exist) — continuing."
-            fi
-            ;;
-        mongo|mongodb)
-            # MongoDB creates databases on first write — nothing to do here.
-            echo-white "MongoDB creates the database on first write — nothing to create."
-            ;;
-        *)
-            # MySQL/MariaDB: IF NOT EXISTS makes this idempotent.
-            if json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`;"; then
-                echo-green 'Database ready!'; echo-white
-            else
-                echo-yellow "Could not create database '$DB_NAME' (it may already exist) — continuing."
-            fi
-            ;;
-    esac
+    ensure_database "$DB_NAME" "$DATABASE_ENGINE"
 
     framework_run_migrations
 
