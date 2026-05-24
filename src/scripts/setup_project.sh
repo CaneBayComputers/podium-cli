@@ -41,6 +41,7 @@ usage() {
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
+    echo-white "  --no-migration          Skip database migrations (they run by default)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
@@ -59,6 +60,8 @@ SKIP_STORAGE_SYMLINK=false
 NO_STARTUP=0
 DB_NAME_OVERRIDE=""
 OVERWRITE_ENV=0
+RUN_MIGRATIONS=1
+MIGRATE_SAFE=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -103,6 +106,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --overwrite-env)
             OVERWRITE_ENV=1
+            shift
+            ;;
+        --no-migration|--no-migrations)
+            RUN_MIGRATIONS=0
             shift
             ;;
         --no-startup)
@@ -357,6 +364,13 @@ elif [ -f "docker-compose.yml" ]; then
     EXISTING_COMPOSE_FILE="docker-compose.yml"
 fi
 
+# Adopting an existing project (it shipped its own compose) → use non-destructive
+# migrations (apply pending only). Greenfield projects use the full reset+seed.
+if [ -n "$EXISTING_COMPOSE_FILE" ]; then
+    MIGRATE_SAFE=1
+fi
+export MIGRATE_SAFE
+
 # Capture original compose and detect complexity before conflict handling deletes it
 ORIGINAL_COMPOSE_TMPFILE="/tmp/podium_original_compose_$$.yaml"
 ORIGINAL_COMPOSE_IS_COMPLEX=0
@@ -533,8 +547,10 @@ PYEOF
             [ -n "$REMOVED" ] && echo-cyan "  Replaced with Podium shared services: $REMOVED"
         fi
         rm -f "$ORIGINAL_COMPOSE_TMPFILE"
-        # Complex adapted projects skip auto-startup so the agent can verify/fix before starting
-        NO_STARTUP=1
+        # Note: image type only affects this compose adaptation. Framework steps
+        # (composer install, .env wiring, storage symlink, migrations) are driven
+        # by framework DETECTION in the startup branch below and run for adapted
+        # projects too. Use --no-startup to defer and review the compose first.
     else
         echo-yellow "Warning: docker-compose adaptation failed — falling back to Podium template"
         rm -f "$ORIGINAL_COMPOSE_TMPFILE"
@@ -590,23 +606,6 @@ fi
 cd "$PROJECT_DIR"
 
 echo-cyan "Current directory: $(pwd)"
-
-# Complex/adapted projects skip the framework env+DB step below (it lives in the
-# startup branch, which they bypass). When the user explicitly asks to (re)wire
-# the env with --overwrite-env, rewrite the existing .env's connection settings
-# to the shared services and ensure the database exists — without touching
-# APP_KEY or running migrations (destructive on a populated DB).
-if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ] && [ "$OVERWRITE_ENV" = "1" ]; then
-    echo-return
-    echo-cyan "Applying --overwrite-env to adapted project ..."
-    rewrite_env_for_shared_services "$DB_NAME" "$DATABASE_ENGINE"
-    # Shared services must be up to create the database. Start them in a subshell
-    # so their cd/output doesn't disturb this script's state.
-    ( cd "$PROJECTS_DIR_PATH" && source "$DEV_DIR/scripts/start_services.sh" ) >/dev/null 2>&1 || true
-    ensure_database "$DB_NAME" "$DATABASE_ENGINE"
-    echo-yellow "Note: migrations/seeds were NOT run. Run them yourself when ready (e.g. 'podium art migrate')."
-    echo-return
-fi
 
 if [ "$NO_STARTUP" = "1" ]; then
     echo-yellow "Container startup deferred — run 'podium up $PROJECT_NAME' after verifying docker-compose.yaml"
@@ -755,9 +754,28 @@ PYEOF
         fi
     fi
 
-    # Install and setup .env / config file
+    # Install and setup .env / config file.
     unalias cp 2>/dev/null || true
-    framework_setup_env
+    if [ -n "$EXISTING_COMPOSE_FILE" ] && [ -f ".env" ]; then
+        # Adopting an existing app that ships its own .env: never regenerate it
+        # from a template (would lose real config + APP_KEY). Detect its DB engine
+        # so DB creation + migrations match, then rewrite only the connection
+        # settings to the shared services when --overwrite-env is set.
+        _conn=$(grep -E "^#*[[:space:]]*DB_CONNECTION=" .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d "\"' ")
+        case "$_conn" in
+            pgsql|postgres|postgresql) DATABASE_ENGINE="postgres" ;;
+            mongodb|mongo)             DATABASE_ENGINE="mongo" ;;
+            mysql|mariadb)             DATABASE_ENGINE="mysql" ;;
+        esac
+        if [ "$OVERWRITE_ENV" = "1" ]; then
+            rewrite_env_for_shared_services "$DB_NAME" "$DATABASE_ENGINE"
+        else
+            echo-yellow "Keeping existing .env (pass --overwrite-env to rewrite connection settings for Podium)."
+        fi
+    else
+        # Greenfield / template-based project: generate the framework's .env.
+        framework_setup_env
+    fi
 
     echo-return; echo-return
 
@@ -793,7 +811,14 @@ PYEOF
     # Create new database (idempotent — if it already exists, just continue).
     ensure_database "$DB_NAME" "$DATABASE_ENGINE"
 
-    framework_run_migrations
+    # Migrations run by default (driven by framework detection). For adopted
+    # projects (MIGRATE_SAFE=1) frameworks use non-destructive migrate; greenfield
+    # uses the full reset+seed. --no-migration skips them entirely.
+    if [ "$RUN_MIGRATIONS" = "1" ]; then
+        framework_run_migrations
+    else
+        echo-yellow "Skipping migrations (--no-migration)."
+    fi
 
     echo-return; echo-return
 

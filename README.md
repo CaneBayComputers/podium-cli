@@ -595,6 +595,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
 | `--db-name <name>` | Database name | Default: project name with dashes converted to underscores |
 | `--overwrite-env` | Regenerate `.env` even if one exists | New projects always write `.env`; this matters for re-runs |
+| `--no-migration` | Skip database migrations | Migrations run by default |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
@@ -610,6 +611,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--overwrite-env` | Regenerate `.env` even if the cloned repo already includes one (default: keep the existing `.env`) |
+| `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github` | Create GitHub repository in user account |
@@ -619,7 +621,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--private` | Make the new GitHub repository private |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
 
-> **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Podium automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Podium's shared containers (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). The web-facing service gets a static VPC IP. Startup is deferred so you can verify the adapted compose before running `podium up <project>`.
+> **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Podium automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Podium's shared containers (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). The web-facing service gets a static VPC IP. Image type only affects this compose adaptation — framework steps (composer install, `.env` wiring, migrations) are driven by framework detection and run for adapted projects too. Pass `--no-startup` to review the adapted compose before it boots, `--overwrite-env` to repoint an existing app's `.env` connection settings at the shared services (preserving `APP_KEY`), and `--no-migration` to skip migrations.
 
 ### Setup Project Options
 
@@ -629,6 +631,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--overwrite-env` | Regenerate `.env` even if one already exists (default: keep the existing `.env`) |
+| `--no-migration` | Skip database migrations (they run by default) |
 | `--no-startup` | Register and adapt project without starting the container |
 
 ### Remove Project Options

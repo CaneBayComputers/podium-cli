@@ -152,6 +152,20 @@ framework_setup_env() {
 
 framework_run_migrations() {
     [ ! -f "artisan" ] && return
+
+    # Adopting an existing app (MIGRATE_SAFE=1): apply pending migrations only —
+    # non-destructive, no data loss, no seed. Greenfield: full reset + seed.
+    if [ "${MIGRATE_SAFE:-0}" = "1" ]; then
+        echo-cyan 'Applying pending migrations (artisan migrate) ...'; echo-white
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            art-docker migrate --force > /dev/null 2>&1 || true
+        else
+            art-docker migrate --force || true
+        fi
+        echo-green 'Migrations applied (existing data and seeders left untouched).'; echo-white
+        return
+    fi
+
     echo-cyan 'Running migrations ...'; echo-white
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then

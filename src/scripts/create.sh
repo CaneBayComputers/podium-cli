@@ -185,12 +185,13 @@ Rules:
    - Bundled database/cache services (postgres, mysql/mariadb, redis/valkey, mongodb) are removed and their environment variable references are repointed to the Podium shared containers (hostnames: podium-postgres, podium-mariadb, podium-redis, podium-mongo).
    - The web-facing service gets a static IP on podium-cli_vpc and a container_name matching the project name.
    - All other project services (workers, schedulers, etc.) are wired to podium-cli_vpc without a fixed IP.
-   - The container is NOT auto-started so you can review the adapted compose first.
-   After `podium clone` completes for a complex project, do the following:
-   a. Read the generated docker-compose.yaml to verify the adaptation. Key things to check: correct web-facing service identified, correct Podium shared hostnames in environment vars, correct ports (the web service must be reachable on port 80 or you need to handle the port in the URL).
-   b. Read the project's configuration files (e.g. `.env`, `configuration/` directory) and update any hostnames that still reference the removed services. Use `podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo` as appropriate.
+   - Image type only affects this compose adaptation. Framework steps (composer install, .env wiring, storage symlink, migrations) are driven by framework DETECTION and run for adapted projects too — the project is started and wired up automatically. Pass `--no-startup` if you specifically want to review the adapted compose before it boots.
+   - For an existing app that ships its own populated `.env`, pass `--overwrite-env` to repoint its connection settings (DB_HOST, DB_DATABASE, REDIS_HOST, etc.) at the Podium shared services while preserving APP_KEY and the rest. Use `--db-name <name>` to choose the database name. Migrations run by default (non-destructive `migrate` for adopted apps); pass `--no-migration` to skip if you'll import a DB dump instead.
+   After setup completes for a complex project, verify:
+   a. Read the generated docker-compose.yaml: correct web-facing service identified, correct Podium shared hostnames in environment vars, correct ports (the web service must be reachable on port 80 or handle the port in the URL).
+   b. Confirm the app's `.env`/config points at the shared hostnames (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). With `--overwrite-env` Podium does this for you.
    c. If the web-facing service listens on a non-80 port (e.g. 8080), either update the compose to expose port 80 via nginx, or note that the URL will require that port (e.g. `http://project-name:8080/`).
-   d. Start the project with `podium up <project-name>` and verify with curl.
+   d. `curl -sI http://<project-name>/` to verify it responds.
 
 User project idea:
 

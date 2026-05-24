@@ -69,6 +69,7 @@ usage() {
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
+    echo-white "  --no-migration          Skip database migrations (they run by default)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
@@ -105,6 +106,7 @@ DB_NAME_OVERRIDE=""
 # scaffolders (e.g. Laravel's composer create-project) drop a stock .env that
 # must be replaced with Podium's configured one.
 OVERWRITE_ENV=1
+RUN_MIGRATIONS=1
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -130,6 +132,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --overwrite-env)
             OVERWRITE_ENV=1
+            shift
+            ;;
+        --no-migration|--no-migrations)
+            RUN_MIGRATIONS=0
             shift
             ;;
         --no-storage-symlink)
@@ -653,6 +659,9 @@ if [[ -n "$DB_NAME_OVERRIDE" ]]; then
 fi
 if [[ "$OVERWRITE_ENV" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-env"
+fi
+if [[ "$RUN_MIGRATIONS" == "0" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --no-migration"
 fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then

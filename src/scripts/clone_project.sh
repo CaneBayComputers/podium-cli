@@ -30,6 +30,7 @@ SKIP_INTERACTIVE=0
 GITHUB_VISIBILITY=""
 DB_NAME_OVERRIDE=""
 OVERWRITE_ENV=0
+RUN_MIGRATIONS=1
 GIT_CLONE_ARGS=()
 
 # Function to display usage
@@ -49,6 +50,7 @@ usage() {
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
     echo-white "  --overwrite-env              Regenerate the project's .env even if one already exists"
+    echo-white "  --no-migration               Skip database migrations (they run by default)"
     echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
@@ -135,6 +137,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --overwrite-env)
             OVERWRITE_ENV=1
+            shift
+            ;;
+        --no-migration|--no-migrations)
+            RUN_MIGRATIONS=0
             shift
             ;;
         --framework)
@@ -440,6 +446,9 @@ if [[ -n "$DB_NAME_OVERRIDE" ]]; then
 fi
 if [[ "$OVERWRITE_ENV" == "1" ]]; then
     SETUP_ARGS+=("--overwrite-env")
+fi
+if [[ "$RUN_MIGRATIONS" == "0" ]]; then
+    SETUP_ARGS+=("--no-migration")
 fi
 
 # Setup project

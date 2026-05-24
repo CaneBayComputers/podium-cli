@@ -200,7 +200,8 @@ When `podium clone` or `podium setup` encounters a `docker-compose.yaml` with mo
 - Env var references are rewritten to the Podium shared hostnames.
 - The web-facing service gets a static IP on `podium-cli_vpc` and a `container_name` matching the project name.
 - Other services (workers, schedulers) attach to `podium-cli_vpc` without a fixed IP.
-- The container is **not auto-started** — review the generated `docker-compose.yaml` before `podium up <project>`.
+- Image type only affects this compose adaptation. **Framework steps (composer install, `.env` wiring, storage symlink, migrations) are driven by framework detection** — they run for adapted projects too, and the project is started + wired up automatically. Pass `--no-startup` to defer and review the compose first.
+- For an existing app that ships its own populated `.env`, pass `--overwrite-env` to repoint its connection settings (`DB_HOST`, `DB_DATABASE`, `REDIS_HOST`, …) at the shared services while preserving `APP_KEY`; `--db-name <name>` sets the DB name. Migrations run by default (non-destructive `migrate` for adopted apps); `--no-migration` skips them (e.g. when importing a DB dump).
 
 After `podium clone` of a complex project, the agent's checklist:
 
