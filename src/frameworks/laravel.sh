@@ -72,6 +72,7 @@ framework_scaffold() {
 framework_python_start_command() { echo ""; }
 
 framework_setup_env() {
+    should_write_env ".env" || return 0
     [ ! -f ".env.example" ] && return
     echo-cyan "Setting up .env file ..."; echo-white
     cp -f .env.example .env

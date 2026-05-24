@@ -101,6 +101,10 @@ GITHUB_VISIBILITY=""
 SKIP_STORAGE_SYMLINK=0
 SKIP_INTERACTIVE=0
 DB_NAME_OVERRIDE=""
+# Greenfield projects: Podium owns the .env, so always (re)write it. Some
+# scaffolders (e.g. Laravel's composer create-project) drop a stock .env that
+# must be replaced with Podium's configured one.
+OVERWRITE_ENV=1
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -123,6 +127,10 @@ while [[ $# -gt 0 ]]; do
         --db-name)
             DB_NAME_OVERRIDE="$2"
             shift 2
+            ;;
+        --overwrite-env)
+            OVERWRITE_ENV=1
+            shift
             ;;
         --no-storage-symlink)
             SKIP_STORAGE_SYMLINK=1
@@ -642,6 +650,9 @@ if [[ "$DEBUG" == "1" ]]; then
 fi
 if [[ -n "$DB_NAME_OVERRIDE" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --db-name $DB_NAME_OVERRIDE"
+fi
+if [[ "$OVERWRITE_ENV" == "1" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-env"
 fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then

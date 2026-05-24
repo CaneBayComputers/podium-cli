@@ -29,6 +29,7 @@ FORK_USED=0
 SKIP_INTERACTIVE=0
 GITHUB_VISIBILITY=""
 DB_NAME_OVERRIDE=""
+OVERWRITE_ENV=0
 GIT_CLONE_ARGS=()
 
 # Function to display usage
@@ -47,6 +48,7 @@ usage() {
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
     echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
+    echo-white "  --overwrite-env              Regenerate the project's .env even if one already exists"
     echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
@@ -130,6 +132,10 @@ while [[ $# -gt 0 ]]; do
             else
                 error "Error: --db-name requires a database name"
             fi
+            ;;
+        --overwrite-env)
+            OVERWRITE_ENV=1
+            shift
             ;;
         --framework)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
@@ -431,6 +437,9 @@ if [[ -n "$FORCED_FRAMEWORK" ]]; then
 fi
 if [[ -n "$DB_NAME_OVERRIDE" ]]; then
     SETUP_ARGS+=("--db-name" "$DB_NAME_OVERRIDE")
+fi
+if [[ "$OVERWRITE_ENV" == "1" ]]; then
+    SETUP_ARGS+=("--overwrite-env")
 fi
 
 # Setup project

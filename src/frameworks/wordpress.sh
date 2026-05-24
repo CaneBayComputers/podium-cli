@@ -43,6 +43,7 @@ framework_scaffold() {
 framework_python_start_command() { echo ""; }
 
 framework_setup_env() {
+    should_write_env "wp-config.php" || return 0
     [ ! -f "wp-config-sample.php" ] && return
 
     echo-cyan "Configuring WordPress for containerized setup..."

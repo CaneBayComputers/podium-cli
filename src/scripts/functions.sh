@@ -571,6 +571,19 @@ debug() {
     fi
 }
 
+# Decide whether a framework should (re)write its env/config file.
+# Returns 0 (proceed/write) when the file is absent or --overwrite-env was passed
+# (OVERWRITE_ENV=1); returns 1 (skip) when the file already exists and no override.
+# Usage: should_write_env ".env" || return
+should_write_env() {
+    local config_file="$1"
+    if [ -f "$config_file" ] && [ "${OVERWRITE_ENV:-0}" != "1" ]; then
+        echo-yellow "Existing $config_file found — keeping it (pass --overwrite-env to regenerate)."
+        return 1
+    fi
+    return 0
+}
+
 # After a project is created/cloned/installed, hand off to an interactive AI session
 # inside the project directory — same flow that podium create does in phase 2.
 #

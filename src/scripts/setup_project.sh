@@ -40,6 +40,7 @@ usage() {
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
+    echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
@@ -57,6 +58,7 @@ OVERWRITE_DOCKER_COMPOSE=""
 SKIP_STORAGE_SYMLINK=false
 NO_STARTUP=0
 DB_NAME_OVERRIDE=""
+OVERWRITE_ENV=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -98,6 +100,10 @@ while [[ $# -gt 0 ]]; do
             else
                 error "Error: --db-name requires a database name"
             fi
+            ;;
+        --overwrite-env)
+            OVERWRITE_ENV=1
+            shift
             ;;
         --no-startup)
             NO_STARTUP=1

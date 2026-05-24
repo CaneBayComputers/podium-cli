@@ -63,6 +63,7 @@ framework_node_start_command() {
 }
 
 framework_setup_env() {
+    should_write_env ".env" || return 0
     echo-cyan "Setting up .env file ..."; echo-white
 
     local db_connection db_host db_port db_username db_password
