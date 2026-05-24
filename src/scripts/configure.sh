@@ -170,13 +170,22 @@ sudo rm -f /usr/local/bin/podium 2>/dev/null || true
 # Create symlink to podium script
 sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
 
-# Install bash tab-completion (idempotent). Drops a symlink into the standard
-# completion dir so new bash shells pick it up. Harmless if bash-completion
-# isn't installed — the file just won't be sourced.
+# Install bash tab-completion (idempotent). bash-completion 2.x prefers the
+# on-demand location /usr/share/bash-completion/completions/<cmd>; the older
+# /etc/bash_completion.d is eager-sourced. Install to whichever dirs exist so
+# completion loads regardless of bash-completion version. Harmless if the
+# package isn't installed.
 if [ -f "$DEV_DIR/completion/podium.bash" ]; then
+	_comp_installed=0
+	if [ -d /usr/share/bash-completion/completions ]; then
+		sudo ln -sf "$DEV_DIR/completion/podium.bash" /usr/share/bash-completion/completions/podium 2>/dev/null && _comp_installed=1
+	fi
 	sudo mkdir -p /etc/bash_completion.d 2>/dev/null || true
-	if sudo ln -sf "$DEV_DIR/completion/podium.bash" /etc/bash_completion.d/podium 2>/dev/null; then
-		echo-cyan "Bash completion installed (open a new shell or run 'source /etc/bash_completion.d/podium')."
+	if [ -d /etc/bash_completion.d ]; then
+		sudo ln -sf "$DEV_DIR/completion/podium.bash" /etc/bash_completion.d/podium 2>/dev/null && _comp_installed=1
+	fi
+	if [ "$_comp_installed" = "1" ]; then
+		echo-cyan "Bash completion installed — open a new terminal (or run 'source $DEV_DIR/completion/podium.bash') to use it."
 	fi
 fi
 
