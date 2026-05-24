@@ -14,7 +14,7 @@ source scripts/pre_check.sh
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 # Build sorted list of project directories (skip files and hidden dirs)
-mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
+mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
 
 if [[ ${#PROJECTS[@]} -eq 0 ]]; then
     echo-yellow "No projects found in $PROJECTS_DIR_PATH."

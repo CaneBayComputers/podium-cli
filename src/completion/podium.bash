@@ -21,7 +21,7 @@ _podium_projects() {
         dir="${dir/#\~/$HOME}"
     fi
     [ -z "$dir" ] && dir="$HOME/podium-projects"
-    [ -d "$dir" ] && find "$dir" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null
+    [ -d "$dir" ] && find -L "$dir" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null
 }
 
 # List available installer slugs.

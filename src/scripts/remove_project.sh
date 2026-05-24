@@ -113,7 +113,7 @@ if [ -z "$PROJECT_NAME" ]; then
         exit 1
     fi
 
-    mapfile -t PROJECTS < <(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' | sort)
+    mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
 
     if [[ ${#PROJECTS[@]} -eq 0 ]]; then
         echo-yellow "No projects found in $PROJECTS_DIR_PATH."
