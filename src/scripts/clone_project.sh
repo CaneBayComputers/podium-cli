@@ -28,6 +28,7 @@ REQUEST_FORK=0
 FORK_USED=0
 SKIP_INTERACTIVE=0
 GITHUB_VISIBILITY=""
+DB_NAME_OVERRIDE=""
 GIT_CLONE_ARGS=()
 
 # Function to display usage
@@ -45,6 +46,7 @@ usage() {
     echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
     echo-white "  --no-github                  Skip GitHub repository creation (default)"
     echo-white "  --github                     Create GitHub repository in user account"
     echo-white "  --github-org ORG             Create GitHub repository in organization"
@@ -120,6 +122,14 @@ while [[ $# -gt 0 ]]; do
         --private)
             GITHUB_VISIBILITY="private"
             shift
+            ;;
+        --db-name)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                DB_NAME_OVERRIDE="$2"
+                shift 2
+            else
+                error "Error: --db-name requires a database name"
+            fi
             ;;
         --framework)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
@@ -418,6 +428,9 @@ if [[ "$NO_STARTUP" == "1" ]]; then
 fi
 if [[ -n "$FORCED_FRAMEWORK" ]]; then
     SETUP_ARGS+=("--framework" "$FORCED_FRAMEWORK")
+fi
+if [[ -n "$DB_NAME_OVERRIDE" ]]; then
+    SETUP_ARGS+=("--db-name" "$DB_NAME_OVERRIDE")
 fi
 
 # Setup project

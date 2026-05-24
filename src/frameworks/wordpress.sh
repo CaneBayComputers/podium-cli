@@ -49,7 +49,7 @@ framework_setup_env() {
 
     cat > wp-config.php << EOF
 <?php
-define('DB_NAME', '$PROJECT_NAME_SNAKE');
+define('DB_NAME', '$DB_NAME');
 define('DB_USER', 'root');
 define('DB_PASSWORD', '');
 define('DB_HOST', '$MARIADB_CONTAINER_NAME');

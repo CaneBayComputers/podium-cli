@@ -39,6 +39,7 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
+    echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
@@ -55,6 +56,7 @@ DATABASE_ENGINE="mariadb"
 OVERWRITE_DOCKER_COMPOSE=""
 SKIP_STORAGE_SYMLINK=false
 NO_STARTUP=0
+DB_NAME_OVERRIDE=""
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -88,6 +90,14 @@ while [[ $# -gt 0 ]]; do
         --no-storage-symlink)
             SKIP_STORAGE_SYMLINK=true
             shift
+            ;;
+        --db-name)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                DB_NAME_OVERRIDE="$2"
+                shift 2
+            else
+                error "Error: --db-name requires a database name"
+            fi
             ;;
         --no-startup)
             NO_STARTUP=1
@@ -267,8 +277,22 @@ echo-return "$(pwd)"; echo-return
 # Determine PHP version
 
 
-# Convert dashes to underscores
+# Convert dashes to underscores (used for the project's package/module name)
 PROJECT_NAME_SNAKE=$(echo "$PROJECT_NAME" | sed 's/-/_/g')
+
+# Database name: explicit --db-name override, otherwise the snake-cased project name.
+# Kept separate from PROJECT_NAME_SNAKE so overriding the DB doesn't rename the
+# Django settings module / package directory.
+if [ -n "$DB_NAME_OVERRIDE" ]; then
+    # Sanitize: allow letters, digits, and underscores only (valid across mysql/postgres)
+    DB_NAME=$(echo "$DB_NAME_OVERRIDE" | sed 's/[^A-Za-z0-9_]/_/g')
+    if [ "$DB_NAME" != "$DB_NAME_OVERRIDE" ]; then
+        echo-yellow "Note: database name sanitized to '$DB_NAME' (only letters, digits, underscores allowed)."
+    fi
+else
+    DB_NAME="$PROJECT_NAME_SNAKE"
+fi
+export DB_NAME
 
 
 # Get a random D class number and make sure it doesn' already exist in hosts file
@@ -737,23 +761,33 @@ PYEOF
 
     fi
 
-    # Create new database, run migration and seed
-    echo-cyan "Creating database $PROJECT_NAME_SNAKE ..."; echo-white
+    # Create new database (idempotent — if it already exists, just continue).
+    echo-cyan "Ensuring database '$DB_NAME' exists ..."; echo-white
 
     case "$DATABASE_ENGINE" in
         postgres|postgresql|pgsql)
-            # PostgreSQL has no IF NOT EXISTS on CREATE DATABASE; suppress "already exists" error
-            json-postgres -d postgres -c "CREATE DATABASE \"$PROJECT_NAME_SNAKE\";" 2>/dev/null || true
+            # PostgreSQL has no IF NOT EXISTS for CREATE DATABASE — check first.
+            if json-postgres -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" 2>/dev/null | grep -q 1; then
+                echo-yellow "Database '$DB_NAME' already exists — continuing."
+            elif json-postgres -d postgres -c "CREATE DATABASE \"$DB_NAME\";" 2>/dev/null; then
+                echo-green 'Database created!'; echo-white
+            else
+                echo-yellow "Could not create database '$DB_NAME' (it may already exist) — continuing."
+            fi
             ;;
         mongo|mongodb)
-            : # MongoDB creates databases on first write — nothing to do here
+            # MongoDB creates databases on first write — nothing to do here.
+            echo-white "MongoDB creates the database on first write — nothing to create."
             ;;
         *)
-            json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS $PROJECT_NAME_SNAKE;"
+            # MySQL/MariaDB: IF NOT EXISTS makes this idempotent.
+            if json-mysql -u"root" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`;"; then
+                echo-green 'Database ready!'; echo-white
+            else
+                echo-yellow "Could not create database '$DB_NAME' (it may already exist) — continuing."
+            fi
             ;;
     esac
-
-    echo-green 'Database created!'; echo-white
 
     framework_run_migrations
 

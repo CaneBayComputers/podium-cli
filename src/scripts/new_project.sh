@@ -68,6 +68,7 @@ usage() {
     echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white "  --github                Create GitHub repository in user account"
     echo-white "  --github-org ORG        Create GitHub repository in organization"
@@ -99,6 +100,7 @@ CREATE_GITHUB=""
 GITHUB_VISIBILITY=""
 SKIP_STORAGE_SYMLINK=0
 SKIP_INTERACTIVE=0
+DB_NAME_OVERRIDE=""
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -116,6 +118,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --database)
             DATABASE="$2"
+            shift 2
+            ;;
+        --db-name)
+            DB_NAME_OVERRIDE="$2"
             shift 2
             ;;
         --no-storage-symlink)
@@ -633,6 +639,9 @@ if [[ "$NO_COLOR" == "1" ]]; then
 fi
 if [[ "$DEBUG" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --debug"
+fi
+if [[ -n "$DB_NAME_OVERRIDE" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --db-name $DB_NAME_OVERRIDE"
 fi
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then

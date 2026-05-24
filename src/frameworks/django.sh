@@ -96,7 +96,7 @@ else:
 DATABASES = {
     'default': {
         'ENGINE': f'django.db.backends.{_db_engine}',
-        'NAME': os.getenv('DB_DATABASE', '${PROJECT_NAME_SNAKE}'),
+        'NAME': os.getenv('DB_DATABASE', '${DB_NAME}'),
         'USER': os.getenv('DB_USERNAME', 'root'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
@@ -198,7 +198,7 @@ APP_URL=http://$PROJECT_NAME
 DB_CONNECTION=$db_connection
 DB_HOST=$db_host
 DB_PORT=$db_port
-DB_DATABASE=$PROJECT_NAME_SNAKE
+DB_DATABASE=$DB_NAME
 DB_USERNAME=$db_username
 DB_PASSWORD=$db_password
 REDIS_HOST=$REDIS_CONTAINER_NAME

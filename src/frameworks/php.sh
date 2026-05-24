@@ -33,7 +33,7 @@ framework_setup_env() {
         podium-sed "s/DB_HOSTNAME/$MARIADB_CONTAINER_NAME/" config.inc.php
         podium-sed "s/DB_USERNAME/root/" config.inc.php
         podium-sed "s/DB_PASSWORD//" config.inc.php
-        podium-sed "s/DB_NAME/$PROJECT_NAME_SNAKE/" config.inc.php
+        podium-sed "s/DB_NAME/$DB_NAME/" config.inc.php
     fi
     # Plain PHP projects don't need a .env by default
 }
@@ -41,7 +41,7 @@ framework_setup_env() {
 framework_run_migrations() {
     if [ -f "create_tables.sql" ]; then
         echo-cyan 'Creating tables ...'; echo-white
-        docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$PROJECT_NAME_SNAKE" < create_tables.sql
+        docker container exec -i "$MARIADB_CONTAINER_NAME" mariadb -u"root" "$DB_NAME" < create_tables.sql
     fi
 }
 

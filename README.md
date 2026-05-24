@@ -593,6 +593,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
+| `--db-name <name>` | Database name | Default: project name with dashes converted to underscores |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
 | `--no-github` | Skip GitHub repository creation (default) | - |
@@ -606,6 +607,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--database <type>` | Database type (`mysql`, `postgres`, `mongodb`) |
+| `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github` | Create GitHub repository in user account |
@@ -623,6 +625,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--no-startup` | Register and adapt project without starting the container |
 
 ### Remove Project Options
