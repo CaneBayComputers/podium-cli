@@ -24,16 +24,18 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | Command | Purpose |
 |---|---|
 | `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. |
-| `podium new <name> --framework <type>` | Greenfield project on a cbc base image (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). |
-| `podium clone <repo>` | Clone a Git repo and adapt its compose to use Podium shared services. |
-
-> **Heads up:** `podium create`, `podium new`, `podium clone`, and `podium install` all hand off to an interactive AI session inside the new project once setup completes. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip.
-| `podium up [name\|--all]` | Start a project. With no arg: interactive picker. With `--all`: every project. Shared services always start. |
-| `podium down [name\|--all]` | Stop a project. With no arg: interactive picker. With `--all`: every project. Shared services keep running — use `podium stop-services` for those. |
-| `podium setup [name]` | Adapt a project directory in `~/podium-projects/`. Interactive picker if name omitted. |
-| `podium remove [name] --force-db-delete` | Tear down a project including its DB. Interactive picker if name omitted. |
+| `podium new <framework> <name>` | Greenfield project. Framework + name are required positionals (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). DB auto-selected per framework; override with `--database`; version via `--version`. |
+| `podium clone <mode> <repo> [name]` | Clone a Git repo and adapt its compose to use Podium shared services. Mode (required, git-remote style): `work-directly` (keep original as upstream), `fork`, or `new-repo`. |
+| `podium up <name\|--all>` | Start a project, or `--all` for every project. Shared services always start. |
+| `podium down <name\|--all>` | Stop a project, or `--all` for every project. Shared services keep running — use `podium stop-services` for those. |
+| `podium setup <name>` | Adapt a project directory in `~/podium-projects/`. |
+| `podium remove <name>` | Tear down a project. DB is **preserved** by default — pass `--force-db-delete` to drop it. |
 | `podium status [name] [--running]` | Show running state. `--running` lists only projects whose container is up. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
+
+**No interactive prompts.** Every command (except `podium configure`, the one-time user wizard) fails with a clear "required argument" error rather than prompting — so nothing ever blocks an agent. Always pass explicit arguments.
+
+`podium create`, `podium new`, `podium clone`, and `podium install` hand off to an interactive AI session inside the new project once setup completes. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip.
 
 For automation, prefer `podium exec` / `podium exec-root` over interactive variants (`podium bash`, `podium tinker`, `podium exec-tty*`) — those allocate a TTY and aren't agent-friendly. `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`).
 

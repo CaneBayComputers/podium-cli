@@ -96,7 +96,7 @@ PROJECT_NAME=""
 ORGANIZATION=""
 VERSION="latest"
 FRAMEWORK=""
-DATABASE=""
+DATABASE="auto"
 CREATE_GITHUB=""
 GITHUB_VISIBILITY=""
 SKIP_STORAGE_SYMLINK=0
@@ -114,10 +114,6 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --framework)
-            FRAMEWORK="$2"
-            shift 2
-            ;;
         --version)
             VERSION="$2"
             shift 2
@@ -187,12 +183,11 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         *)
-            if [ -z "$PROJECT_NAME" ]; then
+            # Positional order: <framework> <name>
+            if [ -z "$FRAMEWORK" ]; then
+                FRAMEWORK="$1"
+            elif [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
-            elif [ -z "$ORGANIZATION" ]; then
-                ORGANIZATION="$1"
-            elif [ -z "$VERSION" ]; then
-                VERSION="$1"
             else
                 echo-red "Too many arguments"
                 usage
@@ -204,6 +199,32 @@ done
 
 # Initialize debug logging
 debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
+
+# --- Required arguments (no interactive prompts; 'configure' is the only wizard) ---
+if [ -z "$FRAMEWORK" ]; then
+    error "Error: framework is required. Usage: podium new <framework> <name> [--database <type>] [--version X]
+Frameworks: laravel wordpress php fastapi django python express nestjs fastify node"
+fi
+case "$FRAMEWORK" in
+    laravel|wordpress|php|fastapi|django|python|express|nestjs|fastify|node) ;;
+    *) error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node." ;;
+esac
+if [ -z "$PROJECT_NAME" ]; then
+    error "Error: project name is required. Usage: podium new $FRAMEWORK <name>"
+fi
+
+# Resolve database: 'auto' (or empty) → sensible per-framework default.
+if [ -z "$DATABASE" ] || [ "$DATABASE" = "auto" ]; then
+    case "$FRAMEWORK" in
+        django|fastapi|python) DATABASE="postgres" ;;
+        *)                     DATABASE="mysql" ;;
+    esac
+    echo-cyan "Auto-selected database for $FRAMEWORK: $DATABASE"
+fi
+if [ "$FRAMEWORK" = "wordpress" ] && [ "$DATABASE" != "mysql" ] && [ "$DATABASE" != "mariadb" ]; then
+    echo-yellow "WordPress requires MySQL/MariaDB — using mysql."
+    DATABASE="mysql"
+fi
 
 # Validation for JSON output mode
 debug "Starting validation phase"
@@ -414,19 +435,10 @@ case $FRAMEWORK in
                 fi
             fi
         else
-            # In interactive mode, ask for version — skip if stdin is not a TTY (background/pipe)
-            if [ -t 0 ]; then
-                echo-yellow -n "Enter Laravel version [latest]: "
-                read USER_VERSION
-                if [ -n "$USER_VERSION" ]; then VERSION="$USER_VERSION"; fi
-                while ! validate_laravel_version "$VERSION"; do
-                    echo-red "Invalid Laravel version: $VERSION"
-                    echo-yellow -n "Enter Laravel version [latest]: "
-                    read USER_VERSION
-                    if [ -z "$USER_VERSION" ]; then VERSION="latest"; else VERSION="$USER_VERSION"; fi
-                done
+            # No prompt — validate the provided/default version and fail if invalid.
+            if ! validate_laravel_version "$VERSION"; then
+                error "Error: invalid Laravel version '$VERSION'. Use 'latest' or a valid Laravel version tag."
             fi
-            # VERSION stays "latest" (default) when not in a TTY
         fi
         
         # Set the version for download
@@ -454,19 +466,10 @@ case $FRAMEWORK in
                 json_error "invalid WordPress version: $VERSION"
             fi
         else
-            # In interactive mode, ask for version — skip if stdin is not a TTY (background/pipe)
-            if [ -t 0 ]; then
-                echo-yellow -n "Enter WordPress version [latest]: "
-                read USER_VERSION
-                if [ -n "$USER_VERSION" ]; then VERSION="$USER_VERSION"; fi
-                while ! validate_wordpress_version "$VERSION"; do
-                    echo-red "Invalid WordPress version: $VERSION"
-                    echo-yellow -n "Enter WordPress version [latest]: "
-                    read USER_VERSION
-                    if [ -z "$USER_VERSION" ]; then VERSION="latest"; else VERSION="$USER_VERSION"; fi
-                done
+            # No prompt — validate the provided/default version and fail if invalid.
+            if ! validate_wordpress_version "$VERSION"; then
+                error "Error: invalid WordPress version '$VERSION'. Use 'latest' or a valid WordPress version."
             fi
-            # VERSION stays "latest" (default) when not in a TTY
         fi
         
         WP_VERSION="$VERSION"
@@ -582,23 +585,6 @@ fi
 
 echo-return; echo-return
 
-# GitHub organization prompt for interactive mode
-if [[ "$JSON_OUTPUT" != "1" ]] && [ "$CREATE_GITHUB" = "yes" ] && [ -z "$ORGANIZATION" ]; then
-    echo-cyan "GitHub repository will be created in your personal account."
-    echo-yellow -n "Would you like to create it in an organization instead? (y/N): "
-    read USE_ORG
-    if [[ "$USE_ORG" =~ ^[Yy]$ ]]; then
-        echo-yellow -n "Enter organization name: "
-        read ORGANIZATION
-        if [ -n "$ORGANIZATION" ]; then
-            CREATE_GITHUB="org"
-            echo-green "Repository will be created in organization: $ORGANIZATION"
-        else
-            echo-yellow "No organization specified. Using personal account."
-        fi
-    fi
-fi
-
 # Set project name
 cd "$PROJECTS_DIR"
 
@@ -628,13 +614,11 @@ framework_scaffold
 # GitHub repository creation
 # Skip repository creation when we already created a fork via GitHub CLI
 if [[ "$FORK_USED" -ne 1 ]]; then
-    # GitHub repository creation (interactive prompts if not specified)
-    if [ -z "$CREATE_GITHUB" ]; then
-        prompt_github_creation
-    fi
-    
+    # No prompt: default to NOT creating a repo unless --github/--github-org was passed.
+    [ -z "$CREATE_GITHUB" ] && CREATE_GITHUB="no"
+
     # Create GitHub repository if requested
-    if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
+    if [ "$CREATE_GITHUB" != "no" ]; then
         create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "" "${GITHUB_VISIBILITY:-private}"
     fi
 fi

@@ -89,25 +89,11 @@ if [[ -z "$USER_IDEA" && ! -t 0 ]]; then
     STDIN_CONSUMED=1
 fi
 
-# 3. Otherwise prompt interactively (only if stdin is a TTY)
+# 3. A project idea is required — no interactive prompt. Pass it as an argument,
+#    via -f <file>, or on stdin.
 if [[ -z "$USER_IDEA" ]]; then
-    if [[ ! -t 0 ]]; then
-        echo-red "No project idea provided and no TTY for interactive prompt."
-        exit 1
-    fi
-    echo-return
-    echo-cyan "What would you like to build?"; echo-white
-    echo-white "Describe your project in plain English. The AI will create a Podium-managed project for you."
-    echo-white "You can also paste a GitHub HTTPS URL to clone and set up an existing project."
-    echo-return
-    echo-yellow -n "Your project idea: "
-    echo-white -ne
-    read -r USER_IDEA
-    echo-return
-fi
-
-if [[ -z "$USER_IDEA" ]]; then
-    echo-yellow "No project idea provided. Aborting."
+    echo-red "No project idea provided."
+    echo-white "Usage: podium create \"<idea>\"   |   podium create -f <file>   |   ... | podium create"
     exit 1
 fi
 
@@ -140,8 +126,8 @@ Important workflow:
    a. Do you want to use an existing open-source project (battle-tested, feature-complete, faster to set up) or build something custom from scratch?
    b. If building from scratch: which framework do you prefer? List the options Podium supports and let the user choose, or offer a sensible recommendation if they have no preference.
    If the user wants an existing project, suggest two or three well-known open-source options for that category by name, and ask which one they want before proceeding.
-3. If the user is cloning a GitHub URL, assume the repo may already contain a docker-compose.yaml. Inform the user that Podium will replace it with a managed version, then run `podium clone` with --overwrite-docker-compose.
-4. If the user is setting up an existing local project directory, check whether a docker-compose.yaml already exists in that directory. If it does, inform the user it will be replaced, then run `podium setup` with --overwrite-docker-compose.
+3. If the user is cloning a GitHub URL, run `podium clone work-directly <url>`. The FIRST argument is the mode (git-remote style): `work-directly` clones the original repo and keeps it as upstream (default choice — do this unless the user asks otherwise); `fork` forks to the user's GitHub account; `new-repo` creates a fresh GitHub repo. Podium adapts the repo's docker-compose automatically and preserves the original as docker-compose.upstream.yaml.
+4. If the user is setting up an existing local project directory that already has a non-Podium docker-compose.yaml, run `podium setup <name> --overwrite-docker-compose`.
 5. Before running `podium new` or `podium clone`, check that the project directory does not already exist in the projects directory. If it does, remove it immediately with `podium remove <name> --force-db-delete` and proceed — do not ask the user for confirmation and do not attempt to reuse or work inside the existing directory. The `podium create` command always means start fresh.
 6. Create or enter the Podium-managed project first.
 7. After the project exists, look for the generated project's .env file.
@@ -162,16 +148,16 @@ Rules:
 9. Do not require the user to manually create database tables.
 10. If the app needs mail, cache, queues, sessions, or database access, use the available .env configuration when present.
 11. Update the generated project's README with startup instructions, local URL, useful commands, and default credentials if any.
-12. If the user provides a GitHub HTTPS URL, clone that repo using `podium clone` with --overwrite-docker-compose and --no-github. Do not fork it. The original repo remains the upstream so the user can pull future updates. Only create a new separate GitHub repo for the user if they explicitly ask for one.
-13. If the user asks to install or set up a well-known open-source project by name (a CMS, CRM, wiki, helpdesk, etc.), find its official GitHub repository and clone it using `podium clone <official-github-url> --overwrite-docker-compose --no-github`. Do not install it via a package manager or build it from scratch. Only build from scratch if the user explicitly describes a custom app or if no official repository exists. Important: many projects separate their source code from their Docker deployment — the source repo often has no docker-compose.yaml, while a sibling `-docker` repo (e.g. `netbox-community/netbox-docker`, `gogs/gogs-docker`) ships the full docker-compose setup. Always prefer the `-docker` repo when it exists, because Podium's compose adaptation works best when there is already a docker-compose.yaml to adapt.
+12. If the user provides a GitHub HTTPS URL, clone it with `podium clone work-directly <url>`. work-directly keeps the original repo as upstream so the user can pull future updates. Only use `podium clone fork <url>` or `podium clone new-repo <url>` if the user explicitly asks to fork or to create a new repo.
+13. If the user asks to install or set up a well-known open-source project by name (a CMS, CRM, wiki, helpdesk, etc.), find its official GitHub repository and clone it using `podium clone work-directly <official-github-url>`. Do not install it via a package manager or build it from scratch. Only build from scratch if the user explicitly describes a custom app or if no official repository exists. Important: many projects separate their source code from their Docker deployment — the source repo often has no docker-compose.yaml, while a sibling `-docker` repo (e.g. `netbox-community/netbox-docker`, `gogs/gogs-docker`) ships the full docker-compose setup. Always prefer the `-docker` repo when it exists, because Podium's compose adaptation works best when there is already a docker-compose.yaml to adapt.
 14. Never use --json-output on ANY podium command. That flag suppresses all human-readable output (including the success/failure distinction) so you cannot tell whether a command worked. It exists only for external scripts/GUIs that parse Podium's output — not for you. Always run podium commands without --json-output so success and errors print to stdout where you can read them.
-15. Do not pass --overwrite-docker-compose by default. For `podium clone`, Podium handles the existing docker-compose automatically — it detects complexity and adapts it, or replaces it with a managed template, without needing the flag. For `podium setup`, only pass --overwrite-docker-compose if Podium explicitly tells you it found a non-Podium docker-compose and needs confirmation to proceed.
-16. Always pass --no-github to `podium new` and `podium clone` unless the user explicitly asks to create a GitHub repository.
+15. `podium clone` always adapts/overwrites the repo's docker-compose automatically (the original is saved as docker-compose.upstream.yaml). You do NOT pass --overwrite-docker-compose to clone. For `podium setup` of an existing directory that already has a non-Podium docker-compose, pass --overwrite-docker-compose.
+16. `podium new` does NOT create a GitHub repo (pass --github or --github-org only if the user asks). `podium clone work-directly` neither forks nor creates a repo. Only fork/create when the user explicitly asks (clone modes fork / new-repo).
 17. When cloning a project whose framework is known (e.g. a Django app, a Node app), pass --framework <name> to `podium clone` so Podium generates the correct docker-compose for that stack instead of falling back to PHP.
 18. Python containers provide `python3`, not `python`. Never run `podium exec python ...` — use `podium python <args>` or `podium exec python3 <args>` instead. For Django management commands, always use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`, `podium django manage createsuperuser`). This is shorter and more reliable than `podium exec python3 manage.py <args>`.
 19. The project is not done until the site responds with HTTP 2xx or 3xx. Always run the curl check from workflow step 10 as your final action. If it fails, check container logs (`docker logs <project-name>`), fix the issue, and re-verify before finishing.
 20. To restart processes inside a running container use `podium supervisor restart all` (run from the project directory). Never use `podium exec supervisorctl ...` — that runs as the developer user and will get a permission denied error on the supervisor socket. If `podium supervisor` is not enough, restart the whole container with `podium down <name>` followed by `podium up <name>`.
-21. Always pass `--database <type>` to `podium new` when the user specifies a database. The default is MySQL even if the user asked for postgres or mongodb. Supported values: `mysql`, `postgres`, `mongodb`. Example: `podium new my-app --framework express --database postgres --no-github`. Skipping this flag will generate a MySQL .env regardless of what the user requested.
+21. `podium new` takes the framework as the FIRST positional and the project name as the SECOND: `podium new <framework> <name>`. The database is auto-selected per framework (PHP/Node → mysql, Python/Django/FastAPI → postgres); override with `--database <mysql|postgres|mongodb>` when the user specifies one. Version via `--version`. Examples: `podium new laravel my-shop`  /  `podium new express my-api --database postgres`  /  `podium new django survey-app`.
 22. Podium shared service credentials (use these when configuring any project to connect to Podium's shared containers — do not guess or run docker inspect):
    - PostgreSQL: host=`podium-postgres`, port=5432, user=`root`, password=`password`
    - MariaDB/MySQL: host=`podium-mariadb`, port=3306, user=`root`, password=(empty — no password)

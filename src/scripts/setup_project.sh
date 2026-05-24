@@ -134,63 +134,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no project name was provided, show an interactive picker (skip in JSON mode).
+# A project name is required — no interactive picker.
 if [ ${#POSITIONAL_ARGS[@]} -lt 1 ]; then
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        error "Error: Project name is required."
-    fi
-
-    if [[ ! -t 0 ]]; then
-        echo-red "No project specified and not running in an interactive terminal."
-        echo-white "Pass a project name explicitly (e.g. 'podium setup <project>')."
-        exit 1
-    fi
-
-    mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
-
-    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
-        echo-yellow "No project directories found in $PROJECTS_DIR_PATH."
-        echo-white "Drop a project folder there (or 'podium clone <repo>') and re-run."
-        exit 1
-    fi
-
-    echo-cyan "Select a project to set up:"
-    echo-return
-
-    COLS=$(tput cols 2>/dev/null || echo 80)
-    if command -v column >/dev/null 2>&1; then
-        for i in "${!PROJECTS[@]}"; do
-            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done | column -c "$COLS"
-    else
-        for i in "${!PROJECTS[@]}"; do
-            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done
-    fi
-
-    echo-return
-    echo-yellow -n "Enter number or project name (Ctrl+C to cancel): "
-    echo-white -ne
-    read -r SELECTION
-    echo-return
-
-    if [[ -z "$SELECTION" ]]; then
-        echo-yellow "No selection made. Aborting."
-        exit 1
-    fi
-
-    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
-        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
-            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
-            exit 1
-        fi
-        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
-    else
-        PROJECT_NAME="$SELECTION"
-    fi
-else
-    PROJECT_NAME="${POSITIONAL_ARGS[0]}"
+    error "Error: project name is required. Usage: podium setup <project> [database_engine] [options]"
 fi
+PROJECT_NAME="${POSITIONAL_ARGS[0]}"
 
 if [ ${#POSITIONAL_ARGS[@]} -gt 1 ]; then
     DATABASE_ENGINE="${POSITIONAL_ARGS[1]}"

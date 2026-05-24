@@ -99,61 +99,14 @@ done
 # Initialize debug logging
 debug "Script started: remove_project.sh with args: $ORIGINAL_ARGS"
 
-# If no project name was provided, show an interactive picker (skip in JSON mode
-# since automation should always pass an explicit name).
+# A project name is required — no interactive picker.
 if [ -z "$PROJECT_NAME" ]; then
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         debug "No project name provided in JSON mode"
-        usage
     fi
-
-    if [[ ! -t 0 ]]; then
-        echo-red "No project specified and not running in an interactive terminal."
-        echo-white "Pass a project name explicitly (e.g. 'podium remove <project>')."
-        exit 1
-    fi
-
-    mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
-
-    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
-        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
-        exit 0
-    fi
-
-    echo-cyan "Select a project to remove:"
-    echo-return
-
-    COLS=$(tput cols 2>/dev/null || echo 80)
-    if command -v column >/dev/null 2>&1; then
-        for i in "${!PROJECTS[@]}"; do
-            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done | column -c "$COLS"
-    else
-        for i in "${!PROJECTS[@]}"; do
-            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done
-    fi
-
-    echo-return
-    echo-yellow -n "Enter number or project name (Ctrl+C to cancel): "
-    echo-white -ne
-    read -r SELECTION
-    echo-return
-
-    if [[ -z "$SELECTION" ]]; then
-        echo-yellow "No selection made. Aborting."
-        exit 1
-    fi
-
-    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
-        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
-            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
-            exit 1
-        fi
-        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
-    else
-        PROJECT_NAME="$SELECTION"
-    fi
+    echo-red "No project specified."
+    echo-white "Usage: podium remove <project> [--force-db-delete] [--preserve-database]"
+    exit 1
 fi
 
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
@@ -194,29 +147,15 @@ if echo "$_DB_HINTS" | grep -q "podium-postgres\|podium-mongo\|podium-mariadb"; 
 fi
 debug "Detected database engine: $DB_ENGINE, uses shared DB: $HAS_SHARED_DB"
 
-# Project removal confirmation. Only prompt about the database when the project
-# actually uses a Podium shared DB; otherwise there is nothing for us to drop.
-if [ "$HAS_SHARED_DB" = false ]; then
-    debug "Skipping database confirmation (project uses bundled or no Podium-managed DB)"
-    if [[ "$JSON_OUTPUT" != "1" ]]; then
-        echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
-        echo-cyan "Project files will be moved to trash (recoverable)."
-        echo-white
-    fi
-elif [ "$FORCE_DB_DELETE" = false ] && [[ "$JSON_OUTPUT" != "1" ]]; then
-    debug "Requesting database confirmation (non-JSON mode)"
+# No interactive confirmation. The database is PRESERVED by default and only
+# dropped when --force-db-delete is passed (non-destructive default).
+if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-cyan "This will remove the project '$PROJECT_NAME' and associated settings."
     echo-cyan "Project files will be moved to trash (recoverable)."
-    echo-white
-    read -p "Also delete database data? (y/n): " DB_CONFIRM
-    if [[ "$DB_CONFIRM" == "y" ]]; then
-        FORCE_DB_DELETE=true
-        debug "User confirmed database deletion"
-    else
-        debug "User declined database deletion"
+    if [ "$HAS_SHARED_DB" = true ] && [ "$FORCE_DB_DELETE" = false ] && [ "$PRESERVE_DATABASE" = false ]; then
+        echo-yellow "The shared database '$DB_ENGINE' will be PRESERVED — pass --force-db-delete to drop it."
     fi
-else
-    debug "Skipping database confirmation (JSON mode or force mode)"
+    echo-white
 fi
 
 debug "Starting project removal for: $PROJECT_NAME"
@@ -259,22 +198,15 @@ if [ -d "$PROJECT_DIR" ]; then
         trash "$TRASH_TARGET"
         echo-green "Project directory moved to trash (can be recovered)."
     else
-        # Fallback: ask user if they want permanent deletion
-        echo-yellow "Warning: trash-cli not installed. This will PERMANENTLY delete the project!"
+        # No trash tool available. Non-destructive default: do NOT permanently
+        # delete without consent — leave the directory in place and tell the user.
+        echo-yellow "trash-cli not installed — leaving the project directory in place to avoid permanent deletion."
+        echo-white "Install trash-cli, or remove the directory manually:"
+        echo-white "  Ubuntu/Debian: sudo apt-get install trash-cli"
+        echo-white "  Arch Linux:    sudo pacman -S trash-cli"
+        echo-white "  macOS:         brew install trash-cli"
+        echo-white "  Manual:        rm -rf \"$PROJECT_DIR\""
         echo-white
-        read -p "Continue with permanent deletion? (y/n): " PERMANENT_DELETE
-        if [[ "$PERMANENT_DELETE" == "y" ]]; then
-            rm -rf "$PROJECT_DIR"
-            echo-red "Project directory permanently deleted."
-        else
-            echo-yellow "Project directory removal cancelled."
-            echo-white "Install trash-cli for safer project removal:"
-            echo-white "  Ubuntu/Debian: sudo apt-get install trash-cli"
-            echo-white "  Arch Linux:    sudo pacman -S trash-cli"
-            echo-white "  macOS:         brew install trash-cli"
-            cd "$ORIG_DIR"
-            exit 0
-        fi
     fi
     echo-white
 else
@@ -311,26 +243,23 @@ fi
 DB_NAME=$(echo "$PROJECT_NAME" | sed 's/-/_/g')
 DELETE_DB_CONFIRM="n"
 
+# Database is preserved by default; only dropped with --force-db-delete.
 if [ "$PRESERVE_DATABASE" = true ]; then
-    echo-cyan "Preserving database '$DB_NAME' (--preserve-database flag specified)"
+    echo-cyan "Preserving database '$DB_NAME' (--preserve-database)."
     echo-white
     DELETE_DB_CONFIRM="n"
 elif [ "$HAS_SHARED_DB" = false ]; then
     debug "Project has no shared Podium DB hostnames — skipping database step"
-    echo-cyan "Project '$PROJECT_NAME' does not use a Podium shared database (bundled DB or none)."
-    echo-cyan "Skipping database deletion step."
+    echo-cyan "Project '$PROJECT_NAME' does not use a Podium shared database (bundled DB or none). Skipping database step."
     echo-white
     DELETE_DB_CONFIRM="n"
 elif [ "$FORCE_DB_DELETE" = true ]; then
-    echo-cyan "Force mode: Deleting database '$DB_NAME'..."
+    echo-cyan "Deleting database '$DB_NAME' (--force-db-delete)..."
     DELETE_DB_CONFIRM="y"
-elif [[ "$JSON_OUTPUT" == "1" ]]; then
-    debug "JSON mode: Preserving database by default"
-    DELETE_DB_CONFIRM="n"
 else
-    echo-cyan "Would you like to delete the associated database '$DB_NAME'? This cannot be undone!"
+    echo-cyan "Preserving database '$DB_NAME' (default). Pass --force-db-delete to drop it."
     echo-white
-    read -p "Delete database? (y/n): " DELETE_DB_CONFIRM
+    DELETE_DB_CONFIRM="n"
 fi
 
 if [[ "$DELETE_DB_CONFIRM" == "y" ]]; then

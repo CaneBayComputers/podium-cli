@@ -62,7 +62,7 @@ up update update-installer wp"
         --framework)
             COMPREPLY=( $(compgen -W "$frameworks" -- "$cur") ); return 0 ;;
         --database)
-            COMPREPLY=( $(compgen -W "mysql postgres mongodb" -- "$cur") ); return 0 ;;
+            COMPREPLY=( $(compgen -W "auto mysql postgres mongodb" -- "$cur") ); return 0 ;;
         --agent)
             COMPREPLY=( $(compgen -W "claude codex gemini" -- "$cur") ); return 0 ;;
         --db-name|--version|--github-org|--model|--api-key|--git-name|--git-email|--projects-dir|--vpc-subnet|-f|--file|--prompt-file)
@@ -110,9 +110,19 @@ up update update-installer wp"
                 COMPREPLY=( $(compgen -W "$(_podium_installers)" -- "$cur") )
             fi ;;
         new)
-            COMPREPLY=( $(compgen -W "--framework --version --database --db-name --no-migration --github --github-org --no-github --public --private --no-storage-symlink --one-off --json-output --no-colors --debug" -- "$cur") ) ;;
+            # First positional = framework.
+            if [ "$cword" -eq 2 ] && [[ "$cur" != -* ]]; then
+                COMPREPLY=( $(compgen -W "$frameworks" -- "$cur") )
+            else
+                COMPREPLY=( $(compgen -W "--version --database --db-name --no-migration --github --github-org --public --private --no-storage-symlink --one-off --json-output --no-colors --debug" -- "$cur") )
+            fi ;;
         clone)
-            COMPREPLY=( $(compgen -W "--framework --database --db-name --overwrite-env --no-migration --overwrite-docker-compose --no-startup --github --github-org --no-github --public --private --no-storage-symlink --one-off --json-output --no-colors --debug" -- "$cur") ) ;;
+            # First positional = mode (git-remote style).
+            if [ "$cword" -eq 2 ] && [[ "$cur" != -* ]]; then
+                COMPREPLY=( $(compgen -W "work-directly fork new-repo" -- "$cur") )
+            else
+                COMPREPLY=( $(compgen -W "--framework --database --db-name --overwrite-env --no-migration --overwrite-docker-compose --no-startup --github-org --public --private --no-storage-symlink --one-off --json-output --no-colors --debug" -- "$cur") )
+            fi ;;
         create)
             COMPREPLY=( $(compgen -W "--one-off -f --file" -- "$cur") ) ;;
         create-installer)

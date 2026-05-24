@@ -16,6 +16,7 @@ source scripts/pre_check.sh
 # Initialize variables
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
+CLONE_MODE=""
 REPOSITORY=""
 PROJECT_NAME=""
 OVERWRITE_DOCKER_COMPOSE=""
@@ -35,12 +36,21 @@ GIT_CLONE_ARGS=()
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <repository> [OPTIONS] [project_name]"
-    echo-white "Clone a Git repository and set up as Podium project"
+    echo-white "Usage: $0 <mode> <repository> [project_name] [OPTIONS]"
+    echo-white "Clone a Git repository and set it up as a Podium project"
     echo-white ""
     echo-white "Arguments:"
+    echo-white "  mode              Required. How to handle the repo (git-remote style):"
+    echo-white "                      work-directly  Clone and work on the original repo directly"
+    echo-white "                      fork           Fork to your GitHub account, work from the fork"
+    echo-white "                      new-repo       Create a new GitHub repo for this project"
     echo-white "  repository        Git repository URL to clone"
     echo-white "  project_name      Optional: Local project name (defaults to repo name)"
+    echo-white ""
+    echo-white "Examples:"
+    echo-white "  $0 work-directly https://github.com/user/app"
+    echo-white "  $0 fork https://github.com/user/app"
+    echo-white "  $0 new-repo https://github.com/user/app my-app"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output                Output results in JSON format"
@@ -51,9 +61,7 @@ usage() {
     echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
     echo-white "  --overwrite-env              Regenerate the project's .env even if one already exists"
     echo-white "  --no-migration               Skip database migrations (they run by default)"
-    echo-white "  --no-github                  Skip GitHub repository creation (default)"
-    echo-white "  --github                     Create GitHub repository in user account"
-    echo-white "  --github-org ORG             Create GitHub repository in organization"
+    echo-white "  --github-org ORG             For new-repo mode: create the repo in this organization"
     echo-white "  --public                     Make the new GitHub repository public (default: private)"
     echo-white "  --private                    Make the new GitHub repository private"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
@@ -182,7 +190,9 @@ while [[ $# -gt 0 ]]; do
             error "Unknown option: $1"
             ;;
         *)
-            if [ -z "$REPOSITORY" ]; then
+            if [ -z "$CLONE_MODE" ]; then
+                CLONE_MODE="$1"
+            elif [ -z "$REPOSITORY" ]; then
                 REPOSITORY="$1"
             elif [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
@@ -193,6 +203,22 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Mode is a required first positional (git-remote style). It decides how the
+# repository is handled — replaces the old interactive fork/repo prompt.
+case "$CLONE_MODE" in
+    work-directly)
+        REQUEST_FORK=0; CREATE_GITHUB="no" ;;
+    fork)
+        REQUEST_FORK=1; CREATE_GITHUB="no" ;;
+    new-repo)
+        REQUEST_FORK=0
+        if [ -n "$ORGANIZATION" ]; then CREATE_GITHUB="org"; else CREATE_GITHUB="yes"; fi ;;
+    "")
+        error "Error: clone mode is required. Usage: podium clone <work-directly|fork|new-repo> <url> [name]" ;;
+    *)
+        error "Error: invalid clone mode '$CLONE_MODE'. Use one of: work-directly, fork, new-repo." ;;
+esac
 
 # Helper to detect GitHub repository URLs
 is_github_repo() {
@@ -293,36 +319,6 @@ if is_github_repo "$REPOSITORY"; then
             # gh not available or not authenticated; fall back to clone
             echo-yellow "GitHub CLI (gh) is not installed or not authenticated. Cloning original repository instead of forking."
             FORK_USED=0
-        fi
-    # Interactive prompt (only when no explicit GitHub options are set)
-    elif [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
-        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-            echo-cyan "GitHub repository detected."
-            echo-white "How would you like to work with this repository?"
-            echo-white "1) Work directly with the original repository"
-            echo-white "2) Fork to your GitHub account and work from the fork"
-            echo-white "3) Create a new private GitHub repository for this project (no fork)"
-            echo-yellow -n "Enter your choice (1-3): "
-            read FORK_CHOICE
-            
-            case "$FORK_CHOICE" in
-                1)
-                    FORK_USED=0
-                    CREATE_GITHUB="no"
-                    ;;
-                2)
-                    FORK_USED=1
-                    CREATE_GITHUB="no"
-                    ;;
-                3)
-                    FORK_USED=0
-                    CREATE_GITHUB="yes"
-                    ;;
-                *)
-                    FORK_USED=0
-                    CREATE_GITHUB="no"
-                    ;;
-            esac
         fi
     fi
 fi
@@ -465,15 +461,12 @@ else
     source "$DEV_DIR/scripts/setup_project.sh" "${SETUP_ARGS[@]}"
 fi
 
-# GitHub repository creation (interactive prompts if not specified).
+# GitHub repository creation — the clone MODE already set CREATE_GITHUB
+# (work-directly/fork → no; new-repo → yes/org). No prompt.
 # Skip this when we already created a fork via gh.
 if [[ "$FORK_USED" -ne 1 ]]; then
-    if [[ "$JSON_OUTPUT" != "1" ]] && [ -z "$CREATE_GITHUB" ]; then
-        prompt_github_creation
-    fi
-    
-    # Create GitHub repository if requested
-    if [ "$CREATE_GITHUB" != "no" ] && [ -n "$CREATE_GITHUB" ]; then
+    [ -z "$CREATE_GITHUB" ] && CREATE_GITHUB="no"
+    if [ "$CREATE_GITHUB" != "no" ]; then
         cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
         create_github_repo "$PROJECT_NAME" "$CREATE_GITHUB" "$ORGANIZATION" "$REPOSITORY" "${GITHUB_VISIBILITY:-private}"
     fi

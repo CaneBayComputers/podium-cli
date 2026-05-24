@@ -28,7 +28,7 @@ One `podium-postgres`, one `podium-mariadb`, one `podium-redis`, one `podium-mon
 
 ### ⚡ Installs frameworks and 100+ OSS apps in one command
 
-`podium install <app>` — fully configured, running, reachable at `http://<app>/` in under two minutes. Grafana, Gitea, Ghost, Nextcloud, Immich, Mattermost, Mastodon, Plane, Zulip, n8n, Outline, Paperless-ngx — and ~90 more. Or `podium new --framework laravel` / `--framework fastapi` / `--framework express` for a fresh greenfield project.
+`podium install <app>` — fully configured, running, reachable at `http://<app>/` in under two minutes. Grafana, Gitea, Ghost, Nextcloud, Immich, Mattermost, Mastodon, Plane, Zulip, n8n, Outline, Paperless-ngx — and ~90 more. Or `podium new laravel my-app` / `podium new fastapi my-api` / `podium new express my-svc` for a fresh greenfield project.
 
 - **Saves AI tokens.** Each curated installer captures upstream quirks (Mastodon's VAPID keys, Zulip's HTTPS-redirect-by-default, plane's YAML anchors, Mastodon's separate db-migrate service) once. An AI agent doesn't re-derive them every "yo install minio" session.
 - **Saves headaches.** No env-var spelunking. No "wait, why isn't `db:5432` resolving" debugging sessions. No first-run setup wizards to navigate twice. The shared-services rewrite handles bundled DB conflicts automatically.
@@ -146,60 +146,30 @@ The AI CLI can be cloud-based or local depending on your configuration. See [AI-
 
 ### Or create a project manually
 
+The framework comes first, then the project name: `podium new <framework> <name>`. The database is auto-selected per framework (PHP/Node → MySQL, Python → PostgreSQL); override with `--database <mysql|postgres|mongodb>`, and set a framework version with `--version`.
+
 ```bash
-podium new
+podium new laravel my-laravel-app          # Laravel (MySQL auto)
+podium new wordpress my-wp-site             # WordPress (MySQL)
+podium new fastapi my-api                   # FastAPI (PostgreSQL auto)
+podium new django my-django-app            # Django (PostgreSQL auto)
+podium new python my-script                 # Plain Python
+podium new express my-express-app           # Express (MySQL auto)
+podium new nestjs my-nest-app               # NestJS
+podium new fastify my-fastify-app           # Fastify
+podium new node my-node-app                 # Plain Node.js
+podium new php my-php-app                    # Empty PHP
+podium new express my-api --database postgres --version latest   # explicit DB + version
 ```
-
-Common project types:
-
-- Laravel API / app:
-  ```bash
-  podium new my-laravel-app --framework laravel
-  ```
-- WordPress site:
-  ```bash
-  podium new my-wp-site --framework wordpress
-  ```
-- FastAPI project:
-  ```bash
-  podium new my-api --framework fastapi
-  ```
-- Django project:
-  ```bash
-  podium new my-django-app --framework django
-  ```
-- Plain Python project:
-  ```bash
-  podium new my-script --framework python
-  ```
-- Express project:
-  ```bash
-  podium new my-express-app --framework express
-  ```
-- NestJS project:
-  ```bash
-  podium new my-nest-app --framework nestjs
-  ```
-- Fastify project:
-  ```bash
-  podium new my-fastify-app --framework fastify
-  ```
-- Plain Node.js project:
-  ```bash
-  podium new my-node-app --framework node
-  ```
-- Empty PHP project:
-  ```bash
-  podium new my-php-app --framework php
-  ```
 
 ### Or use an existing project
 
-Clone a Git repository and set it up automatically:
+Clone a Git repository and set it up automatically. The first argument is the **mode** (git-remote style) — how you want to work with the repo:
 
 ```bash
-podium clone https://github.com/user/my-laravel-app
-podium clone owner/repo                              # GitHub shorthand
+podium clone work-directly https://github.com/user/my-laravel-app   # keep the original repo as upstream
+podium clone fork https://github.com/user/my-laravel-app            # fork to your GitHub account
+podium clone new-repo https://github.com/user/my-laravel-app my-app # create a fresh repo for it
 ```
 
 Already have a project folder in your projects directory? Just set it up:
@@ -474,16 +444,16 @@ podium down my-project     # Stop just one project
 
 | Command | Description |
 |---------|-------------|
-| `podium up [project\|--all]` | Start a project (interactive picker if omitted; `--all` for every project). Services start regardless. |
-| `podium down [project\|--all]` | Stop a project (interactive picker if omitted; `--all` for every project). Shared services stay up — use `podium stop-services` for those. |
+| `podium up <project\|--all>` | Start a project, or `--all` for every project. Services start regardless. |
+| `podium down <project\|--all>` | Stop a project, or `--all` for every project. Shared services stay up — use `podium stop-services` for those. |
 | `podium status [project] [--running]` | Show project status (`--running` lists only running projects) |
-| `podium new [options]` | Create new project |
-| `podium create ["idea"]` | Create a project non-interactively, then start interactive session in the project dir (AI) |
-| `podium resume [project]` | Resume the last AI session for a project (interactive picker if no arg) |
+| `podium new <framework> <name> [options]` | Create a new project (framework + name required; DB auto-selected, override with `--database`) |
+| `podium create "<idea>"` | Create a project from a plain-English idea, then start an interactive AI session in the project dir |
+| `podium resume <project>` | Resume the last AI session for a project |
 | `podium install <app>` | Install a popular OSS app in one command (`--list` to see all) |
-| `podium clone <repo>` | Clone existing project |
-| `podium setup [project] [options]` | Set up an existing project directory (interactive picker if omitted) |
-| `podium remove [project] [options]` | Remove a project (interactive picker if omitted) |
+| `podium clone <mode> <repo> [name]` | Clone an existing repo (mode: `work-directly` / `fork` / `new-repo`) |
+| `podium setup <project> [options]` | Set up an existing project directory |
+| `podium remove <project> [options]` | Remove a project (DB preserved unless `--force-db-delete`) |
 
 ### ⚙️ System Management
 
@@ -588,22 +558,23 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 
 ### New Project Options
 
+`podium new <framework> <name>` — framework and name are **required positional arguments**. Framework is one of: `laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`.
+
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--framework <name>` | Framework type | `laravel` (default), `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node` |
+| `--database <type>` | Database type | `auto` (default — per-framework), `mysql`, `postgres`, `mongodb` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
-| `--database <type>` | Database type | `mysql` (default), `postgres`, `mongodb` |
 | `--db-name <name>` | Database name | Default: project name with dashes converted to underscores |
-| `--overwrite-env` | Regenerate `.env` even if one exists | New projects always write `.env`; this matters for re-runs |
 | `--no-migration` | Skip database migrations | Migrations run by default |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
-| `--no-github` | Skip GitHub repository creation (default) | - |
 | `--public` | Make the new GitHub repository public | Default is private when `--github`/`--github-org` is used |
 | `--private` | Make the new GitHub repository private | Default behavior when no visibility flag is set |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink | (Laravel only) |
 
 ### Clone Project Options
+
+`podium clone <mode> <repo> [name]` — **mode** is a required first argument: `work-directly` (clone and keep the original as upstream), `fork` (fork to your GitHub account), or `new-repo` (create a new GitHub repo for it).
 
 | Option | Description |
 |--------|-------------|
@@ -614,9 +585,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
-| `--github` | Create GitHub repository in user account |
-| `--github-org <org>` | Create GitHub repository in organization |
-| `--no-github` | Skip GitHub repository creation |
+| `--github-org <org>` | For `new-repo` mode: create the repository in this organization |
 | `--public` | Make the new GitHub repository public (default: private) |
 | `--private` | Make the new GitHub repository private |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
@@ -687,8 +656,8 @@ podium setup new-project --overwrite-docker-compose
 ### WordPress Development
 
 ```bash
-# Create a WordPress project with PostgreSQL
-podium new wp-site --framework wordpress --version latest --no-github
+# Create a WordPress project (MySQL is auto-selected)
+podium new wordpress wp-site --version latest
 
 # Install and activate plugins
 podium wp plugin install woocommerce --activate
@@ -702,7 +671,7 @@ podium wp plugin list --status=active
 podium status --json-output
 
 # Create project with JSON response
-podium new my-api --framework fastapi --database postgres --no-github --json-output
+podium new fastapi my-api --database postgres --json-output
 
 # Check if services are running in a script
 if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep -q "RUNNING"; then
@@ -801,7 +770,7 @@ Podium provides clean JSON output for programmatic integration, perfect for GUI 
 
 ```javascript
 // Example: Create project via JSON API
-const result = await exec('podium new myapp --framework laravel --version 11.x --database mysql --no-github --json-output');
+const result = await exec('podium new laravel myapp --version 11.x --json-output');
 const data = JSON.parse(result.stdout);
 
 // Result:
@@ -950,7 +919,8 @@ podium configure
 podium ins<TAB>            → install
 podium install gr<TAB>     → grafana  graylog  grocy
 podium up <TAB>            → (your project names)
-podium new --framework <TAB>  → laravel  wordpress  fastapi  django  ...
+podium new <TAB>           → laravel  wordpress  fastapi  django  ...
+podium clone <TAB>         → work-directly  fork  new-repo
 ```
 
 ### Environment Variables
@@ -1020,7 +990,7 @@ All Podium commands support a `--debug` flag that creates detailed logs to help 
 **Example:**
 ```bash
 # Debug a project creation issue
-podium new test-project --framework laravel --debug
+podium new laravel test-project --debug
 
 # Check what happened
 tail -f /tmp/podium-cli-debug.log

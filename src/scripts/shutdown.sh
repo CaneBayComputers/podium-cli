@@ -90,56 +90,12 @@ if [[ "$STOP_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
 fi
 
 # If no project name and no --all and not JSON mode, prompt the user.
-# JSON mode without args falls through to "stop everything" for backward-compat.
-if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
-    if [[ ! -t 0 ]]; then
-        echo-red "No project specified and not running in an interactive terminal."
-        echo-white "Pass a project name (e.g. 'podium down <project>') or '--all' to stop every project."
-        exit 1
-    fi
-
-    mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
-
-    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
-        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
-        echo-white "Nothing to stop. (Use 'podium stop-services' to stop shared services.)"
-        exit 0
-    fi
-
-    echo-cyan "Select a project to stop:"
-    echo-return
-
-    COLS=$(tput cols 2>/dev/null || echo 80)
-    if command -v column >/dev/null 2>&1; then
-        for i in "${!PROJECTS[@]}"; do
-            printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done | column -c "$COLS"
-    else
-        for i in "${!PROJECTS[@]}"; do
-            printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-        done
-    fi
-
-    echo-return
-    echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to stop every project): "
-    echo-white -ne
-    read -r SELECTION
-    echo-return
-
-    if [[ -z "$SELECTION" ]]; then
-        echo-yellow "No selection made. Aborting."
-        exit 1
-    fi
-
-    if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
-        if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
-            echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
-            exit 1
-        fi
-        PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
-    else
-        PROJECT_NAME="$SELECTION"
-    fi
+# A project name (or --all) is required — no interactive picker.
+if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" ]]; then
+    echo-red "No project specified."
+    echo-white "Usage: podium down <project>   # stop one project"
+    echo-white "       podium down --all       # stop every project"
+    exit 1
 fi
 
 # Initialize debug logging

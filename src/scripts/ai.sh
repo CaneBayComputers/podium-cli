@@ -37,20 +37,10 @@ done
 
 INIT_PROMPT="${PROMPT_ARGS[*]}"
 
+# An initial prompt is required — no interactive prompt.
 if [[ -z "$INIT_PROMPT" ]]; then
-    echo-return
-    echo-cyan "AI Session Initial Prompt"; echo-white
-    echo-white "You're about to start an interactive session with your configured AI agent CLI."
-    echo-white "Set the stage with a clear initial instruction for this project."
-    echo-return
-    echo-yellow -n "Enter initial prompt: "
-    echo-white -ne
-    read -r INIT_PROMPT
-    echo-return
-fi
-
-if [[ -z "$INIT_PROMPT" ]]; then
-    echo-yellow "No initial prompt provided. Aborting 'podium ai' session."
+    echo-red "No initial prompt provided."
+    echo-white "Usage: podium ai [--one-off] \"<prompt>\""
     cd "$CALLER_DIR"
     exit 1
 fi

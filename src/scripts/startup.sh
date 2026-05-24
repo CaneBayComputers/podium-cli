@@ -172,55 +172,14 @@ cd "$PROJECTS_DIR_PATH"
 # to pick a project from a numbered list (services have already been started).
 # JSON mode without explicit --all/project falls through to "all projects" for
 # backward compatibility with automation that relied on the old default.
-if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" && "$JSON_OUTPUT" != "1" ]]; then
-    if [[ ! -t 0 ]]; then
-        echo-red "No project specified and not running in an interactive terminal."
-        echo-white "Pass a project name (e.g. 'podium up <project>') or '--all' to start every project."
-        exit 1
-    fi
-
-    mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
-
-    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
-        echo-yellow "No projects found in $PROJECTS_DIR_PATH."
-        echo-white "Shared services have been started. Create a project with 'podium new', 'podium clone', or 'podium install <app>'."
-    else
-        echo-return
-        echo-cyan "Select a project to start:"
-        echo-return
-
-        COLS=$(tput cols 2>/dev/null || echo 80)
-        if command -v column >/dev/null 2>&1; then
-            for i in "${!PROJECTS[@]}"; do
-                printf "%3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-            done | column -c "$COLS"
-        else
-            for i in "${!PROJECTS[@]}"; do
-                printf "  %3d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-            done
-        fi
-
-        echo-return
-        echo-yellow -n "Enter number or project name (Ctrl+C to cancel, or --all on the command line to start every project): "
-        echo-white -ne
-        read -r SELECTION
-        echo-return
-
-        if [[ -z "$SELECTION" ]]; then
-            echo-yellow "No selection made. Aborting."
-            exit 1
-        fi
-
-        if [[ "$SELECTION" =~ ^[0-9]+$ ]]; then
-            if (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
-                echo-red "Invalid selection: $SELECTION (valid range: 1-${#PROJECTS[@]})"
-                exit 1
-            fi
-            PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
-        else
-            PROJECT_NAME="$SELECTION"
-        fi
-    fi
+# A project name (or --all) is required — no interactive picker. Shared services
+# have already been started above, which is the useful, non-destructive part.
+if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
+    echo-return
+    echo-red "No project specified."
+    echo-white "Usage: podium up <project>     # start one project"
+    echo-white "       podium up --all         # start every project"
+    exit 1
 fi
 
 # Decide which projects to start.
@@ -229,8 +188,8 @@ if [[ -n "$PROJECT_NAME" ]]; then
     debug "Starting specific project: $PROJECT_NAME"
     if start_project "$PROJECT_NAME"; then true; fi
 
-elif [[ "$START_ALL" == "1" || "$JSON_OUTPUT" == "1" ]]; then
-    debug "Starting all projects (START_ALL=$START_ALL JSON_OUTPUT=$JSON_OUTPUT)"
+elif [[ "$START_ALL" == "1" ]]; then
+    debug "Starting all projects (--all)"
 
     # Only iterate directories; avoid literal '*' / '*/' with nullglob.
     # Skip files and any directory whose name starts with a dot.

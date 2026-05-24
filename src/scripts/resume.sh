@@ -13,37 +13,13 @@ source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
-# Build sorted list of project directories (skip files and hidden dirs)
-mapfile -t PROJECTS < <( find -L "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null | sort)
-
-if [[ ${#PROJECTS[@]} -eq 0 ]]; then
-    echo-yellow "No projects found in $PROJECTS_DIR_PATH."
+# A project name is required — no interactive picker.
+if [[ -z "$1" ]]; then
+    echo-red "No project specified."
+    echo-white "Usage: podium resume <project>"
     exit 1
 fi
-
-# If a project name was passed directly, use it
-if [[ -n "$1" ]]; then
-    PROJECT_NAME="$1"
-else
-    echo-return
-    echo-cyan "Select a project to resume:"
-    echo-return
-    for i in "${!PROJECTS[@]}"; do
-        printf "  %2d) %s\n" "$((i + 1))" "${PROJECTS[$i]}"
-    done
-    echo-return
-    echo-yellow -n "Enter number: "
-    echo-white -ne
-    read -r SELECTION
-    echo-return
-
-    if ! [[ "$SELECTION" =~ ^[0-9]+$ ]] || (( SELECTION < 1 || SELECTION > ${#PROJECTS[@]} )); then
-        echo-red "Invalid selection."
-        exit 1
-    fi
-
-    PROJECT_NAME="${PROJECTS[$((SELECTION - 1))]}"
-fi
+PROJECT_NAME="$1"
 
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
 
