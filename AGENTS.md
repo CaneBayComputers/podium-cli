@@ -26,8 +26,8 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. |
 | `podium new <framework> <name>` | Greenfield project. Framework + name are required positionals (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). DB auto-selected per framework; override with `--database`; version via `--version`. |
 | `podium clone <mode> <repo> [name]` | Clone a Git repo and adapt its compose to use Podium shared services. Mode (required, git-remote style): `work-directly` (keep original as upstream), `fork`, or `new-repo`. |
-| `podium up <name\|--all>` | Start a project, or `--all` for every project. Shared services always start. |
-| `podium down <name\|--all>` | Stop a project, or `--all` for every project. Shared services keep running — use `podium stop-services` for those. |
+| `podium up <name>` / `podium up-all` | Start one project, or every project. Shared services always start. |
+| `podium down <name>` / `podium down-all` | Stop one project, or every project. Shared services keep running — use `podium stop-services` for those. |
 | `podium setup <name>` | Adapt a project directory in `~/podium-projects/`. |
 | `podium remove <name>` | Tear down a project. DB is **preserved** by default — pass `--force-db-delete` to drop it. |
 | `podium status [name] [--running]` | Show running state. `--running` lists only projects whose container is up. |

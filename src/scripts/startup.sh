@@ -178,7 +178,7 @@ if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
     echo-return
     echo-red "No project specified."
     echo-white "Usage: podium up <project>     # start one project"
-    echo-white "       podium up --all         # start every project"
+    echo-white "       podium up-all           # start every project"
     exit 1
 fi
 

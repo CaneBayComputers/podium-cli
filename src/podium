@@ -103,8 +103,10 @@ show_help() {
     echo "  podium supervisor-status  - Show all supervised processes (Run from project directory)"
     echo
     echo-white "PROJECT MANAGEMENT:"
-    echo "  podium up <project|--all> - Start a project (or --all for every project). Services always start."
-    echo "  podium down <project|--all> - Stop a project (or --all for every project). Shared services keep running."
+    echo "  podium up <project>       - Start a project (shared services always start too)"
+    echo "  podium up-all             - Start every project"
+    echo "  podium down <project>     - Stop a project (shared services keep running)"
+    echo "  podium down-all           - Stop every project (shared services keep running)"
     echo "  podium status [project] [--running] - Show project status (--running: only running projects)"
     echo "  podium new <framework> <name> [--database <type>] [--version X] - Create a new project"
     echo "  podium create \"<idea>\"    - Create a project from a plain English description (AI)"
@@ -185,7 +187,7 @@ show_help() {
     echo
     echo-white "NOTES:"
     echo "  • Commands require explicit arguments (no interactive pickers) so they're safe for AI agents and scripts. 'configure' is the only interactive wizard."
-    echo "  • 'podium up'/'down' need a <project> or --all. 'podium down' leaves shared services up (use 'podium stop-services')."
+    echo "  • 'podium up'/'down' need a <project>; use 'podium up-all'/'podium down-all' for every project. 'podium down' leaves shared services up (use 'podium stop-services')."
     echo "  • 'podium remove' preserves the database by default — pass --force-db-delete to drop it."
     echo "  • 'podium create', 'podium new', 'podium clone', and 'podium install' all drop into an interactive AI session in the new project on completion. Pass --one-off to skip."
     echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
@@ -596,11 +598,25 @@ case "$1" in
             "$SCRIPT_DIR/scripts/startup.sh" "$@"
         )
         ;;
+    "up-all")
+        shift
+        (
+            cd "$(get_projects_dir)"
+            "$SCRIPT_DIR/scripts/startup.sh" --all "$@"
+        )
+        ;;
     "down")
         shift
         (
             cd "$(get_projects_dir)"
             "$SCRIPT_DIR/scripts/shutdown.sh" "$@"
+        )
+        ;;
+    "down-all")
+        shift
+        (
+            cd "$(get_projects_dir)"
+            "$SCRIPT_DIR/scripts/shutdown.sh" --all "$@"
         )
         ;;
     "status")

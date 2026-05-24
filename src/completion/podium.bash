@@ -43,11 +43,11 @@ _podium() {
     verb="${COMP_WORDS[1]}"
 
     local verbs="ai ai-set art bash cache-refresh clone composer configure create \
-create-installer db-refresh django down exec exec-root exec-tty exec-tty-root help \
+create-installer db-refresh django down down-all exec exec-root exec-tty exec-tty-root help \
 install memcache memcache-flush memcache-stats mysql new node npm npx php phpcbf \
 phpcs phpmd pip projects-dir python redis redis-flush remove resume setup shell \
 start-services status stop-services supervisor supervisor-status tinker uninstall \
-up update update-installer wp"
+up up-all update update-installer wp"
 
     local frameworks="laravel wordpress php fastapi django python express nestjs fastify node"
 
@@ -73,10 +73,12 @@ up update update-installer wp"
     case "$verb" in
         up|down)
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=( $(compgen -W "--all --json-output --no-colors --debug" -- "$cur") )
+                COMPREPLY=( $(compgen -W "--json-output --no-colors --debug" -- "$cur") )
             else
                 COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
             fi ;;
+        up-all|down-all)
+            COMPREPLY=( $(compgen -W "--json-output --no-colors --debug" -- "$cur") ) ;;
         status)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--running --json-output --no-colors --debug" -- "$cur") )

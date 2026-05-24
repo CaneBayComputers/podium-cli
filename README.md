@@ -340,27 +340,21 @@ Podium is designed around two magic commands that handle your entire development
 
 ### ⚡ `podium up`
 ```bash
-podium up                # Interactive picker — services start, then choose a project
-podium up --all          # Start every project in the projects directory
 podium up my-project     # Start a specific project
+podium up-all            # Start every project in the projects directory
 ```
 **Starts services + the project(s) you select:**
 - Always starts shared services (MariaDB, Redis, PostgreSQL, MongoDB, etc.) if not already up
-- With no argument: shows a numbered list of projects to pick from
-- With `--all`: starts every project in the projects directory
-- With a project name: starts just that one
+- `podium up <project>` starts just that one; `podium up-all` starts every project
 - Configures networking so all running projects are reachable at `http://project-name`
 
 ### 🛑 `podium down`
 ```bash
-podium down                # Interactive picker — choose a project to stop
-podium down --all          # Stop every project (services keep running)
 podium down my-project     # Stop just one project
+podium down-all            # Stop every project (services keep running)
 ```
 **Stops the project(s) you select. Shared services keep running:**
-- With no argument: shows a numbered list of projects
-- With `--all`: stops every project (shared services stay up)
-- With a project name: stops just that one
+- `podium down <project>` stops just that one; `podium down-all` stops every project
 - Run `podium stop-services` separately when you want to stop MariaDB, Redis, Postgres, Mongo, etc.
 - All data and configurations are preserved either way
 
@@ -444,8 +438,10 @@ podium down my-project     # Stop just one project
 
 | Command | Description |
 |---------|-------------|
-| `podium up <project\|--all>` | Start a project, or `--all` for every project. Services start regardless. |
-| `podium down <project\|--all>` | Stop a project, or `--all` for every project. Shared services stay up — use `podium stop-services` for those. |
+| `podium up <project>` | Start a project (shared services start regardless) |
+| `podium up-all` | Start every project |
+| `podium down <project>` | Stop a project (shared services stay up — use `podium stop-services`) |
+| `podium down-all` | Stop every project (shared services stay up) |
 | `podium status [project] [--running]` | Show project status (`--running` lists only running projects) |
 | `podium new <framework> <name> [options]` | Create a new project (framework + name required; DB auto-selected, override with `--database`) |
 | `podium create "<idea>"` | Create a project from a plain-English idea, then start an interactive AI session in the project dir |

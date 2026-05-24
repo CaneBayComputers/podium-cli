@@ -94,7 +94,7 @@ fi
 if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" ]]; then
     echo-red "No project specified."
     echo-white "Usage: podium down <project>   # stop one project"
-    echo-white "       podium down --all       # stop every project"
+    echo-white "       podium down-all         # stop every project"
     exit 1
 fi
 
