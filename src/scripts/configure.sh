@@ -170,6 +170,16 @@ sudo rm -f /usr/local/bin/podium 2>/dev/null || true
 # Create symlink to podium script
 sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
 
+# Install bash tab-completion (idempotent). Drops a symlink into the standard
+# completion dir so new bash shells pick it up. Harmless if bash-completion
+# isn't installed — the file just won't be sourced.
+if [ -f "$DEV_DIR/completion/podium.bash" ]; then
+	sudo mkdir -p /etc/bash_completion.d 2>/dev/null || true
+	if sudo ln -sf "$DEV_DIR/completion/podium.bash" /etc/bash_completion.d/podium 2>/dev/null; then
+		echo-cyan "Bash completion installed (open a new shell or run 'source /etc/bash_completion.d/podium')."
+	fi
+fi
+
 
 
 ###############################

@@ -944,6 +944,15 @@ sudo rm -rf /etc/podium-cli
 podium configure
 ```
 
+`podium configure` also installs **bash tab-completion** (to `/etc/bash_completion.d/podium`). Open a new shell and tab through commands, project names, and installer names:
+
+```
+podium ins<TAB>            → install
+podium install gr<TAB>     → grafana  graylog  grocy
+podium up <TAB>            → (your project names)
+podium new --framework <TAB>  → laravel  wordpress  fastapi  django  ...
+```
+
 ### Environment Variables
 
 - `PROJECTS_DIR` - Custom projects directory
