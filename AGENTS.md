@@ -32,7 +32,7 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium down [name\|--all]` | Stop a project. With no arg: interactive picker. With `--all`: every project. Shared services keep running — use `podium stop-services` for those. |
 | `podium setup [name]` | Adapt a project directory in `~/podium-projects/`. Interactive picker if name omitted. |
 | `podium remove [name] --force-db-delete` | Tear down a project including its DB. Interactive picker if name omitted. |
-| `podium status [name]` | Show running state. |
+| `podium status [name] [--running]` | Show running state. `--running` lists only projects whose container is up. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
 
 For automation, prefer `podium exec` / `podium exec-root` over interactive variants (`podium bash`, `podium tinker`, `podium exec-tty*`) — those allocate a TTY and aren't agent-friendly. `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`).

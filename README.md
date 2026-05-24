@@ -476,7 +476,7 @@ podium down my-project     # Stop just one project
 |---------|-------------|
 | `podium up [project\|--all]` | Start a project (interactive picker if omitted; `--all` for every project). Services start regardless. |
 | `podium down [project\|--all]` | Stop a project (interactive picker if omitted; `--all` for every project). Shared services stay up — use `podium stop-services` for those. |
-| `podium status [project]` | Show project status |
+| `podium status [project] [--running]` | Show project status (`--running` lists only running projects) |
 | `podium new [options]` | Create new project |
 | `podium create ["idea"]` | Create a project non-interactively, then start interactive session in the project dir (AI) |
 | `podium resume [project]` | Resume the last AI session for a project (interactive picker if no arg) |

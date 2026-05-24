@@ -105,7 +105,7 @@ show_help() {
     echo-white "PROJECT MANAGEMENT:"
     echo "  podium up [project|--all] - Start a project (interactive picker if omitted; --all for every project). Services always start."
     echo "  podium down [project|--all] - Stop a project (interactive picker if omitted; --all for every project). Shared services keep running."
-    echo "  podium status [project]   - Show project status"
+    echo "  podium status [project] [--running] - Show project status (--running: only running projects)"
     echo "  podium new [options]      - Create new project"
     echo "  podium create [\"idea\"]    - Create a project from a plain English description (AI)"
     echo "  podium resume [project]   - Resume AI session for a project (interactive picker if no arg)"
@@ -605,13 +605,10 @@ case "$1" in
         )
         ;;
     "status")
+        shift
         (
             cd "$(get_projects_dir)"
-            if [ -n "$2" ]; then
-                "$SCRIPT_DIR/scripts/status.sh" "$2"
-            else
-                "$SCRIPT_DIR/scripts/status.sh"
-            fi
+            "$SCRIPT_DIR/scripts/status.sh" "$@"
         )
         ;;
     "new")

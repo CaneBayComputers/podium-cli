@@ -26,6 +26,7 @@ usage() {
     echo-white "  project_name     Name of specific project to check (optional)"
     echo-white ""
     echo-white "Options:"
+    echo-white "  --running        Only show projects whose container is running"
     echo-white "  --json-output    Output JSON responses (for programmatic use)"
     echo-white "  --debug          Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --no-colors      Disable colored output"
@@ -33,14 +34,16 @@ usage() {
     echo-white ""
     echo-white "Examples:"
     echo-white "  $0                    # Show all projects"
+    echo-white "  $0 --running          # Show only running projects"
     echo-white "  $0 my-project         # Show specific project"
     echo-white "  $0 --json-output      # JSON output for all projects"
-    
+
     error "usage" 1
 }
 
 # Initialize variables
 PROJECT_NAME=""
+RUNNING_ONLY=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -50,6 +53,10 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --running)
+            RUNNING_ONLY=1
+            shift
+            ;;
         --json-output)
             JSON_OUTPUT=1
             shift
@@ -504,13 +511,18 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         if ! [ -z "$PROJECT_NAME" ]; then
             # Single project requested
             if [ -d "$PROJECT_NAME" ]; then
-                PROJECT_JSON=$(get_project_status "$PROJECT_NAME")
-                JSON_DATA=$(echo "$JSON_DATA" | jq --argjson project "$PROJECT_JSON" '.projects += [$project]')
+                if [ "$RUNNING_ONLY" != "1" ] || service_running "$PROJECT_NAME"; then
+                    PROJECT_JSON=$(get_project_status "$PROJECT_NAME")
+                    JSON_DATA=$(echo "$JSON_DATA" | jq --argjson project "$PROJECT_JSON" '.projects += [$project]')
+                fi
             fi
         else
-            # All projects
+            # All projects (optionally only running ones)
             for item in *; do
                 if [ -d "$item" ] && [ "$item" != "." ] && [ "$item" != ".." ]; then
+                    if [ "$RUNNING_ONLY" = "1" ] && ! service_running "$item"; then
+                        continue
+                    fi
                     PROJECT_JSON=$(get_project_status "$item")
                     JSON_DATA=$(echo "$JSON_DATA" | jq --argjson project "$PROJECT_JSON" '.projects += [$project]')
                 fi
@@ -676,28 +688,46 @@ divider
 cd "$PROJECTS_DIR_PATH"
 
 if ! [ -z "$PROJECT_NAME" ]; then
-    if project_status $PROJECT_NAME; then true; fi
-    divider
+    if [ "$RUNNING_ONLY" = "1" ] && ! service_running "$PROJECT_NAME"; then
+        echo-cyan "PROJECTS STATUS:"
+        echo-return
+        echo-yellow "$PROJECT_NAME is not running."
+        divider
+    else
+        if project_status $PROJECT_NAME; then true; fi
+        divider
+    fi
 else
-    # Check if there are any actual project directories (not just files)
+    # Count project directories (only running ones when --running is set)
     PROJECT_COUNT=0
     for item in *; do
         if [ -d "$item" ] && [ "$item" != "." ] && [ "$item" != ".." ]; then
+            if [ "$RUNNING_ONLY" = "1" ] && ! service_running "$item"; then
+                continue
+            fi
             PROJECT_COUNT=$((PROJECT_COUNT + 1))
         fi
     done
-    
+
     if [ $PROJECT_COUNT -eq 0 ]; then
         echo-cyan "PROJECTS STATUS:"
         echo-return
-        echo-yellow "No projects found in $(pwd)"
-        echo-white "Create your first project with: podium new"
+        if [ "$RUNNING_ONLY" = "1" ]; then
+            echo-yellow "No running projects."
+            echo-white "Start one with: podium up <project>"
+        else
+            echo-yellow "No projects found in $(pwd)"
+            echo-white "Create your first project with: podium new"
+        fi
         divider
     else
         echo-cyan "PROJECTS STATUS:"
         echo-return
         for PROJECT_NAME in *; do
             if [ -d "$PROJECT_NAME" ] && [ "$PROJECT_NAME" != "." ] && [ "$PROJECT_NAME" != ".." ]; then
+                if [ "$RUNNING_ONLY" = "1" ] && ! service_running "$PROJECT_NAME"; then
+                    continue
+                fi
                 if project_status $PROJECT_NAME; then true; fi
                 divider
             fi
