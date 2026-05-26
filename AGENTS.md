@@ -184,7 +184,7 @@ INSTALL_SETUP_FULL=1        # run the full setup pipeline instead of --no-startu
 INSTALL_SETUP_DB="mysql"    # database engine passed to `podium setup` (optional; default mysql)
 ```
 
-Then `write_files()` downloads the source into the project dir. Setup detects the framework (`artisan` / `manage.py` / `package.json`) and runs composer install, the front-end build, `.env` wiring, and migrations — same as `podium new`. `livewire.sh` is the reference example (Laravel skeleton + `livewire/livewire` + a demo component).
+Then `write_files()` downloads the source into the project dir (and does any one-shot post-create steps the upstream normally runs). Setup detects the framework (`artisan` / `manage.py` / `package.json`) and runs composer install, the front-end build, `.env` wiring, and migrations — same as `podium new`. `livewire.sh` is the reference example: it downloads the official `laravel/livewire-starter-kit` and replicates its `⚡` single-file-component rename in Python (no host-PHP dependency).
 
 ### Reference installers
 
