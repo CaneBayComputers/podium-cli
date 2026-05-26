@@ -175,12 +175,24 @@ COMPOSE
 - **Generate secrets** via `openssl rand -hex 32` (or whatever the upstream expects).
 - **Pick a slug**: lowercase hyphenated. Becomes the filename, project URL (`http://<slug>/`), and DB name (with hyphens → underscores).
 
+### Source-based installers
+
+Most installers pull a prebuilt image, so `write_files()` only writes a `docker-compose.yaml` and the default flow is `podium setup --no-startup` + `podium up`. For an app that is **source you scaffold** (e.g. a Laravel skeleton) rather than a prebuilt image, set:
+
+```bash
+INSTALL_SETUP_FULL=1        # run the full setup pipeline instead of --no-startup + up
+INSTALL_SETUP_DB="mysql"    # database engine passed to `podium setup` (optional; default mysql)
+```
+
+Then `write_files()` downloads the source into the project dir. Setup detects the framework (`artisan` / `manage.py` / `package.json`) and runs composer install, the front-end build, `.env` wiring, and migrations — same as `podium new`. `livewire.sh` is the reference example (Laravel skeleton + `livewire/livewire` + a demo component).
+
 ### Reference installers
 
 When writing a new installer, find 2-3 existing ones with similar shape:
 - Postgres + Redis: `paperless-ngx.sh`, `outline.sh`, `hedgedoc.sh`
 - Bundled stack with multiple services: `mastodon.sh`, `zulip.sh`, `plane.sh`, `dify.sh`
 - nginx reverse proxy in front of a non-port-80 app: `zulip.sh`, `mastodon.sh`
+- Source-based scaffold (not a prebuilt image): `livewire.sh`
 
 ---
 

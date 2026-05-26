@@ -79,9 +79,19 @@ mkdir -p "$PROJECT_DIR"
 cd "$PROJECT_DIR"
 write_files
 
-# Setup and start
-podium setup "$APP" --no-startup
-podium up "$APP"
+# Setup and start.
+# Prebuilt-image apps (the default) only need their compose adapted, then a start —
+# so setup runs with --no-startup and 'podium up' brings the container online.
+# Source-based apps (INSTALL_SETUP_FULL=1, e.g. a Laravel scaffold) need the full
+# setup pipeline — composer install, front-end build, .env wiring, migrations — which
+# only runs when setup is NOT given --no-startup. Setup starts the container itself in
+# that case, so no separate 'podium up' is required.
+if [ "${INSTALL_SETUP_FULL:-0}" = "1" ]; then
+    podium setup "$APP" ${INSTALL_SETUP_DB:-}
+else
+    podium setup "$APP" --no-startup
+    podium up "$APP"
+fi
 
 # Verify
 echo-return
