@@ -111,7 +111,7 @@ show_help() {
     echo "  podium new <framework> <name> [--database <type>] [--version X] - Create a new project"
     echo "  podium create \"<idea>\"    - Create a project from a plain English description (AI)"
     echo "  podium resume <project>   - Resume AI session for a project"
-    echo "  podium install <app> [--image <ref>] - Install a known open-source app (podium install --list)"
+    echo "  podium install <app> [name] [--image <ref>] - Install a known open-source app (podium install --list)"
     echo "  podium create-installer \"<idea>\" - Generate a new installer + hint for an OSS app via AI"
     echo "  podium update-installer <app>|--all - Refresh an installer (or all) against current upstream via AI"
     echo "  podium clone <work-directly|fork|new-repo> <repo> [name] - Clone an existing repo"

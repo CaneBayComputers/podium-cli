@@ -10,6 +10,7 @@ source scripts/pre_check.sh
 
 SKIP_INTERACTIVE=0
 APP=""
+PROJECT_NAME=""
 CUSTOM_IMAGE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -23,13 +24,24 @@ while [[ $# -gt 0 ]]; do
             fi
             ;;
         *)
+            # Positional order: <app> [name]. The app selects the installer; the
+            # optional name is the project directory/hostname (defaults to app).
             if [ -z "$APP" ]; then
                 APP="$1"
+            elif [ -z "$PROJECT_NAME" ]; then
+                PROJECT_NAME="$1"
+            else
+                error "Too many arguments. Usage: podium install <app> [name] [--image <ref>]"
             fi
             shift
             ;;
     esac
 done
+
+# Project name defaults to the app slug when not given a custom name.
+if [ -z "$PROJECT_NAME" ]; then
+    PROJECT_NAME="$APP"
+fi
 
 # List available installers
 if [ "$APP" = "--list" ] || [ "$APP" = "-l" ]; then
@@ -45,7 +57,7 @@ fi
 if [ -z "$APP" ]; then
     # An app name is required — no interactive picker.
     echo-red "No app specified."
-    echo-white "Usage: podium install <app> [--image <ref>]     (run 'podium install --list' to see all)"
+    echo-white "Usage: podium install <app> [name] [--image <ref>]     (run 'podium install --list' to see all)"
     exit 1
 fi
 
@@ -57,19 +69,19 @@ if [ ! -f "$INSTALLER" ]; then
 fi
 
 PROJECTS_DIR="$(get_projects_dir)"
-PROJECT_DIR="$PROJECTS_DIR/$APP"
+PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
 # Already installed? (only skip if actually running)
-if grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[[:space:]]+${APP}$" /etc/hosts 2>/dev/null; then
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${APP}$"; then
-        echo-yellow "$APP is already installed and running."
-        echo-white "Visit: http://$APP/"
+if grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[[:space:]]+${PROJECT_NAME}$" /etc/hosts 2>/dev/null; then
+    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${PROJECT_NAME}$"; then
+        echo-yellow "$PROJECT_NAME is already installed and running."
+        echo-white "Visit: http://$PROJECT_NAME/"
         exit 0
     fi
 fi
 
 # Defaults (overridable by installer)
-INSTALL_DISPLAY="$APP"
+INSTALL_DISPLAY="$PROJECT_NAME"
 INSTALL_CREDENTIALS=""
 INSTALL_NOTES=""
 
@@ -101,10 +113,10 @@ IMAGE_ARGS=()
 [ -n "$CUSTOM_IMAGE" ] && IMAGE_ARGS=(--image "$CUSTOM_IMAGE")
 
 if [ "${INSTALL_SETUP_FULL:-0}" = "1" ]; then
-    podium setup "$APP" ${INSTALL_SETUP_DB:-} "${IMAGE_ARGS[@]}"
+    podium setup "$PROJECT_NAME" ${INSTALL_SETUP_DB:-} "${IMAGE_ARGS[@]}"
 else
-    podium setup "$APP" --no-startup "${IMAGE_ARGS[@]}"
-    podium up "$APP"
+    podium setup "$PROJECT_NAME" --no-startup "${IMAGE_ARGS[@]}"
+    podium up "$PROJECT_NAME"
 fi
 
 # Verify
@@ -113,7 +125,7 @@ echo-white "Waiting for $INSTALL_DISPLAY to be ready..."
 RETRIES=0
 HTTP_CODE="000"
 while [ $RETRIES -lt 15 ]; do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://$APP/" 2>/dev/null || echo "000")
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://$PROJECT_NAME/" 2>/dev/null || echo "000")
     first_digit="${HTTP_CODE:0:1}"
     if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
         break
@@ -127,16 +139,18 @@ first_digit="${HTTP_CODE:0:1}"
 if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
     echo-green "$INSTALL_DISPLAY is ready! (HTTP $HTTP_CODE)"
     echo-return
-    echo-white "  URL: http://$APP/"
+    echo-white "  URL: http://$PROJECT_NAME/"
     [ -n "$INSTALL_CREDENTIALS" ] && echo-white "  Credentials: $INSTALL_CREDENTIALS"
     [ -n "$INSTALL_NOTES" ] && echo-yellow "  Note: $INSTALL_NOTES"
 else
     echo-yellow "$INSTALL_DISPLAY returned HTTP $HTTP_CODE — it may still be initializing."
-    echo-white "  Check: curl -sI http://$APP/"
-    echo-white "  Logs:  podium logs $APP"
+    echo-white "  Check: curl -sI http://$PROJECT_NAME/"
+    echo-white "  Logs:  podium logs $PROJECT_NAME"
 fi
 echo-return
 
 # Drop into an interactive AI session inside the project (skipped when --one-off,
 # JSON mode, non-TTY, or no AI agent configured).
-ai_handoff "$APP" "This project is managed by the Podium CLI — a Docker-based local development environment manager — and was created by running 'podium install $APP'. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works; (2) run 'podium help' for the full command list. $INSTALL_DISPLAY is running at http://$APP/. You are the developer."
+INSTALL_CMD="podium install $APP"
+[ "$PROJECT_NAME" != "$APP" ] && INSTALL_CMD="podium install $APP $PROJECT_NAME"
+ai_handoff "$PROJECT_NAME" "This project is managed by the Podium CLI — a Docker-based local development environment manager — and was created by running '$INSTALL_CMD'. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works; (2) run 'podium help' for the full command list. $INSTALL_DISPLAY is running at http://$PROJECT_NAME/. You are the developer."
