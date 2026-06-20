@@ -223,7 +223,7 @@ podium create "I need a private Git server called dev-forge, set it up and creat
 podium create "New Grafana"
 ```
 
-The installed app lands at `http://<app-name>/` immediately, and `podium install` drops you into an interactive AI session inside the project directory so you can keep iterating on it. Pass `--one-off` to skip the AI hand-off (same applies to `podium create`, `podium new`, and `podium clone`).
+The installed app lands at `http://<app-name>/` immediately, and `podium install` drops you into an interactive AI session inside the project directory so you can keep iterating on it. Pass `--one-off` to skip the AI hand-off (same applies to `podium create`, `podium new`, and `podium clone`). Pass `--image <ref>` to override the image the installer would otherwise use — e.g. `podium install livewire --image canebaycomputers/cbc:nginx-php8` (for prebuilt-image apps it overrides the web-facing service's image; for source-scaffold apps it overrides the cbc base image).
 
 ### Available apps
 

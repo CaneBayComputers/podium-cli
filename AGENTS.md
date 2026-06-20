@@ -23,7 +23,7 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 
 | Command | Purpose |
 |---|---|
-| `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. |
+| `podium install <app>` | Install a curated OSS app (`--list` to see all). Always check this first before hand-rolling anything. Override the image with `--image <ref>`. |
 | `podium new <framework> <name>` | Greenfield project. Framework + name are required positionals (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`). DB auto-selected per framework; override with `--database`; version via `--version`. |
 | `podium clone <mode> <repo> [name]` | Clone a Git repo and adapt its compose to use Podium shared services. Mode (required, git-remote style): `work-directly` (keep original as upstream), `fork`, or `new-repo`. |
 | `podium up <name>` / `podium up-all` | Start one project, or every project. Shared services always start. |
@@ -112,7 +112,7 @@ When writing a custom compose: give the entry-point service a static IP in `.100
 
 ## cbc Base Docker Images
 
-Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Source repos live under `CaneBayComputers/` on GitHub. Override the per-framework default with `--image <ref>` on `podium new`, `podium clone`, or `podium setup` (for an adapted complex compose it overrides the web-facing service's image).
+Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Source repos live under `CaneBayComputers/` on GitHub. Override the per-framework default with `--image <ref>` on `podium new`, `podium clone`, `podium setup`, or `podium install` (for an adapted complex compose it overrides the web-facing service's image).
 
 ### `canebaycomputers/cbc:nginx-node` — Node.js projects
 - **GitHub**: `CaneBayComputers/cbc-docker-node-nginx`

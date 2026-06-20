@@ -10,13 +10,23 @@ source scripts/pre_check.sh
 
 SKIP_INTERACTIVE=0
 APP=""
-for arg in "$@"; do
-    case "$arg" in
-        --one-off) SKIP_INTERACTIVE=1 ;;
+CUSTOM_IMAGE=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --one-off) SKIP_INTERACTIVE=1; shift ;;
+        --image)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                CUSTOM_IMAGE="$2"
+                shift 2
+            else
+                error "Error: --image requires a Docker image reference (e.g. canebaycomputers/cbc:nginx-php8)"
+            fi
+            ;;
         *)
             if [ -z "$APP" ]; then
-                APP="$arg"
+                APP="$1"
             fi
+            shift
             ;;
     esac
 done
@@ -35,7 +45,7 @@ fi
 if [ -z "$APP" ]; then
     # An app name is required — no interactive picker.
     echo-red "No app specified."
-    echo-white "Usage: podium install <app>     (run 'podium install --list' to see all)"
+    echo-white "Usage: podium install <app> [--image <ref>]     (run 'podium install --list' to see all)"
     exit 1
 fi
 
@@ -86,10 +96,14 @@ write_files
 # setup pipeline — composer install, front-end build, .env wiring, migrations — which
 # only runs when setup is NOT given --no-startup. Setup starts the container itself in
 # that case, so no separate 'podium up' is required.
+# Forward a user-supplied --image override to setup (empty array → no extra args).
+IMAGE_ARGS=()
+[ -n "$CUSTOM_IMAGE" ] && IMAGE_ARGS=(--image "$CUSTOM_IMAGE")
+
 if [ "${INSTALL_SETUP_FULL:-0}" = "1" ]; then
-    podium setup "$APP" ${INSTALL_SETUP_DB:-}
+    podium setup "$APP" ${INSTALL_SETUP_DB:-} "${IMAGE_ARGS[@]}"
 else
-    podium setup "$APP" --no-startup
+    podium setup "$APP" --no-startup "${IMAGE_ARGS[@]}"
     podium up "$APP"
 fi
 
