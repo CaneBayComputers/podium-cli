@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Mastodon"
 INSTALL_CREDENTIALS="Register on first visit — first account becomes admin"
-INSTALL_NOTES="Federated social network. Runs migrations on first startup (~60s). Visit http://mastodon/ to create your account."
+INSTALL_NOTES="Federated social network. Runs migrations on first startup (~60s). Visit http://$PROJECT_NAME/ to create your account."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE mastodon_production;" 2>/dev/null || true

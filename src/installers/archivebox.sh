@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="ArchiveBox"
-INSTALL_NOTES="Visit http://archivebox/ to access the archiving interface. Create a superuser with: docker exec -it archivebox-app archivebox manage createsuperuser"
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to access the archiving interface. Create a superuser with: docker exec -it archivebox-app archivebox manage createsuperuser"
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

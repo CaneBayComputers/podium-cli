@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Kavita"
-INSTALL_NOTES="Visit http://kavita/ to create the admin account on first launch."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Cachet"
-INSTALL_NOTES="Visit http://cachet/ to complete the setup wizard and create your admin account."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to complete the setup wizard and create your admin account."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE cachet;" 2>/dev/null || true

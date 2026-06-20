@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Audiobookshelf"
-INSTALL_NOTES="Visit http://audiobookshelf/ to create the admin account on first launch."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

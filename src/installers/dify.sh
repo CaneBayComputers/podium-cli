@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Dify"
 INSTALL_CREDENTIALS="Set admin password on first visit (uses INIT_PASSWORD=DifyAdmin123)"
-INSTALL_NOTES="AI workflow builder. First startup takes ~60 seconds for DB migrations. Visit http://dify/ to initialize."
+INSTALL_NOTES="AI workflow builder. First startup takes ~60 seconds for DB migrations. Visit http://$PROJECT_NAME/ to initialize."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE dify;" 2>/dev/null || true

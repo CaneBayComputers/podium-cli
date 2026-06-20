@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Typebot"
-INSTALL_NOTES="Conversational form builder. Log in with admin@typebot.local. Viewer is at http://typebot/viewer/."
+INSTALL_NOTES="Conversational form builder. Log in with admin@typebot.local. Viewer is at http://$PROJECT_NAME/viewer/."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE typebot;" 2>/dev/null || true

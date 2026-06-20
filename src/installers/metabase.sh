@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Metabase"
-INSTALL_NOTES="Visit http://metabase/ to complete setup. First startup takes ~60 seconds for JVM initialization."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to complete setup. First startup takes ~60 seconds for JVM initialization."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

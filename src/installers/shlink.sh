@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Shlink"
-INSTALL_NOTES="Shlink is a URL shortener API. Access the REST API at http://shlink/rest/v3/. The API key is printed below. Use Shlink Web Client or the shlink CLI to manage links."
+INSTALL_NOTES="Shlink is a URL shortener API. Access the REST API at http://$PROJECT_NAME/rest/v3/. The API key is printed below. Use Shlink Web Client or the shlink CLI to manage links."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS shlink CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

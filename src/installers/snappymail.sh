@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Snappymail"
-INSTALL_NOTES="Admin panel at http://snappymail/?admin — set the admin password on first visit. Configure IMAP/SMTP servers in the admin panel."
+INSTALL_NOTES="Admin panel at http://$PROJECT_NAME/?admin — set the admin password on first visit. Configure IMAP/SMTP servers in the admin panel."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Firefly III"
-INSTALL_NOTES="Visit http://firefly-iii/ to create the admin account on first launch."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS firefly CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

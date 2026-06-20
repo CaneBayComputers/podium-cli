@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Standard Notes"
-INSTALL_NOTES="Self-hosted encrypted notes server. Connect with the Standard Notes app at http://standard-notes/. Use the Standard Notes desktop/mobile app to register and sync."
+INSTALL_NOTES="Self-hosted encrypted notes server. Connect with the Standard Notes app at http://$PROJECT_NAME/. Use the Standard Notes desktop/mobile app to register and sync."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS standard_notes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

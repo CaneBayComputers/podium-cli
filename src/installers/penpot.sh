@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Penpot"
-INSTALL_NOTES="Open-source design tool. Register at http://penpot/ to create your account. Email verification is disabled."
+INSTALL_NOTES="Open-source design tool. Register at http://$PROJECT_NAME/ to create your account. Email verification is disabled."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE penpot;" 2>/dev/null || true

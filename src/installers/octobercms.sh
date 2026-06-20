@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="October CMS"
-INSTALL_CREDENTIALS="admin / password (backend at http://octobercms/backend)"
+INSTALL_CREDENTIALS="admin / password (backend at http://$PROJECT_NAME/backend)"
 INSTALL_NOTES="First boot copies files and runs migrations (~60-90s). The official image bundles its own MariaDB internally — this is the only image upstream ships and it ignores external DB env, so podium-mariadb is not used here."
 
 write_files() {

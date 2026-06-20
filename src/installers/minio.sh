@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="MinIO"
 INSTALL_CREDENTIALS="minioadmin / minioadmin123"
-INSTALL_NOTES="S3-compatible object storage. API port 9000 is internal; the web console is at http://minio/."
+INSTALL_NOTES="S3-compatible object storage. API port 9000 is internal; the web console is at http://$PROJECT_NAME/."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

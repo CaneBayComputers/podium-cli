@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Graylog"
 INSTALL_CREDENTIALS="admin / admin"
-INSTALL_NOTES="First startup takes ~90 seconds while OpenSearch and Graylog initialize. Visit http://graylog/ after startup."
+INSTALL_NOTES="First startup takes ~90 seconds while OpenSearch and Graylog initialize. Visit http://$PROJECT_NAME/ after startup."
 
 write_files() {
     local password_secret root_password_sha2

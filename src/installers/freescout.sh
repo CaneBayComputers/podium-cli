@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="FreeScout"
 INSTALL_CREDENTIALS="admin@freescout.local / freescout-admin"
-INSTALL_NOTES="FreeScout is a help desk / shared inbox. Visit http://freescout/ to access."
+INSTALL_NOTES="FreeScout is a help desk / shared inbox. Visit http://$PROJECT_NAME/ to access."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS freescout CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

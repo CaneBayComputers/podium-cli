@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Zulip"
-INSTALL_CREDENTIALS="Register at http://zulip/register/ — first user becomes admin"
-INSTALL_NOTES="Open-source team chat. First startup takes ~3 minutes for initialization. Visit http://zulip/ to create your organization."
+INSTALL_CREDENTIALS="Register at http://$PROJECT_NAME/register/ — first user becomes admin"
+INSTALL_NOTES="Open-source team chat. First startup takes ~3 minutes for initialization. Visit http://$PROJECT_NAME/ to create your organization."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE zulip;" 2>/dev/null || true

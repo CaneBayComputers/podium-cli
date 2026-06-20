@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Redash"
-INSTALL_NOTES="Visit http://redash/ to create the admin account on first launch. First startup runs DB migrations — allow ~30 seconds."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch. First startup runs DB migrations — allow ~30 seconds."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE redash;" 2>/dev/null || true

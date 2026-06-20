@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Leantime"
 INSTALL_CREDENTIALS="admin@leantime.io / admin"
-INSTALL_NOTES="Visit http://leantime/ to complete setup wizard on first launch."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to complete setup wizard on first launch."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS leantime;"

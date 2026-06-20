@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Mautic"
-INSTALL_CREDENTIALS="Visit http://mautic/ to complete setup wizard"
+INSTALL_CREDENTIALS="Visit http://$PROJECT_NAME/ to complete setup wizard"
 INSTALL_NOTES="First visit shows the install wizard. Mautic requires a dedicated database user."
 
 pre_install() {

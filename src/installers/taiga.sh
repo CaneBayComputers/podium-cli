@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Taiga"
-INSTALL_NOTES="Open-source project management. Register at http://taiga/ to create your account. First startup takes ~60 seconds."
+INSTALL_NOTES="Open-source project management. Register at http://$PROJECT_NAME/ to create your account. First startup takes ~60 seconds."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE taiga;" 2>/dev/null || true

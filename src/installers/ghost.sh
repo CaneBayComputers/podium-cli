@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Ghost"
-INSTALL_NOTES="Admin panel is at http://ghost/ghost/ — create the owner account on first visit."
+INSTALL_NOTES="Admin panel is at http://$PROJECT_NAME/ghost/ — create the owner account on first visit."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

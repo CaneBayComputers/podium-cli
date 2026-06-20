@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Apache Superset"
 INSTALL_CREDENTIALS="admin / admin"
-INSTALL_NOTES="First startup takes ~2 minutes while Superset runs migrations and builds the UI. Visit http://superset/ when ready."
+INSTALL_NOTES="First startup takes ~2 minutes while Superset runs migrations and builds the UI. Visit http://$PROJECT_NAME/ when ready."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE superset;" 2>/dev/null || true

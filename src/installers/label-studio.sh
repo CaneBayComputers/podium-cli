@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Label Studio"
-INSTALL_NOTES="Visit http://label-studio/ to create your account on first launch."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create your account on first launch."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

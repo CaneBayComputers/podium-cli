@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="YOURLS"
 INSTALL_CREDENTIALS="admin / admin123"
-INSTALL_NOTES="Visit http://yourls/admin/ to manage your short links."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/admin/ to manage your short links."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS yourls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

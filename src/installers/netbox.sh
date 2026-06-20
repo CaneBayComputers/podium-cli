@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="NetBox"
 INSTALL_CREDENTIALS="admin / admin"
-INSTALL_NOTES="First startup takes ~60 seconds for database migrations. Visit http://netbox/ to access."
+INSTALL_NOTES="First startup takes ~60 seconds for database migrations. Visit http://$PROJECT_NAME/ to access."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE netbox;" 2>/dev/null || true

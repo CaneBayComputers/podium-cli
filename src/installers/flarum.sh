@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Flarum"
 INSTALL_CREDENTIALS="admin / AdminPassword123!"
-INSTALL_NOTES="First startup takes a few minutes while Flarum installs. Visit http://flarum/ once it's ready."
+INSTALL_NOTES="First startup takes a few minutes while Flarum installs. Visit http://$PROJECT_NAME/ once it's ready."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS flarum CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

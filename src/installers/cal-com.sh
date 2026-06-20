@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Cal.com"
-INSTALL_NOTES="Open-source scheduling platform. First startup takes ~60 seconds for migrations. Visit http://cal-com/ to create your account."
+INSTALL_NOTES="Open-source scheduling platform. First startup takes ~60 seconds for migrations. Visit http://$PROJECT_NAME/ to create your account."
 
 pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE calcom;" 2>/dev/null || true

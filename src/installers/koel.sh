@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Koel"
 INSTALL_CREDENTIALS="admin@example.com / KoelAdmin123"
-INSTALL_NOTES="Place your music files in the koel-music volume then scan from the admin panel at http://koel/."
+INSTALL_NOTES="Place your music files in the koel-music volume then scan from the admin panel at http://$PROJECT_NAME/."
 
 # Shared between pre_install and write_files
 KOEL_APP_KEY="base64:$(openssl rand -base64 32)"

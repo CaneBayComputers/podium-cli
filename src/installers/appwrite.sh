@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Appwrite"
-INSTALL_NOTES="Visit http://appwrite/ to create your first admin account. Background workers are not included — use for API/SDK development and testing."
+INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create your first admin account. Background workers are not included — use for API/SDK development and testing."
 
 pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS appwrite CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
