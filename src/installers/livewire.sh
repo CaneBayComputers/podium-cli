@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Laravel Livewire"
-INSTALL_CREDENTIALS="register at http://livewire/register (or seeded user test@example.com / password)"
+INSTALL_CREDENTIALS="register at http://$PROJECT_NAME/register (or seeded user test@example.com / password)"
 INSTALL_NOTES="Official laravel/livewire-starter-kit: Livewire 4 + Flux UI + Fortify auth (login, register, 2FA, passkeys), settings, and a dashboard. Add components with: podium artisan livewire make:livewire <Name>"
 
 # Source-based app: run the full Laravel setup pipeline (composer install, Vite build,
