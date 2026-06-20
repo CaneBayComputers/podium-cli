@@ -112,7 +112,7 @@ When writing a custom compose: give the entry-point service a static IP in `.100
 
 ## cbc Base Docker Images
 
-Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Source repos live under `CaneBayComputers/` on GitHub.
+Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Source repos live under `CaneBayComputers/` on GitHub. Override the per-framework default with `--image <ref>` on `podium new`, `podium clone`, or `podium setup` (for an adapted complex compose it overrides the web-facing service's image).
 
 ### `canebaycomputers/cbc:nginx-node` — Node.js projects
 - **GitHub**: `CaneBayComputers/cbc-docker-node-nginx`

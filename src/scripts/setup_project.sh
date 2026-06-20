@@ -40,6 +40,7 @@ usage() {
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
+    echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
     echo-white "  --no-migration          Skip database migrations (they run by default)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
@@ -59,6 +60,7 @@ OVERWRITE_DOCKER_COMPOSE=""
 SKIP_STORAGE_SYMLINK=false
 NO_STARTUP=0
 DB_NAME_OVERRIDE=""
+CUSTOM_IMAGE=""
 OVERWRITE_ENV=0
 RUN_MIGRATIONS=1
 MIGRATE_SAFE=0
@@ -102,6 +104,14 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --db-name requires a database name"
+            fi
+            ;;
+        --image)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                CUSTOM_IMAGE="$2"
+                shift 2
+            else
+                error "Error: --image requires a Docker image reference (e.g. canebaycomputers/cbc:nginx-php8)"
             fi
             ;;
         --overwrite-env)
@@ -374,10 +384,11 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ] && [ -f "$ORIGINAL_COMPOSE_TMPFILE" 
     # Complex project: adapt the original docker-compose for Podium instead of using a cbc template.
     # Removes bundled DB/cache services, wires remaining services to podium-cli_vpc, assigns static IP.
     echo-cyan "Complex docker-compose detected — adapting for Podium environment..."
-    ADAPT_SUMMARY=$(python3 - "$IP_ADDRESS" "$PROJECT_NAME" "$D_CLASS" "$ORIGINAL_COMPOSE_TMPFILE" docker-compose.yaml 2>/dev/null << 'PYEOF'
+    ADAPT_SUMMARY=$(python3 - "$IP_ADDRESS" "$PROJECT_NAME" "$D_CLASS" "$ORIGINAL_COMPOSE_TMPFILE" docker-compose.yaml "$CUSTOM_IMAGE" 2>/dev/null << 'PYEOF'
 import sys, yaml, re, json
 
 ip, project, d_class, src, dst = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+custom_image = sys.argv[6] if len(sys.argv) > 6 else ''
 
 SHARED_BY_NAME = [
     (re.compile(r'^(postgres|postgresql|db|database|pg)$', re.I), 'podium-postgres'),
@@ -461,6 +472,9 @@ for name, svc in services.items():
     if name == web_name:
         svc['container_name'] = project
         svc['networks'] = {'default': {'ipv4_address': ip}}
+        # User-supplied --image overrides the upstream web service image.
+        if custom_image:
+            svc['image'] = custom_image
     else:
         svc['networks'] = ['default']
 
@@ -493,6 +507,7 @@ PYEOF
             REMOVED=$(echo "$ADAPT_SUMMARY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(', '.join(d.get('removed',[])))" 2>/dev/null || echo "")
             echo-green "  Web-facing service: $WEB_SVC (IP: $IP_ADDRESS)"
             [ -n "$REMOVED" ] && echo-cyan "  Replaced with Podium shared services: $REMOVED"
+            [ -n "$CUSTOM_IMAGE" ] && echo-cyan "  Using custom image: $CUSTOM_IMAGE"
         fi
         rm -f "$ORIGINAL_COMPOSE_TMPFILE"
         # Note: image type only affects this compose adaptation. Framework steps
@@ -531,6 +546,13 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" != "1" ]; then
         podium-sed "s|PYTHON_START_COMMAND|$(framework_python_start_command)|g" docker-compose.yaml
     elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
         podium-sed "s|NODE_START_COMMAND|$(framework_node_start_command)|g" docker-compose.yaml
+    fi
+
+    # Override the framework's default cbc base image when the user supplied --image.
+    # The template has a single server-service image line; replace it in place.
+    if [ -n "$CUSTOM_IMAGE" ]; then
+        podium-sed "s|^\([[:space:]]*image:\)[[:space:]].*|\1 $CUSTOM_IMAGE|" docker-compose.yaml
+        echo-cyan "Using custom image: $CUSTOM_IMAGE"
     fi
 fi
 

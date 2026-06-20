@@ -561,6 +561,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--database <type>` | Database type | `auto` (default — per-framework), `mysql`, `postgres`, `mongodb` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--db-name <name>` | Database name | Default: project name with dashes converted to underscores |
+| `--image <ref>` | Override the project's Docker image | Default: the framework's cbc base image (`canebaycomputers/cbc:nginx-php8` / `nginx-python3` / `nginx-node`) |
 | `--no-migration` | Skip database migrations | Migrations run by default |
 | `--github` | Create GitHub repository in user account | Requires GitHub CLI authentication |
 | `--github-org <org>` | Create GitHub repository in organization | Requires GitHub CLI authentication |
@@ -580,6 +581,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--overwrite-env` | Regenerate `.env` even if the cloned repo already includes one (default: keep the existing `.env`) |
 | `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
 | `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github-org <org>` | For `new-repo` mode: create the repository in this organization |
 | `--public` | Make the new GitHub repository public (default: private) |
@@ -595,6 +597,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
 | `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
+| `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--overwrite-env` | Regenerate `.env` even if one already exists (default: keep the existing `.env`) |
 | `--no-migration` | Skip database migrations (they run by default) |
 | `--no-startup` | Register and adapt project without starting the container |

@@ -68,6 +68,7 @@ usage() {
     echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --no-migration          Skip database migrations (they run by default)"
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
@@ -102,6 +103,7 @@ GITHUB_VISIBILITY=""
 SKIP_STORAGE_SYMLINK=0
 SKIP_INTERACTIVE=0
 DB_NAME_OVERRIDE=""
+CUSTOM_IMAGE=""
 # Greenfield projects: Podium owns the .env, so always (re)write it. Some
 # scaffolders (e.g. Laravel's composer create-project) drop a stock .env that
 # must be replaced with Podium's configured one.
@@ -125,6 +127,14 @@ while [[ $# -gt 0 ]]; do
         --db-name)
             DB_NAME_OVERRIDE="$2"
             shift 2
+            ;;
+        --image)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                CUSTOM_IMAGE="$2"
+                shift 2
+            else
+                error "Error: --image requires a Docker image reference (e.g. canebaycomputers/cbc:nginx-php8)"
+            fi
             ;;
         --overwrite-env)
             OVERWRITE_ENV=1
@@ -640,6 +650,9 @@ if [[ "$DEBUG" == "1" ]]; then
 fi
 if [[ -n "$DB_NAME_OVERRIDE" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --db-name $DB_NAME_OVERRIDE"
+fi
+if [[ -n "$CUSTOM_IMAGE" ]]; then
+    SETUP_OPTIONS="$SETUP_OPTIONS --image $CUSTOM_IMAGE"
 fi
 if [[ "$OVERWRITE_ENV" == "1" ]]; then
     SETUP_OPTIONS="$SETUP_OPTIONS --overwrite-env"

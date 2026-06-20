@@ -67,6 +67,7 @@ usage() {
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
     echo-white "  --framework FRAMEWORK        Force framework detection (laravel, wordpress, php, fastapi, django, express, nestjs, fastify, node)"
     echo-white "  --no-startup                 Clone and register project but do not start the container"
+    echo-white "  --image REF                  Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
@@ -157,6 +158,14 @@ while [[ $# -gt 0 ]]; do
                 shift 2
             else
                 error "Error: --framework requires a framework name"
+            fi
+            ;;
+        --image)
+            if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then
+                CUSTOM_IMAGE="$2"
+                shift 2
+            else
+                error "Error: --image requires a Docker image reference (e.g. canebaycomputers/cbc:nginx-php8)"
             fi
             ;;
         --fork)
@@ -436,6 +445,9 @@ if [[ "$NO_STARTUP" == "1" ]]; then
 fi
 if [[ -n "$FORCED_FRAMEWORK" ]]; then
     SETUP_ARGS+=("--framework" "$FORCED_FRAMEWORK")
+fi
+if [[ -n "$CUSTOM_IMAGE" ]]; then
+    SETUP_ARGS+=("--image" "$CUSTOM_IMAGE")
 fi
 if [[ -n "$DB_NAME_OVERRIDE" ]]; then
     SETUP_ARGS+=("--db-name" "$DB_NAME_OVERRIDE")
