@@ -26,24 +26,26 @@ usage() {
     echo-white "  project_name     Name of specific project to check (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --running        Only show projects whose container is running"
+    echo-white "  --all            Show every project (default: only active/running projects)"
+    echo-white "  --running        Only show projects whose container is running (the default)"
     echo-white "  --json-output    Output JSON responses (for programmatic use)"
     echo-white "  --debug          Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --no-colors      Disable colored output"
     echo-white "  --help           Show this help message"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0                    # Show all projects"
-    echo-white "  $0 --running          # Show only running projects"
-    echo-white "  $0 my-project         # Show specific project"
-    echo-white "  $0 --json-output      # JSON output for all projects"
+    echo-white "  $0                    # Show only active (running) projects"
+    echo-white "  $0 --all              # Show every project"
+    echo-white "  $0 my-project         # Show specific project (shown even if stopped)"
+    echo-white "  $0 --json-output      # JSON output for active projects"
 
     error "usage" 1
 }
 
 # Initialize variables
 PROJECT_NAME=""
-RUNNING_ONLY=0
+# Project listing defaults to active (running) projects only; --all shows every project.
+RUNNING_ONLY=1
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 NO_COLOR="${NO_COLOR:-}"
 
@@ -53,6 +55,10 @@ ORIGINAL_ARGS="$*"
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
+        --all)
+            RUNNING_ONLY=0
+            shift
+            ;;
         --running)
             RUNNING_ONLY=1
             shift
@@ -509,12 +515,10 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
         cd "$PROJECTS_DIR_PATH"
         
         if ! [ -z "$PROJECT_NAME" ]; then
-            # Single project requested
+            # Single project requested — always shown, even if stopped.
             if [ -d "$PROJECT_NAME" ]; then
-                if [ "$RUNNING_ONLY" != "1" ] || service_running "$PROJECT_NAME"; then
-                    PROJECT_JSON=$(get_project_status "$PROJECT_NAME")
-                    JSON_DATA=$(echo "$JSON_DATA" | jq --argjson project "$PROJECT_JSON" '.projects += [$project]')
-                fi
+                PROJECT_JSON=$(get_project_status "$PROJECT_NAME")
+                JSON_DATA=$(echo "$JSON_DATA" | jq --argjson project "$PROJECT_JSON" '.projects += [$project]')
             fi
         else
             # All projects (optionally only running ones)
@@ -541,66 +545,6 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 fi
 
 # Traditional text output
-echo-cyan "SHARED SERVICES STATUS:"
-echo-return
-
-# Check MariaDB
-echo-white -n "MariaDB: "
-if service_running "$MARIADB_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check phpMyAdmin
-echo-white -n "phpMyAdmin: "
-if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check Redis
-echo-white -n "Redis: "
-if service_running "$REDIS_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check Memcached
-echo-white -n "Memcached: "
-if service_running "$MEMCACHED_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check PostgreSQL
-echo-white -n "PostgreSQL: "
-if service_running "$POSTGRES_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check MongoDB
-echo-white -n "MongoDB: "
-if service_running "$MONGO_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-# Check MailHog
-echo-white -n "MailHog: "
-if service_running "$MAILHOG_CONTAINER_NAME"; then
-    echo-green "RUNNING"
-else
-    echo-red "STOPPED"
-fi
-
-echo-return
 echo-cyan "SHARED SERVICES CONNECTIVITY:"
 echo-return
 
@@ -655,16 +599,6 @@ fi
 
 echo-return
 divider
-echo-cyan "SHARED SERVICES ACCESS:"
-echo-return
-if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
-    echo-white "phpMyAdmin UI: http://$PHPMYADMIN_CONTAINER_NAME/"
-fi
-if service_running "$MAILHOG_CONTAINER_NAME"; then
-    echo-white "MailHog UI: http://$MAILHOG_CONTAINER_NAME:8025/"
-fi
-
-echo-return
 echo-cyan "SHARED SERVICE HTTP CHECKS:"
 echo-return
 
@@ -688,15 +622,9 @@ divider
 cd "$PROJECTS_DIR_PATH"
 
 if ! [ -z "$PROJECT_NAME" ]; then
-    if [ "$RUNNING_ONLY" = "1" ] && ! service_running "$PROJECT_NAME"; then
-        echo-cyan "PROJECTS STATUS:"
-        echo-return
-        echo-yellow "$PROJECT_NAME is not running."
-        divider
-    else
-        if project_status $PROJECT_NAME; then true; fi
-        divider
-    fi
+    # A specifically named project is always shown, even if stopped.
+    if project_status $PROJECT_NAME; then true; fi
+    divider
 else
     # Count project directories (only running ones when --running is set)
     PROJECT_COUNT=0

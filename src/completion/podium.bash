@@ -81,7 +81,7 @@ up up-all update update-installer wp"
             COMPREPLY=( $(compgen -W "--json-output --no-colors --debug" -- "$cur") ) ;;
         status)
             if [[ "$cur" == -* ]]; then
-                COMPREPLY=( $(compgen -W "--running --json-output --no-colors --debug" -- "$cur") )
+                COMPREPLY=( $(compgen -W "--all --running --json-output --no-colors --debug" -- "$cur") )
             else
                 COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
             fi ;;

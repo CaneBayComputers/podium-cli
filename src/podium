@@ -107,7 +107,7 @@ show_help() {
     echo "  podium up-all             - Start every project"
     echo "  podium down <project>     - Stop a project (shared services keep running)"
     echo "  podium down-all           - Stop every project (shared services keep running)"
-    echo "  podium status [project] [--running] - Show project status (--running: only running projects)"
+    echo "  podium status [project] [--all] - Show status of active projects (--all: include stopped projects)"
     echo "  podium new <framework> <name> [--database <type>] [--version X] - Create a new project"
     echo "  podium create \"<idea>\"    - Create a project from a plain English description (AI)"
     echo "  podium resume <project>   - Resume AI session for a project"

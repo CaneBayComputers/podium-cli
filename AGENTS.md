@@ -30,7 +30,7 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium down <name>` / `podium down-all` | Stop one project, or every project. Shared services keep running — use `podium stop-services` for those. |
 | `podium setup <name>` | Adapt a project directory in `~/podium-projects/`. |
 | `podium remove <name>` | Tear down a project. DB is **preserved** by default — pass `--force-db-delete` to drop it. |
-| `podium status [name] [--running]` | Show running state. `--running` lists only projects whose container is up. |
+| `podium status [name] [--all]` | Show running state. Lists only active (running) projects by default; `--all` includes stopped projects. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
 
 **No interactive prompts.** Every command (except `podium configure`, the one-time user wizard) fails with a clear "required argument" error rather than prompting — so nothing ever blocks an agent. Always pass explicit arguments.

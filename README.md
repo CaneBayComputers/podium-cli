@@ -442,7 +442,7 @@ podium down-all            # Stop every project (services keep running)
 | `podium up-all` | Start every project |
 | `podium down <project>` | Stop a project (shared services stay up — use `podium stop-services`) |
 | `podium down-all` | Stop every project (shared services stay up) |
-| `podium status [project] [--running]` | Show project status (`--running` lists only running projects) |
+| `podium status [project] [--all]` | Show status of active (running) projects; `--all` includes stopped projects |
 | `podium new <framework> <name> [options]` | Create a new project (framework + name required; DB auto-selected, override with `--database`) |
 | `podium create "<idea>"` | Create a project from a plain-English idea, then start an interactive AI session in the project dir |
 | `podium resume <project>` | Resume the last AI session for a project |
@@ -677,8 +677,8 @@ if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep 
     echo "Database is ready"
 fi
 
-# Batch project operations
-for project in $(podium status --json-output | jq -r '.projects[].name'); do
+# Batch project operations (--all so stopped projects are included)
+for project in $(podium status --all --json-output | jq -r '.projects[].name'); do
     podium up $project --json-output
 done
 ```
