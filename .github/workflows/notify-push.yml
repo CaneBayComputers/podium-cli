@@ -1,0 +1,27 @@
+name: notify-push
+
+on: push
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify ntfy on push
+        env:
+          NTFY_URL: https://notify.canebaycomputers.com/podium-cli-push
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF_NAME}"
+          ACTOR="${GITHUB_ACTOR}"
+          COUNT="$(jq '.commits | length' "$GITHUB_EVENT_PATH")"
+          HEADMSG="$(jq -r '.head_commit.message // "(no commits — branch created/deleted)"' "$GITHUB_EVENT_PATH" | head -1)"
+          COMPARE="$(jq -r '.compare // ""' "$GITHUB_EVENT_PATH")"
+          BODY="$ACTOR pushed $COUNT commit(s) to $BRANCH
+          ↳ $HEADMSG"
+          curl -sf -m 15 \
+            -H "Title: Push to $GITHUB_REPOSITORY" \
+            -H "Tags: bell" \
+            -H "Priority: default" \
+            -H "Click: $COMPARE" \
+            -d "$BODY" \
+            "$NTFY_URL"
