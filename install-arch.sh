@@ -113,6 +113,16 @@ echo -e "${CYAN}Installing system dependencies...${NC}"
 ###############################
 # Update package databases
 ###############################
+# Minimal Arch environments (cloud images, containers, fresh chroots) can ship
+# without an initialized pacman keyring. Every install then dies with
+# "required key missing from keyring" / "keyring is not writable". A normal
+# desktop install already has this, so the probe skips it.
+if ! sudo pacman-key --list-keys >/dev/null 2>&1; then
+    echo -e "${BLUE}Initializing pacman keyring...${NC}"
+    sudo pacman-key --init
+    sudo pacman-key --populate archlinux
+fi
+
 echo -e "${BLUE}Updating package databases...${NC}"
 sudo pacman -Syu --noconfirm
 
@@ -120,9 +130,13 @@ sudo pacman -Syu --noconfirm
 # Install core tools
 ###############################
 echo -e "${BLUE}Installing base packages...${NC}"
+# `docker-compose` is a SEPARATE package on Arch — it ships the Compose v2 CLI
+# plugin that provides `docker compose`. Podium drives every project through
+# `docker compose`, so without it `podium start-services` dies with
+# "unknown shorthand flag: 'd' in -d".
 sudo pacman -S --noconfirm --needed \
     git curl jq unzip \
-    docker \
+    docker docker-compose \
     trash-cli \
     imagemagick librsvg
 
@@ -179,12 +193,28 @@ fi
 ###############################
 echo -e "${BLUE}Configuring Docker...${NC}"
 
+# A full `pacman -Syu` can replace the running kernel. Its modules directory is
+# swapped out from under it, so netfilter modules can no longer be loaded and
+# dockerd dies with an opaque "iptables: Could not fetch rule set generation id:
+# Invalid argument". Nothing fixes that but a reboot — detect it and say so
+# plainly instead of failing on a systemd error the user has to go dig out.
+KERNEL_REBOOT_REQUIRED=0
+if [ ! -d "/usr/lib/modules/$(uname -r)" ]; then
+    KERNEL_REBOOT_REQUIRED=1
+    echo
+    echo -e "${YELLOW}The system upgrade replaced the running kernel ($(uname -r)).${NC}"
+    echo -e "${YELLOW}Docker cannot start until this machine reboots.${NC}"
+    echo
+fi
+
 # Enable and start Docker service
 if ! systemctl is-enabled docker.service >/dev/null 2>&1; then
     sudo systemctl enable docker.service
 fi
 
-if ! systemctl is-active docker.service >/dev/null 2>&1; then
+if [ "$KERNEL_REBOOT_REQUIRED" = "1" ]; then
+    echo -e "${CYAN}Skipping Docker startup until after the reboot.${NC}"
+elif ! systemctl is-active docker.service >/dev/null 2>&1; then
     sudo systemctl start docker.service
 fi
 
@@ -287,6 +317,9 @@ if command -v podium >/dev/null 2>&1; then
     echo -e "${GREEN}✓ Podium CLI installed successfully${NC}"
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
+    if [ "${KERNEL_REBOOT_REQUIRED:-0}" = "1" ]; then
+        echo -e "  0. ${YELLOW}REBOOT NOW${NC} — the system upgrade replaced the running kernel, so Docker cannot start until you do (${BLUE}sudo reboot${NC})"
+    fi
     echo -e "  1. ${YELLOW}Log out and back in${NC} so Docker group permissions take effect — SSH users: just reconnect; desktop users: reboot if a re-login does not work"
     echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
     echo -e "  3. Create your first project:"
