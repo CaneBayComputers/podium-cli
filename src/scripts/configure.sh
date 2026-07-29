@@ -344,7 +344,9 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
     echo-return
     echo-yellow -ne "Would you like to run 'aws configure' now? (y/N): "
     echo-white -ne
-    read CONFIG_AWS
+    # `|| true`: at EOF (non-interactive run, stdin from /dev/null) read returns
+    # non-zero, which under `set -e` would abort configure half-configured.
+    read CONFIG_AWS || CONFIG_AWS=""
     echo-return
     if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
         # Only auto-detect closest region and seed config if no config file exists yet
@@ -383,7 +385,7 @@ if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
             echo-yellow "AWS credentials test failed."; echo-white
             echo-yellow -ne "Would you like to run 'aws configure' again? (y/N): "
             echo-white -ne
-            read RETRY_AWS
+            read RETRY_AWS || RETRY_AWS=""
             echo-return
             if [[ ! "$RETRY_AWS" =~ ^[Yy]$ ]]; then
                 echo-cyan "Continuing without verified AWS credentials."; echo-white
