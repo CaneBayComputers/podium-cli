@@ -546,10 +546,10 @@ cd /path/to/project
 podium ai "Build a unique homepage hero section."
 ```
 
-By default `podium ai` launches an **interactive** session — the agent starts up, receives the prompt as its first message, and stays open so you can continue the conversation. Add `--one-off` to run a single non-interactive prompt and exit (useful for automation and scripted pipelines):
+By default `podium ai` sends a **one-off** prompt — the agent receives it, does the work, and exits. Durable project context lives in the project's `AGENTS.md` (Podium writes it on creation), so each prompt can stand alone. Add `--interactive` if you want a persistent session instead:
 
 ```bash
-podium ai --one-off "Add a health-check endpoint at /ping"
+podium ai --interactive "Add a health-check endpoint at /ping"
 ```
 
 `podium ai` / `podium create`:

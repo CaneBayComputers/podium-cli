@@ -120,7 +120,7 @@ show_help() {
     echo
     echo-white "SYSTEM MANAGEMENT:"
     echo "  podium configure          - Configure Podium environment"
-    echo "  podium ai \"<prompt>\"      - Start AI agent session with initial prompt"
+    echo "  podium ai \"<prompt>\"      - Send a one-off prompt to the AI agent (--interactive for a session)"
     echo "  podium ai-set             - Configure AI agent and model"
     echo "  podium update [--full]    - Update Podium CLI (--full also re-pulls Docker images)"
     echo "  podium start-services     - Start shared services"

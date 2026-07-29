@@ -20,11 +20,12 @@ usage() {
     echo-white "Describe a project in plain English and your configured AI agent will"
     echo-white "create a working Podium-managed project for you."
     echo-white ""
-    echo-white "The AI creates the project non-interactively, then drops you into an"
-    echo-white "interactive session inside the new project directory."
+    echo-white "The AI creates the project, writes an AGENTS.md handoff file into it,"
+    echo-white "then cd's into the new project directory and hands off to your agent"
+    echo-white "with a prompt to read that file."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --one-off       Skip the interactive follow-up (for automation)"
+    echo-white "  --one-off       Stop after creation; skip the handoff (for automation)"
     echo-white "  -f, --file PATH Read the project idea from a file instead of an argument"
     echo-white ""
     echo-white "If neither a positional idea nor --file is given, podium create reads"
@@ -283,11 +284,19 @@ NEW_PROJECT=$(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d -newer "
 rm -f "$TIMESTAMP_FILE"
 
 if [[ -n "$NEW_PROJECT" ]] && [[ -d "$PROJECTS_DIR_PATH/$NEW_PROJECT" ]]; then
+    # Write the durable handoff context into the new project, then cd into it
+    # and hand off with a prompt whose only job is to point at that file.
+    write_project_agents_md "$NEW_PROJECT" "$PROJECTS_DIR_PATH/$NEW_PROJECT"
+
     echo-return
-    echo-cyan "Project ready. Starting interactive session in $NEW_PROJECT..."
+    echo-green "Project ready: $NEW_PROJECT"
+    echo-cyan "Wrote AGENTS.md handoff context."
+    echo-white "Local URL: http://$NEW_PROJECT/"
+    echo-white "Project directory: $PROJECTS_DIR_PATH/$NEW_PROJECT"
     echo-return
+
     cd "$PROJECTS_DIR_PATH/$NEW_PROJECT"
-    exec "$SCRIPT_DIR/ai.sh" "This project is managed by the Podium CLI — a Docker-based local development environment manager. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works (shared services, hostname routing, runtime images, command patterns); (2) run 'podium help' for the full command list. Then read this project's README.md. The project is running at http://$NEW_PROJECT/. You are the developer."
+    exec "$SCRIPT_DIR/ai.sh" "Read AGENTS.md in this directory first — it describes this Podium-managed project, its local URL, its database, and the commands to use. Then read README.md if present. The project is running at http://$NEW_PROJECT/. You are the developer on it."
 else
     echo-yellow "Could not detect the project directory. Navigate to your project and run 'podium ai' to continue."
 fi

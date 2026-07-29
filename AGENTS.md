@@ -35,7 +35,9 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 
 **No interactive prompts.** Every command (except `podium configure`, the one-time user wizard) fails with a clear "required argument" error rather than prompting — so nothing ever blocks an agent. Always pass explicit arguments.
 
-`podium create`, `podium new`, `podium clone`, and `podium install` hand off to an interactive AI session inside the new project once setup completes. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip.
+`podium create`, `podium new`, `podium clone`, and `podium install` write an `AGENTS.md` handoff file into the new project, then `cd` into it and send the AI agent a one-off prompt telling it to read that file. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip the handoff entirely.
+
+`podium ai "<prompt>"` is a one-off prompt by default — durable project context lives in the project's `AGENTS.md`, not in a long-lived session. Pass `--interactive` for a persistent session.
 
 For automation, prefer `podium exec` / `podium exec-root` over interactive variants (`podium bash`, `podium tinker`, `podium exec-tty*`) — those allocate a TTY and aren't agent-friendly. `podium exec` accepts either separate arguments (`podium exec python3 manage.py migrate`) or a single quoted string (`podium exec "python3 manage.py migrate"`).
 
