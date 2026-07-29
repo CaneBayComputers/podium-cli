@@ -216,52 +216,56 @@ echo-return; echo-cyan 'Setting up Git ...'; echo-white
 
 
 
-# Configure Git (use GUI-provided values or prompt)
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-	if [[ -n "$GIT_NAME" ]]; then
+# Configure Git. An explicit --git-name/--git-email wins in EVERY mode; only
+# fall back to prompting when the flag wasn't given, git doesn't already know
+# the value, and we're interactive. (These flags used to be honored only under
+# --json-output, so they silently did nothing on a normal run.)
+if [[ -n "$GIT_NAME" ]]; then
+
+	git config --global user.name "$GIT_NAME"
+
+	echo-cyan "Git name set to: $GIT_NAME"
+
+elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.name > /dev/null 2>&1; then
+
+	echo-yellow -ne 'Enter your full name for Git commits: '
+
+	echo-white -ne
+
+	read GIT_NAME
+
+	if ! [ -z "${GIT_NAME}" ]; then
+
 		git config --global user.name "$GIT_NAME"
-		echo-cyan "Git name set to: $GIT_NAME"
+
 	fi
-	if [[ -n "$GIT_EMAIL" ]]; then
+
+	echo-return
+
+fi
+
+if [[ -n "$GIT_EMAIL" ]]; then
+
+	git config --global user.email "$GIT_EMAIL"
+
+	echo-cyan "Git email set to: $GIT_EMAIL"
+
+elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.email > /dev/null 2>&1; then
+
+	echo-yellow -ne 'Enter your email address for Git commits: '
+
+	echo-white -ne
+
+	read GIT_EMAIL
+
+	if ! [ -z "${GIT_EMAIL}" ]; then
+
 		git config --global user.email "$GIT_EMAIL"
-		echo-cyan "Git email set to: $GIT_EMAIL"
-	fi
-else
-	if ! git config user.name > /dev/null 2>&1; then
-
-		echo-yellow -ne 'Enter your full name for Git commits: '
-
-		echo-white -ne
-
-		read GIT_NAME
-
-		if ! [ -z "${GIT_NAME}" ]; then
-
-			git config --global user.name "$GIT_NAME"
-
-		fi
-
-		echo-return
 
 	fi
 
-	if ! git config user.email > /dev/null 2>&1; then
+	echo-return
 
-		echo-yellow -ne 'Enter your email address for Git commits: '
-
-		echo-white -ne
-
-		read GIT_EMAIL
-
-		if ! [ -z "${GIT_EMAIL}" ]; then
-
-			git config --global user.email $GIT_EMAIL
-
-		fi
-
-		echo-return
-
-	fi
 fi
 
 if [[ "$JSON_OUTPUT" != "1" ]]; then
