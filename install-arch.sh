@@ -113,6 +113,16 @@ echo -e "${CYAN}Installing system dependencies...${NC}"
 ###############################
 # Update package databases
 ###############################
+# Minimal Arch environments (cloud images, containers, fresh chroots) can ship
+# without an initialized pacman keyring. Every install then dies with
+# "required key missing from keyring" / "keyring is not writable". A normal
+# desktop install already has this, so the probe skips it.
+if ! sudo pacman-key --list-keys >/dev/null 2>&1; then
+    echo -e "${BLUE}Initializing pacman keyring...${NC}"
+    sudo pacman-key --init
+    sudo pacman-key --populate archlinux
+fi
+
 echo -e "${BLUE}Updating package databases...${NC}"
 sudo pacman -Syu --noconfirm
 
