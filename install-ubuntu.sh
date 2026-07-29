@@ -104,9 +104,15 @@ else
         exit 1
     fi
 fi
-( while true; do sudo -n -v 2>/dev/null; sleep 50; done ) &
+# `|| true` matters: set -e is inherited by this subshell, and `sudo -n -v`
+# fails wherever a password-requiring sudoers rule coexists with NOPASSWD.
+# Without it the keepalive dies instantly and the EXIT trap below kills a
+# dead PID.
+( while true; do sudo -n -v 2>/dev/null || true; sleep 50; done ) &
 SUDO_KEEPALIVE_PID=$!
-trap "kill \$SUDO_KEEPALIVE_PID 2>/dev/null; exit" INT TERM EXIT
+# Preserve the real exit status — a bare `exit` here would return the status
+# of `kill`, reporting failure after a fully successful install.
+trap 'rc=$?; kill $SUDO_KEEPALIVE_PID 2>/dev/null || true; exit $rc' INT TERM EXIT
 
 echo -e "${CYAN}Installing system dependencies...${NC}"
 
