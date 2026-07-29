@@ -157,11 +157,18 @@ fi
 echo-return
 echo-cyan "Installing Podium command globally..."
 echo-white "Creating 'podium' command accessible from anywhere on your system."
-echo-white "You'll be prompted for your password to install to /usr/local/bin"
 echo-return
 
-if ! sudo -v; then
-	error "No sudo privileges. Root access required!"
+# Probe for passwordless sudo before prompting. `sudo -v` authenticates against
+# every matching sudoers rule, so on hosts where NOPASSWD coexists with a
+# password-requiring rule (cloud images, CI runners) it demands a password —
+# and fails outright without a TTY — even though every sudo call below succeeds.
+if ! sudo -n true 2>/dev/null; then
+	echo-white "You'll be prompted for your password to install to /usr/local/bin"
+	echo-return
+	if ! sudo -v; then
+		error "No sudo privileges. Root access required!"
+	fi
 fi
 
 # Remove existing symlink if it exists
