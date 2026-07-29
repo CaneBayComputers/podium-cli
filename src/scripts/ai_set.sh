@@ -102,7 +102,11 @@ if [[ -n "$NEW_API_KEY" ]]; then
 fi
 
 NONINTERACTIVE=0
-if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" ]]; then
+# No TTY on stdin means nobody can answer a prompt — reading would hit EOF and
+# either abort under `set -e` or spin the selection loop forever. Treat it as
+# non-interactive so scripted runs (and `podium configure < /dev/null`) keep the
+# existing configuration instead of hanging or dying.
+if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || ! -t 0 ]]; then
     NONINTERACTIVE=1
 fi
 
