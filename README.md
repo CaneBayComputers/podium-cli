@@ -6,7 +6,7 @@ Type `podium create "A timeclock for employees in Django"` and an AI agent scaff
 
 **Built to save AI tokens.** Framework scaffolding, container networking, shared services, secret generation, and 100+ OSS app installs are all pre-baked into Podium. Your agent doesn't burn tokens rediscovering how to wire nginx + php-fpm, what env vars Mastodon needs, or how to generate VAPID keys every session. It skips the platform plumbing and goes straight to the app you actually want built — faster results, cheaper bills, fewer "ugh, why isn't this working" loops.
 
-Podium supports Laravel, FastAPI, Django, WordPress, Express, NestJS, Fastify, and plain Node.js, plus 100+ curated OSS app installers. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
+Podium supports Laravel, FastAPI, Flask, Django, WordPress, Express, NestJS, Fastify, and plain Node.js, plus 100+ curated OSS app installers. Every project shares MariaDB, PostgreSQL, Redis, and other services automatically — a Laravel backend and a FastAPI service can talk to the same database on day one with no extra configuration.
 
 Podium runs on Linux and Mac. It is open source. Stop configuring. Start building.
 
@@ -169,6 +169,7 @@ The framework comes first, then the project name: `podium new <framework> <name>
 podium new laravel my-laravel-app          # Laravel (MySQL auto)
 podium new wordpress my-wp-site             # WordPress (MySQL)
 podium new fastapi my-api                   # FastAPI (PostgreSQL auto)
+podium new flask my-flask-app               # Flask (PostgreSQL auto)
 podium new django my-django-app            # Django (PostgreSQL auto)
 podium new python my-script                 # Plain Python
 podium new express my-express-app           # Express (MySQL auto)
@@ -571,7 +572,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 
 ### New Project Options
 
-`podium new <framework> <name>` — framework and name are **required positional arguments**. Framework is one of: `laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`.
+`podium new <framework> <name>` — framework and name are **required positional arguments**. Framework is one of: `laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`.
 
 | Option | Description | Values |
 |--------|-------------|---------|
@@ -597,7 +598,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--overwrite-env` | Regenerate `.env` even if the cloned repo already includes one (default: keep the existing `.env`) |
 | `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
-| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github-org <org>` | For `new-repo` mode: create the repository in this organization |
@@ -612,7 +613,7 @@ podium ai --one-off "Add a health-check endpoint at /ping"
 | Option | Description |
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
-| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--overwrite-env` | Regenerate `.env` even if one already exists (default: keep the existing `.env`) |
