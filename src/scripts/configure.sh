@@ -115,7 +115,7 @@ elif [[ "$JSON_OUTPUT" != "1" ]]; then
 	echo-white "Current: $VPC_SUBNET"
 	echo-yellow -ne 'Enter subnet or press Enter to keep current: '
 	echo-white -ne
-	read USER_VPC_SUBNET
+	read USER_VPC_SUBNET || USER_VPC_SUBNET=""
 	echo-return
 
 	if [[ -n "$USER_VPC_SUBNET" ]]; then
@@ -126,7 +126,7 @@ elif [[ "$JSON_OUTPUT" != "1" ]]; then
 				echo-white "first (preserves projects, removes containers/network), then re-run 'podium configure'."
 				echo-yellow -ne "Keep $VPC_SUBNET for now? [Y/n]: "
 				echo-white -ne
-				read KEEP_SUBNET
+				read KEEP_SUBNET || KEEP_SUBNET=""
 				echo-return
 				if [[ ! "$KEEP_SUBNET" =~ ^[Nn]$ ]]; then
 					USER_VPC_SUBNET="$VPC_SUBNET"
@@ -232,7 +232,7 @@ elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.name > /dev/null 2>&1; the
 
 	echo-white -ne
 
-	read GIT_NAME
+	read GIT_NAME || GIT_NAME=""
 
 	if ! [ -z "${GIT_NAME}" ]; then
 
@@ -256,7 +256,7 @@ elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.email > /dev/null 2>&1; th
 
 	echo-white -ne
 
-	read GIT_EMAIL
+	read GIT_EMAIL || GIT_EMAIL=""
 
 	if ! [ -z "${GIT_EMAIL}" ]; then
 
@@ -419,7 +419,7 @@ elif [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-white "Current: $CURRENT_PROJECTS_DIR"
     echo-yellow -ne 'Enter projects directory or press Enter to keep current: '
     echo-white -ne
-    read USER_PROJECTS_DIR
+    read USER_PROJECTS_DIR || USER_PROJECTS_DIR=""
 
     if [[ -z "$USER_PROJECTS_DIR" ]]; then
         PROJECTS_DIR="$CURRENT_PROJECTS_DIR"
@@ -495,7 +495,7 @@ else
 		echo-return
         echo-yellow -ne "Do you want to set up GitHub authentication now? [N/y]: "
         echo-white -ne
-        read SETUP_GITHUB
+        read SETUP_GITHUB || SETUP_GITHUB=""
 		echo-return
 
 		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
@@ -510,7 +510,7 @@ else
 				echo-yellow "GitHub authentication failed or was cancelled."; echo-white
 				echo-yellow -n "Would you like to try GitHub authentication again? (y/N): "
 				echo-white -ne
-				read RETRY_GITHUB
+				read RETRY_GITHUB || RETRY_GITHUB=""
 				echo-return
 				if [[ ! "$RETRY_GITHUB" =~ ^[Yy]$ ]]; then
 					echo-cyan "Skipping further GitHub authentication attempts."; echo-white
