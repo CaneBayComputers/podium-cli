@@ -81,14 +81,22 @@ if [[ $EUID -eq 0 ]]; then
    exit 1
 fi
 
-# Request sudo upfront with a clear explanation, then keep credentials alive
-echo
-echo -e "${YELLOW}Podium needs sudo to install system packages and configure Docker.${NC}"
-echo -e "${YELLOW}You'll be asked for your password once — it won't be asked again during the install.${NC}"
-echo
-if ! sudo -v; then
-    echo -e "${RED}Error: sudo access is required. Please run as a user with sudo privileges.${NC}"
-    exit 1
+# Request sudo upfront with a clear explanation, then keep credentials alive.
+# Probe with `sudo -n` first: systems that grant passwordless sudo (cloud
+# images, CI runners) usually ALSO carry a password-requiring rule, and plain
+# `sudo -v` authenticates against every matching rule — so it prompts even
+# though each individual command would run fine without a password.
+if sudo -n true 2>/dev/null; then
+    echo -e "${GREEN}✓ Passwordless sudo available${NC}"
+else
+    echo
+    echo -e "${YELLOW}Podium needs sudo to install system packages and configure Docker.${NC}"
+    echo -e "${YELLOW}You'll be asked for your password once — it won't be asked again during the install.${NC}"
+    echo
+    if ! sudo -v; then
+        echo -e "${RED}Error: sudo access is required. Please run as a user with sudo privileges.${NC}"
+        exit 1
+    fi
 fi
 ( while true; do sudo -n -v 2>/dev/null; sleep 50; done ) &
 SUDO_KEEPALIVE_PID=$!
