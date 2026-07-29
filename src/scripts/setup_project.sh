@@ -38,7 +38,7 @@ usage() {
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, django, python, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
@@ -223,6 +223,12 @@ cd "$PROJECT_DIR"
 if [ -z "$FRAMEWORK" ]; then
     if [ -n "$FORCED_FRAMEWORK" ]; then
         FRAMEWORK="$FORCED_FRAMEWORK"
+    elif [ -f "app.py" ] && grep -qiE '^[[:space:]]*(from|import)[[:space:]]+flask' app.py 2>/dev/null; then
+        FRAMEWORK="flask"
+    elif [ -f "main.py" ] && grep -qiE '^[[:space:]]*(from|import)[[:space:]]+flask' main.py 2>/dev/null; then
+        # Flask app that happens to live in main.py — check before falling
+        # through to the filename-only FastAPI match below.
+        FRAMEWORK="flask"
     elif [ -f "main.py" ]; then
         FRAMEWORK="fastapi"
     elif [ -f "manage.py" ]; then

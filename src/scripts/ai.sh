@@ -18,21 +18,40 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 cd "$CALLER_DIR"
 
 usage() {
-    echo-white "Usage: podium ai [--one-off] \"<initial prompt>\""
+    echo-white "Usage: podium ai [--interactive] \"<prompt>\""
     echo-white ""
-    echo-white "Start an interactive AI agent session seeded with the given prompt."
-    echo-white "Use --one-off to run a single non-interactive prompt and exit."
+    echo-white "Send a one-off prompt to your configured AI agent and exit."
+    echo-white "Durable project context lives in the project's AGENTS.md, so each"
+    echo-white "prompt can stand alone — the agent reads that file to pick the"
+    echo-white "project up cold."
+    echo-white ""
+    echo-white "Options:"
+    echo-white "  --interactive, -i  Open a persistent interactive session instead"
+    echo-white "  --one-off          Accepted for compatibility (now the default)"
+    echo-white ""
     echo-white "Must be run from a Podium project directory."
 }
 
-ONE_OFF=0
+# One-off is the DEFAULT. --interactive opts back into a persistent session;
+# --one-off is still accepted so existing scripts and callers keep working.
+ONE_OFF=1
 PROMPT_ARGS=()
 for arg in "$@"; do
-    if [[ "$arg" == "--one-off" ]]; then
-        ONE_OFF=1
-    else
-        PROMPT_ARGS+=("$arg")
-    fi
+    case "$arg" in
+        --one-off)
+            ONE_OFF=1
+            ;;
+        --interactive|-i)
+            ONE_OFF=0
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            PROMPT_ARGS+=("$arg")
+            ;;
+    esac
 done
 
 INIT_PROMPT="${PROMPT_ARGS[*]}"
@@ -40,7 +59,7 @@ INIT_PROMPT="${PROMPT_ARGS[*]}"
 # An initial prompt is required — no interactive prompt.
 if [[ -z "$INIT_PROMPT" ]]; then
     echo-red "No initial prompt provided."
-    echo-white "Usage: podium ai [--one-off] \"<prompt>\""
+    echo-white "Usage: podium ai [--interactive] \"<prompt>\""
     cd "$CALLER_DIR"
     exit 1
 fi
