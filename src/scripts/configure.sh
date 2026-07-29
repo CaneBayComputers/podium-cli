@@ -429,6 +429,25 @@ if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
     error "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
 fi
 
+# SELinux (Fedora/RHEL): every project is bind-mounted into its container, which
+# SELinux denies unless the directory carries the container_file_t label. Applied
+# to the whole projects dir so it covers greenfield projects, adapted composes and
+# installer-written composes alike. No-op wherever SELinux isn't enforcing.
+if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "Enforcing" ]]; then
+    if command -v semanage >/dev/null 2>&1; then
+        echo-cyan "SELinux enforcing — labeling projects directory for container access ..."
+        # -a fails if the rule already exists; that's the idempotent no-op case.
+        sudo semanage fcontext -a -t container_file_t "${PROJECTS_DIR}(/.*)?" 2>/dev/null || true
+        sudo restorecon -R "$PROJECTS_DIR" 2>/dev/null || true
+        echo-green "Projects directory labeled container_file_t."
+    else
+        echo-yellow "SELinux is enforcing but 'semanage' is not installed."
+        echo-white "Containers will be denied access to $PROJECTS_DIR. Install it with:"
+        echo-white "  sudo dnf install policycoreutils-python-utils"
+    fi
+    echo-white; echo
+fi
+
 # Update .env file with projects directory (handles both commented and uncommented lines)
 sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
 sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env

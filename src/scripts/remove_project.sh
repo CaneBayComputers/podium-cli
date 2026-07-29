@@ -204,6 +204,7 @@ if [ -d "$PROJECT_DIR" ]; then
         echo-white "Install trash-cli, or remove the directory manually:"
         echo-white "  Ubuntu/Debian: sudo apt-get install trash-cli"
         echo-white "  Arch Linux:    sudo pacman -S trash-cli"
+        echo-white "  Fedora/RHEL:   sudo dnf install trash-cli"
         echo-white "  macOS:         brew install trash-cli"
         echo-white "  Manual:        rm -rf \"$PROJECT_DIR\""
         echo-white

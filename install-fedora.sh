@@ -69,8 +69,8 @@ done
 
 # Check for Fedora (or at least dnf)
 if ! command -v dnf >/dev/null 2>&1; then
-    echo -e "${RED}Error: This installer requires Fedora (dnf).${NC}"
-    echo "For Arch use the original install script."
+    echo -e "${RED}Error: This installer requires Fedora/RHEL (dnf).${NC}"
+    echo "For Ubuntu/Debian use install-ubuntu.sh; for Arch use install-arch.sh."
     exit 1
 fi
 
@@ -110,7 +110,8 @@ sudo dnf install -y \
     git curl jq unzip \
     dnf-plugins-core \
     trash-cli \
-    ImageMagick librsvg2-tools
+    ImageMagick librsvg2-tools \
+    policycoreutils-python-utils
 
 # Docker (using official Docker CE repo - most reliable)
 if ! command -v docker >/dev/null 2>&1; then
@@ -120,7 +121,15 @@ if ! command -v docker >/dev/null 2>&1; then
                        docker-selinux docker-engine-selinux docker-engine 2>/dev/null || true
 
     sudo dnf install -y dnf-plugins-core
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
+    # dnf5 (Fedora 41+) dropped `config-manager --add-repo` in favour of the
+    # `addrepo` subcommand. Try the new syntax first, fall back to dnf4's.
+    DOCKER_REPO_URL="https://download.docker.com/linux/fedora/docker-ce.repo"
+    if [ ! -f /etc/yum.repos.d/docker-ce.repo ]; then
+        if ! sudo dnf config-manager addrepo --from-repofile="$DOCKER_REPO_URL" 2>/dev/null; then
+            sudo dnf config-manager --add-repo "$DOCKER_REPO_URL"
+        fi
+    fi
 
     echo -e "${BLUE}Installing Docker...${NC}"
     sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -186,6 +195,18 @@ sudo systemctl enable --now docker.service 2>/dev/null || true
 if ! id -nG "$USER" | grep -q "\bdocker\b"; then
     sudo usermod -aG docker "$USER"
     echo -e "${YELLOW}You were added to the 'docker' group. Log out and back in (or reboot) for this to take effect.${NC}"
+fi
+
+###############################
+# SELinux
+###############################
+# Fedora/RHEL ship SELinux enforcing. Podium bind-mounts each project directory
+# into its container, which SELinux denies unless the directory carries the
+# container_file_t label. The projects directory doesn't exist yet at install
+# time — 'podium configure' creates it and applies the label there.
+if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "Enforcing" ]]; then
+    echo -e "${BLUE}SELinux is enforcing.${NC}"
+    echo -e "${CYAN}  'podium configure' will label your projects directory so containers can access it.${NC}"
 fi
 
 ###############################

@@ -42,8 +42,8 @@ while [[ $# -gt 0 ]]; do
             echo "directory — no system packages are updated, no Docker images are"
             echo "touched, and running projects keep going."
             echo
-            echo "Pass --full to also run the platform install script (apt-get update,"
-            echo "Docker / dependency refresh) and remove/re-pull the Podium shared"
+            echo "Pass --full to also run the platform install script (system package"
+            echo "update, Docker / dependency refresh) and remove/re-pull the Podium shared"
             echo "service and base Docker images. This will stop running projects."
             echo
             echo "Options:"
@@ -144,8 +144,17 @@ if [[ "$FULL_UPDATE" == "1" ]]; then
             ubuntu|debian|linuxmint|pop)
                 INSTALL_SCRIPT="install-ubuntu.sh"
                 ;;
+            fedora|rhel|centos|rocky|almalinux)
+                INSTALL_SCRIPT="install-fedora.sh"
+                ;;
             *)
-                INSTALL_SCRIPT=""
+                # Derivatives (nobara, garuda, zorin, ...) declare their base in ID_LIKE.
+                case " $ID_LIKE " in
+                    *" arch "*)                     INSTALL_SCRIPT="install-arch.sh" ;;
+                    *" debian "*|*" ubuntu "*)      INSTALL_SCRIPT="install-ubuntu.sh" ;;
+                    *" fedora "*|*" rhel "*)        INSTALL_SCRIPT="install-fedora.sh" ;;
+                    *)                              INSTALL_SCRIPT="" ;;
+                esac
                 ;;
         esac
     fi
@@ -162,7 +171,7 @@ if [[ "$FULL_UPDATE" == "1" ]]; then
             echo-yellow "Please check your network connection or run the appropriate install script manually."
         fi
     else
-        echo-yellow "Could not detect a supported platform (ubuntu/arch/mac) for automatic CLI update."
+        echo-yellow "Could not detect a supported platform (ubuntu/arch/fedora/mac) for automatic CLI update."
         echo-yellow "Please update Podium CLI manually using the install scripts from the repository."
     fi
 else

@@ -84,6 +84,22 @@ podium configure
 
 This installs Docker, Node.js, Git, `jq`, `trash-cli`, and other utilities via `pacman`, then sets up the Podium CLI and `podium` command.
 
+#### 🐧 Linux (Fedora / RHEL-based)
+
+On Fedora, RHEL, Rocky, and AlmaLinux:
+
+```bash
+# One-liner install
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-fedora.sh | bash
+
+# Configure your development environment post installation
+podium configure
+```
+
+This installs Docker CE from the official Docker repository, plus Node.js, Git, `jq`, `trash-cli`, and other utilities via `dnf`.
+
+**SELinux:** Fedora and RHEL ship SELinux enforcing. Podium bind-mounts each project directory into its container, which SELinux blocks by default. `podium configure` handles this for you — it labels your projects directory `container_file_t` so containers can read and write it. If you ever move your projects directory manually, re-run `podium configure` to relabel.
+
 
 #### 🍎 MacOS
 
@@ -115,6 +131,7 @@ cd podium-cli
 
 - Ubuntu/Debian: `./install-ubuntu.sh`
 - Arch: `./install-arch.sh`
+- Fedora/RHEL: `./install-fedora.sh`
 - macOS: `./install-mac.sh`
 
 
