@@ -215,9 +215,10 @@ fi
 # SELinux
 ###############################
 # Fedora/RHEL ship SELinux enforcing. Podium bind-mounts each project directory
-# into its container, which SELinux denies unless the directory carries the
-# container_file_t label. The projects directory doesn't exist yet at install
-# time — 'podium configure' creates it and applies the label there.
+# into its container; if Docker's SELinux support is enabled, that mount is
+# denied unless the directory carries the container_file_t label. The projects
+# directory doesn't exist yet at install time — 'podium configure' creates it
+# and applies the label there.
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "Enforcing" ]]; then
     echo -e "${BLUE}SELinux is enforcing.${NC}"
     echo -e "${CYAN}  'podium configure' will label your projects directory so containers can access it.${NC}"

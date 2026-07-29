@@ -442,10 +442,14 @@ if [[ ! -d "$PROJECTS_DIR" || ! -w "$PROJECTS_DIR" ]]; then
     error "ERROR: Cannot create or write to projects directory: $PROJECTS_DIR"
 fi
 
-# SELinux (Fedora/RHEL): every project is bind-mounted into its container, which
-# SELinux denies unless the directory carries the container_file_t label. Applied
-# to the whole projects dir so it covers greenfield projects, adapted composes and
-# installer-written composes alike. No-op wherever SELinux isn't enforcing.
+# SELinux (Fedora/RHEL): every project is bind-mounted into its container. Docker
+# CE disables SELinux confinement by default (containers run as spc_t), so this
+# isn't required on a stock install — but with "selinux-enabled": true in
+# daemon.json an unlabeled projects dir yields Permission denied on every mount.
+# Verified on Fedora 44: unlabeled user_home_t -> denied, container_file_t -> OK.
+# Applied to the whole projects dir so it covers greenfield projects, adapted
+# composes and installer-written composes alike. No-op where SELinux isn't
+# enforcing, and cheap insurance where it is.
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "Enforcing" ]]; then
     if command -v semanage >/dev/null 2>&1; then
         echo-cyan "SELinux enforcing — labeling projects directory for container access ..."

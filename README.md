@@ -98,7 +98,7 @@ podium configure
 
 This installs Docker CE from the official Docker repository, plus Node.js, Git, `jq`, `trash-cli`, and other utilities via `dnf`.
 
-**SELinux:** Fedora and RHEL ship SELinux enforcing. Podium bind-mounts each project directory into its container, which SELinux blocks by default. `podium configure` handles this for you — it labels your projects directory `container_file_t` so containers can read and write it. If you ever move your projects directory manually, re-run `podium configure` to relabel.
+**SELinux:** Fedora and RHEL ship SELinux enforcing, and Podium bind-mounts each project directory into its container. Docker CE disables SELinux confinement by default (containers run unconfined as `spc_t`), so this doesn't bite on a stock install — but the moment Docker's SELinux support is turned on (`"selinux-enabled": true` in `/etc/docker/daemon.json`), an unlabeled project directory gives every container `Permission denied`. `podium configure` labels your projects directory `container_file_t` so Podium keeps working either way. If you move your projects directory manually, re-run `podium configure` to relabel.
 
 
 #### 🍎 MacOS
