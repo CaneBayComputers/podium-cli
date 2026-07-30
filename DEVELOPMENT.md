@@ -80,11 +80,13 @@ When editing the file:
 
 ## Updating cbc Base Docker Images
 
-The three cbc images are documented in [AGENTS.md → cbc Base Docker Images](AGENTS.md#cbc-base-docker-images). Each lives in a separate GitHub repo under `CaneBayComputers/`.
+The three cbc images are documented in [AGENTS.md → cbc Base Docker Images](AGENTS.md#cbc-base-docker-images). All of them live in the single `CaneBayComputers/docker-images` repo, one directory per image (`cbc-docker-php8-nginx/`, `cbc-docker-python3-nginx/`, `cbc-docker-node-nginx/`, `cbc-docker-php8-nginx-vector/`).
+
+**When adding a framework to `podium new`, check whether its runtime is in the image.** Project containers are recreated from the base image on every `podium up`, so anything pip/npm installed into a running container is lost. If the framework's package isn't baked into the Dockerfile, projects come back as a 502 after their first restart. `startup.sh` reinstalls `requirements.txt` as a safety net, but the image is the correct fix (this is exactly what Flask hit).
 
 To rebuild and publish:
 
-1. Edit the relevant file in the image's repo.
+1. Edit the relevant file in `docker-images/<image-dir>/`.
 2. Commit and push the repo.
 3. From the repo directory: `sudo bash build_push.sh` — builds, tags, and pushes to Docker Hub.
 4. Existing running containers will not pick up the new image automatically. They need `podium down <name> && podium up <name>`.
