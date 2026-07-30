@@ -147,7 +147,7 @@ Examples:
 `podium create` collects your project idea, adds Podium-specific instructions, and hands the combined prompt to your configured AI CLI. Podium sets up the environment. The AI builds the app.
 
 ```bash
-# Podium will prompt you for an idea
+# asks what you want to build (interactive terminals only)
 podium create
 
 # Pass the idea directly

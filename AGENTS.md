@@ -33,7 +33,7 @@ Podium is infrastructure for **multi-project local dev** and **AI-driven workflo
 | `podium status [name] [--all]` | Show running state. Lists only active (running) projects by default; `--all` includes stopped projects. |
 | `podium exec <cmd>` | Run a command inside the project container, no TTY (automation-friendly). Run from the project directory. |
 
-**No interactive prompts.** Every command (except `podium configure`, the one-time user wizard) fails with a clear "required argument" error rather than prompting — so nothing ever blocks an agent. Always pass explicit arguments.
+**No interactive prompts.** Every command fails with a clear "required argument" error rather than prompting — so nothing ever blocks an agent. Always pass explicit arguments. (`podium configure` and `podium create` do prompt a human at a terminal, but both fall back to the hard error under `--one-off`, `--json-output`, or a non-TTY stdin — which is every context an agent runs in.)
 
 `podium create`, `podium new`, `podium clone`, and `podium install` write an `AGENTS.md` handoff file into the new project, then `cd` into it and send the AI agent a one-off prompt telling it to read that file. Pass `--one-off` (or run with `--json-output` / non-TTY / no AI agent configured) to skip the handoff entirely.
 
