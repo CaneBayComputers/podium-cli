@@ -227,7 +227,14 @@ COMMON_RULES="Rules:
 - Python containers provide python3, not python. For Django use 'podium django manage <args>'.
 - To restart processes use 'podium supervisor restart all', never 'podium exec supervisorctl'.
 - Never pass --json-output to a podium command; it hides the success/failure distinction.
-- You are NOT done until 'curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 http://$CHOSEN_NAME/' returns 2xx or 3xx. If it does not, check 'docker logs $CHOSEN_NAME', fix it, and re-verify."
+- Before verifying, RESTART the app so your changes are actually loaded:
+  'podium supervisor restart all'. A long-running server keeps serving the code
+  it started with, so curling without restarting can return 200 from the
+  pre-edit process and hide a broken app.
+- If you imported a package, add it to requirements.txt / package.json /
+  composer.json AND install it in the container. An import that was never
+  installed only fails once the process restarts.
+- You are NOT done until, AFTER that restart, 'curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 http://$CHOSEN_NAME/' returns 2xx or 3xx AND the response reflects what you built rather than the scaffold's placeholder page. If it does not, check 'docker logs $CHOSEN_NAME', fix it, and re-verify."
 
 if [[ "$CHOSEN_KIND" == "app" ]]; then
     # The software is already installed, configured and serving. Framing this as
