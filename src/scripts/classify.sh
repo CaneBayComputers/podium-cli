@@ -28,10 +28,13 @@ import json, os, sys
 d = sys.argv[1]
 apps = json.load(open(os.path.join(d, "apps.json")))["apps"]
 fws  = json.load(open(os.path.join(d, "frameworks.json")))["frameworks"]
-print("READY-TO-RUN APPS (installed via `podium install <slug>`; database is fixed by the installer):")
+print("READY-TO-RUN APPS, IN NO PARTICULAR ORDER OF PREFERENCE")
+print("(installed via `podium install <slug>`; database is fixed by the installer):")
 print(", ".join(a["slug"] for a in apps))
 print()
-print("FRAMEWORKS (scaffolded via `podium new <slug> <name>`; the user writes the app):")
+print("FRAMEWORKS, IN NO PARTICULAR ORDER OF PREFERENCE")
+print("(scaffolded via `podium new <slug> <name>`; the user writes the app).")
+print("List order carries no meaning — judge each on fit alone:")
 for f in fws:
     print(f"  {f['slug']} — {f['display']} ({f['runtime']}); databases: {', '.join(f['databases'])}")
 PYEOF
