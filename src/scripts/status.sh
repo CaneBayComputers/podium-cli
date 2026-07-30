@@ -621,6 +621,23 @@ else
     echo-yellow "PING (MailHog): skipped (not running)"
 fi
 
+# Optional shared services, only reported when this machine has them enabled —
+# otherwise every install would show two permanently-skipped lines for services
+# it deliberately does not run.
+for _opt in ${OPTIONAL_SERVICES:-}; do
+    case "$_opt" in
+        minio)       _opt_host="${MINIO_CONTAINER_NAME:-podium-minio}"; _opt_label="MinIO" ;;
+        meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}"; _opt_label="Meilisearch" ;;
+        *)           _opt_host="podium-$_opt"; _opt_label="$_opt" ;;
+    esac
+    if service_running "$_opt_host"; then
+        echo-white -n "PING ($_opt_label): "
+        ping_host "$_opt_host"
+    else
+        echo-yellow "PING ($_opt_label): enabled but NOT RUNNING — try 'podium start-services'"
+    fi
+done
+
 echo-return
 divider
 echo-cyan "SHARED SERVICE HTTP CHECKS:"

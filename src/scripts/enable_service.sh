@@ -54,6 +54,12 @@ if ! printf '%s\n' $AVAILABLE_OPTIONAL_SERVICES | grep -qx "$SERVICE"; then
     error "Unknown optional service '$SERVICE'. Available: $AVAILABLE_OPTIONAL_SERVICES"
 fi
 
+case "$SERVICE" in
+    minio)       CONTAINER="${MINIO_CONTAINER_NAME:-podium-minio}" ;;
+    meilisearch) CONTAINER="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}" ;;
+    *)           CONTAINER="podium-$SERVICE" ;;
+esac
+
 CURRENT="${OPTIONAL_SERVICES:-}"
 NEW=""
 for s in $CURRENT; do
@@ -83,6 +89,17 @@ if [[ "$MODE" == "enable" ]]; then
     echo-cyan "Starting $SERVICE ..."
     ( cd /etc/podium-cli && docker compose --profile "$SERVICE" up -d "$SERVICE" ) || \
         error "Failed to start $SERVICE"
+    # The host needs to resolve the name too — the MinIO console is meant to be
+    # opened in a browser, and `podium status` pings by hostname. Compose
+    # profiles hide these services from `docker compose config`, so the entry
+    # cannot come from configure.sh's usual sweep until it is re-run.
+    _ip=$(docker inspect "$CONTAINER" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
+    if [[ -n "$_ip" ]]; then
+        sudo-podium-sed "/[[:space:]]${CONTAINER}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
+        echo "$_ip        $CONTAINER" | sudo tee -a /etc/hosts > /dev/null
+        echo-white "  Added /etc/hosts entry: $_ip $CONTAINER"
+    fi
+
     echo-green "$SERVICE enabled."
     case "$SERVICE" in
         minio)
@@ -99,6 +116,7 @@ else
     echo-cyan "Stopping $SERVICE ..."
     ( cd /etc/podium-cli && docker compose --profile "$SERVICE" stop "$SERVICE" >/dev/null 2>&1 ) || true
     ( cd /etc/podium-cli && docker compose --profile "$SERVICE" rm -f "$SERVICE" >/dev/null 2>&1 ) || true
+    sudo-podium-sed "/[[:space:]]${CONTAINER}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
     echo-green "$SERVICE disabled. Its data volume is kept — re-enable to get it back."
 fi
 
