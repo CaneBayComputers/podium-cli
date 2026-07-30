@@ -175,13 +175,37 @@ ping_status() {
     fi
 }
 
+# One quick attempt by default, so `podium status` (and `--all` across many
+# projects) stays fast and a stopped project doesn't stall the report.
+#
+# Callers that have JUST started a container set HTTP_WAIT_SECS to give the app
+# time to bind its port — a freshly created project reports HTTP: FAILED
+# otherwise, purely because the status check outran the app's startup.
 curl_status() {
     local url="$1"
-    if curl -fsS --max-time 3 --connect-timeout 2 "$url" >/dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
+    local wait_secs="${HTTP_WAIT_SECS:-0}"
+    local deadline=$(( $(date +%s) + wait_secs ))
+    local dotted=0
+
+    while true; do
+        if curl -fsS --max-time 3 --connect-timeout 2 "$url" >/dev/null 2>&1; then
+            # Close the progress dots so the verdict lands on the same line.
+            [ "$dotted" = "1" ] && echo-white -n " "
+            return 0
+        fi
+
+        [ "$(date +%s)" -ge "$deadline" ] && {
+            [ "$dotted" = "1" ] && echo-white -n " "
+            return 1
+        }
+
+        # Show progress so a legitimate wait doesn't look like a hang.
+        if [[ "$JSON_OUTPUT" != "1" ]]; then
+            echo-white -n "."
+            dotted=1
+        fi
+        sleep 2
+    done
 }
 
 # Parse docker-compose.yaml to get all services dynamically

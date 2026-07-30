@@ -836,6 +836,10 @@ else
             STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
         fi
 
+        # Give the just-started app time to bind before the HTTP check calls it
+        # failed (see curl_status in status.sh).
+        export HTTP_WAIT_SECS="${HTTP_WAIT_SECS:-45}"
+
         # Show status to confirm successful startup
         source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
     fi
