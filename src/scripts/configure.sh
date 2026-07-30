@@ -418,7 +418,10 @@ COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
 
 if [ -f "$COMPOSE_FILE" ]; then
     RENDERED_COMPOSE=$(mktemp)
-    if docker compose -f "$COMPOSE_FILE" config > "$RENDERED_COMPOSE" 2>/dev/null; then
+    # Render with the machine's enabled profiles, or optional services would be
+    # absent from the output and never get a /etc/hosts entry.
+    mapfile -t _cfg_profiles < <(podium_profile_args)
+    if docker compose -f "$COMPOSE_FILE" "${_cfg_profiles[@]}" config > "$RENDERED_COMPOSE" 2>/dev/null; then
         SOURCE_FILE="$RENDERED_COMPOSE"
     else
         # Fallback to raw compose file if docker compose config fails
