@@ -1,0 +1,32 @@
+title: Podium CLI
+description: Docker-based local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.
+remote_theme: just-the-docs/just-the-docs
+
+url: https://canebaycomputers.github.io
+baseurl: /podium-cli
+
+# Navigation / search
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 2
+heading_anchors: true
+
+aux_links:
+  "GitHub":
+    - "https://github.com/CaneBayComputers/podium-cli"
+aux_links_new_tab: true
+
+back_to_top: true
+back_to_top_text: "Back to top"
+
+footer_content: 'Podium CLI — open source. <a href="https://github.com/CaneBayComputers/podium-cli">Source on GitHub</a>.'
+
+color_scheme: dark
+
+plugins:
+  - jekyll-remote-theme
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
