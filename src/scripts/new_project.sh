@@ -65,7 +65,7 @@ usage() {
     echo-white "  version         Framework version (optional)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node (required with --json-output)"
+    echo-white "  --framework TYPE        Framework type: laravel, kavera, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
@@ -213,10 +213,10 @@ debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
 # --- Required arguments (no interactive prompts; 'configure' is the only wizard) ---
 if [ -z "$FRAMEWORK" ]; then
     error "Error: framework is required. Usage: podium new <framework> <name> [--database <type>] [--version X]
-Frameworks: laravel wordpress php fastapi flask django python express nestjs fastify node"
+Frameworks: laravel kavera wordpress php fastapi flask django python express nestjs fastify node"
 fi
 case "$FRAMEWORK" in
-    laravel|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
+    laravel|kavera|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
     *)
         # `new` scaffolds a framework you write; `install` deploys a prebuilt
         # app. Nobody should have to know which bucket a name lives in, so if
@@ -232,7 +232,7 @@ case "$FRAMEWORK" in
             echo-return
             error "Wrong command for '$FRAMEWORK' — use 'podium install'."
         fi
-        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
+        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
         ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
@@ -289,11 +289,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
+        "laravel"|"kavera"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
             ;;
     esac
 
@@ -389,17 +389,18 @@ done
 if [ -z "$FRAMEWORK" ]; then
     echo-return; echo-cyan "What type of project would you like to create?"
     echo-white "1) Laravel (PHP Framework)"
-    echo-white "2) WordPress (CMS)"
-    echo-white "3) PHP (Plain PHP project)"
-    echo-white "4) FastAPI (Python Framework)"
-    echo-white "5) Flask (Python Framework)"
-    echo-white "6) Django (Python Framework)"
-    echo-white "7) Python (Plain Python project)"
-    echo-white "8) Express (Node.js Framework)"
-    echo-white "9) NestJS (Node.js Framework)"
-    echo-white "10) Fastify (Node.js Framework)"
-    echo-white "11) Node.js (Plain Node.js)"
-    echo-return; echo-yellow -n "Enter your choice (1-11): "
+    echo-white "2) Kavera (PHP — Laravel-native website framework)"
+    echo-white "3) WordPress (CMS)"
+    echo-white "4) PHP (Plain PHP project)"
+    echo-white "5) FastAPI (Python Framework)"
+    echo-white "6) Flask (Python Framework)"
+    echo-white "7) Django (Python Framework)"
+    echo-white "8) Python (Plain Python project)"
+    echo-white "9) Express (Node.js Framework)"
+    echo-white "10) NestJS (Node.js Framework)"
+    echo-white "11) Fastify (Node.js Framework)"
+    echo-white "12) Node.js (Plain Node.js)"
+    echo-return; echo-yellow -n "Enter your choice (1-12): "
     read FRAMEWORK_CHOICE
 
     case $FRAMEWORK_CHOICE in
@@ -407,37 +408,37 @@ if [ -z "$FRAMEWORK" ]; then
             FRAMEWORK="laravel"
             ;;
         2)
-            FRAMEWORK="wordpress"
+            FRAMEWORK="kavera"
             ;;
         3)
-            FRAMEWORK="php"
+            FRAMEWORK="wordpress"
             ;;
         4)
-            FRAMEWORK="fastapi"
+            FRAMEWORK="php"
             ;;
         5)
-            FRAMEWORK="flask"
+            FRAMEWORK="fastapi"
             ;;
         6)
-            FRAMEWORK="django"
+            FRAMEWORK="flask"
             ;;
         7)
-            FRAMEWORK="python"
+            FRAMEWORK="django"
             ;;
         8)
-            FRAMEWORK="express"
+            FRAMEWORK="python"
             ;;
         9)
-            FRAMEWORK="nestjs"
+            FRAMEWORK="express"
             ;;
         10)
-            FRAMEWORK="fastify"
+            FRAMEWORK="nestjs"
             ;;
         11)
-            FRAMEWORK="node"
+            FRAMEWORK="fastify"
             ;;
-        *)
-            error "Invalid choice. Exiting..."
+        12)
+            FRAMEWORK="node"
             ;;
     esac
 fi
@@ -519,6 +520,12 @@ case $FRAMEWORK in
                 DATABASE="mysql"
             fi
         fi
+        ;;
+    kavera)
+        # Kavera tracks its own repo rather than a versioned Laravel tag, so
+        # there is no version to validate here — the scaffold hook downloads it.
+        echo-return; echo-cyan "Kavera project selected!"
+        echo-green "Kavera (Laravel-native website framework) will be downloaded."
         ;;
     php)
         echo-return; echo-cyan "PHP project selected!"

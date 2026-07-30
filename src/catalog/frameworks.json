@@ -1,19 +1,135 @@
 {
   "_comment": "Hand-maintained. Frameworks offered by `podium new`. 'databases' lists the engines that actually WORK for that framework, not merely the ones Podium will write into .env. Empty/absent means all engines are fine.",
   "frameworks": [
-    { "slug": "laravel",   "display": "Laravel",   "runtime": "PHP 8.3",  "databases": ["mysql", "postgres", "sqlite"],
-      "note": "MongoDB needs the third-party mongodb/laravel-mongodb package; not offered." },
-    { "slug": "wordpress", "display": "WordPress", "runtime": "PHP 8.3",  "databases": ["mysql"],
-      "note": "WordPress is MySQL/MariaDB only." },
-    { "slug": "php",       "display": "Plain PHP", "runtime": "PHP 8.3",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
-    { "slug": "django",    "display": "Django",    "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite"],
-      "note": "Django has no native MongoDB backend." },
-    { "slug": "flask",     "display": "Flask",     "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
-    { "slug": "fastapi",   "display": "FastAPI",   "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
-    { "slug": "python",    "display": "Plain Python", "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
-    { "slug": "express",   "display": "Express",   "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
-    { "slug": "nestjs",    "display": "NestJS",    "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
-    { "slug": "fastify",   "display": "Fastify",   "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
-    { "slug": "node",      "display": "Plain Node.js", "runtime": "Node 22", "databases": ["mysql", "postgres", "sqlite", "mongodb"] }
+    {
+      "slug": "laravel",
+      "display": "Laravel",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "note": "MongoDB needs the third-party mongodb/laravel-mongodb package; not offered."
+    },
+    {
+      "slug": "kavera",
+      "display": "Kavera",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "note": "Laravel-native WEBSITE framework. Flat-file Blade pages plus service-driven dynamic content (Blogger posts, Eventbrite events, Flickr galleries, form webhooks) cached via Redis. Ships forms with email/webhooks, spam controls and reCAPTCHA, SEO titles and JSON-LD, and an agent-brief wizard. Built so an AI agent edits page FILES instead of fighting a CMS admin UI. Prefer this over plain Laravel for marketing sites, brochure sites, portfolios, galleries and any content-first website. Prefer plain Laravel instead when the ask is a real web APPLICATION with custom models, business logic and user accounts."
+    },
+    {
+      "slug": "wordpress",
+      "display": "WordPress",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql"
+      ],
+      "note": "WordPress is MySQL/MariaDB only."
+    },
+    {
+      "slug": "php",
+      "display": "Plain PHP",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "django",
+      "display": "Django",
+      "runtime": "Python 3",
+      "databases": [
+        "postgres",
+        "mysql",
+        "sqlite"
+      ],
+      "note": "Django has no native MongoDB backend."
+    },
+    {
+      "slug": "flask",
+      "display": "Flask",
+      "runtime": "Python 3",
+      "databases": [
+        "postgres",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "fastapi",
+      "display": "FastAPI",
+      "runtime": "Python 3",
+      "databases": [
+        "postgres",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "python",
+      "display": "Plain Python",
+      "runtime": "Python 3",
+      "databases": [
+        "postgres",
+        "mysql",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "express",
+      "display": "Express",
+      "runtime": "Node 22",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "nestjs",
+      "display": "NestJS",
+      "runtime": "Node 22",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "fastify",
+      "display": "Fastify",
+      "runtime": "Node 22",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite",
+        "mongodb"
+      ]
+    },
+    {
+      "slug": "node",
+      "display": "Plain Node.js",
+      "runtime": "Node 22",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite",
+        "mongodb"
+      ]
+    }
   ]
 }
