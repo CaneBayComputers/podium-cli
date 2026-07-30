@@ -79,12 +79,20 @@ specific idea. The user sees these side by side and decides from them, so make
 them concrete and comparative, not generic praise.
 
 Recommend databases only from the chosen framework's allowed list.
-Suggest a short lowercase hyphenated project name derived from the idea.
+Suggest a short lowercase hyphenated project name, but ONLY when the idea
+actually implies one. "track which guitar pedals are lent out" implies
+"pedal-lending"; "a Django app for tracking chores" implies "chore-tracker".
+
+Return null for project_name when the idea does not name a real subject —
+"create a Flask project", "do a wordpress site", "a blog", "a website". Naming
+it after the framework or app ("flask-app", "wordpress-site") or after nothing
+in particular ("my-app", "new-project") is worse than returning null, because
+the user will be asked directly instead.
 
 Reply with ONLY this JSON. No prose, no markdown fences:
 
 {
-  "project_name": "short-hyphenated-name",
+  "project_name": "short-hyphenated-name" | null,
   "recommended": "app" | "framework",
   "customization_requested": true | false,
   "framework": {"slug": "<framework slug>", "reason": "<one short sentence, max 15 words>"},
@@ -152,10 +160,21 @@ if rec not in ("app", "framework"):
 if rec == "app" and not has_app:
     rec = "framework"
 
+# A name is only useful if it says something about the project. Reject the
+# generic shapes outright rather than trusting the instruction above — the model
+# still reaches for "flask-app" when the idea names no subject.
 name = (doc.get("project_name") or "").strip().lower()
 name = re.sub(r"[^a-z0-9-]+", "-", name).strip("-")[:40]
-if not name:
-    name = "new-project"
+
+FILLER = {"my", "app", "apps", "site", "website", "project", "new", "web",
+          "demo", "test", "thing", "tool", "system", "the", "a"}
+known = set(apps) | set(fws)
+if name:
+    parts = [w for w in name.split("-") if w]
+    meaningful = [w for w in parts if w not in FILLER and w not in known]
+    # Nothing left once framework/app names and filler words are removed.
+    if not meaningful:
+        name = ""
 
 dbs = [d for d in (doc.get("databases") or []) if isinstance(d, str)]
 
@@ -331,15 +350,36 @@ classify_project() {
     fi
 
     CHOSEN_NAME="$suggested_name"
+    local typed
     if [[ "$non_interactive" != "1" ]]; then
-        echo-return
-        echo-yellow -ne "Project name [$CHOSEN_NAME]: "
-        local typed
-        read typed || typed=""
-        echo-return
+        if [[ -n "$CHOSEN_NAME" ]]; then
+            echo-return
+            echo-yellow -ne "Project name [$CHOSEN_NAME]: "
+            read typed || typed=""
+            echo-return
+        else
+            # The idea named no real subject, so there is nothing sensible to
+            # default to. Ask rather than inventing "flask-app".
+            echo-return
+            echo-white "Your description doesn't suggest a project name."
+            while [[ -z "$CHOSEN_NAME" ]]; do
+                echo-yellow -ne "What should this project be called? "
+                read typed || typed=""
+                typed=$(echo "$typed" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g; s/^-//; s/-$//')
+                [[ -n "$typed" ]] && CHOSEN_NAME="$typed"
+            done
+            echo-return
+            typed=""
+        fi
         [[ -n "$typed" ]] && CHOSEN_NAME=$(echo "$typed" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g; s/^-//; s/-$//')
     fi
-    [[ -z "$CHOSEN_NAME" ]] && CHOSEN_NAME="new-project"
+
+    # Scripted runs cannot be asked, so fall back to the chosen slug — which is
+    # also what `podium install <app>` would have named it — and say so.
+    if [[ -z "$CHOSEN_NAME" ]]; then
+        CHOSEN_NAME="$CHOSEN_SLUG"
+        echo-yellow "No project name could be derived from the idea — using '$CHOSEN_NAME'." >&2
+    fi
 
     return 0
 }
