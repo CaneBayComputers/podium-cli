@@ -966,8 +966,11 @@ mongo `root`/`password`. Redis and memcached need no auth.
 - Do not install runtimes or services directly on the host.
 - Python containers provide `python3`, not `python`.
 - Use `podium supervisor restart all`, never `podium exec supervisorctl ...`.
+- After changing code, restart the app before verifying:
+  `podium supervisor restart all`. A running server keeps serving the code it
+  started with, so a 200 from the old process can hide a broken app.
 - Before reporting done, verify: `curl -sI --max-time 10 http://{name}/`
-  must return 2xx or 3xx.
+  must return 2xx or 3xx **after that restart**.
 
 Full Podium reference for agents: `/usr/local/share/podium-cli/AGENTS.md`
 (run `podium --help` for the complete command list).
