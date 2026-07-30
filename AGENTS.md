@@ -114,25 +114,26 @@ When writing a custom compose: give the entry-point service a static IP in `.100
 
 ## cbc Base Docker Images
 
-Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Source repos live under `CaneBayComputers/` on GitHub. Override the per-framework default with `--image <ref>` on `podium new`, `podium clone`, `podium setup`, or `podium install` (for an adapted complex compose it overrides the web-facing service's image).
+Greenfield projects (`podium new`) build from one of three cbc base images on Docker Hub under `canebaycomputers/cbc`. Each runs nginx + supervisor on Ubuntu Noble. Sources live in the `CaneBayComputers/docker-images` repo, one directory per image. Override the per-framework default with `--image <ref>` on `podium new`, `podium clone`, `podium setup`, or `podium install` (for an adapted complex compose it overrides the web-facing service's image).
 
 ### `canebaycomputers/cbc:nginx-node` — Node.js projects
-- **GitHub**: `CaneBayComputers/cbc-docker-node-nginx`
+- **GitHub**: `CaneBayComputers/docker-images` → `cbc-docker-node-nginx/`
 - **nginx**: Reverse proxy, port 80 → `localhost:3000`. WebSocket upgrade headers included.
 - **App startup**: Supervisor runs `/usr/local/bin/start-node-app.sh`. If `NODE_APP_COMMAND` is set, it `cd`s to `/usr/share/nginx/html`, sources `.env`, and execs the command. If unset, the process sleeps.
 - **Web root**: `/usr/share/nginx/html`
 - **Node version**: 22 LTS
 - **Key note**: App must bind to port 3000. Set `PORT=3000` in `.env` for frameworks that default elsewhere (e.g. Strapi defaults to 1337).
 
-### `canebaycomputers/cbc:nginx-python3` — Python projects (FastAPI, Django)
-- **GitHub**: `CaneBayComputers/cbc-docker-python3-nginx`
+### `canebaycomputers/cbc:nginx-python3` — Python projects (FastAPI, Flask, Django)
+- **GitHub**: `CaneBayComputers/docker-images` → `cbc-docker-python3-nginx/`
 - **nginx**: Reverse proxy, port 80 → `localhost:8000`. Passes `Host $host`, WebSocket upgrade headers included.
 - **App startup**: Supervisor runs `/usr/local/bin/start-python-app.sh`. If `PYTHON_APP_COMMAND` is set, `cd`s to `/usr/share/nginx/html`, sources `.env`, execs. If unset, sleeps.
 - **Web root**: `/usr/share/nginx/html`
 - **Key note**: App must bind to port 8000. `python3` is available; `python` is not.
+- **Preinstalled**: fastapi, uvicorn, django, flask, gunicorn, sqlalchemy, psycopg2-binary, PyMySQL, pymongo, redis, pymemcache. Project containers are recreated from the image on every `podium up`, so a framework that isn't baked in here returns a 502 after a restart — `startup.sh` reinstalls `requirements.txt` as a safety net, but the image is the real fix.
 
 ### `canebaycomputers/cbc:nginx-php8` — PHP projects (Laravel, WordPress)
-- **GitHub**: `CaneBayComputers/cbc-docker-php8-nginx`
+- **GitHub**: `CaneBayComputers/docker-images` → `cbc-docker-php8-nginx/`
 - **nginx**: FastCGI (not reverse proxy). Web root is `/usr/share/nginx/html/public`. PHP requests pass to `php-fpm8.3` via Unix socket.
 - **PHP version**: 8.3
 - **Supervisor programs**: `nginx`, `php-fpm`, `laravel-worker` (queue worker, `autostart=true`, runs 4 processes as `www-data`)
