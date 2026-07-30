@@ -22,6 +22,7 @@ Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone`
 | `src/docker-stack/` | Compose templates and defaults for shared services. Update `env.example` when adding variables. |
 | `src/installers/` | Curated installers for OSS apps. Format documented in [AGENTS.md → Writing Installers](AGENTS.md#writing-installers). |
 | `src/project-hints/` | Per-project setup hints used by `podium create`. |
+| `src/catalog/` | Stack catalogue driving `podium create`'s classifier. `frameworks.json` is hand-maintained (including each framework's supported databases); `apps.json` is **generated** — re-run `bash src/scripts/build_catalog.sh` after adding, removing or re-pointing an installer. |
 | `install-ubuntu.sh` / `install-arch.sh` / `install-fedora.sh` / `install-mac.sh` | The only scripts that touch host package managers. Adding one means wiring its distro IDs into `update.sh`'s `--full` platform detection too. |
 | `logs/` | Runtime logs land here, not the repo root. |
 | `/etc/podium-cli/.env` | Resolved runtime configuration. Ship defaults via `env.example`, never commit secrets. |

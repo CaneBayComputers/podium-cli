@@ -247,9 +247,10 @@ if [ -z "$DATABASE" ] || [ "$DATABASE" = "auto" ]; then
     esac
     echo-cyan "Auto-selected database for $FRAMEWORK: $DATABASE"
 fi
-if [ "$FRAMEWORK" = "wordpress" ] && [ "$DATABASE" != "mysql" ] && [ "$DATABASE" != "mariadb" ]; then
-    echo-yellow "WordPress requires MySQL/MariaDB — using mysql."
-    DATABASE="mysql"
+# Constrain the engine to what this framework actually supports. Rules live in
+# src/catalog/frameworks.json rather than as per-framework special cases here.
+if [ -n "$DATABASE" ] && [ "$DATABASE" != "auto" ]; then
+    DATABASE=$(resolve_framework_database "$FRAMEWORK" "$DATABASE")
 fi
 
 # Validation for JSON output mode
