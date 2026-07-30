@@ -794,6 +794,12 @@ ensure_database() {
 build_aider_args() {
     AIDER_ARGS=(--yes-always --no-check-update)
 
+    # Aider renders through a rich console that hard-wraps at the terminal width
+    # and pads with trailing spaces. That corrupts any machine-readable reply —
+    # a wrap landing inside a JSON string inserts a raw newline, which is
+    # illegal JSON, and it's what broke `podium create`'s classifier.
+    AIDER_ARGS+=(--no-pretty)
+
     # The other agents leave their edits in the working tree; aider commits each
     # change by default. Match the rest of Podium and leave the tree dirty.
     #
@@ -809,6 +815,13 @@ build_aider_args() {
     if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         AIDER_ARGS+=(--no-git)
     fi
+
+    # Aider walks up to the nearest enclosing repo, which is not necessarily the
+    # project: if the projects directory lives under a repo (a git-backed home
+    # directory, say), it adopts that entire tree as the working repo. Confine
+    # it to the project. Measured on one classifier call: 324 files scanned and
+    # 12k tokens sent, down to 0 files and 2.5k.
+    AIDER_ARGS+=(--subtree-only)
 
     if [[ -n "$AI_MODEL" ]]; then
         AIDER_ARGS+=("--model" "$AI_MODEL")
