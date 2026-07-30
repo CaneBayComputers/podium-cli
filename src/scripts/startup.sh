@@ -214,6 +214,34 @@ fi
 # Allow containers time to finish booting before running status checks
 sleep 12
 
+# Containers are recreated from their base image on every `up`, so anything pip
+# installed INTO the container filesystem during setup is gone — only the
+# bind-mounted project directory survives. The cbc:nginx-python3 image bakes in
+# gunicorn/uvicorn/fastapi, so FastAPI projects restart fine, but any project
+# with dependencies outside that set (Flask, and anything else in
+# requirements.txt) comes back to a 502 because its app can't import.
+#
+# Reinstall requirements when the container is missing them. pip is a fast
+# no-op once satisfied, and this only runs for projects that actually ship a
+# requirements.txt.
+if [ -n "$PROJECT_NAME" ] && [ -f "$PROJECTS_DIR_PATH/$PROJECT_NAME/requirements.txt" ]; then
+    if docker exec "$PROJECT_NAME" bash -c 'command -v pip3 >/dev/null 2>&1' 2>/dev/null; then
+        if ! docker exec "$PROJECT_NAME" bash -c \
+            'cd /usr/share/nginx/html && pip3 install --break-system-packages --quiet --disable-pip-version-check -r requirements.txt' >/dev/null 2>&1; then
+            echo-yellow "Warning: could not reinstall Python dependencies in $PROJECT_NAME."
+        else
+            # Restart the app so it picks up freshly-installed packages.
+            docker exec "$PROJECT_NAME" supervisorctl restart python-app >/dev/null 2>&1 || true
+        fi
+    fi
+fi
+
+# The container is up but the app inside may still be binding its port (or
+# finishing a dependency install). Let the HTTP check retry instead of
+# reporting a false FAILED. Only affects freshly-started projects — plain
+# `podium status` keeps its single fast attempt.
+export HTTP_WAIT_SECS="${HTTP_WAIT_SECS:-45}"
+
 # Show status to confirm successful startup
 if [ -n "$PROJECT_NAME" ]; then
     source "$DEV_DIR/scripts/status.sh" $PROJECT_NAME $STATUS_OPTIONS
