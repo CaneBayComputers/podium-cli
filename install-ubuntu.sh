@@ -62,11 +62,28 @@ if ! pwd &>/dev/null; then
 fi
 
 # Detect a local Podium CLI checkout (for development installs)
-CURRENT_DIR="$(pwd -P)"
-LOCAL_REPO_DIR=""
-if [[ -f "$CURRENT_DIR/README.md" && -f "$CURRENT_DIR/src/podium" && -f "$CURRENT_DIR/src/scripts/functions.sh" ]]; then
-    LOCAL_REPO_DIR="$CURRENT_DIR"
+# Prefer the directory this script lives in, so running it by path from
+# somewhere else (./podium-cli/install-ubuntu.sh) still finds the checkout
+# instead of silently re-cloning master over the top of it. Falls back to the
+# working directory. Piped through `curl | bash` there is no script file on
+# disk, so neither candidate matches and the clone path below runs — which is
+# the intended behaviour for that install method.
+SELF_DIR=""
+if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
+    SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)"
 fi
+CURRENT_DIR="$(pwd -P)"
+
+LOCAL_REPO_DIR=""
+for _candidate in "$SELF_DIR" "$CURRENT_DIR"; do
+    if [[ -n "$_candidate" \
+        && -f "$_candidate/README.md" \
+        && -f "$_candidate/src/podium" \
+        && -f "$_candidate/src/scripts/functions.sh" ]]; then
+        LOCAL_REPO_DIR="$_candidate"
+        break
+    fi
+done
 
 echo
 
