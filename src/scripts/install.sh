@@ -134,10 +134,20 @@ fi
 # Verify
 echo-return
 echo-white "Waiting for $INSTALL_DISPLAY to be ready..."
+# 15 x 5s = 75s suits most apps, but some do first-run migrations or asset
+# builds that take minutes. An installer can declare INSTALL_READY_RETRIES to
+# wait longer; without it a working app reports failure purely for being slow.
+READY_RETRIES="${INSTALL_READY_RETRIES:-15}"
 RETRIES=0
 HTTP_CODE="000"
-while [ $RETRIES -lt 15 ]; do
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://$PROJECT_NAME/" 2>/dev/null || echo "000")
+while [ $RETRIES -lt "$READY_RETRIES" ]; do
+    # Two traps here. curl -w already prints 000 when it cannot connect, so the
+    # original `|| echo "000"` produced "HTTP 000000". But that `||` was ALSO
+    # shielding the assignment from `set -e` — curl exits 7 on connection
+    # refused, which is the normal case while an app is still booting, and
+    # without a guard the whole install aborts mid-wait with status 7.
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "http://$PROJECT_NAME/" 2>/dev/null) || true
+    [ -z "$HTTP_CODE" ] && HTTP_CODE="000"
     first_digit="${HTTP_CODE:0:1}"
     if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
         break

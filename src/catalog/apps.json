@@ -8,6 +8,12 @@
       "note": "Set an optional server password on first visit to restrict access."
     },
     {
+      "slug": "appsmith",
+      "display": "Appsmith",
+      "database": "",
+      "note": "Low-code internal-tool builder. First boot takes 60-90s while it initialises. Apps are built in the browser UI, not in this project directory."
+    },
+    {
       "slug": "appwrite",
       "display": "Appwrite",
       "database": "mysql",
@@ -273,6 +279,12 @@
       "note": "Official laravel/livewire-starter-kit: Livewire 4 + Flux UI + Fortify auth (login, register, 2FA, passkeys), settings, and a dashboard. Add components with: podium artisan livewire make:livewire <Name>"
     },
     {
+      "slug": "localstack",
+      "display": "LocalStack",
+      "database": "",
+      "note": "Local AWS emulator. Point the AWS CLI at it with: aws --endpoint-url=http://$PROJECT_NAME s3 ls. Needs the Docker socket so it can start Lambda containers."
+    },
+    {
       "slug": "lychee",
       "display": "Lychee",
       "database": "mysql",
@@ -377,12 +389,6 @@
       "note": "Open-source Airtable alternative. First user to register becomes admin."
     },
     {
-      "slug": "octobercms",
-      "display": "October CMS",
-      "database": "mysql",
-      "note": "First boot copies files and runs migrations (~60-90s). The official image bundles its own MariaDB internally \u2014 this is the only image upstream ships and it ignores external DB env, so podium-mariadb is not used here."
-    },
-    {
       "slug": "open-webui",
       "display": "Open WebUI",
       "database": "",
@@ -410,6 +416,12 @@
       "display": "PhotoPrism",
       "database": "mysql",
       "note": "Place photos in ~/podium-projects/photoprism/originals/ then run 'podium exec photoprism-app photoprism index' to index them."
+    },
+    {
+      "slug": "pixelfed",
+      "display": "Pixelfed",
+      "database": "mysql",
+      "note": "Federated image-sharing platform. First boot runs migrations and can take ~2 minutes. Email is wired to MailHog, so activation links land at http://podium-mailhog:8025/."
     },
     {
       "slug": "plane",
