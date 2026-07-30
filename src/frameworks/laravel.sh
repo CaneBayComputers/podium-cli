@@ -1,6 +1,7 @@
 #!/bin/bash
 # Laravel framework hooks
 
+FRAMEWORK_SQLITE_PATH="database/database.sqlite"
 FRAMEWORK_IS_PYTHON=0
 FRAMEWORK_DOCKER_TEMPLATE="project"
 
@@ -85,6 +86,20 @@ framework_setup_env() {
     podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
 
     case $DATABASE_ENGINE in
+        "sqlite"|"sqlite3")
+            # Laravel wants an absolute path (or it resolves database/database.sqlite).
+            # The file MUST live in the project directory — that is the only path
+            # bind-mounted into the container, so a database anywhere else is
+            # destroyed when the container is recreated on `podium up`.
+            # Laravel errors out if the file does not exist, so ensure_database
+            # creates it before migrations run.
+            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=sqlite" .env
+            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=" .env
+            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=" .env
+            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database/database.sqlite}" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
+            ;;
         "postgres"|"postgresql"|"pgsql")
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
             podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env

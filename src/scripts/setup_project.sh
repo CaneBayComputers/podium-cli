@@ -31,7 +31,7 @@ usage() {
     echo-white ""
     echo-white "Arguments:"
     echo-white "  project_name     Name of the project to setup"
-    echo-white "  database_engine  Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  database_engine  Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"

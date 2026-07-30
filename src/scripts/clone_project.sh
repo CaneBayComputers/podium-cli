@@ -57,7 +57,7 @@ usage() {
     echo-white "  --no-colors                  Disable colored output"
     echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --database ENGINE            Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --database ENGINE            Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
     echo-white "  --overwrite-env              Regenerate the project's .env even if one already exists"
     echo-white "  --no-migration               Skip database migrations (they run by default)"

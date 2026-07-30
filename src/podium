@@ -136,7 +136,7 @@ show_help() {
     echo "  --framework <name>        - Framework: laravel (default), wordpress, php, fastapi, flask, django,"
     echo "                             express, nestjs, fastify, node"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
-    echo "  --database <type>         - Database: mysql (default), postgres, mongodb"
+    echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
     echo "  --github                  - Create GitHub repository in user account"
     echo "  --github-org <org>        - Create GitHub repository in organization"

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Django framework hooks
 
+FRAMEWORK_SQLITE_PATH="db.sqlite3"   # Django convention
 FRAMEWORK_IS_PYTHON=1
 FRAMEWORK_DOCKER_TEMPLATE="python3-project"
 
@@ -88,21 +89,34 @@ WSGI_APPLICATION = '${PROJECT_NAME_SNAKE}.wsgi.application'
 _db_engine = os.getenv('DB_CONNECTION', 'mysql')
 if _db_engine in ('postgresql', 'pgsql', 'postgres'):
     _db_engine = 'postgresql'
+elif _db_engine in ('sqlite', 'sqlite3'):
+    _db_engine = 'sqlite3'
 elif _db_engine == 'mongodb':
     _db_engine = 'mysql'  # mongo not natively supported in DATABASES; use separate lib
 else:
     _db_engine = 'mysql'
 
-DATABASES = {
-    'default': {
-        'ENGINE': f'django.db.backends.{_db_engine}',
-        'NAME': os.getenv('DB_DATABASE', '${DB_NAME}'),
-        'USER': os.getenv('DB_USERNAME', 'root'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', '3306'),
+if _db_engine == 'sqlite3':
+    # SQLite takes only a file path — USER/PASSWORD/HOST/PORT are meaningless
+    # and Django rejects some of them. The default lives in the project
+    # directory, the only path bind-mounted into the container.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.getenv('DB_DATABASE') or str(BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': f'django.db.backends.{_db_engine}',
+            'NAME': os.getenv('DB_DATABASE', '${DB_NAME}'),
+            'USER': os.getenv('DB_USERNAME', 'root'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', ''),
+            'PORT': os.getenv('DB_PORT', '3306'),
+        }
+    }
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -175,7 +189,17 @@ framework_setup_env() {
     echo-cyan "Setting up .env file ..."; echo-white
 
     local db_connection db_host db_port db_username db_password
+    # SQLite overrides this with a FILE PATH; every server engine uses the name.
+    local db_database="$DB_NAME"
     case $DATABASE_ENGINE in
+        "sqlite"|"sqlite3")
+            # The file MUST sit in the project directory: that is the only path
+            # bind-mounted into the container, so a database anywhere else is
+            # destroyed when the container is recreated on `podium up`.
+            db_connection="sqlite3"; db_host=""; db_port=""
+            db_username=""; db_password=""
+            db_database="/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database.sqlite}"
+            ;;
         "postgres"|"postgresql"|"pgsql")
             db_connection="postgresql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432"
             db_username="root"; db_password="password"
@@ -198,7 +222,7 @@ APP_URL=http://$PROJECT_NAME
 DB_CONNECTION=$db_connection
 DB_HOST=$db_host
 DB_PORT=$db_port
-DB_DATABASE=$DB_NAME
+DB_DATABASE=$db_database
 DB_USERNAME=$db_username
 DB_PASSWORD=$db_password
 REDIS_HOST=$REDIS_CONTAINER_NAME
@@ -233,6 +257,8 @@ framework_setup_gitignore() {
 
     cat > .gitignore << 'GITEOF'
 docker-compose.yaml
+*.sqlite
+*.sqlite3
 __pycache__/
 *.py[cod]
 *.egg-info/

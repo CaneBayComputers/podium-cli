@@ -67,7 +67,17 @@ framework_setup_env() {
     echo-cyan "Setting up .env file ..."; echo-white
 
     local db_connection db_host db_port db_username db_password
+    # SQLite overrides this with a FILE PATH; every server engine uses the name.
+    local db_database="$DB_NAME"
     case $DATABASE_ENGINE in
+        "sqlite"|"sqlite3")
+            # The file MUST sit in the project directory: that is the only path
+            # bind-mounted into the container, so a database anywhere else is
+            # destroyed when the container is recreated on `podium up`.
+            db_connection="sqlite"; db_host=""; db_port=""
+            db_username=""; db_password=""
+            db_database="/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database.sqlite}"
+            ;;
         "postgres"|"postgresql"|"pgsql")
             db_connection="postgresql"; db_host="$POSTGRES_CONTAINER_NAME"; db_port="5432"
             db_username="root"; db_password="password"
@@ -91,7 +101,7 @@ PORT=3000
 DB_CONNECTION=$db_connection
 DB_HOST=$db_host
 DB_PORT=$db_port
-DB_DATABASE=$DB_NAME
+DB_DATABASE=$db_database
 DB_USERNAME=$db_username
 DB_PASSWORD=$db_password
 REDIS_HOST=$REDIS_CONTAINER_NAME
