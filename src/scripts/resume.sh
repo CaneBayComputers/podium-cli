@@ -107,9 +107,16 @@ case "$AI_AGENT_CLI_NAME" in
             exec gemini "${common_args[@]}"
         fi
         ;;
+    aider)
+        build_aider_args
+        # --restore-chat-history replays this directory's .aider.chat.history.md.
+        # There's nothing to fall back to: with no history aider just opens a
+        # fresh session, which is the fallback behavior anyway.
+        exec aider "${AIDER_ARGS[@]}" --restore-chat-history
+        ;;
     *)
         echo-red "Unsupported AI agent: '$AI_AGENT_CLI_NAME'."
-        echo-white "Supported agents: codex, claude, gemini"
+        echo-white "Supported agents: codex, claude, gemini, aider"
         exit 1
         ;;
 esac

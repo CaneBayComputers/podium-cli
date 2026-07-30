@@ -16,16 +16,37 @@ Podium's command surface is shaped around AI-driven development. The point is to
 podium ai-set --agent claude --model claude-opus-4-7
 podium ai-set --agent codex  --model gpt-4.1
 podium ai-set --agent gemini
+podium ai-set --agent aider  --model openai/gpt-4o --api-key sk-...
 podium ai-set --json-output          # inspect current settings
 ```
 
 | Flag | Description |
 |---|---|
-| `--agent <name>` | `codex`, `claude`, `gemini`, or a custom command |
-| `--model <name>` | Model name (optional) |
-| `--api-key <key>` | API key (optional; Gemini uses Google account auth) |
+| `--agent <name>` | `codex`, `claude`, `gemini`, or `aider` |
+| `--model <name>` | Model name (optional, except for Aider) |
+| `--api-key <key>` | API key (optional; Gemini uses Google account auth, Aider requires a key) |
+| `--api-base <url>` | OpenAI-compatible endpoint — Aider only |
 
 Settings live in `/etc/podium-cli/.env`. Always change them with `podium ai-set` rather than editing the file.
+
+### Aider
+
+Codex, Claude and Gemini each sign in with their own account. Aider doesn't — it
+talks straight to a provider API, so it needs a model and a key before it will run:
+
+```bash
+# a hosted provider — the model prefix picks it
+podium ai-set --agent aider --model anthropic/claude-sonnet-4-5 --api-key sk-ant-...
+
+# a local OpenAI-compatible server
+podium ai-set --agent aider --model openai/llama3.1 \
+  --api-key ollama --api-base http://localhost:11434/v1
+```
+
+`--api-base` is only for OpenAI-compatible servers (Ollama, LM Studio, OpenRouter,
+vLLM); leave it blank to use a provider's own hosted API. Aider normally commits
+each edit itself — Podium runs it with `--no-auto-commits` so its changes sit in
+your working tree like every other agent's.
 
 {: .warning }
 Podium starts your agent in a high-trust mode (`--dangerously-skip-permissions`, `--yolo`, or equivalent). Only use `podium ai` in project directories you're comfortable letting an AI modify extensively.

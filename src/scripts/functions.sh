@@ -247,6 +247,23 @@ sudo-podium-sed-change() {
     fi
 }
 
+# Set KEY=VALUE in an env file, adding the line when it isn't there yet.
+#
+# sudo-podium-sed-change silently does nothing when its pattern matches no line,
+# so keys introduced after an install was provisioned (e.g. AI_API_BASE) would
+# never persist on an existing /etc/podium-cli/.env. Upsert instead.
+sudo-podium-env-set() {
+    local key="$1"
+    local value="$2"
+    local file="$3"
+
+    if grep -q "^$key=" "$file" 2>/dev/null; then
+        sudo-podium-sed-change "/^$key=/" "$key=$value" "$file"
+    else
+        printf '%s=%s\n' "$key" "$value" | sudo tee -a "$file" >/dev/null
+    fi
+}
+
 # Safe sudo function (doesn't override user's sudo)
 podium-sudo() {
     if command -v sudo >/dev/null 2>&1; then
@@ -761,6 +778,75 @@ ensure_database() {
             fi
             ;;
     esac
+}
+
+# ---------------------------------------------------------------------------
+# Aider argument construction
+# ---------------------------------------------------------------------------
+# Aider is the odd one out among the supported agents: codex/claude/gemini all
+# have their own subscription login, while aider is bring-your-own key and talks
+# to whatever provider the model name points at. That means AI_MODEL is
+# effectively required, AI_API_KEY has to carry a provider tag, and an
+# OpenAI-compatible endpoint (Ollama, LM Studio, OpenRouter, vLLM) needs
+# AI_API_BASE.
+#
+# Fills the global AIDER_ARGS array with everything except the prompt.
+build_aider_args() {
+    AIDER_ARGS=(--yes-always --no-check-update)
+
+    # The other agents leave their edits in the working tree; aider commits each
+    # change by default. Match the rest of Podium and leave the tree dirty.
+    #
+    # Aider's other git-side default is left alone: on first run in a repo it
+    # appends `.aider*` to .gitignore (auto-accepted here because of
+    # --yes-always). That's a visible one-line working-tree change, and without
+    # it aider's history/cache files show up as untracked clutter.
+    AIDER_ARGS+=(--no-auto-commits)
+
+    # --yes-always answers "yes" to aider's "create a git repo?" prompt, which
+    # would silently git-init a project that deliberately isn't one. Only let
+    # aider use git when there's already a repo here.
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        AIDER_ARGS+=(--no-git)
+    fi
+
+    if [[ -n "$AI_MODEL" ]]; then
+        AIDER_ARGS+=("--model" "$AI_MODEL")
+    fi
+
+    if [[ -n "$AI_API_KEY" ]]; then
+        # Aider wants `provider=key` (it exports PROVIDER_API_KEY). Podium
+        # stores a bare key, so tag it with the provider implied by the model
+        # prefix — `openai/gpt-4o` -> openai, `anthropic/...` -> anthropic.
+        # An unprefixed model means OpenAI (also the right answer for a custom
+        # OpenAI-compatible endpoint). A key that already contains `=` is
+        # assumed to be pre-tagged and passed through untouched.
+        if [[ "$AI_API_KEY" == *=* ]]; then
+            AIDER_ARGS+=("--api-key" "$AI_API_KEY")
+        elif [[ "$AI_MODEL" == */* ]]; then
+            AIDER_ARGS+=("--api-key" "${AI_MODEL%%/*}=$AI_API_KEY")
+        else
+            AIDER_ARGS+=("--api-key" "openai=$AI_API_KEY")
+        fi
+    fi
+
+    if [[ -n "$AI_API_BASE" ]]; then
+        AIDER_ARGS+=(--openai-api-base "$AI_API_BASE")
+    fi
+}
+
+# Aider has no "seed this prompt then stay interactive" flag — --message
+# processes the prompt and exits. --load runs in-chat /commands at launch and
+# then hands over to the user, so seed the session with `/code <prompt>`.
+# Writes the file path to the global AIDER_SEED_FILE; caller removes it.
+#
+# /commands are dispatched a line at a time, so a multi-line prompt would lose
+# everything after the first newline — flatten it.
+write_aider_seed_file() {
+    local prompt="$1"
+
+    AIDER_SEED_FILE=$(mktemp "${TMPDIR:-/tmp}/podium-aider-seed.XXXXXX")
+    printf '/code %s\n' "$(printf '%s' "$prompt" | tr '\n' ' ')" > "$AIDER_SEED_FILE"
 }
 
 # After a project is created/cloned/installed, hand off to an interactive AI session

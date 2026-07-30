@@ -197,9 +197,19 @@ case "$AI_AGENT_CLI_NAME" in
         fi
         gemini "${gemini_args[@]}"
         ;;
+    aider)
+        build_aider_args
+        if [[ "$ONE_OFF" == "1" ]]; then
+            aider "${AIDER_ARGS[@]}" --message "$PROMPT"
+        else
+            write_aider_seed_file "$PROMPT"
+            aider "${AIDER_ARGS[@]}" --load "$AIDER_SEED_FILE"
+            rm -f "$AIDER_SEED_FILE"
+        fi
+        ;;
     *)
         echo-red "Unsupported AI agent: '$AI_AGENT_CLI_NAME'."
-        echo-white "Supported agents: codex, claude, gemini"
+        echo-white "Supported agents: codex, claude, gemini, aider"
         exit 1
         ;;
 esac
