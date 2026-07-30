@@ -123,7 +123,7 @@ echo -e "${BLUE}Installing base packages...${NC}"
 sudo dnf install -y \
     git curl jq unzip \
     dnf-plugins-core \
-    trash-cli \
+    trash-cli acl \
     ImageMagick librsvg2-tools \
     policycoreutils-python-utils
 
