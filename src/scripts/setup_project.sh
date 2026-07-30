@@ -762,7 +762,17 @@ PYEOF
 
         find storage -type d -exec chmod 777 {} +
 
-        find storage -type d -exec setfacl -m "default:group::rw" {} +
+        # setfacl comes from the `acl` package, which is NOT present on a stock
+        # Ubuntu or Fedora install. Under `set -e` a missing binary aborted the
+        # entire setup — a project that was otherwise complete got rolled back.
+        # The chmod above already grants the access needed; the default ACL only
+        # makes it stick for files created later, so its absence is a downgrade,
+        # not a failure.
+        if command -v setfacl >/dev/null 2>&1; then
+            find storage -type d -exec setfacl -m "default:group::rw" {} + || true
+        else
+            echo-yellow "setfacl not found (install the 'acl' package) — skipping default ACLs."
+        fi
 
         echo-green 'Storage folder permissions set!'; echo-white
 
