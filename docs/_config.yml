@@ -12,6 +12,10 @@ search:
   previews: 2
 heading_anchors: true
 
+# Pretty URLs: /guide/installation/ instead of /guide/installation.html.
+# Without this Jekyll emits .html and every in-page link 404s.
+permalink: pretty
+
 aux_links:
   "GitHub":
     - "https://github.com/CaneBayComputers/podium-cli"
