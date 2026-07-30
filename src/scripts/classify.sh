@@ -78,7 +78,12 @@ Give every option a "reason": one short sentence saying why it fits this
 specific idea. The user sees these side by side and decides from them, so make
 them concrete and comparative, not generic praise.
 
-Recommend databases only from the chosen framework's allowed list.
+Recommend ONE database for the framework you chose, from that framework's
+allowed list only, and say why in one short sentence. Judge it on the actual
+workload the user described: sqlite for a small single-user or low-traffic tool
+where a server is overkill, postgres for relational data, concurrency or
+anything that will grow, mysql where the ecosystem expects it, mongodb only for
+genuinely document-shaped data.
 Suggest a short lowercase hyphenated project name, but ONLY when the idea
 actually implies one. "track which guitar pedals are lent out" implies
 "pedal-lending"; "a Django app for tracking chores" implies "chore-tracker".
@@ -99,7 +104,7 @@ Reply with ONLY this JSON. No prose, no markdown fences:
   "apps": [
     {"slug": "<app slug>", "reason": "<one short sentence, max 15 words>"}
   ],
-  "databases": ["<engine>", "..."]
+  "database": {"slug": "<engine>", "reason": "<one short sentence, max 15 words>"}
 }
 PROMPTEOF
 }
@@ -176,11 +181,23 @@ if name:
     if not meaningful:
         name = ""
 
-dbs = [d for d in (doc.get("databases") or []) if isinstance(d, str)]
+# Preferred shape is a single {slug, reason}; the older bare array is still
+# accepted so a stale reply doesn't fail the whole classification.
+db_rec, db_reason = "", ""
+_db = doc.get("database")
+if isinstance(_db, dict):
+    db_rec = (_db.get("slug") or "").strip().lower()
+    db_reason = (_db.get("reason") or "").strip().replace("\t", " ")[:120]
+elif isinstance(_db, str):
+    db_rec = _db.strip().lower()
+if not db_rec:
+    _arr = [d for d in (doc.get("databases") or []) if isinstance(d, str)]
+    db_rec = _arr[0].strip().lower() if _arr else ""
 
 # TSV so bash can read it without another parser.
 print("NAME\t" + name)
-print("DBS\t" + ",".join(dbs))
+print("DBS\t" + db_rec)
+print("DBWHY\t" + db_reason)
 print("REC\t" + rec)
 # Only an EXPLICIT false skips the build. A missing field must mean "yes":
 # skipping wrongly drops half of what the user asked for, while running it
@@ -256,6 +273,8 @@ classify_project() {
     local suggested_name suggested_dbs
     suggested_name=$(printf '%s' "$parsed" | awk -F'\t' '$1=="NAME"{print $2; exit}')
     suggested_dbs=$(printf '%s' "$parsed" | awk -F'\t' '$1=="DBS"{print $2; exit}')
+    local suggested_db_why
+    suggested_db_why=$(printf '%s' "$parsed" | awk -F'\t' '$1=="DBWHY"{print $2; exit}')
     local recommended_kind
     recommended_kind=$(printf '%s' "$parsed" | awk -F'\t' '$1=="REC"{print $2; exit}')
     CHOSEN_CUSTOMIZE=$(printf '%s' "$parsed" | awk -F'\t' '$1=="CUSTOM"{print $2; exit}')
@@ -340,8 +359,12 @@ classify_project() {
             local -a dblabels
             local first=1 o
             for o in "${ordered[@]}"; do
-                if [[ $first -eq 1 ]]; then dblabels+=("$o|recommended"); first=0
-                else dblabels+=("$o|"); fi
+                if [[ $first -eq 1 ]]; then
+                    dblabels+=("$(printf '%s  \033[1;32m(Recommended)\033[0m' "$o")|${suggested_db_why:-best fit for this workload}")
+                    first=0
+                else
+                    dblabels+=("$o|")
+                fi
             done
             local dbidx
             dbidx=$(_menu_choose "Which database for ${displays[$sel]}?" 1 "${dblabels[@]}")
