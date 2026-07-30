@@ -49,26 +49,36 @@ The user's idea:
 
 $idea
 
-Decide which options fit. Rules:
-- If a ready-to-run app CLOSELY matches the idea, rank it first — it is far
-  cheaper and faster than building the same thing from scratch.
-- Do NOT force a fit. A vaguely-related app is worse than a custom build: the
-  user ends up fighting someone else's product instead of getting what they
-  asked for. If nothing matches well, return frameworks only — that is a
-  perfectly good answer and is expected for anything bespoke.
-- You are NOT limited to the app list.
-- Offer between 1 and 4 candidates, best first. Mixing apps and frameworks is
-  fine and often the most useful answer.
-- For frameworks, recommend databases from that framework's allowed list only.
-- Suggest a short lowercase hyphenated project name derived from the idea.
+Return BOTH of the following, always:
+
+1. Exactly ONE framework — the best fit for building this custom, from scratch.
+   This is never optional. Even when a ready-made app is the obvious answer,
+   the user is entitled to see what building it themselves would look like.
+2. Zero or more ready-to-run apps that genuinely fit, best first.
+   Only include an app if it actually does what the user described. A
+   vaguely-related app is worse than none: the user ends up fighting someone
+   else's product instead of getting what they asked for. Returning an empty
+   list is a perfectly good answer for anything bespoke.
+
+Also state which you would recommend overall — "app" or "framework". An app is
+running in about two minutes; a framework build costs meaningfully more time and
+AI tokens, but produces exactly what was asked for.
+
+Give every option a "reason": one short sentence saying why it fits this
+specific idea. The user sees these side by side and decides from them, so make
+them concrete and comparative, not generic praise.
+
+Recommend databases only from the chosen framework's allowed list.
+Suggest a short lowercase hyphenated project name derived from the idea.
 
 Reply with ONLY this JSON. No prose, no markdown fences:
 
 {
   "project_name": "short-hyphenated-name",
-  "candidates": [
-    {"kind": "app",       "slug": "<app slug>",       "why": "<max 10 words>"},
-    {"kind": "framework", "slug": "<framework slug>", "why": "<max 10 words>"}
+  "recommended": "app" | "framework",
+  "framework": {"slug": "<framework slug>", "reason": "<one short sentence, max 15 words>"},
+  "apps": [
+    {"slug": "<app slug>", "reason": "<one short sentence, max 15 words>"}
   ],
   "databases": ["<engine>", "..."]
 }
@@ -103,16 +113,33 @@ try:
 except Exception:
     sys.exit(1)
 
+# Apps first (ready immediately), framework last (always present as the
+# build-it-yourself path). Unknown slugs are dropped rather than passed on.
 out = []
-for c in (doc.get("candidates") or []):
-    kind, slug = c.get("kind"), (c.get("slug") or "").strip()
-    why = (c.get("why") or "").strip().replace("\t", " ")
-    if kind == "app" and slug in apps:
+for a in (doc.get("apps") or []):
+    slug = (a.get("slug") or "").strip()
+    why = (a.get("reason") or a.get("why") or "").strip().replace("\t", " ")[:120]
+    if slug in apps:
         out.append(("app", slug, apps[slug]["display"], apps[slug]["database"], why))
-    elif kind == "framework" and slug in fws:
-        out.append(("framework", slug, fws[slug]["display"], ",".join(fws[slug]["databases"]), why))
+
+fw = doc.get("framework") or {}
+fw_slug = (fw.get("slug") or "").strip()
+fw_why = (fw.get("reason") or fw.get("why") or "").strip().replace("\t", " ")[:120]
+if fw_slug in fws:
+    out.append(("framework", fw_slug, fws[fw_slug]["display"],
+                ",".join(fws[fw_slug]["databases"]), fw_why))
+
 if not out:
     sys.exit(1)
+
+# What the model would pick. Fall back to the framework when it named "app" but
+# supplied none, which is the only way that answer can be self-contradictory.
+rec = (doc.get("recommended") or "").strip().lower()
+has_app = any(o[0] == "app" for o in out)
+if rec not in ("app", "framework"):
+    rec = "app" if has_app else "framework"
+if rec == "app" and not has_app:
+    rec = "framework"
 
 name = (doc.get("project_name") or "").strip().lower()
 name = re.sub(r"[^a-z0-9-]+", "-", name).strip("-")[:40]
@@ -124,7 +151,8 @@ dbs = [d for d in (doc.get("databases") or []) if isinstance(d, str)]
 # TSV so bash can read it without another parser.
 print("NAME\t" + name)
 print("DBS\t" + ",".join(dbs))
-for kind, slug, display, db, why in out[:4]:
+print("REC\t" + rec)
+for kind, slug, display, db, why in out[:5]:
     print(f"CAND\t{kind}\t{slug}\t{display}\t{db}\t{why}")
 PYEOF
 }
@@ -193,6 +221,8 @@ classify_project() {
     local suggested_name suggested_dbs
     suggested_name=$(printf '%s' "$parsed" | awk -F'\t' '$1=="NAME"{print $2; exit}')
     suggested_dbs=$(printf '%s' "$parsed" | awk -F'\t' '$1=="DBS"{print $2; exit}')
+    local recommended_kind
+    recommended_kind=$(printf '%s' "$parsed" | awk -F'\t' '$1=="REC"{print $2; exit}')
 
     local -a kinds slugs displays dbs whys labels
     while IFS=$'\t' read -r tag kind slug display db why; do
@@ -204,29 +234,36 @@ classify_project() {
 
     local idx=1
     if [[ "$non_interactive" == "1" ]]; then
-        idx=1
+        local n
+        for n in "${!slugs[@]}"; do
+            if [[ "${kinds[$n]}" == "${recommended_kind}" ]]; then idx=$((n + 1)); break; fi
+        done
     else
-        # Candidates arrive ranked, best first. Mark the top one only when there
-        # is actually a choice to make — "(Recommended)" against a single option
-        # is noise.
-        local n tag rec=""
-        [[ ${#slugs[@]} -gt 1 ]] && rec="  \033[1;32m(Recommended)\033[0m"
+        # Apps come first (running in ~2 minutes), the framework last (does
+        # exactly what was asked, but costs real time and tokens). Mark whichever
+        # the model actually recommends rather than always the first row, so the
+        # marker means something.
+        local n tag rec_n=-1
+        for n in "${!slugs[@]}"; do
+            if [[ "${kinds[$n]}" == "${recommended_kind}" ]]; then rec_n=$n; break; fi
+        done
         for n in "${!slugs[@]}"; do
             if [[ "${kinds[$n]}" == "app" ]]; then
-                tag="(ready-to-run app)"
+                tag="ready to run — live in about 2 minutes"
             else
-                tag="(custom build — more tokens and time)"
+                tag="custom build — exactly what you asked for, more time and tokens"
             fi
-            if [[ $n -eq 0 ]]; then
-                labels+=("$(printf '%s  %s%b' "${displays[$n]}" "$tag" "$rec")|${whys[$n]}")
+            if [[ $n -eq $rec_n ]]; then
+                labels+=("$(printf '%s  \033[2m(%s)\033[0m  \033[1;32m(Recommended)\033[0m' "${displays[$n]}" "$tag")|${whys[$n]}")
             else
-                labels+=("${displays[$n]}  $tag|${whys[$n]}")
+                labels+=("$(printf '%s  \033[2m(%s)\033[0m' "${displays[$n]}" "$tag")|${whys[$n]}")
             fi
         done
-        labels+=("I don't know — just choose for me|uses the top recommendation")
-        idx=$(_menu_choose "What would you like to build this with?" 1 "${labels[@]}")
-        # The trailing "just choose" entry maps back to the first candidate.
-        (( idx > ${#slugs[@]} )) && idx=1
+        labels+=("I don't know — just choose for me|uses the recommended option")
+        local default_idx=$(( rec_n >= 0 ? rec_n + 1 : 1 ))
+        idx=$(_menu_choose "How would you like to build this?" "$default_idx" "${labels[@]}")
+        # The trailing "just choose for me" entry resolves to the recommendation.
+        (( idx > ${#slugs[@]} )) && idx=$default_idx
     fi
 
     local sel=$((idx - 1))
