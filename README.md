@@ -4,6 +4,17 @@
 
 **Local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.**
 
+| | Without Podium | With Podium |
+|---|---|---|
+| **Standing up an OSS app** | Hunt down an image, write a compose, wire env vars, chase port clashes | `podium install grafana` |
+| ↳ prompts | Several rounds of "now fix the database host" | One |
+| ↳ tokens | ~10–15k, and it lands *almost* right | ~800 |
+| ↳ time | An afternoon of yak-shaving | Under two minutes |
+| **Databases** | Every project bundles its own | One shared set — ~700MB of RAM becomes ~100MB |
+| **Reaching it** | `localhost:3002`… or was it `:3003`? | `http://grafana/` |
+| **Guardrails for AI** | Agent invents its own ports, DB and layout each time | Fixed hostnames, IPs, images and credentials |
+| **On another machine** | "Worked on my laptop" | Identical |
+
 📖 **[Full documentation →](https://canebaycomputers.github.io/podium-cli/guide/)**
 
 ---
