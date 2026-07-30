@@ -49,7 +49,7 @@ phpcs phpmd pip projects-dir python redis redis-flush remove resume setup shell 
 start-services status stop-services supervisor supervisor-status tinker uninstall \
 up up-all update update-installer wp"
 
-    local frameworks="laravel kavera wordpress php fastapi flask django python express nestjs fastify node"
+    local frameworks="laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node"
 
     # First token after `podium` → the verb.
     if [ "$cword" -eq 1 ]; then

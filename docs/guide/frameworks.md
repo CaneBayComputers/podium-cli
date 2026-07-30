@@ -24,6 +24,7 @@ For ready-made third-party apps you *run* rather than write, see [App library]({
 |---|---|---|
 | `laravel` | PHP 8.3 | MySQL |
 | `kavera` | PHP 8.3 | MySQL |
+| `octobercms` | PHP 8.3 | MySQL |
 | `wordpress` | PHP 8.3 | MySQL |
 | `php` | PHP 8.3 | MySQL |
 | `fastapi` | Python 3 | PostgreSQL |

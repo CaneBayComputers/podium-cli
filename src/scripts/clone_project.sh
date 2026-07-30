@@ -65,7 +65,7 @@ usage() {
     echo-white "  --public                     Make the new GitHub repository public (default: private)"
     echo-white "  --private                    Make the new GitHub repository private"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
-    echo-white "  --framework FRAMEWORK        Force framework detection (laravel, kavera, wordpress, php, fastapi, flask, django, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK        Force framework detection (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, express, nestjs, fastify, node)"
     echo-white "  --no-startup                 Clone and register project but do not start the container"
     echo-white "  --image REF                  Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"

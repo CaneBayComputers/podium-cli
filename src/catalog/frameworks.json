@@ -33,6 +33,17 @@
       "note": "WordPress is MySQL/MariaDB only."
     },
     {
+      "slug": "octobercms",
+      "display": "October CMS",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "note": "Laravel-based CMS you build sites in \u2014 themes, plugins and page templates live in the project source tree, editable by an agent. Has a backend admin UI for content editors. Choose it over Kavera when the client needs a login-based admin to edit content themselves; choose Kavera for a pure flat-file site. Free for local development; production needs a licence from octobercms.com."
+    },
+    {
       "slug": "php",
       "display": "Plain PHP",
       "runtime": "PHP 8.3",

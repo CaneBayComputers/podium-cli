@@ -109,6 +109,7 @@ Both emit a prepared prompt telling an agent to fetch upstream, diff against the
 | Leantime | `podium install leantime` | Project Mgmt |
 | Lemmy | `podium install lemmy` | Social |
 | LimeSurvey | `podium install limesurvey` | Surveys |
+| Laravel Livewire | `podium install livewire` | Starter Kit |
 | Linkwarden | `podium install linkwarden` | Bookmarks |
 | Listmonk | `podium install listmonk` | Newsletters |
 | LocalStack | `podium install localstack` | Dev Tools |
@@ -130,7 +131,6 @@ Both emit a prepared prompt telling an agent to fetch upstream, diff against the
 | Nextcloud | `podium install nextcloud` | File Hosting |
 | Nginx Proxy Manager | `podium install nginx-proxy-manager` | Networking |
 | NocoDB | `podium install nocodb` | Database |
-| October CMS | `podium install octobercms` | CMS |
 | Open WebUI | `podium install open-webui` | AI / LLM |
 | Outline | `podium install outline` | Wiki |
 | Paperless-ngx | `podium install paperless` | Documents |
