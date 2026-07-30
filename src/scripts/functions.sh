@@ -656,6 +656,52 @@ rewrite_env_for_shared_services() {
     echo-green ".env connection settings updated (APP_KEY and other settings preserved)."
 }
 
+# Constrain a database engine to what the chosen framework actually supports.
+# Source of truth is src/catalog/frameworks.json, so the rules live in one place
+# instead of being scattered special cases (WordPress was hardcoded in
+# new_project.sh; Django silently rewrote mongodb to mysql inside its settings
+# template, which looked like data loss to anyone who asked for Mongo).
+#
+# Echoes the engine to use. Falls back to the framework's first supported
+# engine, warning when it had to override.
+#   $1 framework slug   $2 requested engine
+resolve_framework_database() {
+    local framework="$1" requested="$2"
+    local catalog="$DEV_DIR/catalog/frameworks.json"
+    [[ ! -f "$catalog" ]] && { printf '%s' "$requested"; return 0; }
+
+    local resolved
+    resolved=$(python3 - "$catalog" "$framework" "$requested" << 'PYEOF_DB'
+import json, sys
+catalog, framework, requested = sys.argv[1], sys.argv[2], (sys.argv[3] or "").lower()
+ALIAS = {"mariadb": "mysql", "postgresql": "postgres", "pgsql": "postgres",
+         "mongo": "mongodb", "sqlite3": "sqlite"}
+requested = ALIAS.get(requested, requested)
+fws = {f["slug"]: f for f in json.load(open(catalog))["frameworks"]}
+fw = fws.get(framework)
+if not fw:
+    print(requested or "")
+    sys.exit(0)
+allowed = fw.get("databases") or []
+if not allowed or not requested or requested in allowed:
+    print(requested or (allowed[0] if allowed else ""))
+    sys.exit(0)
+print(f"{allowed[0]}\t{fw['display']}\t{fw.get('note', '')}")
+PYEOF_DB
+)
+    if [[ "$resolved" == *$'\t'* ]]; then
+        local engine display note
+        IFS=$'\t' read -r engine display note <<< "$resolved"
+        # Warnings MUST go to stderr: the caller captures stdout as the engine
+        # name, so anything printed here would end up inside $DATABASE.
+        echo-yellow "$display does not support '$requested' — using $engine." >&2
+        [[ -n "$note" ]] && echo-white "  $note" >&2
+        printf '%s' "$engine"
+    else
+        printf '%s' "$resolved"
+    fi
+}
+
 # Idempotently ensure a database exists. Never errors if it already exists.
 # Args: $1 = database name, $2 = database engine (mysql|postgres|mongo|"")
 ensure_database() {

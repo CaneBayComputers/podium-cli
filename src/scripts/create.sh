@@ -109,194 +109,110 @@ if [[ "$STDIN_CONSUMED" == "1" && "$SKIP_INTERACTIVE" == "0" ]]; then
     fi
 fi
 
-# Build the full prompt by substituting the user's idea into the prepend template.
-# cat + $() avoids the read -d '' + set -e silent-exit trap (read returns 1 on EOF).
-PREPEND=$(cat << 'PREPEND_EOF'
-You are creating a new local project using Podium.
+# ---------------------------------------------------------------------------
+# Phase 1: classify — decide the stack, confirm with the user
+# ---------------------------------------------------------------------------
+# The AI is asked ONLY which stack fits, and answers in JSON. Podium then does
+# the creating itself. Previously one prompt had to hold the 100-app catalogue
+# AND build the app, and a wrong stack guess wasn't visible until after a full
+# build had been paid for.
+source "$SCRIPT_DIR/classify.sh"
 
-Podium is a Docker based local development environment manager.
-
-Your job is to turn the user's plain English project idea into a working Podium managed project.
-
-Read AGENTS.md and run `podium --help` before doing anything else. These are all you need to understand Podium. Do not read any Podium source files.
-
-Important workflow:
-
-1. Understand the user's project idea.
-2. Before doing anything else, assess whether you have enough information to proceed. If the idea is vague or names a general app category (CRM, blog, wiki, forum, helpdesk, inventory tracker, etc.) without specifying a product or framework, ask the user these two questions up front:
-   a. Do you want to use an existing open-source project (battle-tested, feature-complete, faster to set up) or build something custom from scratch?
-   b. If building from scratch: which framework do you prefer? List the options Podium supports and let the user choose, or offer a sensible recommendation if they have no preference.
-   If the user wants an existing project, suggest two or three well-known open-source options for that category by name, and ask which one they want before proceeding.
-3. If the user is cloning a GitHub URL, run `podium clone work-directly <url>`. The FIRST argument is the mode (git-remote style): `work-directly` clones the original repo and keeps it as upstream (default choice — do this unless the user asks otherwise); `fork` forks to the user's GitHub account; `new-repo` creates a fresh GitHub repo. Podium adapts the repo's docker-compose automatically and preserves the original as docker-compose.upstream.yaml.
-4. If the user is setting up an existing local project directory that already has a non-Podium docker-compose.yaml, run `podium setup <name> --overwrite-docker-compose`.
-5. Before running `podium new` or `podium clone`, check that the project directory does not already exist in the projects directory. If it does, remove it immediately with `podium remove <name> --force-db-delete` and proceed — do not ask the user for confirmation and do not attempt to reuse or work inside the existing directory. The `podium create` command always means start fresh.
-6. Create or enter the Podium-managed project first.
-7. After the project exists, look for the generated project's .env file.
-8. Use the .env file, if present, to understand available database, cache, mail, and service configuration.
-9. Build the app using framework-native conventions.
-10. After all code and migrations are in place, verify the site is actually responding. Run: `curl -sI --max-time 10 http://<project-name>/` and check for a 200 or 302 HTTP status code. If the response is not 2xx or 3xx, diagnose and fix the problem before reporting success. Do not tell the user the project is ready until this check passes.
-
-Rules:
-
-1. Use Podium commands and conventions.
-2. Do not install runtimes or services directly on the host machine.
-3. The user edits files locally, but project tooling should run inside the Podium container.
-4. Keep generated app files inside the project directory.
-5. Do not modify Podium core files unless the user specifically asked to modify Podium itself.
-6. Prefer simple working code over complex architecture.
-7. Make the project boot successfully in the Podium environment.
-8. Use framework native models, migrations, seeders, fixtures, and configuration when the app needs data.
-9. Do not require the user to manually create database tables.
-10. If the app needs mail, cache, queues, sessions, or database access, use the available .env configuration when present.
-11. Update the generated project's README with startup instructions, local URL, useful commands, and default credentials if any.
-12. If the user provides a GitHub HTTPS URL, clone it with `podium clone work-directly <url>`. work-directly keeps the original repo as upstream so the user can pull future updates. Only use `podium clone fork <url>` or `podium clone new-repo <url>` if the user explicitly asks to fork or to create a new repo.
-13. If the user asks to install or set up a well-known open-source project by name (a CMS, CRM, wiki, helpdesk, etc.), find its official GitHub repository and clone it using `podium clone work-directly <official-github-url>`. Do not install it via a package manager or build it from scratch. Only build from scratch if the user explicitly describes a custom app or if no official repository exists. Important: many projects separate their source code from their Docker deployment — the source repo often has no docker-compose.yaml, while a sibling `-docker` repo (e.g. `netbox-community/netbox-docker`, `gogs/gogs-docker`) ships the full docker-compose setup. Always prefer the `-docker` repo when it exists, because Podium's compose adaptation works best when there is already a docker-compose.yaml to adapt.
-14. Never use --json-output on ANY podium command. That flag suppresses all human-readable output (including the success/failure distinction) so you cannot tell whether a command worked. It exists only for external scripts/GUIs that parse Podium's output — not for you. Always run podium commands without --json-output so success and errors print to stdout where you can read them.
-15. `podium clone` always adapts/overwrites the repo's docker-compose automatically (the original is saved as docker-compose.upstream.yaml). You do NOT pass --overwrite-docker-compose to clone. For `podium setup` of an existing directory that already has a non-Podium docker-compose, pass --overwrite-docker-compose.
-16. `podium new` does NOT create a GitHub repo (pass --github or --github-org only if the user asks). `podium clone work-directly` neither forks nor creates a repo. Only fork/create when the user explicitly asks (clone modes fork / new-repo).
-17. When cloning a project whose framework is known (e.g. a Django app, a Node app), pass --framework <name> to `podium clone` so Podium generates the correct docker-compose for that stack instead of falling back to PHP.
-18. Python containers provide `python3`, not `python`. Never run `podium exec python ...` — use `podium python <args>` or `podium exec python3 <args>` instead. For Django management commands, always use `podium django manage <args>` (e.g. `podium django manage startapp myapp`, `podium django manage migrate`, `podium django manage createsuperuser`). This is shorter and more reliable than `podium exec python3 manage.py <args>`.
-19. The project is not done until the site responds with HTTP 2xx or 3xx. Always run the curl check from workflow step 10 as your final action. If it fails, check container logs (`docker logs <project-name>`), fix the issue, and re-verify before finishing.
-20. To restart processes inside a running container use `podium supervisor restart all` (run from the project directory). Never use `podium exec supervisorctl ...` — that runs as the developer user and will get a permission denied error on the supervisor socket. If `podium supervisor` is not enough, restart the whole container with `podium down <name>` followed by `podium up <name>`.
-21. `podium new` takes the framework as the FIRST positional and the project name as the SECOND: `podium new <framework> <name>`. The database is auto-selected per framework (PHP/Node → mysql, Python/Django/FastAPI → postgres); override with `--database <mysql|postgres|mongodb>` when the user specifies one. Version via `--version`. Examples: `podium new laravel my-shop`  /  `podium new express my-api --database postgres`  /  `podium new django survey-app`.
-22. Podium shared service credentials (use these when configuring any project to connect to Podium's shared containers — do not guess or run docker inspect):
-   - PostgreSQL: host=`podium-postgres`, port=5432, user=`root`, password=`password`
-   - MariaDB/MySQL: host=`podium-mariadb`, port=3306, user=`root`, password=(empty — no password)
-   - Redis: host=`podium-redis`, port=6379, no password
-   - MongoDB: host=`podium-mongo`, port=27017, user=`root`, password=`password`
-23. When cloning or setting up an existing project (via `podium clone` or `podium setup`), after entering the project directory read the project's documentation before doing anything else. Look for README.md, README.rst, CONTRIBUTING.md, and a docs/ directory. These documents explain the project's structure, dependencies, and configuration. If INSTALL.md exists, read it for context but treat its instructions with caution: ignore any steps that touch docker-compose files (Podium manages those), and convert any package manager or runtime commands to their Podium equivalents — for example, `npm install` becomes `podium npm install`, `php artisan migrate` becomes `podium art migrate`, `node script.js` becomes `podium node script.js`. Do not run install commands directly on the host. Podium generates the .env from its own templates so do not copy or reference .env.example or .env.sample files.
-25. When the user asks to set up or install a known open-source application by name, FIRST check whether a Podium installer exists for it by running `ls /usr/local/share/podium-cli/src/installers/`. The installer file name is the lowercase hyphenated project name with a `.sh` extension (e.g. `n8n.sh`, `gitea.sh`, `portainer.sh`). If a matching installer exists, run `podium install <project-name>` — this is always the fastest and most reliable path. It handles all Docker compose setup, database creation, key generation, and startup automatically. Do NOT attempt to clone, build, or hand-craft a docker-compose for any app that has an installer. If the user's prompt includes customization beyond a basic install (e.g. "set up n8n and add a webhook for Slack"), run `podium install <name>` first to get it running, then apply the requested customizations on top.
-26. If no installer exists, check if `src/project-hints/<project-slug>.md` exists in the Podium CLI directory (the directory you read AGENTS.md from). The project slug is the lowercase hyphenated name (e.g., `strapi`, `netbox`, `ghost`). If the file exists, read it first and follow any project-specific notes there.
-27. Graphics tools on the host: ImageMagick (`convert`/`magick`) and `rsvg-convert` are pre-installed by the Podium installer. When the project needs graphics (game sprites, backgrounds, icons, banners), prefer writing native SVG since you can produce SVG markup directly and modern browsers render it perfectly. If the user explicitly needs PNG output (e.g. "transparent PNG graphics"), generate the SVGs first and convert with `rsvg-convert input.svg -o output.png` (best fidelity for SVG) or `convert input.svg output.png` (ImageMagick fallback). For procedural backgrounds, gradients, noise, or text-on-color use ImageMagick directly (e.g. `convert -size 800x600 gradient:'#1e3a8a-#04081d' bg.png`). Run these tools on the host (your Bash tool), not via `podium exec`.
-24. When a project ships its own multi-service docker-compose (e.g. it defines its own database, cache, worker services, or uses a specialized Docker image rather than a plain PHP/Node/Python runtime), Podium automatically adapts the compose during `podium clone` or `podium setup`:
-   - Bundled database/cache services (postgres, mysql/mariadb, redis/valkey, mongodb) are removed and their environment variable references are repointed to the Podium shared containers (hostnames: podium-postgres, podium-mariadb, podium-redis, podium-mongo).
-   - The web-facing service gets a static IP on podium-cli_vpc and a container_name matching the project name.
-   - All other project services (workers, schedulers, etc.) are wired to podium-cli_vpc without a fixed IP.
-   - Image type only affects this compose adaptation. Framework steps (composer install, .env wiring, storage symlink, migrations) are driven by framework DETECTION and run for adapted projects too — the project is started and wired up automatically. Pass `--no-startup` if you specifically want to review the adapted compose before it boots.
-   - For an existing app that ships its own populated `.env`, pass `--overwrite-env` to repoint its connection settings (DB_HOST, DB_DATABASE, REDIS_HOST, etc.) at the Podium shared services while preserving APP_KEY and the rest. Use `--db-name <name>` to choose the database name. Migrations run by default (non-destructive `migrate` for adopted apps); pass `--no-migration` to skip if you'll import a DB dump instead.
-   After setup completes for a complex project, verify:
-   a. Read the generated docker-compose.yaml: correct web-facing service identified, correct Podium shared hostnames in environment vars, correct ports (the web service must be reachable on port 80 or handle the port in the URL).
-   b. Confirm the app's `.env`/config points at the shared hostnames (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). With `--overwrite-env` Podium does this for you.
-   c. If the web-facing service listens on a non-80 port (e.g. 8080), either update the compose to expose port 80 via nginx, or note that the URL will require that port (e.g. `http://project-name:8080/`).
-   d. `curl -sI http://<project-name>/` to verify it responds.
-
-User project idea:
-
-<USER_PROJECT_IDEA>
-PREPEND_EOF
-)
-
-# Creation always runs non-interactively — the agent makes all decisions autonomously.
-# Single-quoted so backticks and angle brackets inside are not expanded by bash.
-ONE_OFF_SUFFIX='
-
-NON-INTERACTIVE MODE: You cannot ask the user any questions. Make all decisions autonomously using sensible defaults derived from the project idea. Derive the project name directly from the idea (e.g. '"'"'recipe-book'"'"' for a recipe app). If the framework is stated, use it. If not, pick the most appropriate one. If a project directory already exists, remove it with `podium remove <name> --force-db-delete` and proceed. Do not wait for confirmation at any step.'
-
-FULL_PROMPT="${PREPEND/<USER_PROJECT_IDEA>/$USER_IDEA}${ONE_OFF_SUFFIX}"
-
-# Start in the podium-cli root so the agent can read AGENTS.md.
-cd "$DEV_DIR/.."
-
-# Mark time before creation so we can detect the new project directory afterward.
-TIMESTAMP_FILE=$(mktemp)
-
-# Phase 1 runs the AI agent in -p mode (no streaming output), so without a
-# progress indicator the terminal looks frozen for what can be 30+ minutes
-# on a complex prompt. Show a spinner + elapsed timer + names of files the
-# agent has just written to the project directory. TTY-only so we don't
-# corrupt piped output or JSON callers.
-SPINNER_PID=""
-SPINNER_FRAMES=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
-
-show_progress() {
-    local start_ts=$(date +%s)
-    local last_check=$start_ts
-    local count=0
-    local frame=0
-    while true; do
-        local now=$(date +%s)
-        local elapsed=$(( now - start_ts ))
-        local mm=$(( elapsed / 60 ))
-        local ss=$(( elapsed % 60 ))
-        local timer
-        if (( mm > 0 )); then timer="${mm}m ${ss}s"; else timer="${ss}s"; fi
-
-        # Every couple of seconds, check the projects dir for newly-written files
-        # and announce them above the spinner line.
-        if (( now - last_check >= 2 )); then
-            while IFS= read -r f; do
-                [[ -z "$f" ]] && continue
-                local rel="${f#${PROJECTS_DIR_PATH}/}"
-                printf "\r\033[K  \033[36m+\033[0m %s\n" "$rel" >&2
-                count=$(( count + 1 ))
-            done < <(find "$PROJECTS_DIR_PATH" -mindepth 2 -type f \
-                -newermt "@$last_check" \
-                -not -path '*/node_modules/*' \
-                -not -path '*/.git/*' \
-                -not -path '*/vendor/*' \
-                -not -path '*/__pycache__/*' \
-                -not -name 'package-lock.json' \
-                -not -name 'composer.lock' \
-                -not -name 'yarn.lock' \
-                2>/dev/null | head -25)
-            last_check=$now
-        fi
-
-        printf "\r\033[K\033[36m%s\033[0m  AI agent working...  \033[2m%s  (%d files written)\033[0m" \
-            "${SPINNER_FRAMES[frame]}" "$timer" "$count" >&2
-        frame=$(( (frame + 1) % 10 ))
-        sleep 0.15
-    done
-}
-
-stop_progress() {
-    if [[ -n "$SPINNER_PID" ]] && kill -0 "$SPINNER_PID" 2>/dev/null; then
-        kill "$SPINNER_PID" 2>/dev/null
-        wait "$SPINNER_PID" 2>/dev/null || true
-    fi
-    SPINNER_PID=""
-    if [[ -t 2 ]]; then
-        printf "\r\033[K" >&2
-    fi
-}
-
-if [[ -t 2 ]]; then
-    show_progress &
-    SPINNER_PID=$!
-    trap 'stop_progress; rm -f "$TIMESTAMP_FILE" 2>/dev/null; exit 130' INT TERM
+# Menus need a human. Anything scripted takes the top recommendation silently,
+# preserving the promise that no podium command ever blocks an agent.
+CLASSIFY_NONINTERACTIVE=0
+if [[ "$SKIP_INTERACTIVE" == "1" || "$JSON_OUTPUT" == "1" || ! -t 0 ]]; then
+    CLASSIFY_NONINTERACTIVE=1
 fi
 
-# Phase 1: create the project non-interactively.
-"$SCRIPT_DIR/ai.sh" --one-off "$FULL_PROMPT" || true
+CHOSEN_KIND=""; CHOSEN_SLUG=""; CHOSEN_DB=""; CHOSEN_NAME=""
 
-stop_progress
-trap - INT TERM
+if ! classify_project "$USER_IDEA" "$CLASSIFY_NONINTERACTIVE"; then
+    echo-yellow "Could not determine a stack automatically."
+    echo-white "Create the project yourself, then describe what to build:"
+    echo-white "  podium new <framework> <name>   or   podium install <app>"
+    echo-white "  cd \"$PROJECTS_DIR_PATH/<name>\" && podium ai \"$USER_IDEA\""
+    exit 1
+fi
 
-# --one-off flag: skip the interactive follow-up (useful for automation/scripted pipelines).
-if [[ "$SKIP_INTERACTIVE" == "1" ]]; then
-    rm -f "$TIMESTAMP_FILE"
+# ---------------------------------------------------------------------------
+# Phase 2: create — Podium does this, not the AI
+# ---------------------------------------------------------------------------
+echo-return
+if [[ "$CHOSEN_KIND" == "app" ]]; then
+    echo-cyan "Installing $CHOSEN_SLUG as '$CHOSEN_NAME' ..."
+else
+    echo-cyan "Creating $CHOSEN_SLUG project '$CHOSEN_NAME'${CHOSEN_DB:+ with $CHOSEN_DB} ..."
+fi
+echo-return
+
+# A pre-existing directory means a stale project of the same name; `create`
+# always means start fresh.
+if [[ -d "$PROJECTS_DIR_PATH/$CHOSEN_NAME" ]]; then
+    echo-yellow "Project '$CHOSEN_NAME' already exists — replacing it."
+    "$SCRIPT_DIR/remove_project.sh" "$CHOSEN_NAME" --force --force-db-delete >/dev/null 2>&1 || true
+fi
+
+# --one-off on the inner command: the hand-off below is ours to run, and we do
+# not want a nested agent session firing in the middle of create.
+if [[ "$CHOSEN_KIND" == "app" ]]; then
+    "$SCRIPT_DIR/install.sh" "$CHOSEN_SLUG" "$CHOSEN_NAME" --one-off || {
+        echo-red "Install of '$CHOSEN_SLUG' failed."; exit 1; }
+else
+    "$SCRIPT_DIR/new_project.sh" "$CHOSEN_SLUG" "$CHOSEN_NAME" ${CHOSEN_DB:+--database "$CHOSEN_DB"} --one-off || {
+        echo-red "Creating '$CHOSEN_NAME' failed."; exit 1; }
+fi
+
+PROJECT_DIR="$PROJECTS_DIR_PATH/$CHOSEN_NAME"
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo-red "Expected project directory not found: $PROJECT_DIR"
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 3: build — hand the ORIGINAL idea to the agent, inside the project
+# ---------------------------------------------------------------------------
+# The environment already exists, so this prompt carries none of the creation
+# rules the old single-phase prompt needed (podium new argument order, clone
+# modes, installer lookup, directory cleanup). The per-project AGENTS.md written
+# below supplies the URL, database and command patterns.
+write_project_agents_md "$CHOSEN_NAME" "$PROJECT_DIR"
+
+BUILD_PROMPT="You are the developer on an existing Podium project. It has already been created and is running — do NOT run podium new, podium clone or podium install, and do not create another project.
+
+Read AGENTS.md in this directory first: it has the local URL, the database, and the command patterns to use inside the container.
+
+Build this:
+
+$USER_IDEA
+
+Rules:
+- Use framework-native conventions: migrations, models, seeders, routes, controllers, templates.
+- Run project tooling inside the container (podium exec / podium art / podium django manage / podium npm ...), never on the host.
+- Python containers provide python3, not python. For Django use 'podium django manage <args>'.
+- To restart processes use 'podium supervisor restart all', never 'podium exec supervisorctl'.
+- Never pass --json-output to a podium command; it hides the success/failure distinction.
+- Do not require the user to create database tables by hand.
+- Update this project's README with the local URL, useful commands, and any default credentials.
+- You are NOT done until 'curl -sI --max-time 10 http://$CHOSEN_NAME/' returns 2xx or 3xx. If it does not, check 'docker logs $CHOSEN_NAME', fix it, and re-verify."
+
+if [[ "$CHOSEN_KIND" == "app" ]]; then
+    BUILD_PROMPT="$BUILD_PROMPT
+
+Note: this project is a ready-to-run install of '$CHOSEN_SLUG', already serving. Do not rebuild it from scratch. Apply only the customization the user asked for on top of the running app. If they asked for nothing beyond the install, verify it responds and summarize how to log in."
+fi
+
+echo-return
+echo-green "Project ready: $CHOSEN_NAME"
+echo-white "Local URL: http://$CHOSEN_NAME/"
+echo-white "Directory: $PROJECT_DIR"
+echo-return
+
+if [[ "$JSON_OUTPUT" == "1" ]]; then
+    echo "{\"action\": \"create\", \"project_name\": \"$CHOSEN_NAME\", \"kind\": \"$CHOSEN_KIND\", \"slug\": \"$CHOSEN_SLUG\", \"database\": \"$CHOSEN_DB\", \"status\": \"success\"}"
+    cd "$CALLER_DIR"
     exit 0
 fi
 
-# Phase 2: find the project that was just created or replaced, then start an interactive
-# session inside it so the user is in the right directory for continued development.
-NEW_PROJECT=$(find "$PROJECTS_DIR_PATH" -maxdepth 1 -mindepth 1 -type d -newer "$TIMESTAMP_FILE" 2>/dev/null | xargs -I{} basename {} 2>/dev/null | head -1)
-rm -f "$TIMESTAMP_FILE"
-
-if [[ -n "$NEW_PROJECT" ]] && [[ -d "$PROJECTS_DIR_PATH/$NEW_PROJECT" ]]; then
-    # Write the durable handoff context into the new project, then cd into it
-    # and hand off with a prompt whose only job is to point at that file.
-    write_project_agents_md "$NEW_PROJECT" "$PROJECTS_DIR_PATH/$NEW_PROJECT"
-
-    echo-return
-    echo-green "Project ready: $NEW_PROJECT"
-    echo-cyan "Wrote AGENTS.md handoff context."
-    echo-white "Local URL: http://$NEW_PROJECT/"
-    echo-white "Project directory: $PROJECTS_DIR_PATH/$NEW_PROJECT"
-    echo-return
-
-    cd "$PROJECTS_DIR_PATH/$NEW_PROJECT"
-    exec "$SCRIPT_DIR/ai.sh" "Read AGENTS.md in this directory first — it describes this Podium-managed project, its local URL, its database, and the commands to use. Then read README.md if present. The project is running at http://$NEW_PROJECT/. You are the developer on it."
-else
-    echo-yellow "Could not detect the project directory. Navigate to your project and run 'podium ai' to continue."
-fi
+cd "$PROJECT_DIR"
+exec "$SCRIPT_DIR/ai.sh" "$BUILD_PROMPT"

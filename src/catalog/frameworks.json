@@ -1,0 +1,19 @@
+{
+  "_comment": "Hand-maintained. Frameworks offered by `podium new`. 'databases' lists the engines that actually WORK for that framework, not merely the ones Podium will write into .env. Empty/absent means all engines are fine.",
+  "frameworks": [
+    { "slug": "laravel",   "display": "Laravel",   "runtime": "PHP 8.3",  "databases": ["mysql", "postgres", "sqlite"],
+      "note": "MongoDB needs the third-party mongodb/laravel-mongodb package; not offered." },
+    { "slug": "wordpress", "display": "WordPress", "runtime": "PHP 8.3",  "databases": ["mysql"],
+      "note": "WordPress is MySQL/MariaDB only." },
+    { "slug": "php",       "display": "Plain PHP", "runtime": "PHP 8.3",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
+    { "slug": "django",    "display": "Django",    "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite"],
+      "note": "Django has no native MongoDB backend." },
+    { "slug": "flask",     "display": "Flask",     "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
+    { "slug": "fastapi",   "display": "FastAPI",   "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
+    { "slug": "python",    "display": "Plain Python", "runtime": "Python 3", "databases": ["postgres", "mysql", "sqlite", "mongodb"] },
+    { "slug": "express",   "display": "Express",   "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
+    { "slug": "nestjs",    "display": "NestJS",    "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
+    { "slug": "fastify",   "display": "Fastify",   "runtime": "Node 22",  "databases": ["mysql", "postgres", "sqlite", "mongodb"] },
+    { "slug": "node",      "display": "Plain Node.js", "runtime": "Node 22", "databases": ["mysql", "postgres", "sqlite", "mongodb"] }
+  ]
+}
