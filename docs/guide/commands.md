@@ -662,6 +662,8 @@ tail -f /tmp/podium-cli-debug.log
 | `podium update [--full]` | Update the CLI (`--full` also re-runs the platform installer and re-pulls images) |
 | `podium start-services` | Start the shared services |
 | `podium stop-services` | Stop the shared services |
+| `podium enable-service <name>` | Enable an optional shared service (`minio`, `meilisearch`) |
+| `podium disable-service <name>` | Disable one (its data volume is kept) |
 | `podium uninstall` | Remove Podium's Docker resources |
 | `podium projects-dir` | Print the projects directory path |
 | `podium create-installer "<idea>"` | Generate a new app installer via AI |

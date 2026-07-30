@@ -91,6 +91,13 @@ Use these hostnames + credentials when configuring projects. Do not inspect cont
 | Memcached | `podium-memcached` | 11211 | — | *(none)* |
 | MailHog | `podium-mailhog` | SMTP 1025 / UI 8025 | — | *(none)* |
 
+**Optional shared services** — off by default, enabled per machine with `podium enable-service <name>`. Once enabled they start with every `podium up`, exactly like the core ones. Check `OPTIONAL_SERVICES` in `/etc/podium-cli/.env` to see what a machine has on.
+
+| Service | Host | Port | Credentials |
+|---|---|---|---|
+| MinIO (S3-compatible storage) | `podium-minio` | API 9000 / console 9001 | `root` / `password` |
+| Meilisearch (full-text search) | `podium-meilisearch` | 7700 | master key `podium-dev-master-key` |
+
 ---
 
 ## VPC Networking & IP Allocation

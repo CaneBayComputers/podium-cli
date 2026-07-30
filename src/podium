@@ -124,6 +124,8 @@ show_help() {
     echo "  podium ai-set             - Configure AI agent and model"
     echo "  podium update [--full]    - Update Podium CLI (--full also re-pulls Docker images)"
     echo "  podium start-services     - Start shared services"
+    echo "  podium enable-service <n> - Enable an optional shared service (minio, meilisearch)"
+    echo "  podium disable-service <n>- Disable an optional shared service"
     echo "  podium stop-services      - Stop shared services"
     echo "  podium uninstall          - Remove Podium Docker resources"
     echo "  podium projects-dir       - Show projects directory path"
@@ -672,6 +674,14 @@ case "$1" in
         ;;
     "start-services")
         "$SCRIPT_DIR/scripts/start_services.sh"
+        ;;
+    "enable-service")
+        shift
+        PODIUM_SERVICE_MODE=enable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
+        ;;
+    "disable-service")
+        shift
+        PODIUM_SERVICE_MODE=disable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
         ;;
     "stop-services")
         "$SCRIPT_DIR/scripts/stop_services.sh"
