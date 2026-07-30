@@ -22,6 +22,23 @@ One set of service containers serves every project on the machine.
 | MailHog | `podium-mailhog` | SMTP 1025 / UI 8025 | — | *(none)* |
 | phpMyAdmin | `podium-phpmyadmin` | 80 | — | — |
 
+### Optional shared services
+
+Most projects need a database, which is what justifies the core services always running. Far fewer need object storage or a search engine, so those sit behind Docker Compose profiles and stay off until a machine asks for them — rather than every install paying that RAM to benefit a few.
+
+```bash
+podium enable-service minio
+podium enable-service meilisearch
+podium disable-service minio      # data volume is kept
+```
+
+Once enabled they start with every `podium up` and resolve by hostname from inside any project container, exactly like the core services. The enabled list persists in `OPTIONAL_SERVICES` in `/etc/podium-cli/.env`.
+
+| Service | Host | Port | Credentials |
+|---|---|---|---|
+| MinIO | `podium-minio` | API 9000 / console 9001 | `root` / `password` |
+| Meilisearch | `podium-meilisearch` | 7700 | master key `podium-dev-master-key` |
+
 Use these hostnames and credentials directly when configuring a project — there's no need to inspect containers to discover them. Podium writes them into each project's `.env` automatically.
 
 ---
@@ -43,7 +60,7 @@ All Podium containers attach to the `podium-cli_vpc` Docker network (`${VPC_SUBN
 
 | Range | Purpose | Allocation |
 |---|---|---|
-| `.2`–`.8` | Shared services | Static |
+| `.2`–`.15` | Shared services (core `.2`–`.8`, optional `.9`–`.15`) | Static |
 | `.32`–`.63` | Helper containers (workers, schedulers) | Dynamic |
 | `.100`–`.250` | Project entry points | Static, assigned per project |
 

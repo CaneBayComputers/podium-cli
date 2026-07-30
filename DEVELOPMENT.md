@@ -70,6 +70,7 @@ Shared services live in `src/docker-stack/docker-compose.services.yaml`. Each se
 
 When editing the file:
 
+- Optional services go behind a compose `profiles: ["<name>"]` key and take a static IP in `.9`–`.15`. Add the name to `AVAILABLE_OPTIONAL_SERVICES` in `src/scripts/enable_service.sh`. They are enabled per machine via `podium enable-service`, which persists the list in `OPTIONAL_SERVICES` in `/etc/podium-cli/.env` — write that value **quoted**, since the file is `source`d by bash and a bare space-separated list would execute the second word as a command.
 - Preserve the `ip_range: ${VPC_SUBNET}.32/27` block on the network. Without it, Docker hands out dynamic IPs starting at `.2` and helper containers in multi-service projects squat on shared-service IPs whenever those services are temporarily down — blocking them from coming back up.
 - The deployed copy lives at `/etc/podium-cli/docker-compose.yaml`, copied once on first `podium configure`. It does **not** auto-resync on `podium update`. To pick up changes on existing installs:
 

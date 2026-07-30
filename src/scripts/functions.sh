@@ -77,14 +77,26 @@ echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR
 echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
 
 # Docker aliases used by scripts (JSON-aware for clean output)
+# Compose profile flags for whatever optional shared services are enabled on
+# this machine (OPTIONAL_SERVICES in /etc/podium-cli/.env). Empty when none are,
+# so the default `docker compose up` behaviour is untouched.
+podium_profile_args() {
+    local svc
+    for svc in ${OPTIONAL_SERVICES:-}; do
+        printf -- '--profile\n%s\n' "$svc"
+    done
+}
+
 dockerup() { 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         # Clear the log file first, then pipe Docker output to temp file for JSON mode
         > /tmp/podium-docker-progress.log
-        docker compose up -d "$@" > /tmp/podium-docker-progress.log 2>&1
+        mapfile -t _profiles < <(podium_profile_args)
+        docker compose "${_profiles[@]}" up -d "$@" > /tmp/podium-docker-progress.log 2>&1
     else
         # Interactive mode - show normal progress
-        docker compose up -d "$@"
+        mapfile -t _profiles < <(podium_profile_args)
+        docker compose "${_profiles[@]}" up -d "$@"
     fi
 }
 dockerdown() { 
