@@ -44,7 +44,7 @@ Log out and back in so Docker group access takes effect. Details and platform no
 podium create "A timeclock for employees in Django"
 ```
 
-Describe what you want. Your AI agent creates the project, wires up the database and environment, builds the app, and hands you a working URL.
+Describe what you want. **Podium** creates the project, wires up the database, installs the framework or app, generates the environment, and hands back a working URL. The AI only customizes on top of that — which is exactly where the prompt and token savings come from.
 
 Name a framework if you have a preference — or don't, and let the agent choose:
 

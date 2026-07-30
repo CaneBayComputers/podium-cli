@@ -14,7 +14,14 @@ nav_order: 3
 podium create "A timeclock for employees in Django"
 ```
 
-Describe what you want in plain English. Podium wraps your idea in platform instructions and hands it to your configured AI CLI, which creates the project, wires up the database and environment, builds the app using framework-native conventions, and updates the README with the local URL and any credentials.
+Describe what you want in plain English. Podium wraps your idea in platform instructions and hands it to your configured AI CLI.
+
+From there the work is split, and the split is the point:
+
+- **Podium** creates the project, creates and wires the database, installs the framework or app, generates the `.env`, assigns the hostname, starts the container, and hands back a working URL.
+- **The AI** only customizes what's on top — models, routes, templates, business logic — then updates the project README with the URL and any credentials.
+
+The agent never has to work out how to wire nginx, pick a port, or provision a database. It calls one Podium command and gets a running project back, which is where the prompt and token savings come from.
 
 ```bash
 podium create "A customer check-in system in Laravel"
