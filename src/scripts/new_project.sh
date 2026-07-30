@@ -217,7 +217,23 @@ Frameworks: laravel wordpress php fastapi flask django python express nestjs fas
 fi
 case "$FRAMEWORK" in
     laravel|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
-    *) error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node." ;;
+    *)
+        # `new` scaffolds a framework you write; `install` deploys a prebuilt
+        # app. Nobody should have to know which bucket a name lives in, so if
+        # this name is actually an installer, point straight at the right
+        # command instead of listing frameworks they didn't ask about.
+        if [ -f "$DEV_DIR/installers/$FRAMEWORK.sh" ]; then
+            _disp=$(grep -m1 '^INSTALL_DISPLAY=' "$DEV_DIR/installers/$FRAMEWORK.sh" 2>/dev/null | cut -d'"' -f2)
+            echo-yellow "'$FRAMEWORK' is an app, not a framework."
+            echo-white "${_disp:-$FRAMEWORK} ships as a ready-to-run install rather than something you scaffold."
+            echo-return
+            echo-cyan "Run this instead:"
+            echo-white "  podium install $FRAMEWORK${PROJECT_NAME:+ $PROJECT_NAME}"
+            echo-return
+            error "Wrong command for '$FRAMEWORK' — use 'podium install'."
+        fi
+        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
+        ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
     error "Error: project name is required. Usage: podium new $FRAMEWORK <name>"
