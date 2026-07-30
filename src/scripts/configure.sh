@@ -22,6 +22,7 @@ GIT_NAME=""
 GIT_EMAIL=""
 FLAG_PROJECTS_DIR=""
 FLAG_VPC_SUBNET=""
+NON_INTERACTIVE=0
 
 # Capture original arguments for debug logging
 ORIGINAL_ARGS="$*"
@@ -48,6 +49,10 @@ while [[ $# -gt 0 ]]; do
             FLAG_VPC_SUBNET="$2"
             shift 2
             ;;
+        --non-interactive|--yes|-y)
+            NON_INTERACTIVE=1
+            shift
+            ;;
         --debug)
             DEBUG=1
             shift
@@ -59,6 +64,8 @@ while [[ $# -gt 0 ]]; do
             echo "from /etc/podium-cli/.env are kept as defaults, and prompts let you"
             echo "change them if you want."
             echo ""
+            echo "Pass --non-interactive for a fully unattended run (scripts, CI, agents)."
+            echo ""
             echo "Options:"
             echo "  --json-output           Output results in JSON format"
             echo "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
@@ -66,6 +73,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --git-email EMAIL       Git user email"
             echo "  --projects-dir DIR      Projects directory (default: existing or ~/podium-projects)"
             echo "  --vpc-subnet A.B.C      Custom Docker VPC subnet (default: existing or random 10.x.x)"
+            echo "  --non-interactive, -y   Never prompt; accept defaults for anything not passed as a flag"
             echo "  --help                  Show this help message"
             exit 0
             ;;
@@ -101,43 +109,23 @@ fi
 # shellcheck disable=SC1091
 source /etc/podium-cli/.env
 
-# Resolve VPC_SUBNET: explicit flag wins, otherwise prompt with current as default.
+# Resolve VPC_SUBNET. An explicit --vpc-subnet wins; otherwise keep whatever is
+# already in .env (a random 10.B.C generated on first run). We deliberately do
+# NOT ask: the generated subnet is a private /24 that never uses 10.0.x — the B
+# octet is 1-255 — so it cannot collide with the 10.0.0.0/24 that most home and
+# office LANs use. Asking every user to rule on a detail that almost never
+# matters is friction; --vpc-subnet remains the escape hatch if it ever does.
 if [[ -n "$FLAG_VPC_SUBNET" ]]; then
 	if [[ ! "$FLAG_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 		error "Invalid --vpc-subnet '$FLAG_VPC_SUBNET'. Format must be A.B.C (e.g. 10.247.177)."
 	fi
-	VPC_SUBNET="$FLAG_VPC_SUBNET"
-elif [[ "$JSON_OUTPUT" != "1" ]]; then
-	echo-return
-	echo-cyan 'Configuring Docker VPC subnet ...'; echo-white
-	echo-white "Podium uses a private /24 Docker network for shared services and projects."
-	echo-white "Format A.B.C (network will be A.B.C.0/24)."
-	echo-white "Current: $VPC_SUBNET"
-	echo-yellow -ne 'Enter subnet or press Enter to keep current: '
-	echo-white -ne
-	read USER_VPC_SUBNET || USER_VPC_SUBNET=""
-	echo-return
-
-	if [[ -n "$USER_VPC_SUBNET" ]]; then
-		if [[ "$USER_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-			if [[ "$USER_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect podium-cli_vpc >/dev/null 2>&1; then
-				echo-yellow "The podium-cli_vpc Docker network already exists at $VPC_SUBNET."
-				echo-white "Changing the subnet requires recreating the network. Run 'podium uninstall'"
-				echo-white "first (preserves projects, removes containers/network), then re-run 'podium configure'."
-				echo-yellow -ne "Keep $VPC_SUBNET for now? [Y/n]: "
-				echo-white -ne
-				read KEEP_SUBNET || KEEP_SUBNET=""
-				echo-return
-				if [[ ! "$KEEP_SUBNET" =~ ^[Nn]$ ]]; then
-					USER_VPC_SUBNET="$VPC_SUBNET"
-				fi
-			fi
-			VPC_SUBNET="$USER_VPC_SUBNET"
-		else
-			echo-yellow "Invalid format '$USER_VPC_SUBNET'. Keeping: $VPC_SUBNET"
-			echo-return
-		fi
+	if [[ "$FLAG_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect podium-cli_vpc >/dev/null 2>&1; then
+		echo-yellow "The podium-cli_vpc network already exists at $VPC_SUBNET."
+		echo-white "Changing the subnet requires recreating it: run 'podium uninstall'"
+		echo-white "(preserves projects), then re-run 'podium configure --vpc-subnet $FLAG_VPC_SUBNET'."
+		echo-return
 	fi
+	VPC_SUBNET="$FLAG_VPC_SUBNET"
 fi
 
 sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
@@ -226,7 +214,7 @@ if [[ -n "$GIT_NAME" ]]; then
 
 	echo-cyan "Git name set to: $GIT_NAME"
 
-elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.name > /dev/null 2>&1; then
+elif [[ "$JSON_OUTPUT" != "1" && "$NON_INTERACTIVE" != "1" ]] && ! git config user.name > /dev/null 2>&1; then
 
 	echo-yellow -ne 'Enter your full name for Git commits: '
 
@@ -250,7 +238,7 @@ if [[ -n "$GIT_EMAIL" ]]; then
 
 	echo-cyan "Git email set to: $GIT_EMAIL"
 
-elif [[ "$JSON_OUTPUT" != "1" ]] && ! git config user.email > /dev/null 2>&1; then
+elif [[ "$JSON_OUTPUT" != "1" && "$NON_INTERACTIVE" != "1" ]] && ! git config user.email > /dev/null 2>&1; then
 
 	echo-yellow -ne 'Enter your email address for Git commits: '
 
@@ -333,73 +321,6 @@ detect_closest_aws_region() {
 }
 
 
-###############################
-# Optional AWS CLI configuration
-###############################
-if [[ "$JSON_OUTPUT" != "1" && "$(command -v aws)" != "" ]]; then
-    echo-return
-    echo-cyan "AWS CLI Configuration"; echo-white
-    echo-white "You can configure the AWS CLI so Podium and your projects can use AWS credentials."
-    echo-white "You'll need your AWS Access Key ID, Secret Access Key, and default region handy."
-    echo-return
-    echo-yellow -ne "Would you like to run 'aws configure' now? (y/N): "
-    echo-white -ne
-    # `|| true`: at EOF (non-interactive run, stdin from /dev/null) read returns
-    # non-zero, which under `set -e` would abort configure half-configured.
-    read CONFIG_AWS || CONFIG_AWS=""
-    echo-return
-    if [[ "$CONFIG_AWS" =~ ^[Yy]$ ]]; then
-        # Only auto-detect closest region and seed config if no config file exists yet
-        AWS_CONFIG_FILE="${AWS_CONFIG_FILE:-$HOME/.aws/config}"
-        if [[ ! -f "$AWS_CONFIG_FILE" ]]; then
-            CLOSEST_REGION="$(detect_closest_aws_region || true)"
-            # Fallback to us-east-1 if detection fails
-            seeded_region="${CLOSEST_REGION:-us-east-1}"
-
-            mkdir -p "$(dirname "$AWS_CONFIG_FILE")"
-            {
-                echo "[default]"
-                echo "region = $seeded_region"
-                echo "output = json"
-            } > "$AWS_CONFIG_FILE"
-
-            export AWS_DEFAULT_REGION="$seeded_region"
-            export AWS_DEFAULT_OUTPUT="json"
-            echo-cyan "Seeded AWS config at $AWS_CONFIG_FILE"; echo-white
-            echo-cyan "Default region set to: $seeded_region"; echo-white
-            echo-cyan "Default AWS output format set to: json"; echo-white
-            echo-return
-        fi
-
-        # Run aws configure in a loop until credentials validate or user opts out
-        while true; do
-            aws configure
-            echo-return
-            echo-cyan "Verifying AWS credentials with 'aws sts get-caller-identity' ..."; echo-white
-            if aws sts get-caller-identity >/dev/null 2>&1; then
-                echo-green "AWS credentials verified successfully."; echo-white
-                echo-return
-                break
-            fi
-
-            echo-yellow "AWS credentials test failed."; echo-white
-            echo-yellow -ne "Would you like to run 'aws configure' again? (y/N): "
-            echo-white -ne
-            read RETRY_AWS || RETRY_AWS=""
-            echo-return
-            if [[ ! "$RETRY_AWS" =~ ^[Yy]$ ]]; then
-                echo-cyan "Continuing without verified AWS credentials."; echo-white
-                echo-return
-                break
-            fi
-        done
-    else
-        echo-cyan "Skipping AWS CLI configuration for now."
-        echo-white
-    fi
-fi
-
-
 
 ###############################
 # Set up projects directory
@@ -414,7 +335,7 @@ CURRENT_PROJECTS_DIR="${CURRENT_PROJECTS_DIR/#\~/$HOME}"
 
 if [[ -n "$FLAG_PROJECTS_DIR" ]]; then
     PROJECTS_DIR="${FLAG_PROJECTS_DIR/#\~/$HOME}"
-elif [[ "$JSON_OUTPUT" != "1" ]]; then
+elif [[ "$JSON_OUTPUT" != "1" && "$NON_INTERACTIVE" != "1" ]]; then
     echo-yellow "Where would you like to store your development projects?"
     echo-white "Current: $CURRENT_PROJECTS_DIR"
     echo-yellow -ne 'Enter projects directory or press Enter to keep current: '
@@ -472,66 +393,6 @@ sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podi
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo
 
-
-
-###############################
-# Set up Github authentication
-###############################
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-	echo-cyan 'Skipping GitHub authentication in GUI mode'
-	echo-white 'GitHub setup can be done later if needed for repository operations'
-	echo-return
-else
-	echo-return; echo-cyan 'GitHub Authentication Setup'
-    echo-return; echo-cyan 'Checking current auth status. Please wait ...'; echo-white
-
-	if ! gh auth status > /dev/null 2>&1; then
-		echo-return
-		echo-cyan "GitHub CLI can be set up for repository operations."
-		echo-white "This process requires:"
-		echo-white "  1. A GitHub account"
-		echo-white "  2. Choosing authentication method (SSH recommended)"
-		echo-white "  3. Selecting your SSH key (usually: id_rsa.pub)"  
-		echo-white "  4. Creating/providing a GitHub personal access token"
-		echo-white "  5. Following the web browser authentication flow"
-		echo-return
-		echo-yellow "This is optional - you can skip and set up later if needed."
-		echo-return
-        echo-yellow -ne "Do you want to set up GitHub authentication now? [N/y]: "
-        echo-white -ne
-        read SETUP_GITHUB || SETUP_GITHUB=""
-		echo-return
-
-		if [[ $SETUP_GITHUB =~ ^[Yy]$ ]]; then
-            while true; do
-				echo-return
-				echo-yellow "Starting GitHub authentication process..."; echo-white
-				echo-return
-                if gh auth login --hostname github.com; then
-                    echo-return; echo-green "GitHub authentication complete!"; echo-white; echo
-                    break
-                fi
-				echo-yellow "GitHub authentication failed or was cancelled."; echo-white
-				echo-yellow -n "Would you like to try GitHub authentication again? (y/N): "
-				echo-white -ne
-				read RETRY_GITHUB || RETRY_GITHUB=""
-				echo-return
-				if [[ ! "$RETRY_GITHUB" =~ ^[Yy]$ ]]; then
-					echo-cyan "Skipping further GitHub authentication attempts."; echo-white
-					echo-white "You can set it up later with: gh auth login"
-					echo-return
-					break
-				fi
-			done
-		else
-			echo-cyan "Skipping GitHub authentication"
-			echo-white "You can set it up later with: gh auth login"
-			echo-return
-		fi
-	else
-		echo-green "GitHub authentication already configured!"; echo-white; echo
-	fi
-fi
 
 
 
@@ -664,7 +525,12 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-return
     echo-cyan "Configuring AI agent (podium ai-set) ..."; echo-white
     echo-return
-    "$DEV_DIR/scripts/ai_set.sh"
+    # ai_set treats a closed stdin as non-interactive and keeps existing config.
+    if [[ "$NON_INTERACTIVE" == "1" ]]; then
+        "$DEV_DIR/scripts/ai_set.sh" < /dev/null
+    else
+        "$DEV_DIR/scripts/ai_set.sh"
+    fi
 fi
 
 cd "$ORIG_DIR"

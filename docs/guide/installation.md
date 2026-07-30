@@ -79,6 +79,23 @@ Re-running `podium configure` is safe — existing values from `/etc/podium-cli/
 | `--git-email <email>` | Git user email |
 | `--projects-dir <dir>` | Projects directory (default `~/podium-projects`) |
 | `--vpc-subnet <A.B.C>` | Docker VPC subnet (default: existing, or a random `10.x.x`) |
+| `--non-interactive`, `-y` | Never prompt; accept defaults for anything not passed as a flag |
+
+For a fully unattended setup — scripts, CI, provisioning an agent's machine:
+
+```bash
+podium configure --non-interactive \
+  --git-name "Your Name" --git-email "you@example.com"
+```
+
+Podium does **not** ask for AWS credentials or GitHub authentication. Neither is
+required: nothing in Podium uses AWS, and GitHub auth only matters for the
+optional `--github` flags and `clone fork` / `clone new-repo`, which warn and
+tell you to run `gh auth login` at the moment you actually use them.
+
+The Docker VPC subnet is chosen for you — a private `/24` in the `10.x.x` range,
+never `10.0.x`, so it can't collide with the `10.0.0.0/24` most home and office
+LANs use. Override with `--vpc-subnet` if you need a specific range.
 
 Tab-completion is installed for commands, project names, framework names and installer names:
 
