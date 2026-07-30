@@ -67,7 +67,7 @@ usage() {
     echo-white "Options:"
     echo-white "  --framework TYPE        Framework type: laravel, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
-    echo-white "  --database TYPE         Database type: mysql, postgres, mongo (default: mysql)"
+    echo-white "  --database TYPE         Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --no-migration          Skip database migrations (they run by default)"
@@ -282,11 +282,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 
     # Database validation
     case "$DATABASE" in
-        "mysql"|"postgres"|"mongo")
+        "mysql"|"postgres"|"mongo"|"sqlite")
             # Valid databases
             ;;
         *)
-            json_error "invalid database: $DATABASE (must be mysql, postgres, or mongo)"
+            json_error "invalid database: $DATABASE (must be mysql, postgres, mongo, or sqlite)"
             ;;
     esac
     

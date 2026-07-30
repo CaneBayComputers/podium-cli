@@ -576,7 +576,7 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 
 | Option | Description | Values |
 |--------|-------------|---------|
-| `--database <type>` | Database type | `auto` (default — per-framework), `mysql`, `postgres`, `mongodb` |
+| `--database <type>` | Database type | `auto` (default — per-framework), `mysql`, `postgres`, `mongodb`, `sqlite` |
 | `--version <ver>` | Framework version | **Laravel:** `latest` (default), any valid Laravel version tag<br/>**WordPress:** `latest` (default), any valid WordPress version |
 | `--db-name <name>` | Database name | Default: project name with dashes converted to underscores |
 | `--image <ref>` | Override the project's Docker image | Default: the framework's cbc base image (`canebaycomputers/cbc:nginx-php8` / `nginx-python3` / `nginx-node`) |

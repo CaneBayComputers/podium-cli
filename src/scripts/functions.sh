@@ -661,6 +661,26 @@ rewrite_env_for_shared_services() {
 ensure_database() {
     local db_name="$1"
     local engine="$2"
+    case "$engine" in
+        sqlite|sqlite3)
+            # SQLite is a file, not a server — nothing to create on a shared
+            # service. The file has to live inside the project directory: that
+            # is the only path bind-mounted into the container, so a database
+            # anywhere else is silently destroyed when the container is
+            # recreated on `podium up`, taking the user's data with it.
+            # Runs with the project directory as cwd (setup_project.sh cd's in).
+            local sqlite_rel="${FRAMEWORK_SQLITE_PATH:-database.sqlite}"
+            echo-cyan "Ensuring SQLite database file '$sqlite_rel' exists ..."; echo-white
+            mkdir -p "$(dirname "$sqlite_rel")" 2>/dev/null || true
+            if [ ! -f "$sqlite_rel" ]; then
+                : > "$sqlite_rel"
+            fi
+            chmod 664 "$sqlite_rel" 2>/dev/null || true
+            echo-green "SQLite database ready: $sqlite_rel"; echo-white
+            return 0
+            ;;
+    esac
+
     echo-cyan "Ensuring database '$db_name' exists ..."; echo-white
     case "$engine" in
         postgres|postgresql|pgsql)
