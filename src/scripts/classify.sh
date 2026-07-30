@@ -37,7 +37,12 @@ print("FRAMEWORKS, IN NO PARTICULAR ORDER OF PREFERENCE")
 print("(scaffolded via `podium new <slug> <name>`; the user writes the app).")
 print("List order carries no meaning — judge each on fit alone:")
 for f in fws:
-    print(f"  {f['slug']} — {f['display']} ({f['runtime']}); databases: {', '.join(f['databases'])}")
+    line = f"  {f['slug']} — {f['display']} ({f['runtime']}); databases: {', '.join(f['databases'])}"
+    # The note carries what the model cannot know from the name alone — in-house
+    # frameworks especially, which are absent from training data entirely.
+    if f.get("note"):
+        line += f"\n      {f['note']}"
+    print(line)
 PYEOF
 }
 
@@ -248,7 +253,7 @@ _menu_choose() {
         i=$((i + 1))
     done
     echo-return
-    echo-yellow -ne "Enter choice [$default]: "
+    echo-yellow -ne "Enter choice [$default] > "
     read choice || choice=""
     echo-return
     [[ -z "$choice" ]] && choice="$default"
@@ -377,7 +382,7 @@ classify_project() {
     if [[ "$non_interactive" != "1" ]]; then
         if [[ -n "$CHOSEN_NAME" ]]; then
             echo-return
-            echo-yellow -ne "Project name [$CHOSEN_NAME]: "
+            echo-yellow -ne "Project name [$CHOSEN_NAME] > "
             read typed || typed=""
             echo-return
         else
@@ -386,7 +391,7 @@ classify_project() {
             echo-return
             echo-white "Your description doesn't suggest a project name."
             while [[ -z "$CHOSEN_NAME" ]]; do
-                echo-yellow -ne "What should this project be called? "
+                echo-yellow -ne "What should this project be called? > "
                 read typed || typed=""
                 typed=$(echo "$typed" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]\+/-/g; s/^-//; s/-$//')
                 [[ -n "$typed" ]] && CHOSEN_NAME="$typed"

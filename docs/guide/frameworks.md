@@ -23,6 +23,7 @@ For ready-made third-party apps you *run* rather than write, see [App library]({
 | Framework | Runtime image | Default database |
 |---|---|---|
 | `laravel` | PHP 8.3 | MySQL |
+| `kavera` | PHP 8.3 | MySQL |
 | `wordpress` | PHP 8.3 | MySQL |
 | `php` | PHP 8.3 | MySQL |
 | `fastapi` | Python 3 | PostgreSQL |
@@ -35,6 +36,22 @@ For ready-made third-party apps you *run* rather than write, see [App library]({
 | `node` | Node 22 | MySQL |
 
 ---
+
+### Kavera
+
+[Kavera](https://github.com/CaneBayComputers/kavera) is a Laravel-native **website** framework: flat-file Blade pages plus service-driven dynamic content (Blogger posts, Eventbrite events, Flickr galleries, form webhooks) cached through Redis. Forms ship with email, webhooks, spam controls and reCAPTCHA; pages carry SEO titles and optional JSON-LD.
+
+It exists because an agent editing page *files* beats an agent driving a CMS admin UI. Reach for it over plain Laravel for marketing sites, brochure sites, portfolios and galleries — and for plain Laravel when you need a real application with custom models and business logic.
+
+```bash
+podium new kavera my-site
+```
+
+Pages live in `resources/views/content`. After adding or removing one, refresh the registry so routes resolve:
+
+```bash
+podium art app:update-content-list
+```
 
 ## Options
 
