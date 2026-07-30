@@ -16,6 +16,7 @@
 #   CHOSEN_SLUG  installer slug or framework name
 #   CHOSEN_DB    database engine (frameworks only; empty for apps)
 #   CHOSEN_NAME  project directory / hostname
+#   CHOSEN_CUSTOMIZE  yes|no — did the idea ask for work beyond the install
 # Returns non-zero if classification failed, so the caller can fall back.
 
 CATALOG_DIR="$DEV_DIR/catalog"
@@ -67,6 +68,12 @@ Also state which you would recommend overall — "app" or "framework". An app is
 running in about two minutes; a framework build costs meaningfully more time and
 AI tokens, but produces exactly what was asked for.
 
+Also decide "customization_requested": does the idea ask for anything BEYOND
+simply standing the software up? Configuring something, adding content, wiring
+an integration, changing behaviour — that is true. "A git server", "a blog",
+"set up Grafana" ask for nothing more than the install itself — that is false.
+Judge only what the user actually wrote; do not invent extra work.
+
 Give every option a "reason": one short sentence saying why it fits this
 specific idea. The user sees these side by side and decides from them, so make
 them concrete and comparative, not generic praise.
@@ -79,6 +86,7 @@ Reply with ONLY this JSON. No prose, no markdown fences:
 {
   "project_name": "short-hyphenated-name",
   "recommended": "app" | "framework",
+  "customization_requested": true | false,
   "framework": {"slug": "<framework slug>", "reason": "<one short sentence, max 15 words>"},
   "apps": [
     {"slug": "<app slug>", "reason": "<one short sentence, max 15 words>"}
@@ -155,6 +163,11 @@ dbs = [d for d in (doc.get("databases") or []) if isinstance(d, str)]
 print("NAME\t" + name)
 print("DBS\t" + ",".join(dbs))
 print("REC\t" + rec)
+# Only an EXPLICIT false skips the build. A missing field must mean "yes":
+# skipping wrongly drops half of what the user asked for, while running it
+# needlessly only costs some tokens.
+_cust = doc.get("customization_requested")
+print("CUSTOM\t" + ("no" if _cust is False else "yes"))
 for kind, slug, display, db, why in out[:5]:
     print(f"CAND\t{kind}\t{slug}\t{display}\t{db}\t{why}")
 PYEOF
@@ -226,6 +239,8 @@ classify_project() {
     suggested_dbs=$(printf '%s' "$parsed" | awk -F'\t' '$1=="DBS"{print $2; exit}')
     local recommended_kind
     recommended_kind=$(printf '%s' "$parsed" | awk -F'\t' '$1=="REC"{print $2; exit}')
+    CHOSEN_CUSTOMIZE=$(printf '%s' "$parsed" | awk -F'\t' '$1=="CUSTOM"{print $2; exit}')
+    [[ -z "$CHOSEN_CUSTOMIZE" ]] && CHOSEN_CUSTOMIZE="yes"
 
     local -a kinds slugs displays dbs whys labels
     while IFS=$'\t' read -r tag kind slug display db why; do

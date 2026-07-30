@@ -125,7 +125,7 @@ if [[ "$SKIP_INTERACTIVE" == "1" || "$JSON_OUTPUT" == "1" || ! -t 0 ]]; then
     CLASSIFY_NONINTERACTIVE=1
 fi
 
-CHOSEN_KIND=""; CHOSEN_SLUG=""; CHOSEN_DB=""; CHOSEN_NAME=""
+CHOSEN_KIND=""; CHOSEN_SLUG=""; CHOSEN_DB=""; CHOSEN_NAME=""; CHOSEN_CUSTOMIZE="yes"
 
 if ! classify_project "$USER_IDEA" "$CLASSIFY_NONINTERACTIVE"; then
     echo-yellow "Could not determine a stack automatically."
@@ -172,13 +172,58 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 3: build — hand the ORIGINAL idea to the agent, inside the project
 # ---------------------------------------------------------------------------
-# The environment already exists, so this prompt carries none of the creation
-# rules the old single-phase prompt needed (podium new argument order, clone
-# modes, installer lookup, directory cleanup). The per-project AGENTS.md written
-# below supplies the URL, database and command patterns.
+# Skipped entirely for a plain app install. install.sh has already polled until
+# the app answered 2xx/3xx and printed its URL, credentials (INSTALL_CREDENTIALS)
+# and gotchas (INSTALL_NOTES) — so an agent session here would spend real tokens
+# re-deriving what Podium reported seconds ago. It only earns its keep when the
+# user asked for something beyond standing the software up.
 write_project_agents_md "$CHOSEN_NAME" "$PROJECT_DIR"
 
-BUILD_PROMPT="You are the developer on an existing Podium project. It has already been created and is running — do NOT run podium new, podium clone or podium install, and do not create another project.
+if [[ "$CHOSEN_KIND" == "app" && "$CHOSEN_CUSTOMIZE" != "yes" ]]; then
+    echo-return
+    echo-green "Done — $CHOSEN_SLUG is installed and serving."
+    echo-white "Nothing beyond the install was requested, so no AI build step was needed."
+    echo-return
+    echo-cyan "To customize it from here:"
+    echo-white "  cd \"$PROJECT_DIR\""
+    echo-white "  podium ai \"<what you want changed>\""
+    echo-return
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        echo "{\"action\": \"create\", \"project_name\": \"$CHOSEN_NAME\", \"kind\": \"app\", \"slug\": \"$CHOSEN_SLUG\", \"build_step\": \"skipped\", \"status\": \"success\"}"
+    fi
+    cd "$CALLER_DIR"
+    exit 0
+fi
+
+# The environment already exists, so this prompt carries none of the creation
+# rules the old single-phase prompt needed. The per-project AGENTS.md written
+# above supplies the URL, database and command patterns.
+COMMON_RULES="Rules:
+- Run project tooling inside the container (podium exec / podium art / podium django manage / podium npm ...), never on the host.
+- Python containers provide python3, not python. For Django use 'podium django manage <args>'.
+- To restart processes use 'podium supervisor restart all', never 'podium exec supervisorctl'.
+- Never pass --json-output to a podium command; it hides the success/failure distinction.
+- You are NOT done until 'curl -s -o /dev/null -w \"%{http_code}\" --max-time 10 http://$CHOSEN_NAME/' returns 2xx or 3xx. If it does not, check 'docker logs $CHOSEN_NAME', fix it, and re-verify."
+
+if [[ "$CHOSEN_KIND" == "app" ]]; then
+    # The software is already installed, configured and serving. Framing this as
+    # "build X" invites the agent to rebuild the whole app from scratch, so the
+    # install is stated as done and only the leftover work is asked for.
+    BUILD_PROMPT="This Podium project is an existing, already-running install of '$CHOSEN_SLUG'. It is installed, configured and serving at http://$CHOSEN_NAME/.
+
+Do NOT install, reinstall, rebuild or scaffold it. Do NOT run podium new, podium clone or podium install. The software itself is finished.
+
+Read AGENTS.md in this directory first: it has the local URL, the database and the command patterns to use inside the container.
+
+The user's original request was:
+
+$USER_IDEA
+
+The install part of that request is already complete. Address ONLY the remaining customization — the parts that go beyond standing the software up. If, on reading it again, nothing remains to be done, just verify the app responds and say so rather than inventing work.
+
+$COMMON_RULES"
+else
+    BUILD_PROMPT="You are the developer on an existing Podium project. The project has been created and is running — do NOT run podium new, podium clone or podium install, and do not create another project.
 
 Read AGENTS.md in this directory first: it has the local URL, the database, and the command patterns to use inside the container.
 
@@ -186,20 +231,11 @@ Build this:
 
 $USER_IDEA
 
-Rules:
 - Use framework-native conventions: migrations, models, seeders, routes, controllers, templates.
-- Run project tooling inside the container (podium exec / podium art / podium django manage / podium npm ...), never on the host.
-- Python containers provide python3, not python. For Django use 'podium django manage <args>'.
-- To restart processes use 'podium supervisor restart all', never 'podium exec supervisorctl'.
-- Never pass --json-output to a podium command; it hides the success/failure distinction.
 - Do not require the user to create database tables by hand.
 - Update this project's README with the local URL, useful commands, and any default credentials.
-- You are NOT done until 'curl -sI --max-time 10 http://$CHOSEN_NAME/' returns 2xx or 3xx. If it does not, check 'docker logs $CHOSEN_NAME', fix it, and re-verify."
 
-if [[ "$CHOSEN_KIND" == "app" ]]; then
-    BUILD_PROMPT="$BUILD_PROMPT
-
-Note: this project is a ready-to-run install of '$CHOSEN_SLUG', already serving. Do not rebuild it from scratch. Apply only the customization the user asked for on top of the running app. If they asked for nothing beyond the install, verify it responds and summarize how to log in."
+$COMMON_RULES"
 fi
 
 echo-return
