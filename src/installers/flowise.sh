@@ -2,11 +2,14 @@ INSTALL_DISPLAY="Flowise"
 INSTALL_CREDENTIALS="admin / flowise123"
 INSTALL_NOTES="LLM workflow builder. Connect AI models and build chatbots visually."
 
+# Pinned deliberately: :latest was shipping a build that crash-looped on
+# "TypeError: this.db.exec is not a function". 3.1.3 starts cleanly.
+
 write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   flowise-app:
-    image: flowiseai/flowise:latest
+    image: flowiseai/flowise:3.1.3
     restart: unless-stopped
     environment:
       PORT: "3000"

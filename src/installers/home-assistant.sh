@@ -2,7 +2,17 @@ INSTALL_DISPLAY="Home Assistant"
 INSTALL_NOTES="First visit shows the onboarding wizard. Reverse-proxy headers are pre-configured."
 
 write_files() {
-    mkdir -p config
+    # configuration.yaml below uses !include for automations/scripts/scenes and
+    # a themes directory. If those are missing, HA fails to load the whole file
+    # and falls back to defaults — which means the http: block is ignored and
+    # every proxied request is rejected with 400:
+    #   "A request from a reverse proxy was received ... but your HTTP
+    #    integration is not set-up for reverse proxies"
+    # Create them so the config actually applies.
+    mkdir -p config/themes
+    printf '[]\n' > config/automations.yaml
+    printf '{}\n' > config/scripts.yaml
+    printf '[]\n' > config/scenes.yaml
 
     cat > config/configuration.yaml << 'EOF'
 default_config:
