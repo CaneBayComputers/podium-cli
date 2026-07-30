@@ -259,11 +259,11 @@ classify_project() {
                 labels+=("$(printf '%s  \033[2m(%s)\033[0m' "${displays[$n]}" "$tag")|${whys[$n]}")
             fi
         done
-        labels+=("I don't know — just choose for me|uses the recommended option")
+        # No "just choose for me" entry: pressing Enter already takes the
+        # recommendation, so it only added a row that did nothing new. A dev who
+        # dislikes every option can create the project by hand instead.
         local default_idx=$(( rec_n >= 0 ? rec_n + 1 : 1 ))
         idx=$(_menu_choose "How would you like to build this?" "$default_idx" "${labels[@]}")
-        # The trailing "just choose for me" entry resolves to the recommendation.
-        (( idx > ${#slugs[@]} )) && idx=$default_idx
     fi
 
     local sel=$((idx - 1))
