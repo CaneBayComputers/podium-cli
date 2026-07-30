@@ -16,6 +16,7 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 NEW_AGENT=""
 NEW_MODEL=""
 NEW_API_KEY=""
+NEW_API_BASE=""
 
 # AI agent configuration rules (summary)
 # --------------------------------------
@@ -29,21 +30,33 @@ NEW_API_KEY=""
 #   - gemini
 #       * AI_MODEL: OPTIONAL (when set, passed as `--model "$AI_MODEL"` to `gemini`)
 #       * AI_API_KEY: not used (gemini uses Google account auth or GEMINI_API_KEY env var)
+#   - aider
+#       * AI_MODEL: REQUIRED in practice — aider has no login of its own, so the
+#         model name is what picks the provider (openai/gpt-4o, anthropic/…, ollama/…)
+#       * AI_API_KEY: REQUIRED — passed as `--api-key provider=$AI_API_KEY`, where
+#         the provider is taken from the AI_MODEL prefix unless the key is already
+#         tagged (contains `=`)
+#       * AI_API_BASE: OPTIONAL — passed as `--openai-api-base "$AI_API_BASE"`, for
+#         OpenAI-compatible servers (Ollama, LM Studio, OpenRouter, vLLM)
 #
 # Initial-prompt behavior (driven by `podium ai "<prompt>"`):
 #   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"`
 #   - claude : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
 #   - gemini : `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"`
+#   - aider  : `aider --yes-always --no-auto-commits --no-check-update [--model …] [--api-key …] [--openai-api-base …] --message "<prompt>"`
+#              (interactive seeds the session with `--load` + `/code <prompt>`, since
+#               aider's --message processes the prompt and exits)
 
 usage() {
-    echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--json-output]"
+    echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--api-base URL] [--json-output]"
     echo-white ""
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, or gemini)."
-    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini)."
-    echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, or aider)."
+    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini; required for aider)."
+    echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude; required for aider)."
+    echo-white "  --api-base URL     Set an OpenAI-compatible API endpoint (aider only)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
     echo-white "Notes:"
@@ -70,6 +83,10 @@ while [[ $# -gt 0 ]]; do
             NEW_API_KEY="$2"
             shift 2
             ;;
+        --api-base)
+            NEW_API_BASE="$2"
+            shift 2
+            ;;
         --help|-h)
             usage
             exit 0
@@ -93,6 +110,11 @@ if [[ -n "$NEW_AGENT" ]]; then
     if [[ -z "$NEW_MODEL" ]]; then
         AI_MODEL=""
     fi
+    # Endpoints are provider-specific too — a base URL left over from the
+    # previous agent would silently point the new one at the wrong server.
+    if [[ -z "$NEW_API_BASE" ]]; then
+        AI_API_BASE=""
+    fi
 fi
 if [[ -n "$NEW_MODEL" ]]; then
     AI_MODEL="$NEW_MODEL"
@@ -100,17 +122,22 @@ fi
 if [[ -n "$NEW_API_KEY" ]]; then
     AI_API_KEY="$NEW_API_KEY"
 fi
+if [[ -n "$NEW_API_BASE" ]]; then
+    AI_API_BASE="$NEW_API_BASE"
+fi
 
 NONINTERACTIVE=0
 # No TTY on stdin means nobody can answer a prompt — reading would hit EOF and
 # either abort under `set -e` or spin the selection loop forever. Treat it as
 # non-interactive so scripted runs (and `podium configure < /dev/null`) keep the
 # existing configuration instead of hanging or dying.
-if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || ! -t 0 ]]; then
+if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || -n "$NEW_API_BASE" || ! -t 0 ]]; then
     NONINTERACTIVE=1
 fi
 
 select_ai_agent() {
+    local previous_agent="$AI_AGENT"
+
     while true; do
         echo-return
         echo-cyan 'AI Agent CLI Selection'; echo-white
@@ -118,8 +145,9 @@ select_ai_agent() {
         echo-white '  1) codex'
         echo-white '  2) claude'
         echo-white '  3) gemini'
+        echo-white '  4) aider   (bring your own API key — any model/provider)'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-3): '
+        echo-yellow -ne 'Enter your choice (1-4): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
@@ -140,11 +168,23 @@ select_ai_agent() {
                 sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
                 break
                 ;;
+            4)
+                AI_AGENT="aider"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
             *)
-                echo-yellow "Invalid selection. Please enter 1, 2, or 3."
+                echo-yellow "Invalid selection. Please enter 1, 2, 3, or 4."
                 ;;
         esac
     done
+
+    # Model names and endpoints don't carry across agents — a leftover
+    # "gemini-2.5-pro" handed to aider is just a broken run.
+    if [[ -n "$previous_agent" && "$AI_AGENT" != "$previous_agent" ]]; then
+        AI_MODEL=""
+        AI_API_BASE=""
+    fi
 }
 
 prompt_ai_model() {
@@ -157,12 +197,62 @@ prompt_ai_model() {
         echo-white "No model is currently configured."
     fi
 
-    echo-yellow -ne 'Enter model name (optional, press Enter to leave blank): '
+    # Aider is the one agent with no login of its own — the model name is what
+    # selects the provider, so it can't be skipped the way it can elsewhere.
+    if [[ "$AI_AGENT" == "aider" ]]; then
+        echo-return
+        echo-white "Aider needs a model — the name is what picks the provider:"
+        echo-white "  openai/gpt-4o                     OpenAI"
+        echo-white "  anthropic/claude-sonnet-4-5       Anthropic"
+        echo-white "  gemini/gemini-2.5-pro             Google"
+        echo-white "  deepseek/deepseek-chat            DeepSeek"
+        echo-white "  openai/<name>  + an API endpoint  Ollama / LM Studio / OpenRouter / vLLM"
+        echo-white "Full list: https://aider.chat/docs/llms.html"
+        echo-return
+        echo-yellow -ne 'Enter model name: '
+    else
+        echo-yellow -ne 'Enter model name (optional, press Enter to leave blank): '
+    fi
+
     echo-white -ne
     read NEW_MODEL
     echo-return
     if [[ -n "$NEW_MODEL" ]]; then
         AI_MODEL="$NEW_MODEL"
+    fi
+
+    if [[ "$AI_AGENT" == "aider" && -z "$AI_MODEL" ]]; then
+        echo-yellow "No model set. 'podium ai' will fall back to whatever aider defaults to,"
+        echo-yellow "which depends on which API key it finds in the environment."
+        echo-return
+    fi
+}
+
+prompt_ai_api_base() {
+    echo-return
+    echo-cyan "API Endpoint (optional)"; echo-white
+    echo-white "Leave this blank to use the provider's own hosted API."
+    echo-white "Set it only to point aider at an OpenAI-compatible server, e.g.:"
+    echo-white "  http://localhost:11434/v1     Ollama"
+    echo-white "  http://localhost:1234/v1      LM Studio"
+    echo-white "  https://openrouter.ai/api/v1  OpenRouter"
+
+    if [[ -n "$AI_API_BASE" ]]; then
+        echo-return
+        echo-white "Current endpoint: $AI_API_BASE"
+        echo-yellow "Press Enter to keep it, or type 'none' to clear it."
+    fi
+
+    echo-return
+    echo-yellow -ne 'Enter API endpoint URL (Enter to skip): '
+    echo-white -ne
+    read -r NEW_AI_API_BASE
+    echo-return
+
+    if [[ "$NEW_AI_API_BASE" == "none" ]]; then
+        AI_API_BASE=""
+    elif [[ -n "$NEW_AI_API_BASE" ]]; then
+        AI_API_BASE="$NEW_AI_API_BASE"
     fi
 }
 
@@ -344,6 +434,15 @@ ensure_ai_agent_installed() {
         claude)
             curl -fsSL https://claude.ai/install.sh | bash
             ;;
+        aider)
+            curl -LsSf https://aider.chat/install.sh | sh
+            # aider installs into ~/.local/bin, which isn't necessarily on PATH
+            # in this shell yet — make the check below (and this run) see it.
+            case ":$PATH:" in
+                *":$HOME/.local/bin:"*) ;;
+                *) export PATH="$HOME/.local/bin:$PATH" ;;
+            esac
+            ;;
         *)
             echo-yellow "Automatic installation for '$cli_command' is not configured. Please install it manually."
             ;;
@@ -368,9 +467,11 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
         sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
     fi
 
-    if [[ -n "$AI_MODEL" ]]; then
-        sudo-podium-sed-change "/^AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
-    fi
+    # Model and endpoint are written unconditionally: switching agents clears
+    # them above, and that clearing has to reach the file or the next run picks
+    # the old agent's model back up.
+    sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
+    sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
 
     if [[ -n "$AI_API_KEY" ]]; then
         sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
@@ -381,11 +482,12 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
         if [[ -n "$AI_API_KEY" ]]; then
             has_api_key="true"
         fi
-        echo "{\"action\": \"ai_set\", \"status\": \"success\", \"agent\": \"${AI_AGENT:-}\", \"model\": \"${AI_MODEL:-}\", \"has_api_key\": $has_api_key}"
+        echo "{\"action\": \"ai_set\", \"status\": \"success\", \"agent\": \"${AI_AGENT:-}\", \"model\": \"${AI_MODEL:-}\", \"api_base\": \"${AI_API_BASE:-}\", \"has_api_key\": $has_api_key}"
     else
         echo-green "AI agent configuration updated."
         echo-white "  Agent: ${AI_AGENT:-<none>}"
         echo-white "  Model: ${AI_MODEL:-<none>}"
+        [[ -n "$AI_API_BASE" ]] && echo-white "  Endpoint: $AI_API_BASE"
         echo-return
     fi
 
@@ -414,6 +516,19 @@ fi
 
 prompt_ai_model
 
+# codex/claude/gemini can authenticate with their own login on first run, so the
+# key and endpoint questions are skipped for them. Aider can't — it only talks
+# to a provider API — so ask up front rather than failing at the first prompt.
+if [[ "$AI_AGENT" == "aider" ]]; then
+    echo-cyan "Aider has no login of its own — it authenticates with the provider's API key."
+    echo-white "  OpenAI:    https://platform.openai.com/api-keys"
+    echo-white "  Anthropic: https://console.anthropic.com/"
+    echo-white "  Google:    https://aistudio.google.com/app/api-keys"
+    echo-white "(A local server such as Ollama usually accepts any placeholder key.)"
+    configure_ai_api_key
+    prompt_ai_api_base
+fi
+
 ensure_ai_agent_installed "$AI_AGENT"
 
 # Persist configuration
@@ -421,9 +536,10 @@ if [[ -n "$AI_AGENT" ]]; then
     sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
 fi
 
-if [[ -n "$AI_MODEL" ]]; then
-    sudo-podium-sed-change "/^AI_MODEL=/" "AI_MODEL=$AI_MODEL" /etc/podium-cli/.env
-fi
+# Written unconditionally so that clearing a value (switching agents, or
+# answering 'none' to the endpoint) actually reaches the file.
+sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
+sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
 
 if [[ -n "$AI_API_KEY" ]]; then
     sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
@@ -432,8 +548,13 @@ fi
 echo-green "AI agent configuration complete."
 echo-white "  Agent: ${AI_AGENT:-<none>}"
 echo-white "  Model: ${AI_MODEL:-<none>}"
+[[ -n "$AI_API_BASE" ]] && echo-white "  Endpoint: $AI_API_BASE"
 echo-return
-echo-white "Authentication will happen automatically the first time you run 'podium create' or 'podium ai'."
+if [[ "$AI_AGENT" == "aider" ]]; then
+    echo-white "Aider uses the API key above on every run — there is no separate login step."
+else
+    echo-white "Authentication will happen automatically the first time you run 'podium create' or 'podium ai'."
+fi
 echo-return
 
 echo-yellow "IMPORTANT:"

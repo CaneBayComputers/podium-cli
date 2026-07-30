@@ -123,14 +123,16 @@ Commands marked *(project dir)* must be run from inside a project directory.
 ```bash
 podium ai-set --agent claude --model claude-opus-4-7
 podium ai-set --agent codex --model gpt-4.1
+podium ai-set --agent aider --model openai/gpt-4o --api-key sk-...
 podium ai-set --json-output
 ```
 
 Supported flags:
 
-- `--agent <name>` – Set the AI agent CLI (`codex`, `claude`, `gemini`, or a custom command name).
-- `--model <name>` – Set the model name (optional for all supported agents).
-- `--api-key <key>` – Set the AI API key (optional for Codex and Claude; not used by Gemini which uses Google account auth).
+- `--agent <name>` – Set the AI agent CLI (`codex`, `claude`, `gemini`, or `aider`).
+- `--model <name>` – Set the model name (optional for Codex, Claude and Gemini; required in practice for Aider).
+- `--api-key <key>` – Set the AI API key (optional for Codex and Claude; not used by Gemini which uses Google account auth; required for Aider).
+- `--api-base <url>` – Set an OpenAI-compatible API endpoint. Aider only.
 - `--json-output` – Return the current configuration or update result as JSON (non-interactive).
 
 Examples:
@@ -141,6 +143,27 @@ Examples:
   - `podium ai-set --agent codex --model gpt-4.1`
 - Configure Claude with a model:
   - `podium ai-set --agent claude --model claude-opus-4-7`
+- Configure Aider against OpenAI:
+  - `podium ai-set --agent aider --model openai/gpt-4o --api-key sk-...`
+- Configure Aider against a local Ollama server:
+  - `podium ai-set --agent aider --model openai/llama3.1 --api-key ollama --api-base http://localhost:11434/v1`
+
+#### Aider
+
+Aider is the one supported agent with no login of its own — it always talks
+directly to a provider's API, so it needs a model **and** a key.
+
+- The model name selects the provider: `openai/gpt-4o`, `anthropic/claude-sonnet-4-5`,
+  `gemini/gemini-2.5-pro`, `deepseek/deepseek-chat`. See
+  [aider's model list](https://aider.chat/docs/llms.html).
+- Aider tags keys by provider (`--api-key openai=sk-...`). Podium stores a bare key
+  and tags it from the model prefix, so `--api-key sk-...` is all you need. A key
+  that already contains `=` is passed through as-is.
+- `--api-base` is only needed for an OpenAI-compatible server — Ollama, LM Studio,
+  OpenRouter, vLLM. Prefix the model with `openai/` when you use one. Leave it blank
+  for a provider's own hosted API.
+- Podium runs Aider with `--no-auto-commits`, so its edits land in your working tree
+  like every other agent's instead of being committed for you.
 
 ### 🤖 AI-assisted project creation
 
@@ -188,11 +211,12 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 
 `podium ai` / `podium create`:
 
-- Looks up your configured `AI_AGENT`, `AI_MODEL`, and `AI_API_KEY` from `/etc/podium-cli/.env`.
+- Looks up your configured `AI_AGENT`, `AI_MODEL`, `AI_API_KEY`, and `AI_API_BASE` from `/etc/podium-cli/.env`.
 - Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
   - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
   - Claude: `claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"` (`-p` added for `--one-off`)
   - Gemini: `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"` (interactive) / `... --output-format text --prompt ...` (one-off)
+  - Aider: `aider --yes-always --no-auto-commits --no-check-update [--model "$AI_MODEL"] [--api-key <provider>="$AI_API_KEY"] [--openai-api-base "$AI_API_BASE"] --message "<prompt>"` (one-off). Aider's `--message` exits after the reply, so interactive runs seed the session with `--load` instead and hand it back to you. `--no-git` is added when the directory isn't already a git repository, so `--yes-always` can't silently `git init` it.
 
 ## 🎯 Command Options
 
