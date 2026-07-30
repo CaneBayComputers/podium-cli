@@ -4,16 +4,16 @@
 
 **Local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.**
 
-| | Without Podium | With Podium |
+| | AI without Podium | AI with Podium |
 |---|---|---|
-| **Standing up an OSS app** | Hunt down an image, write a compose, wire env vars, chase port clashes | `podium install grafana` |
-| ↳ prompts | Several rounds of "now fix the database host" | One |
-| ↳ tokens | ~10–15k, and it lands *almost* right | ~800 |
-| ↳ time | An afternoon of yak-shaving | Under two minutes |
-| **Databases** | Every project bundles its own | One shared set — ~700MB of RAM becomes ~100MB |
-| **Reaching it** | `localhost:3002`… or was it `:3003`? | `http://grafana/` |
-| **Guardrails for AI** | Agent invents its own ports, DB and layout each time | Fixed hostnames, IPs, images and credentials |
-| **On another machine** | "Worked on my laptop" | Identical |
+| **Standing up an OSS app** | Re-derives the image, compose and env vars | `podium install grafana` |
+| ↳ prompts | Several rounds of fixes | One |
+| ↳ tokens | ~10–15k, lands *almost* right | ~800 |
+| ↳ time | An afternoon | Under two minutes |
+| **Databases** | One bundled per project | One shared — ~700MB → ~100MB |
+| **URLs** | `localhost:3002`? `:3003`? | `http://grafana/` |
+| **Project layout** | Reinvented every session | Fixed hostnames, IPs, images, credentials |
+| **Other machines** | "Worked on my laptop" | Identical |
 
 📖 **[Full documentation →](https://canebaycomputers.github.io/podium-cli/guide/)**
 
@@ -21,11 +21,10 @@
 
 ## Why
 
-- **It's a project manager.** Every project gets a name, a hostname, and one shared set of services. Ten projects, one Postgres — not ten.
-- **It keeps AI in bounds.** Left alone, an agent scaffolds a project however it likes — its own ports, its own bundled database, its own compose file — ignoring everything else on your machine. Podium gives it a fixed environment to build inside.
-- **It saves AI tokens.** Networking, scaffolding, secrets and 100+ app installs are pre-baked. Your agent builds the app instead of rediscovering how to wire nginx + php-fpm every session.
-- **The containers are already built.** PHP 8.3, Python 3, Node 22 — nginx, supervisor and every database driver compiled in. Nobody tracks down an image or writes a Dockerfile.
-- **No port juggling.** Every project is `http://project-name`. No `localhost:3001` vs `:3002`. Ports only appear when you want to reach a project from another machine on the LAN.
+- **It's a project manager.** Every project gets a name, a hostname, and the same shared services. Ten projects, one Postgres.
+- **It keeps AI in bounds.** Left alone, an agent invents its own ports, database and compose file, ignoring everything else on your machine. Podium hands it a fixed environment instead.
+- **It saves tokens.** Networking, scaffolding, secrets and 100+ app installs are pre-baked. The agent builds your app, not the plumbing.
+- **The containers are already built.** PHP 8.3, Python 3, Node 22 — nginx, supervisor and every database driver compiled in. No image hunting, no Dockerfiles.
 - **Nothing to configure.** No YAML, no env spelunking, no per-project setup.
 
 ---
@@ -55,7 +54,7 @@ Log out and back in so Docker group access takes effect. Details and platform no
 podium create "A timeclock for employees in Django"
 ```
 
-Describe what you want. **Podium** creates the project, wires up the database, installs the framework or app, generates the environment, and hands back a working URL. The AI only customizes on top of that — which is exactly where the prompt and token savings come from.
+Describe what you want. **Podium** builds the project, database, environment and URL. The AI only customizes what sits on top — that's where the savings come from.
 
 Name a framework if you have a preference — or don't, and let the agent choose:
 
