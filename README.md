@@ -1,8 +1,10 @@
 # Podium CLI
 
+## DevOps in-a-box!
+
 **Local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.**
 
-📖 **[Full documentation →](https://canebaycomputers.github.io/podium-cli/)**
+📖 **[Full documentation →](https://canebaycomputers.github.io/podium-cli/guide/)**
 
 ---
 
@@ -13,7 +15,7 @@
 - **It saves AI tokens.** Networking, scaffolding, secrets and 100+ app installs are pre-baked. Your agent builds the app instead of rediscovering how to wire nginx + php-fpm every session.
 - **The containers are already built.** PHP 8.3, Python 3, Node 22 — nginx, supervisor and every database driver compiled in. Nobody tracks down an image or writes a Dockerfile.
 - **No port juggling.** Every project is `http://project-name`. No `localhost:3001` vs `:3002`. Ports only appear when you want to reach a project from another machine on the LAN.
-- **Nothing to configure.** No YAML, no env spelunking, no first-run wizards.
+- **Nothing to configure.** No YAML, no env spelunking, no per-project setup.
 
 ---
 
@@ -32,7 +34,7 @@ Then, once:
 podium configure
 ```
 
-Log out and back in so Docker group access takes effect. Details and platform notes: **[Installation](https://canebaycomputers.github.io/podium-cli/installation/)**.
+Log out and back in so Docker group access takes effect. Details and platform notes: **[Installation](https://canebaycomputers.github.io/podium-cli/guide/installation/)**.
 
 ---
 
@@ -44,13 +46,20 @@ podium create "A timeclock for employees in Django"
 
 Describe what you want. Your AI agent creates the project, wires up the database and environment, builds the app, and hands you a working URL.
 
+Name a framework if you have a preference — or don't, and let the agent choose:
+
 ```bash
-podium create "A customer check-in system in Laravel"
-podium create "An inventory tracker in Express"
-podium create "New Grafana"
+podium create "A tool to track my guitar pedal collection"
 ```
 
-Set your agent first with `podium ai-set --agent claude` (or `codex`, `gemini`).
+Give it as much detail as you like:
+
+```bash
+podium create "A customer intake system for a small law firm. Clients submit a
+form with their contact info, case type and a short description. Staff log in
+to review submissions, assign each one to an attorney, and move it through new,
+in progress and closed. Email the client whenever the status changes."
+```
 
 ---
 
@@ -63,7 +72,7 @@ podium clone work-directly <repo-url>
 podium up my-api               # start it
 ```
 
-Everything else — frameworks, the 100+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://canebaycomputers.github.io/podium-cli/)**.
+Everything else — frameworks, the 100+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://canebaycomputers.github.io/podium-cli/guide/)**.
 
 ---
 
