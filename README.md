@@ -2,7 +2,7 @@
 
 ## DevOps in-a-box!
 
-**Local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.**
+**Pre-plumbed PHP, Python and Node environments so your AI agent can skip the setup and get straight to building.**
 
 | | AI without Podium | AI with Podium |
 |---|---|---|

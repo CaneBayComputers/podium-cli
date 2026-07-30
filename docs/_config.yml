@@ -1,5 +1,5 @@
 title: Podium CLI
-description: Docker-based local dev environment manager for PHP, Python and Node — and a guardrail for AI coding agents.
+description: Pre-plumbed PHP, Python and Node environments so your AI agent can skip the setup and get straight to building.
 remote_theme: just-the-docs/just-the-docs
 
 url: https://canebaycomputers.github.io
