@@ -30,6 +30,12 @@ podium create "New Grafana"
 podium create "https://github.com/monicahq/monica"
 ```
 
+Run it bare and it asks what you want to build:
+
+```bash
+podium create
+```
+
 Long prompts can come from a file or stdin:
 
 ```bash

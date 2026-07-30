@@ -90,12 +90,36 @@ if [[ -z "$USER_IDEA" && ! -t 0 ]]; then
     STDIN_CONSUMED=1
 fi
 
-# 3. A project idea is required — no interactive prompt. Pass it as an argument,
-#    via -f <file>, or on stdin.
+# 3. Still nothing? Ask, but only when a human is definitely there.
+#    `podium create` already prompts for framework, database and project name,
+#    so refusing to ask for the idea itself was the odd one out. The agent
+#    guarantee is preserved by gating on exactly the same conditions the menus
+#    use: scripts, CI, --one-off and --json-output still get a hard error.
 if [[ -z "$USER_IDEA" ]]; then
-    echo-red "No project idea provided."
-    echo-white "Usage: podium create \"<idea>\"   |   podium create -f <file>   |   ... | podium create"
-    exit 1
+    if [[ -t 0 && "$SKIP_INTERACTIVE" != "1" && "$JSON_OUTPUT" != "1" ]]; then
+        echo-return
+        echo-cyan "What would you like to build?"
+        echo-white "Describe it in plain English — a sentence is enough, more detail is better."
+        echo-return
+        while [[ -z "$USER_IDEA" ]]; do
+            echo-yellow -ne "> "
+            read USER_IDEA || USER_IDEA=""
+            # Blank input on a terminal means they changed their mind.
+            if [[ -z "$USER_IDEA" ]]; then
+                echo-white "Nothing entered — run 'podium create \"<idea>\"' when you're ready."
+                exit 1
+            fi
+        done
+        echo-return
+    elif [[ "$JSON_OUTPUT" == "1" ]]; then
+        # echo-red/echo-white are suppressed in JSON mode, so without this a
+        # machine consumer got exit 1 and an empty stdout.
+        json_error "no project idea provided; pass it as an argument, via -f <file>, or on stdin"
+    else
+        echo-red "No project idea provided."
+        echo-white "Usage: podium create \"<idea>\"   |   podium create -f <file>   |   ... | podium create"
+        exit 1
+    fi
 fi
 
 # If we slurped stdin from a pipe/redirect, the interactive Phase 2 won't have
