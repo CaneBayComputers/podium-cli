@@ -63,6 +63,18 @@ fi
 
 INSTALLER="$DEV_DIR/installers/$APP.sh"
 if [ ! -f "$INSTALLER" ]; then
+    # The mirror of the check in new_project.sh: if this is a framework, the
+    # user wants `podium new` — say so rather than making them go read a list.
+    if [ -f "$DEV_DIR/frameworks/$APP.sh" ]; then
+        echo-yellow "'$APP' is a framework, not a prebuilt app."
+        echo-white "Frameworks are scaffolded into a project you write, rather than installed."
+        echo-return
+        echo-cyan "Run this instead:"
+        echo-white "  podium new $APP ${PROJECT_NAME:-<project-name>}"
+        echo-return
+        echo-red "Wrong command for '$APP' — use 'podium new'."
+        exit 1
+    fi
     echo-red "No installer found for: $APP"
     echo-white "Run 'podium install --list' to see available apps."
     exit 1
