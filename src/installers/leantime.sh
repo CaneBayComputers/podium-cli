@@ -10,7 +10,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   leantime-app:
-    image: leantime/leantime:latest
+    image: leantime/leantime:3.9.8
     restart: unless-stopped
     environment:
       LEAN_DB_HOST: podium-mariadb

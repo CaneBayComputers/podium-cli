@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   healthchecks-app:
-    image: healthchecks/healthchecks:latest
+    image: healthchecks/healthchecks:v4.3
     restart: unless-stopped
     environment:
       DB: postgres

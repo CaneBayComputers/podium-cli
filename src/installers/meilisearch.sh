@@ -7,7 +7,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   meilisearch-app:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.51.0
     restart: unless-stopped
     environment:
       MEILI_ENV: production

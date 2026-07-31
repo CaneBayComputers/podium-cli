@@ -6,7 +6,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   npm-app:
-    image: jc21/nginx-proxy-manager:latest
+    image: jc21/nginx-proxy-manager:2.15.1
     restart: unless-stopped
     volumes:
       - npm-data:/data

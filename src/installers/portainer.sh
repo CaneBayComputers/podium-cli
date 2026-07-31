@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   portainer-app:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.44.0
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

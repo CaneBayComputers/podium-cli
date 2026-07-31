@@ -64,7 +64,7 @@ x-volumes: &common-volumes
 
 services:
   taiga-back:
-    image: taigaio/taiga-back:latest
+    image: taigaio/taiga-back:6.10.2
     restart: unless-stopped
     environment: *common-env
     volumes: *common-volumes
@@ -73,7 +73,7 @@ services:
       - taiga-async-rabbitmq
 
   taiga-async:
-    image: taigaio/taiga-back:latest
+    image: taigaio/taiga-back:6.10.2
     restart: unless-stopped
     entrypoint:
       - /taiga-back/docker/async_entrypoint.sh
@@ -96,7 +96,7 @@ services:
       - taiga-async-rabbitmq-data:/var/lib/rabbitmq
 
   taiga-front:
-    image: taigaio/taiga-front:latest
+    image: taigaio/taiga-front:6.10.3
     restart: unless-stopped
     environment:
       TAIGA_URL: "${TAIGA_SCHEME}://${TAIGA_DOMAIN}"
@@ -104,7 +104,7 @@ services:
       TAIGA_SUBPATH: "${SUBPATH}"
 
   taiga-events:
-    image: taigaio/taiga-events:latest
+    image: taigaio/taiga-events:6.10.0
     restart: unless-stopped
     environment:
       RABBITMQ_USER: ${RABBITMQ_USER}
@@ -126,7 +126,7 @@ services:
       - taiga-events-rabbitmq-data:/var/lib/rabbitmq
 
   taiga-protected:
-    image: taigaio/taiga-protected:latest
+    image: taigaio/taiga-protected:6.10.1
     restart: unless-stopped
     environment:
       MAX_AGE: ${ATTACHMENTS_MAX_AGE}

@@ -10,7 +10,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   budibase-app:
-    image: budibase/budibase:latest
+    image: budibase/budibase:3.41.1
     restart: unless-stopped
     environment:
       JWT_SECRET: $jwt_secret

@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   audiobookshelf-app:
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    image: ghcr.io/advplyr/audiobookshelf:2.19.0
     restart: unless-stopped
     volumes:
       - audiobookshelf-config:/config

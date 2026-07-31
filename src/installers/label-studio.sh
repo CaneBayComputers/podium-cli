@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   label-studio-app:
-    image: heartexlabs/label-studio:latest
+    image: heartexlabs/label-studio:20260731.081854-main-d5091b1
     restart: unless-stopped
     environment:
       # DJANGO_DB must be "sqlite" — using "default" causes it to try PostgreSQL

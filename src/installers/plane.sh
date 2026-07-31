@@ -214,7 +214,7 @@ services:
       - plane-mq-data:/var/lib/rabbitmq
 
   plane-minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /export --console-address ":9090"
     restart: unless-stopped
     environment:

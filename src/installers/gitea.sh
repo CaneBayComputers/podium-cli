@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   gitea-app:
-    image: gitea/gitea:latest
+    image: gitea/gitea:1.27.1
     restart: unless-stopped
     environment:
       USER_UID: 1000

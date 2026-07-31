@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   redmine-app:
-    image: redmine:latest
+    image: redmine:7.0.0
     restart: unless-stopped
     environment:
       REDMINE_DB_MYSQL: podium-mariadb

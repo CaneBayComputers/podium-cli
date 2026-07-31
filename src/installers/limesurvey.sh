@@ -14,7 +14,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   limesurvey-app:
-    image: martialblog/limesurvey:latest
+    image: martialblog/limesurvey:6.17.12-260721-apache
     restart: unless-stopped
     environment:
       DB_TYPE: mysql

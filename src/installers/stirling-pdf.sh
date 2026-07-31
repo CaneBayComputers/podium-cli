@@ -4,7 +4,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   stirling-pdf-app:
-    image: frooodle/s-pdf:latest
+    image: frooodle/s-pdf:2.14.2
     restart: unless-stopped
     environment:
       DOCKER_ENABLE_SECURITY: "false"

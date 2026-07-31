@@ -56,7 +56,7 @@ EOF
     cat > docker-compose.yaml << 'EOF'
 services:
   tooljet-app:
-    image: tooljet/tooljet-ce:latest
+    image: tooljet/tooljet-ce:v3.15.1
     restart: unless-stopped
     env_file:
       - .env

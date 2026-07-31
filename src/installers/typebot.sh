@@ -24,7 +24,7 @@ EOF
     cat > docker-compose.yaml << 'EOF'
 services:
   typebot-builder:
-    image: baptistearno/typebot-builder:latest
+    image: baptistearno/typebot-builder:3.17.2
     restart: unless-stopped
     env_file:
       - .env
@@ -32,7 +32,7 @@ services:
       PORT: "3000"
 
   typebot-viewer:
-    image: baptistearno/typebot-viewer:latest
+    image: baptistearno/typebot-viewer:3.17.2
     restart: unless-stopped
     env_file:
       - .env

@@ -16,7 +16,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   flarum-app:
-    image: mondedie/flarum:latest
+    image: mondedie/flarum:1.3.0
     restart: unless-stopped
     environment:
       FORUM_URL: http://flarum

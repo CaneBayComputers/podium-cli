@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   mattermost-app:
-    image: mattermost/mattermost-team-edition:latest
+    image: mattermost/mattermost-team-edition:11.9
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

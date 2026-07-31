@@ -16,7 +16,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   freescout-app:
-    image: tiredofit/freescout:latest
+    image: tiredofit/freescout:php8.2-1.17.999
     restart: unless-stopped
     environment:
       ADMIN_EMAIL: admin@freescout.local

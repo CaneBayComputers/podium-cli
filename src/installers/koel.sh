@@ -51,7 +51,7 @@ ENV
     cat > docker-compose.yaml << 'EOF'
 services:
   koel-app:
-    image: phanan/koel:latest
+    image: phanan/koel:9.11.0
     restart: unless-stopped
     env_file: ./.env
     environment:

@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   metabase-app:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.63.2
     restart: unless-stopped
     environment:
       MB_DB_TYPE: h2

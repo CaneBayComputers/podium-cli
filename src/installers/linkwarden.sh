@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   linkwarden-app:
-    image: ghcr.io/linkwarden/linkwarden:latest
+    image: ghcr.io/linkwarden/linkwarden:v2.16.0
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://root:password@podium-postgres:5432/linkwarden

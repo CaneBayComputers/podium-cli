@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   wallabag:
-    image: wallabag/wallabag:latest
+    image: wallabag/wallabag:2.6.14
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ""

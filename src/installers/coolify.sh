@@ -16,7 +16,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   coolify-app:
-    image: ghcr.io/coollabsio/coolify:latest
+    image: ghcr.io/coollabsio/coolify:3.12.37
     restart: unless-stopped
     environment:
       APP_ID: $app_id
