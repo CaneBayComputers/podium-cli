@@ -256,7 +256,7 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--overwrite-env` | Regenerate `.env` even if the cloned repo already includes one (default: keep the existing `.env`) |
 | `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
-| `--framework <name>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <name>` | Force framework detection (`laravel`, `kavera`, `wordpress`, `octobercms`, `php`, `django`, `flask`, `fastapi`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
 | `--github-org <org>` | For `new-repo` mode: create the repository in this organization |
@@ -271,7 +271,7 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 | Option | Description |
 |--------|-------------|
 | `--overwrite-docker-compose` | Overwrite existing docker-compose.yaml without prompting |
-| `--framework <type>` | Force framework detection (`laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`) |
+| `--framework <type>` | Force framework detection (`laravel`, `kavera`, `wordpress`, `octobercms`, `php`, `django`, `flask`, `fastapi`, `python`, `express`, `nestjs`, `fastify`, `node`) |
 | `--db-name <name>` | Database name (default: project name with dashes converted to underscores) |
 | `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
 | `--overwrite-env` | Regenerate `.env` even if one already exists (default: keep the existing `.env`) |

@@ -282,6 +282,40 @@ using the container names from `/etc/podium-cli/.env`.
 > test `podium memcache-stats` end-to-end before marking §5 APPLIED — the
 > container-name change alone reads as fixed in a diff but isn't.
 
+> **New finding — 2026-07-31, from a clean install on a second machine.**
+> Related to §3 but in files that fix did not touch.
+>
+> **Three of the four installers close by telling the user to run a command that
+> now hard-errors.** After a successful install, `install-ubuntu.sh:407`,
+> `install-mac.sh:403` and `install-arch.sh:345` all print:
+>
+> ```
+>   3. Create your first project:
+>        podium create "A task tracker with user login"
+>      or use a specific framework:
+>        podium new my-project --framework laravel      <-- removed flag, old arg order
+> ```
+>
+> Reproduced end-to-end on a freshly wiped Linux Mint 22.3 box (Docker pruned,
+> old CLI removed, current `beta` installed via `install-ubuntu.sh`, then
+> `podium configure --non-interactive`):
+>
+> ```
+> $ podium new my-project --framework laravel
+> ...usage...
+> $ echo $?
+> 1
+> ```
+>
+> This is the **first command a brand-new user is told to run**, and it fails on
+> a correct install — which reads as "the install is broken" rather than "the
+> docs are stale". `install-fedora.sh` does not carry the line.
+>
+> Same class as §3 (docs advertising a flag the parser rejects); worth a grep for
+> `--framework` across the whole repo rather than per-file fixes. `README.md:79`
+> is already correct (`podium new flask my-api`), so it is just the three
+> installers.
+
 - `podium projects-dir --json-output` ignores the flag and prints a bare path.
   The dispatcher handles `projects-dir` inline with `echo` and never looks at
   arguments. Harmless — the GUI reads the plain path — but it means the global
