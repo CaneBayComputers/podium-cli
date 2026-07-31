@@ -21,7 +21,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   standard-notes-app:
-    image: standardnotes/server:65b9d74079369b3a2dbd85b42ef4e92b5e03deb4
+    image: standardnotes/server:latest
     restart: unless-stopped
     environment:
       EXPOSED_PORT: "3000"

@@ -13,7 +13,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   nocodb-app:
-    image: nocodb/nocodb:2026.07.0
+    image: nocodb/nocodb:latest
     restart: unless-stopped
     environment:
       NC_DB: "pg://podium-postgres:5432?u=root&p=password&d=nocodb"

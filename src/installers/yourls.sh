@@ -44,7 +44,7 @@ EOF
     cat > docker-compose.yaml << 'EOF'
 services:
   yourls:
-    image: ghcr.io/yourls/yourls:1.9.2
+    image: ghcr.io/yourls/yourls:latest
     restart: unless-stopped
     environment:
       YOURLS_DB_HOST: podium-mariadb

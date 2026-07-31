@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   homer-app:
-    image: b4bz/homer:v26.4.2
+    image: b4bz/homer:latest
     restart: unless-stopped
     environment:
       INIT_ASSETS: 1

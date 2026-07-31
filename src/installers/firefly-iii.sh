@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   firefly-app:
-    image: fireflyiii/core:version-6.6.6
+    image: fireflyiii/core:latest
     restart: unless-stopped
     environment:
       APP_ENV: local

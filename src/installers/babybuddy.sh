@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   babybuddy-app:
-    image: lscr.io/linuxserver/babybuddy:2.9.2
+    image: lscr.io/linuxserver/babybuddy:latest
     restart: unless-stopped
     environment:
       PUID: 1000

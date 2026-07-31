@@ -16,7 +16,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   snipe-it:
-    image: snipe/snipe-it:v8.6.3
+    image: snipe/snipe-it:latest
     restart: unless-stopped
     environment:
       APP_ENV: production

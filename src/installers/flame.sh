@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   flame-app:
-    image: pawelmalak/flame:2.4.0
+    image: pawelmalak/flame:latest
     restart: unless-stopped
     environment:
       PASSWORD: admin

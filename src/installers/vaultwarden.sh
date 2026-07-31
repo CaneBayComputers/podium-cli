@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   vaultwarden:
-    image: vaultwarden/server:1.37.1
+    image: vaultwarden/server:latest
     restart: unless-stopped
     environment:
       WEBSOCKET_ENABLED: "true"

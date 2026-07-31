@@ -4,7 +4,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   changedetection-app:
-    image: ghcr.io/dgtlmoon/changedetection.io:0.49.1
+    image: ghcr.io/dgtlmoon/changedetection.io:latest
     restart: unless-stopped
     environment:
       BASE_URL: http://changedetection

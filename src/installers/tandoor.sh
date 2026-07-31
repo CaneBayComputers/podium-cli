@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   tandoor-app:
-    image: vabene1111/recipes:2.6.13
+    image: vabene1111/recipes:latest
     restart: unless-stopped
     environment:
       SECRET_KEY: "$secret_key"

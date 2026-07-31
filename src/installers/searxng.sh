@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   searxng-app:
-    image: searxng/searxng:2026.7.31-057a77168
+    image: searxng/searxng:latest
     restart: unless-stopped
     environment:
       SEARXNG_BASE_URL: http://searxng/

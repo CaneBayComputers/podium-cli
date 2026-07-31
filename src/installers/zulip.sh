@@ -23,7 +23,7 @@ services:
       - zulip-app
 
   zulip-app:
-    image: zulip/docker-zulip:11.6-0
+    image: zulip/docker-zulip:latest
     restart: unless-stopped
     environment:
       DB_HOST: podium-postgres

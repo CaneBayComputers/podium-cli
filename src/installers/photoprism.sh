@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   photoprism-app:
-    image: photoprism/photoprism:260728
+    image: photoprism/photoprism:latest
     restart: unless-stopped
     environment:
       PHOTOPRISM_AUTH_MODE: password

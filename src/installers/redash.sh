@@ -13,7 +13,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   redash-server:
-    image: redash/redash:26.3.0
+    image: redash/redash:latest
     command: server
     restart: unless-stopped
     environment:
@@ -32,7 +32,7 @@ services:
       - redash-scheduler
 
   redash-worker:
-    image: redash/redash:26.3.0
+    image: redash/redash:latest
     command: worker
     restart: unless-stopped
     environment:
@@ -43,7 +43,7 @@ services:
       QUEUES: queries,scheduled_queries,celery
 
   redash-scheduler:
-    image: redash/redash:26.3.0
+    image: redash/redash:latest
     command: scheduler
     restart: unless-stopped
     environment:

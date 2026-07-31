@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   grafana-app:
-    image: grafana/grafana:13.1.1
+    image: grafana/grafana:latest
     restart: unless-stopped
     environment:
       GF_SERVER_ROOT_URL: http://grafana/

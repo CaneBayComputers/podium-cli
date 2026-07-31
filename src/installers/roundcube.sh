@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   roundcube-app:
-    image: roundcube/roundcubemail:1.3.6
+    image: roundcube/roundcubemail:latest
     restart: unless-stopped
     environment:
       ROUNDCUBEMAIL_DB_TYPE: mysql

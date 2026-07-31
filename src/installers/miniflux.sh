@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   miniflux-app:
-    image: miniflux/miniflux:2.3.3
+    image: miniflux/miniflux:latest
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://root:password@podium-postgres:5432/miniflux?sslmode=disable

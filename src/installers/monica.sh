@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   monica-app:
-    image: monica:4.1.2
+    image: monica:latest
     restart: unless-stopped
     environment:
       APP_ENV: production

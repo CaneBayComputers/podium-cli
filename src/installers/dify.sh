@@ -61,7 +61,7 @@ x-api-env: &api-env
 
 services:
   api:
-    image: langgenius/dify-api:1.16.1
+    image: langgenius/dify-api:latest
     restart: always
     <<: *api-env
     environment:
@@ -70,7 +70,7 @@ services:
       - weaviate
 
   worker:
-    image: langgenius/dify-api:1.16.1
+    image: langgenius/dify-api:latest
     restart: always
     <<: *api-env
     environment:
@@ -79,19 +79,19 @@ services:
       - weaviate
 
   worker_beat:
-    image: langgenius/dify-api:1.16.1
+    image: langgenius/dify-api:latest
     restart: always
     <<: *api-env
     environment:
       MODE: beat
 
   web:
-    image: langgenius/dify-web:1.16.1
+    image: langgenius/dify-web:latest
     restart: always
     env_file: .env
 
   dify-sandbox:
-    image: langgenius/dify-sandbox:0.2.15
+    image: langgenius/dify-sandbox:latest
     restart: always
     environment:
       API_KEY: dify-sandbox

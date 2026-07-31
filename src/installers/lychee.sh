@@ -16,7 +16,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   lychee-app:
-    image: lycheeorg/lychee:v7.7.1
+    image: lycheeorg/lychee:latest
     restart: unless-stopped
     environment:
       DB_CONNECTION: mysql

@@ -4,7 +4,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   netdata-app:
-    image: netdata/netdata:v2.10.4
+    image: netdata/netdata:latest
     restart: unless-stopped
     cap_add:
       - SYS_PTRACE

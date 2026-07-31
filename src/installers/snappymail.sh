@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   snappymail-app:
-    image: djmaze/snappymail:v2.38.2
+    image: djmaze/snappymail:latest
     restart: unless-stopped
     environment:
       SNAPPYMAIL_INCLUDE_ADMINPANEL: "True"

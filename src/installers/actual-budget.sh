@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   actual-budget-app:
-    image: actualbudget/actual-server:26.7.0
+    image: actualbudget/actual-server:latest
     restart: unless-stopped
     volumes:
       - actual-budget-data:/data

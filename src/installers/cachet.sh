@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   cachet-app:
-    image: cachethq/docker:2.3.18
+    image: cachethq/docker:latest
     restart: unless-stopped
     environment:
       APP_ENV: production

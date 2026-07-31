@@ -6,7 +6,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   minio-app:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   trilium-app:
-    image: zadam/trilium:0.63.7
+    image: zadam/trilium:latest
     restart: unless-stopped
     volumes:
       - trilium-data:/home/node/trilium-data

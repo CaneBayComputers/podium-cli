@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   freshrss:
-    image: freshrss/freshrss:1.29.1
+    image: freshrss/freshrss:latest
     restart: unless-stopped
     environment:
       TZ: UTC

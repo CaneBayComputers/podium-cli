@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   paperless-app:
-    image: ghcr.io/paperless-ngx/paperless-ngx:2.9.0
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: unless-stopped
     environment:
       PAPERLESS_DBHOST: podium-postgres

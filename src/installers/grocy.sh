@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   grocy:
-    image: lscr.io/linuxserver/grocy:4.6.0
+    image: lscr.io/linuxserver/grocy:latest
     restart: unless-stopped
     environment:
       PUID: 1000

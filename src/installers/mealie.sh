@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   mealie-app:
-    image: ghcr.io/mealie-recipes/mealie:v3.22.0
+    image: ghcr.io/mealie-recipes/mealie:latest
     restart: unless-stopped
     environment:
       BASE_URL: http://mealie

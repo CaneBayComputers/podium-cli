@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   ghost-app:
-    image: ghost:6.54.1
+    image: ghost:latest
     restart: unless-stopped
     environment:
       url: http://ghost

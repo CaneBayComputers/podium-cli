@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   kavita-app:
-    image: jvmilazz0/kavita:0.9.0
+    image: jvmilazz0/kavita:latest
     restart: unless-stopped
     volumes:
       - kavita-config:/kavita/config

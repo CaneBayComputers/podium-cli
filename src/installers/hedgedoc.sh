@@ -12,7 +12,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   hedgedoc-app:
-    image: quay.io/hedgedoc/hedgedoc:1.11.1
+    image: quay.io/hedgedoc/hedgedoc:latest
     restart: unless-stopped
     environment:
       CMD_DB_URL: postgres://root:password@podium-postgres:5432/hedgedoc

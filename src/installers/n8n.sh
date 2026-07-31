@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   n8n-app:
-    image: n8nio/n8n:2.33.3
+    image: n8nio/n8n:latest
     restart: unless-stopped
     environment:
       N8N_HOST: n8n

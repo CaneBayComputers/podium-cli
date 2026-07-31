@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   listmonk-app:
-    image: listmonk/listmonk:v6.2.0
+    image: listmonk/listmonk:latest
     restart: unless-stopped
     command:
       - sh

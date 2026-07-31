@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   jellyfin-app:
-    image: jellyfin/jellyfin:10.11.11
+    image: jellyfin/jellyfin:latest
     restart: unless-stopped
     volumes:
       - jellyfin-config:/config

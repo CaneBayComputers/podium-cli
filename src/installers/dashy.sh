@@ -4,7 +4,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   dashy-app:
-    image: lissy93/dashy:4.5.3
+    image: lissy93/dashy:latest
     restart: unless-stopped
     environment:
       NODE_ENV: production

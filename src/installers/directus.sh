@@ -13,7 +13,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   directus-app:
-    image: directus/directus:12.2
+    image: directus/directus:latest
     restart: unless-stopped
     environment:
       KEY: $key

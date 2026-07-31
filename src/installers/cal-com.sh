@@ -13,7 +13,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   cal-com-app:
-    image: calcom/cal.com:v6.2.0
+    image: calcom/cal.com:latest
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_WEBAPP_URL: http://cal-com

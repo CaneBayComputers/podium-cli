@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   kanboard:
-    image: kanboard/kanboard:v1.2.53
+    image: kanboard/kanboard:latest
     restart: unless-stopped
     volumes:
       - kanboard-data:/var/www/app/data

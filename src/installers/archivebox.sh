@@ -5,7 +5,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   archivebox-app:
-    image: archivebox/archivebox:0.9.35rc190
+    image: archivebox/archivebox:latest
     command: server --quick-init 0.0.0.0:8000
     restart: unless-stopped
     environment:

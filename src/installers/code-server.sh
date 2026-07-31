@@ -6,7 +6,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   code-server-app:
-    image: codercom/code-server:4.131.0
+    image: codercom/code-server:latest
     restart: unless-stopped
     environment:
       PASSWORD: codeserver123

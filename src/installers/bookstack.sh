@@ -27,7 +27,7 @@ ENV
     cat > docker-compose.yaml << EOF
 services:
   bookstack-app:
-    image: lscr.io/linuxserver/bookstack:26.05.20260608
+    image: lscr.io/linuxserver/bookstack:latest
     restart: unless-stopped
     environment:
       PUID: 1000

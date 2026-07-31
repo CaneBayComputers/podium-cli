@@ -80,7 +80,7 @@ EOF
     cat > docker-compose.yaml << 'EOF'
 services:
   web:
-    image: wger/server:2.6.0
+    image: wger/server:latest
     restart: unless-stopped
     env_file:
       - ./config/prod.env
@@ -95,7 +95,7 @@ services:
       retries: 5
 
   celery_worker:
-    image: wger/server:2.6.0
+    image: wger/server:latest
     restart: unless-stopped
     command: /start-worker
     env_file:
@@ -107,7 +107,7 @@ services:
         condition: service_healthy
 
   celery_beat:
-    image: wger/server:2.6.0
+    image: wger/server:latest
     restart: unless-stopped
     command: /start-beat
     env_file:

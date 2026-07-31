@@ -9,7 +9,7 @@ write_files() {
     cat > docker-compose.yaml << 'EOF'
 services:
   nextcloud-app:
-    image: nextcloud:34.0.2
+    image: nextcloud:latest
     restart: unless-stopped
     environment:
       MYSQL_HOST: podium-mariadb

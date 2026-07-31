@@ -13,7 +13,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   outline-app:
-    image: outlinewiki/outline:1.9.2
+    image: outlinewiki/outline:latest
     restart: unless-stopped
     environment:
       APP_NAME: outline

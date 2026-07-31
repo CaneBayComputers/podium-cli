@@ -18,7 +18,7 @@ write_files() {
     cat > docker-compose.yaml << EOF
 services:
   netbox-app:
-    image: netboxcommunity/netbox:v4.6.7
+    image: netboxcommunity/netbox:latest
     restart: unless-stopped
     environment:
       DB_HOST: podium-postgres
@@ -52,7 +52,7 @@ services:
       - netbox-scripts:/opt/netbox/netbox/scripts
 
   netbox-worker:
-    image: netboxcommunity/netbox:v4.6.7
+    image: netboxcommunity/netbox:latest
     restart: unless-stopped
     command:
       - /opt/netbox/venv/bin/python
