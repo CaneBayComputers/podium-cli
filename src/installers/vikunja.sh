@@ -9,10 +9,18 @@ write_files() {
     local secret
     secret=$(openssl rand -hex 32)
 
+    # Vikunja's process runs as uid 1000, but Docker creates a named volume
+    # owned by root — the app then crash-loops on
+    # "storage validation failed: permission denied [process uid=1000, dir owner uid=0]".
+    # A bind mount inside the project is writable, keeps uploads with the
+    # project like every other Podium data path, and can be chmod'd here.
+    mkdir -p files
+    chmod 777 files
+
     cat > docker-compose.yaml << EOF
 services:
   vikunja-app:
-    image: vikunja/vikunja:latest
+    image: vikunja/vikunja:2.4.0
     restart: unless-stopped
     environment:
       VIKUNJA_DATABASE_TYPE: mysql
@@ -24,7 +32,7 @@ services:
       VIKUNJA_SERVICE_PUBLICURL: http://vikunja/
       VIKUNJA_SERVICE_FRONTENDURL: http://vikunja/
     volumes:
-      - vikunja-files:/app/vikunja/files
+      - ./files:/app/vikunja/files
 
   nginx:
     image: nginx:alpine
@@ -34,8 +42,6 @@ services:
     depends_on:
       - vikunja-app
 
-volumes:
-  vikunja-files:
 EOF
 
     cat > nginx.conf << 'NGINX'

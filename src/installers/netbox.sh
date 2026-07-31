@@ -6,6 +6,10 @@ pre_install() {
     docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE netbox;" 2>/dev/null || true
 }
 
+# NetBox runs Django migrations and collectstatic on first boot; measured at
+# ~4 minutes on a clean box, well past the default 75s readiness window.
+INSTALL_READY_RETRIES=48
+
 write_files() {
     local secret_key
     # SECRET_KEY must be at least 50 chars; use hex (only alphanumeric, never stripped)
