@@ -264,3 +264,109 @@ There is no test anywhere that asserts `podium help` agrees with the parsers.
 A ~20-line check that extracts every `--flag` from the help text and greps for a
 matching case in the corresponding script would have caught 1, 3, 4 and 5 before
 they shipped. Worth considering as its own piece of work.
+
+---
+
+# Batch 2 — 2026-07-31
+
+**Outcome: both APPLIED, verified end-to-end, and pushed to `beta` as `d322a02`.**
+
+Source: `CLI_GUI_ISSUES.md` §5–6, appended by the GUI session *after* batch 1 was
+drafted. Batch 1's scope line ("§1–4 plus its two minors") maps onto the two
+minors at the bottom of that file, not onto these — they were not skipped, they
+did not exist yet.
+
+Both reproduced on `beta` before fixing. Both align with current architecture:
+the neighbouring Redis arms already read `"$REDIS_CONTAINER_NAME"` from `.env`,
+so these were the outliers, not a competing convention.
+
+---
+
+## 8. All `memcache*` commands target a container that does not exist
+
+**Status: APPLIED** (`d322a02`) — and it was broken twice over.
+
+`src/podium` hardcoded the container name at three call sites:
+
+```bash
+echo "$@" | docker container exec -i memcached nc localhost 11211
+```
+
+The container is `podium-memcached` (`MEMCACHED_CONTAINER_NAME` in
+`/etc/podium-cli/.env`). Live repro: `No such container: memcached`.
+
+**The reported fix was necessary but not sufficient.** Substituting
+`"$MEMCACHED_CONTAINER_NAME"` fixes the name, and all three commands still fail
+— **the memcached image ships no `nc`**, so they go from exit 1 ("wrong
+container") to exit 127 ("right container, missing binary"). Identical
+user-visible outcome. This was caught by running the command rather than
+reading the diff; the container-name change alone *reads* as fixed.
+
+Credit where due: the GUI session caught the same gap independently and
+appended it as an update mid-fix, including a verified alternative.
+
+**Fix:** a new `memcache-send` helper in `functions.sh`, next to the existing
+`check-memcached`. It talks to the daemon over bash's `/dev/tcp` built-in from
+inside the container — the image has `bash` even though it has no netcat, so
+this adds no dependency. The protocol needs CRLF endings and a trailing `quit`,
+otherwise the server holds the socket open and `cat` blocks forever. The helper
+also fails early with a readable message when the service is down, instead of
+leaking a Docker daemon error.
+
+**Adjacent fix, not reported by the GUI:** `memcache set <key> <val>` now works.
+Storage commands are two-line — a header declaring the byte count, then the
+payload — so the single-line form the help text has always advertised could
+never have worked against any implementation. Since this path was being
+rewritten anyway, and batch 1's cross-cutting observation was precisely
+"documented option the parser does not accept", leaving a knowingly false help
+block in place would have been reintroducing the bug class by hand.
+
+---
+
+## 9. `podium redis` / `podium redis-flush` require a TTY
+
+**Status: APPLIED** (`d322a02`).
+
+```bash
+docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli "$@"
+docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
+```
+
+`-t` allocates a TTY unconditionally, so every non-terminal caller — the GUI,
+CI, a script, an agent — gets `cannot attach stdin to a TTY-enabled container
+because stdin is not a terminal`. `podium redis INFO` is a one-shot command and
+never wanted a TTY in the first place.
+
+**Fix:** as the GUI session proposed — gate on `[ $# -eq 0 ] && [ -t 0 ]`, so
+only the argument-less REPL requests a TTY, and only when stdin genuinely is a
+terminal. Everything else uses `-i`. `redis-flush` is never interactive and now
+always uses `-i`.
+
+The `[ -t 0 ]` half is an addition to the reported fix: without it, a bare
+`podium redis` piped from a script would still have tried to allocate a TTY.
+
+---
+
+## Batch 2 status
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 8 | `memcache*` wrong container **and** no `nc` in image | hard stop | **APPLIED** |
+| 9 | `redis` / `redis-flush` force a TTY | hard stop | **APPLIED** |
+
+**Verified after** — every command run end-to-end, not diff-read:
+
+- `podium memcache-stats` → `STAT pid 1 …`, exit 0; and again with
+  `< /dev/null` for the non-TTY case, exit 0.
+- `podium memcache version` → `VERSION 1.6.39`.
+- Round-trip: `memcache set greeting "hello from podium"` → `STORED`,
+  `memcache get greeting` → `hello from podium`.
+- `memcache-flush` → `OK`, and the following `get` correctly returns a miss.
+- Bare `podium memcache` still prints its help block.
+- `redis PING` → `PONG`, `SET`/`GET` round-trip, `redis-flush` → key gone,
+  `redis INFO` → 237 lines, all from a non-terminal.
+- All scripts in `src/` still parse; **9 of 9 shared services still running**
+  (batch 1's destructive regression did not recur).
+
+**Note on §7 (`--help` exit codes):** still **OPEN**. Unchanged by this batch —
+it needs a convention decision, not a bug fix.
