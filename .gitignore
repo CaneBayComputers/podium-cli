@@ -27,3 +27,7 @@ machines.local
 .codex/
 .gemini/
 .aider*
+
+# Inter-session working notes (GUI <-> CLI). Local only -- this repo is public.
+CLI_GUI_ISSUES.md
+CLI_GUI_FIXES.md
