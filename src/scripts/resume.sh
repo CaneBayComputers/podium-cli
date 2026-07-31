@@ -64,9 +64,6 @@ echo-return
 echo-white "Ctrl+click (or right-click) the URL above to open it in your browser."
 echo-white "The AI will resume the last session for this project."
 echo-return
-echo-yellow "Press any key to start the AI session..."
-read -r -s -n 1
-echo-return
 
 # Resume the AI session from the project directory
 cd "$PROJECT_DIR"
