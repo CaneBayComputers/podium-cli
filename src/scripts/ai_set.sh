@@ -16,6 +16,7 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 NEW_AGENT=""
 NEW_MODEL=""
 NEW_API_KEY=""
+API_KEY_PROVIDED=0
 NEW_API_BASE=""
 
 # AI agent configuration rules (summary)
@@ -56,6 +57,7 @@ usage() {
     echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, or aider)."
     echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini; required for aider)."
     echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude; required for aider)."
+    echo-white "                     Pass an empty value (--api-key \"\") to clear a stored key."
     echo-white "  --api-base URL     Set an OpenAI-compatible API endpoint (aider only)."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
@@ -80,7 +82,10 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         --api-key)
+            # Tracked separately from its value so an explicit empty string
+            # ("clear it") is distinguishable from the option being absent.
             NEW_API_KEY="$2"
+            API_KEY_PROVIDED=1
             shift 2
             ;;
         --api-base)
@@ -119,7 +124,7 @@ fi
 if [[ -n "$NEW_MODEL" ]]; then
     AI_MODEL="$NEW_MODEL"
 fi
-if [[ -n "$NEW_API_KEY" ]]; then
+if [[ "$API_KEY_PROVIDED" == "1" ]]; then
     AI_API_KEY="$NEW_API_KEY"
 fi
 if [[ -n "$NEW_API_BASE" ]]; then
@@ -473,9 +478,7 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
     sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
 
-    if [[ -n "$AI_API_KEY" ]]; then
-        sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
-    fi
+    sudo-podium-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/podium-cli/.env
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         has_api_key="false"
@@ -541,9 +544,7 @@ fi
 sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
 sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
 
-if [[ -n "$AI_API_KEY" ]]; then
-    sudo-podium-sed-change "/^AI_API_KEY=/" "AI_API_KEY=$AI_API_KEY" /etc/podium-cli/.env
-fi
+sudo-podium-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/podium-cli/.env
 
 echo-green "AI agent configuration complete."
 echo-white "  Agent: ${AI_AGENT:-<none>}"
