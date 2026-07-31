@@ -79,24 +79,6 @@ if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
     exit 1
 fi
 
-# Both the claude and codex CLIs dropped their `--api-key` flags; each now reads
-# its key from the environment. Passing the flag is a hard error ("unknown
-# option '--api-key'"), which silently broke every AI-driven command -- `podium
-# create`, `podium ai`, `create-installer`, `update-installer`.
-#
-# The prefix guard matters: a key for the wrong provider is worse than no key,
-# because it *replaces* the CLI's own working auth with one that cannot work.
-# When it doesn't match, say so and let the CLI authenticate itself.
-_export_agent_key() {
-    local var="$1" want="$2"
-    [[ -z "$AI_API_KEY" ]] && return 0
-    if [[ -n "$want" && "$AI_API_KEY" != ${want}* ]]; then
-        echo-yellow "Configured AI_API_KEY doesn't look like a $AI_AGENT_CLI_NAME key (expected ${want}...) - ignoring it and using the CLI's own sign-in." >&2
-        return 0
-    fi
-    export "$var=$AI_API_KEY"
-}
-
 case "$AI_AGENT_CLI_NAME" in
     codex)
         codex_args=()

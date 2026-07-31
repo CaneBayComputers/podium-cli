@@ -146,7 +146,7 @@ show_help() {
     echo "  -f, --file <path>         - Read the project idea from a file"
     echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
+    echo "  --version <ver>           - Laravel/WordPress only: defaults to latest. Ignored by other frameworks"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
     echo "  --github                  - Create GitHub repository in user account"
@@ -187,7 +187,7 @@ show_help() {
     echo "  podium setup project --overwrite-docker-compose"
     echo "                                             # Force setup even with existing Docker config"
     echo "  podium new laravel my-shop                 # Laravel project (database auto-selected: mysql)"
-    echo "  podium new django survey --database postgres --version latest"
+    echo "  podium new laravel survey --database postgres --version latest"
     echo "                                             # Django project with PostgreSQL"
     echo "  podium new express my-api --json-output    # Express project with clean JSON output"
     echo "  podium remove myproject --preserve-database"

@@ -193,6 +193,25 @@ check-mongo() { [ "$(docker ps -q -f name="$MONGO_CONTAINER_NAME")" ] && return 
 check-postgres() { [ "$(docker ps -q -f name="$POSTGRES_CONTAINER_NAME")" ] && return 0 || return 1; }
 check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && return 0 || return 1; }
 
+# Hand the configured API key to an agent CLI through the environment.
+#
+# Both the claude and codex CLIs REMOVED their `--api-key` flags; passing one is
+# a hard error ("unknown option '--api-key'"). Lives here rather than in ai.sh
+# because resume.sh builds the same argv and drifted out of sync when the fix
+# landed in only one of them.
+#
+# The prefix guard matters: a key for the wrong provider is worse than no key,
+# because it replaces the CLI's own working sign-in with one that cannot work.
+_export_agent_key() {
+    local var="$1" want="$2"
+    [[ -z "$AI_API_KEY" ]] && return 0
+    if [[ -n "$want" && "$AI_API_KEY" != ${want}* ]]; then
+        echo-yellow "Configured AI_API_KEY doesn't look like a $AI_AGENT_CLI_NAME key (expected ${want}...) - ignoring it and using the CLI's own sign-in." >&2
+        return 0
+    fi
+    export "$var=$AI_API_KEY"
+}
+
 # Send a command to Memcached and print the reply.
 #
 # The memcached image ships no netcat, so this talks to the daemon over bash's

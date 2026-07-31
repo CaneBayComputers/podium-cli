@@ -13,6 +13,24 @@ source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
+usage() {
+    echo-white "Usage: ${PODIUM_CMD:-$0} <project>"
+    echo-white ""
+    echo-white "Reopen the AI session for a project, in that project's directory."
+    echo-white "Resumes the previous conversation where the agent supports it,"
+    echo-white "otherwise starts a fresh one."
+    echo-white ""
+    echo-white "Options:"
+    echo-white "  --help, -h   Show this help message"
+}
+
+case "$1" in
+    --help|-h)
+        usage
+        exit 0
+        ;;
+esac
+
 # A project name is required — no interactive picker.
 if [[ -z "$1" ]]; then
     echo-red "No project specified."
@@ -72,9 +90,7 @@ case "$AI_AGENT_CLI_NAME" in
         if [[ -n "$AI_MODEL" ]]; then
             common_args+=("--model" "$AI_MODEL")
         fi
-        if [[ -n "$AI_API_KEY" ]]; then
-            common_args+=("--api-key" "$AI_API_KEY")
-        fi
+        _export_agent_key OPENAI_API_KEY "sk-"
         common_args+=(--dangerously-bypass-approvals-and-sandbox)
         if ! codex resume --last "${common_args[@]}"; then
             notify_resume_fallback
@@ -86,9 +102,7 @@ case "$AI_AGENT_CLI_NAME" in
         if [[ -n "$AI_MODEL" ]]; then
             common_args+=("--model" "$AI_MODEL")
         fi
-        if [[ -n "$AI_API_KEY" ]]; then
-            common_args+=("--api-key" "$AI_API_KEY")
-        fi
+        _export_agent_key ANTHROPIC_API_KEY "sk-ant-"
         if ! claude --continue "${common_args[@]}"; then
             notify_resume_fallback
             exec claude "${common_args[@]}"
