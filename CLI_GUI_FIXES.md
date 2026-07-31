@@ -451,3 +451,97 @@ Batch 1 closed with the observation that nothing asserts `podium help` agrees
 with the parsers. Batch 3 is the same gap from the other side: nothing asserts
 that `--help` *exits 0*. Both are cheap to check in one script, and between them
 they would have caught issues 1, 3, 4, 5 and 7. Still unwritten.
+
+---
+
+# Batch 4 — 2026-07-31
+
+**Outcome: APPLIED, verified, and pushed to `beta` as `4954890`.**
+
+Source: the new finding appended to `CLI_GUI_ISSUES.md` after batch 3, reported
+from a clean install on a second machine. Reproduced before fixing.
+
+---
+
+## 8. Installers and docs still tell users to run `podium new --framework`
+
+**Status: APPLIED** (`4954890`).
+
+Three of the four installers close a *successful* install with:
+
+```
+  3. Create your first project:
+       podium create "A task tracker with user login"
+     or use a specific framework:
+       podium new my-project --framework laravel
+```
+
+That second command exits 1 with `Unknown option: --framework`. It carries both
+faults at once — a flag `new` never accepted, and the pre-2026 argument order.
+
+**Why this one mattered more than its size suggests.** It is the *first command a
+brand-new user is told to run*, immediately after installing. When it fails, the
+reasonable conclusion is "the install is broken", not "the docs are stale". Every
+other entry in this file was found by someone already inside the system; this one
+greets people at the door.
+
+Batch 1 (#3) fixed exactly this class in `podium help` and `new_project.sh`, then
+stopped at the parser and its help text. The same dead command was sitting in
+four other places the whole time.
+
+### The report was right that the fix is a repo-wide grep, and the spread was wider
+
+The GUI session found the three installers. Grepping the whole repo found three
+more categories:
+
+| Location | Problem |
+|---|---|
+| `install-ubuntu.sh`, `install-arch.sh`, `install-mac.sh` | the reported line (`install-fedora.sh` never had it) |
+| `docs/index.html` | the **published landing page** showed the same dead command |
+| `tests/custom-{dingdong,cassie,cami}.sh` | **12** AI prompt fixtures instructing an agent to run the old form |
+
+The test fixtures are the quiet one. They are prompt text handed to an AI agent,
+so they fail at *agent* runtime, not at parse time — nothing would have flagged
+them, and they would have kept poisoning test runs indefinitely.
+
+`docs/index.html` needed care rather than a text swap: the framework name is a
+JS-filled `<span id="frameworkType">`, so the slot had to **move ahead of** the
+project name to match `podium new <framework> <name>`. The click handler only
+sets `textContent`, so no JS change was required — verified before editing.
+
+### What was deliberately left alone
+
+`--framework` is legitimate on `clone` and `setup`, which both parse it. So their
+help text, both `docs/guide/commands.md` tables, `docs/guide/frameworks.md` and
+the `clone)` completion entry are all correct and untouched. The `new)`
+completion block already omitted the flag. Same discipline as batch 1 #3: align
+docs to the parser, do not blanket-remove a flag that three commands share.
+
+### Adjacent drift, fixed while grepping
+
+The framework lists had gone out of sync with the 13-slug catalogue in
+`src/catalog/frameworks.json`:
+
+- `docs/index.html` — 10 chips; missing `kavera`, `octobercms`, `flask`.
+- `docs/guide/commands.md` — 11 of 13, in two separate tables.
+- `src/scripts/clone_project.sh` — 12 of 13; missing `python`.
+
+All three now match the catalogue, checked programmatically against it rather
+than by eye.
+
+### Verified
+
+- **No `podium new … --framework` remains anywhere in the repo.**
+- Every surviving `--framework` reference was traced to its owning command and
+  belongs to `clone` or `setup`.
+- `podium new laravel` now reaches `Error: project name is required`, proving
+  the framework positional parses.
+- Docs chips match the catalogue exactly, 13/13, in catalogue order.
+- All four installers and all three test fixtures still parse; `clone --help`
+  renders its corrected list.
+
+**Standing gap, now three batches old:** batch 1 proposed a check that `podium
+help` agrees with the parsers; batch 3 added that nothing asserts `--help` exits
+0. This batch shows the same check needs to cover **installers, docs and test
+fixtures**, not just `src/`. A grep for `podium <cmd> …--flag` across the repo,
+validated against each command's parser, would have caught 1, 3, 4, 5, 7 and 8.
