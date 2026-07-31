@@ -648,12 +648,22 @@ fi
 mkdir "$PROJECT_NAME"
 _PROJECT_DIR_CREATED=1
 
-# Remove partially-built project directory on any subsequent failure
-_new_project_cleanup() {
-    local code=$?
-    [ $code -eq 0 ] || [ "$_PROJECT_DIR_CREATED" != "1" ] && return
+# Remove partially-built project directory on any subsequent failure.
+#
+# Split out from the trap handler because setup_project.sh is *sourced*, and a
+# sourced `trap ... ERR` REPLACES this one in the same shell. When setup fails
+# it therefore cleans up its own state and calls this directly -- otherwise the
+# directory survives with no docker-compose.yaml and a retry starts dirty.
+_remove_incomplete_project() {
+    [ "$_PROJECT_DIR_CREATED" = "1" ] || return 0
     echo-yellow "Cleaning up incomplete project directory: $PROJECT_NAME"
     rm -rf "$PROJECTS_DIR/$PROJECT_NAME" 2>/dev/null || true
+}
+
+_new_project_cleanup() {
+    local code=$?
+    [ $code -eq 0 ] && return
+    _remove_incomplete_project
 }
 trap _new_project_cleanup ERR
 

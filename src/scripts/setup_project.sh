@@ -179,6 +179,13 @@ _setup_cleanup() {
     if [ "$_compose_file_created" = "1" ]; then
         rm -f "$PROJECT_DIR/docker-compose.yaml"
     fi
+    # `podium new` sources this script, so our `trap ... ERR` above replaced its
+    # handler. Call its cleanup explicitly or a failed setup leaves the
+    # half-built directory it created behind. Not defined for a plain
+    # `podium setup`, where the directory is the user's and must not be touched.
+    if declare -F _remove_incomplete_project >/dev/null 2>&1; then
+        _remove_incomplete_project
+    fi
 }
 trap _setup_cleanup ERR
 
