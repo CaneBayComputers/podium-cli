@@ -25,8 +25,11 @@ usage() {
     echo-white "with a prompt to read that file."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --one-off       Stop after creation; skip the handoff (for automation)"
-    echo-white "  -f, --file PATH Read the project idea from a file instead of an argument"
+    echo-white "  --one-off        Stop after creation; skip the handoff (for automation)"
+    echo-white "  -f, --file PATH  Read the project idea from a file instead of an argument"
+    echo-white "  --classify-only  Work out the stack, print it, and stop. Creates nothing"
+    echo-white "                   and never prompts. Combine with --json-output for a"
+    echo-white "                   machine-readable result (for GUIs and other front ends)."
     echo-white ""
     echo-white "If neither a positional idea nor --file is given, podium create reads"
     echo-white "from stdin if it's piped or redirected. Falls back to an interactive"
@@ -44,11 +47,19 @@ usage() {
 }
 
 SKIP_INTERACTIVE=0
+CLASSIFY_ONLY=0
 PROMPT_FILE=""
 IDEA_ARGS=()
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --one-off)
+            SKIP_INTERACTIVE=1
+            shift
+            ;;
+        --classify-only)
+            # Implies non-interactive: the contract is that this never prompts,
+            # which includes never prompting for the idea itself.
+            CLASSIFY_ONLY=1
             SKIP_INTERACTIVE=1
             shift
             ;;
@@ -144,6 +155,14 @@ source "$SCRIPT_DIR/classify.sh"
 
 # Menus need a human. Anything scripted takes the top recommendation silently,
 # preserving the promise that no podium command ever blocks an agent.
+# --classify-only stops here: run phase 1, report, and create nothing. Placed
+# before the menus rather than inside classify_project so no interactive code
+# path is reachable at all.
+if [[ "$CLASSIFY_ONLY" == "1" ]]; then
+    classify_only "$USER_IDEA" "$JSON_OUTPUT" || exit 1
+    exit 0
+fi
+
 CLASSIFY_NONINTERACTIVE=0
 if [[ "$SKIP_INTERACTIVE" == "1" || "$JSON_OUTPUT" == "1" || ! -t 0 ]]; then
     CLASSIFY_NONINTERACTIVE=1

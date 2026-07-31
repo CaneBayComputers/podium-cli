@@ -139,6 +139,12 @@ show_help() {
     echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
     echo "  --no-colors               - Disable colored output"
     echo
+    echo-white "CREATE PROJECT OPTIONS:"
+    echo "  --classify-only           - Work out the stack, print it, and stop (creates nothing,"
+    echo "                              never prompts; add --json-output for machine-readable)"
+    echo "  --one-off                 - Stop after creation; skip the AI handoff"
+    echo "  -f, --file <path>         - Read the project idea from a file"
+    echo
     echo-white "NEW PROJECT OPTIONS:"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"

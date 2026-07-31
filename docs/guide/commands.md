@@ -167,6 +167,32 @@ directly to a provider's API, so it needs a model **and** a key.
 
 ### 🤖 AI-assisted project creation
 
+### Classify only (for GUIs and other front ends)
+
+```bash
+podium create --classify-only "<idea>"                  # human-readable
+podium create --classify-only --json-output "<idea>"    # machine-readable
+```
+
+Runs only the classify phase: works out the stack, prints the result, exits 0,
+and **creates nothing**. It never prompts, so it is safe to call from a GUI,
+a script or an agent.
+
+This exists because the normal non-interactive path (`--one-off`,
+`--json-output`) silently takes the top recommendation — fine for automation,
+but it throws away the choice a person would have made at the menu. A front end
+that wants to present those choices natively should classify first, show the
+candidates, then call `podium install <app>` or `podium new <framework> <name>`
+with whatever the user picked.
+
+The JSON carries `project_name` (`null` when the idea implies no real subject,
+so ask rather than prefill), `recommended`, `customization_requested`, a
+suggested `database` with a reason, and `candidates` — apps first, framework
+last, capped at 5. **Apps carry a single fixed `database`** set by the installer;
+**frameworks carry a `databases` array** of the engines they allow. Never offer a
+database choice for an app. On failure it emits
+`{"action": "classify", "status": "error", "message": "..."}` and exits non-zero.
+
 `podium create` collects your project idea, adds Podium-specific instructions, and hands the combined prompt to your configured AI CLI. Podium sets up the environment. The AI builds the app.
 
 ```bash
@@ -213,8 +239,9 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 
 - Looks up your configured `AI_AGENT`, `AI_MODEL`, `AI_API_KEY`, and `AI_API_BASE` from `/etc/podium-cli/.env`.
 - Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
-  - Codex: `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
-  - Claude: `claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"` (`-p` added for `--one-off`)
+  - Codex: `OPENAI_API_KEY="$AI_API_KEY" codex [--model "$AI_MODEL"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
+  - Claude: `ANTHROPIC_API_KEY="$AI_API_KEY" claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] "<prompt>"` (`-p` added for `--one-off`)
+  - Codex and Claude both **removed their `--api-key` flags**; the key is passed through the environment instead. Podium checks the key looks like it belongs to that provider (`sk-ant-` for Claude) and, if it does not, ignores it with a warning and lets the CLI use its own sign-in — a key for the wrong provider would otherwise replace working auth with auth that cannot work.
   - Gemini: `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"` (interactive) / `... --output-format text --prompt ...` (one-off)
   - Aider: `aider --yes-always --no-auto-commits --no-check-update [--model "$AI_MODEL"] [--api-key <provider>="$AI_API_KEY"] [--openai-api-base "$AI_API_BASE"] --message "<prompt>"` (one-off). Aider's `--message` exits after the reply, so interactive runs seed the session with `--load` instead and hand it back to you. `--no-git` is added when the directory isn't already a git repository, so `--yes-always` can't silently `git init` it.
 
