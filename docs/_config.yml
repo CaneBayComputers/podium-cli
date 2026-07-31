@@ -2,8 +2,11 @@ title: Podium CLI
 description: Pre-plumbed PHP, Python and Node environments so your AI agent can skip the setup and get straight to building.
 remote_theme: just-the-docs/just-the-docs
 
-url: https://canebaycomputers.github.io
-baseurl: /podium-cli
+# Served from the apex of podiumcli.com, so there is no project sub-path.
+# Leaving baseurl as /podium-cli sends every asset to
+# podiumcli.com/podium-cli/assets/... which 404s and the site renders unstyled.
+url: https://podiumcli.com
+baseurl: ""
 
 # Navigation / search
 search_enabled: true
