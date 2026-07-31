@@ -15,7 +15,7 @@
 | **Project layout** | Reinvented every session | Fixed hostnames, IPs, images, credentials |
 | **Other machines** | "Worked on my laptop" | Identical |
 
-📖 **[Full documentation →](https://canebaycomputers.github.io/podium-cli/guide/)**
+📖 **[Full documentation →](https://podiumcli.com/guide/)**
 
 ---
 
@@ -44,7 +44,7 @@ Then, once:
 podium configure
 ```
 
-Log out and back in so Docker group access takes effect. Details and platform notes: **[Installation](https://canebaycomputers.github.io/podium-cli/guide/installation/)**.
+Log out and back in so Docker group access takes effect. Details and platform notes: **[Installation](https://podiumcli.com/guide/installation/)**.
 
 ---
 
@@ -82,7 +82,7 @@ podium clone work-directly <repo-url>
 podium up my-api               # start it
 ```
 
-Everything else — frameworks, the 100+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://canebaycomputers.github.io/podium-cli/guide/)**.
+Everything else — frameworks, the 100+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://podiumcli.com/guide/)**.
 
 ---
 
