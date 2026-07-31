@@ -133,7 +133,12 @@ ping_host() {
         resolved_ip=""
     fi
 
-    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || ping -c 1 "$hostname" >/dev/null 2>&1; then
+    # The fallback exists because `-W` is not portable (Linux takes seconds,
+    # macOS takes milliseconds and uses -t for the deadline). It must still be
+    # bounded: a hostname that resolves but never answers -- stale /etc/hosts
+    # entries after a subnet change, say -- blocks for the OS default of ~10s,
+    # which across the shared services turned `podium status` into a ~60s hang.
+    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || timeout 2 ping -c 1 "$hostname" >/dev/null 2>&1; then
         if [ -n "$resolved_ip" ]; then
             echo-green "OK ($resolved_ip)"
         else
@@ -167,7 +172,12 @@ resolve_host() {
 
 ping_status() {
     local hostname="$1"
-    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || ping -c 1 "$hostname" >/dev/null 2>&1; then
+    # The fallback exists because `-W` is not portable (Linux takes seconds,
+    # macOS takes milliseconds and uses -t for the deadline). It must still be
+    # bounded: a hostname that resolves but never answers -- stale /etc/hosts
+    # entries after a subnet change, say -- blocks for the OS default of ~10s,
+    # which across the shared services turned `podium status` into a ~60s hang.
+    if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || timeout 2 ping -c 1 "$hostname" >/dev/null 2>&1; then
         return 0
     else
         return 1
