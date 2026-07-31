@@ -3,10 +3,15 @@
 Companion to `CLI_GUI_ISSUES.md`. That file is what the GUI session *reported*;
 this file is what was *verified* and what the fix is.
 
-**This file is append-only.** Add new entries at the bottom under a new dated
-batch heading. Do not rewrite earlier entries — amend them by appending a
-`**Update <date>:**` line inside the entry, so the history of what we believed
-and when stays readable.
+**This file is append-only for prose.** Add new entries at the bottom under a
+new dated batch heading. Do not rewrite an entry's analysis — amend it by
+appending a `**Update <date>:**` line inside the entry, so the history of what
+we believed and when stays readable.
+
+**The `Status:` line is the exception** and must be kept current in place —
+it is a field, not a record. When a fix lands, change it to `APPLIED` and cite
+the commit, so nobody has to cross-reference the summary table to find out
+whether an entry is still outstanding.
 
 Status values: `VERIFIED` (reproduced, fix agreed, not yet applied) ·
 `APPLIED` (in the tree) · `REJECTED` (report was wrong, or fix conflicts with
@@ -15,6 +20,10 @@ current architecture) · `DEFERRED`.
 ---
 
 # Batch 1 — 2026-07-31
+
+**Outcome: all six APPLIED, verified, and pushed to `beta` as `c192837`.**
+A seventh issue (§7) was found while regression-testing this batch and is
+deliberately left OPEN.
 
 Source: `CLI_GUI_ISSUES.md` §1–4 plus its two minors. All six reproduced against
 branch `beta`. **Nothing in this batch conflicts with current architecture** —
@@ -27,7 +36,7 @@ Fix order below is by blast radius, not by the order they were reported.
 
 ## 1. `stop-services` / `start-services` discard every argument
 
-**Status: VERIFIED — fix first, this one is destructive.**
+**Status: APPLIED** (`c192837`) — was the destructive one; fixed first.
 
 `podium stop-services --help` **stops the services** instead of printing help.
 It did this to a live machine during the audit, and again to the shared services
@@ -57,7 +66,7 @@ correctly, so `uninstall --help` is safe.
 
 ## 2. `remove --force` is documented as "skip prompts" but deletes the database
 
-**Status: VERIFIED — fix second, this is a data-loss shape.**
+**Status: APPLIED** (`c192837`) — was a data-loss shape; fixed second.
 
 `podium help` says:
 
@@ -93,7 +102,7 @@ needed there.
 
 ## 3. `podium new --framework <name>` is documented but not parsed
 
-**Status: VERIFIED — hard stop, and partly self-inflicted.**
+**Status: APPLIED** (`c192837`) — hard stop, and partly self-inflicted.
 
 Two places advertise the flag; the parser has no case for it, so it hits the
 `-*` catch-all and exits 1 having created nothing:
@@ -134,7 +143,7 @@ updating a help string is not evidence the flag it describes exists.
 
 ## 4. `podium install --help` is parsed as an app name
 
-**Status: VERIFIED — hard stop.**
+**Status: APPLIED** (`c192837`) — hard stop.
 
 ```
 $ podium install --help
@@ -153,7 +162,7 @@ flag should never be treated as a slug.
 
 ## 5. `podium projects-dir --json-output` ignores the flag
 
-**Status: VERIFIED — minor.**
+**Status: APPLIED** (`c192837`) — minor.
 
 Handled inline in the dispatcher (`src/podium:692`) with a bare `echo`; arguments
 are never examined. Harmless in practice — the GUI reads the plain path — but it
@@ -167,7 +176,7 @@ it is two lines and keeps the global contract honest.
 
 ## 6. `usage()` prints an absolute script path as the program name
 
-**Status: VERIFIED — cosmetic, affects every script.**
+**Status: APPLIED** (`c192837`) — cosmetic, affected every script.
 
 ```
 Usage: /usr/local/share/podium-cli/src/scripts/new_project.sh <project_name> ...
@@ -193,6 +202,7 @@ use `${PODIUM_CMD:-$0}`, so the scripts still work when invoked directly.
 | 4 | `install --help` treated as slug | hard stop | **APPLIED** |
 | 5 | `projects-dir` ignores `--json-output` | minor | **APPLIED** |
 | 6 | `usage()` prints `$0` | cosmetic | **APPLIED** |
+| 7 | `--help` exit codes inconsistent | GUI-affecting | **OPEN** |
 
 **Update 2026-07-31:** all six applied and verified. Notes on what the fixing
 turned up:
@@ -220,7 +230,7 @@ still parses.
 
 ## 7. `--help` exit codes are inconsistent
 
-**Status: VERIFIED — not fixed, needs a design decision.**
+**Status: OPEN — deliberately not fixed. Needs a convention decision.**
 
 Found while regression-testing batch 1. `--help` exits differently depending on
 which command you ask:
