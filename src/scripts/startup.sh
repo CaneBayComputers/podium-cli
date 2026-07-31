@@ -52,7 +52,7 @@ while [[ "$#" -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: $0 [OPTIONS] <project_name>"
+            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS] <project_name>"
             echo-white "Start a project container (and shared services if not running)"
             echo-white ""
             echo-white "Arguments:"

@@ -411,3 +411,95 @@ classify_project() {
 
     return 0
 }
+
+# Phase 1 on its own: classify an idea and print the result without touching the
+# menus and without creating anything. Exists for GUI/API consumers that need to
+# render the choices as native UI.
+#
+# This is deliberately NOT the same as the non-interactive path used by
+# --one-off/--json-output: that one silently takes the top recommendation, which
+# throws away the user's choice, and the choice is the entire point of the menus.
+#
+# Args: idea, want_json (1 = JSON, anything else = human-readable).
+classify_only() {
+    local idea="$1" want_json="$2"
+    local parsed
+
+    if ! parsed=$(_run_classifier "$idea"); then
+        if [[ "$want_json" == "1" ]]; then
+            printf '%s\n' '{"action": "classify", "status": "error", "message": "could not determine a stack from that description"}'
+        else
+            echo-red "Could not determine a stack from that description."
+        fi
+        return 1
+    fi
+
+    if [[ "$want_json" == "1" ]]; then
+        printf '%s' "$parsed" | python3 -c '
+import json, sys
+
+name = rec = db_slug = db_why = ""
+cust = "yes"
+cands = []
+
+for line in sys.stdin.read().split("\n"):
+    if not line:
+        continue
+    f = line.split("\t")
+    tag = f[0]
+    val = f[1] if len(f) > 1 else ""
+    if   tag == "NAME":   name = val
+    elif tag == "DBS":    db_slug = val
+    elif tag == "DBWHY":  db_why = val
+    elif tag == "REC":    rec = val
+    elif tag == "CUSTOM": cust = val
+    elif tag == "CAND" and len(f) >= 6:
+        kind, slug, display, db, why = f[1], f[2], f[3], f[4], f[5]
+        c = {"kind": kind, "slug": slug, "display": display, "reason": why}
+        # Apps have their database fixed by the installer; frameworks offer a
+        # constrained set. The consumer must not present a choice for an app.
+        if kind == "framework":
+            c["databases"] = [d for d in db.split(",") if d]
+        else:
+            c["database"] = db
+        cands.append(c)
+
+print(json.dumps({
+    "action": "classify",
+    "status": "success",
+    "project_name": name or None,
+    "recommended": rec,
+    "customization_requested": cust != "no",
+    "database": ({"slug": db_slug, "reason": db_why} if db_slug else None),
+    "candidates": cands,
+}))
+'
+        return 0
+    fi
+
+    # Human-readable form, so the flag is useful from a terminal too.
+    local name rec_kind db_slug db_why
+    name=$(printf '%s' "$parsed"   | awk -F'\t' '$1=="NAME"{print $2; exit}')
+    rec_kind=$(printf '%s' "$parsed" | awk -F'\t' '$1=="REC"{print $2; exit}')
+    db_slug=$(printf '%s' "$parsed"  | awk -F'\t' '$1=="DBS"{print $2; exit}')
+    db_why=$(printf '%s' "$parsed"   | awk -F'\t' '$1=="DBWHY"{print $2; exit}')
+
+    echo-return
+    echo-cyan "Classification"
+    echo-white "  Project name: ${name:-<none suggested — ask the user>}"
+    echo-white "  Recommended:  ${rec_kind}"
+    [[ -n "$db_slug" ]] && echo-white "  Database:     ${db_slug}${db_why:+ — $db_why}"
+    echo-return
+    echo-cyan "Candidates"
+    while IFS=$'\t' read -r tag kind slug display db why; do
+        [[ "$tag" != "CAND" ]] && continue
+        if [[ "$kind" == "framework" ]]; then
+            echo-white "  [framework] $display ($slug) — databases: ${db//,/, }"
+        else
+            echo-white "  [app]       $display ($slug)${db:+ — database: $db}"
+        fi
+        [[ -n "$why" ]] && echo-white "              $why"
+    done < <(printf '%s\n' "$parsed")
+    echo-return
+    return 0
+}

@@ -36,7 +36,7 @@ GIT_CLONE_ARGS=()
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <mode> <repository> [project_name] [OPTIONS]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} <mode> <repository> [project_name] [OPTIONS]"
     echo-white "Clone a Git repository and set it up as a Podium project"
     echo-white ""
     echo-white "Arguments:"
@@ -48,9 +48,9 @@ usage() {
     echo-white "  project_name      Optional: Local project name (defaults to repo name)"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 work-directly https://github.com/user/app"
-    echo-white "  $0 fork https://github.com/user/app"
-    echo-white "  $0 new-repo https://github.com/user/app my-app"
+    echo-white "  ${PODIUM_CMD:-$0} work-directly https://github.com/user/app"
+    echo-white "  ${PODIUM_CMD:-$0} fork https://github.com/user/app"
+    echo-white "  ${PODIUM_CMD:-$0} new-repo https://github.com/user/app my-app"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output                Output results in JSON format"
@@ -65,7 +65,7 @@ usage() {
     echo-white "  --public                     Make the new GitHub repository public (default: private)"
     echo-white "  --private                    Make the new GitHub repository private"
     echo-white "  --no-storage-symlink         Skip creating public/storage symlink (Laravel)"
-    echo-white "  --framework FRAMEWORK        Force framework detection (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK        Force framework detection (laravel, kavera, wordpress, octobercms, php, django, flask, fastapi, python, express, nestjs, fastify, node)"
     echo-white "  --no-startup                 Clone and register project but do not start the container"
     echo-white "  --image REF                  Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"
@@ -73,8 +73,6 @@ usage() {
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
     echo-white "  --help                       Show this help message"
-    
-    error "usage" 1
 }
 
 # Capture original arguments for debug logging
@@ -194,6 +192,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             error "Unknown option: $1"

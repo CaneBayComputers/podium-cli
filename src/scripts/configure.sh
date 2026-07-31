@@ -58,7 +58,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: $0 [OPTIONS]"
+            echo "Usage: ${PODIUM_CMD:-$0} [OPTIONS]"
             echo ""
             echo "Configure Podium development environment. Re-running is safe — values"
             echo "from /etc/podium-cli/.env are kept as defaults, and prompts let you"

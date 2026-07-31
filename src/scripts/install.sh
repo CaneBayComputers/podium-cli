@@ -14,6 +14,28 @@ PROJECT_NAME=""
 CUSTOM_IMAGE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --help|-h)
+            echo-white "Usage: ${PODIUM_CMD:-$0} <app> [name] [options]"
+            echo-white "Installs a curated open-source app, fully configured and running"
+            echo-white ""
+            echo-white "Arguments:"
+            echo-white "  app             Installer slug (see --list)"
+            echo-white "  name            Project directory and hostname (default: the app slug)"
+            echo-white ""
+            echo-white "Options:"
+            echo-white "  --list          List every available app and exit"
+            echo-white "  --image REF     Override the image the installer would use"
+            echo-white "  --one-off       Skip the AI session after install (for automation)"
+            echo-white "  --json-output   Output JSON responses (for programmatic use)"
+            echo-white "  --no-colors     Disable colored output"
+            echo-white "  --help, -h      Show this help message"
+            echo-white ""
+            echo-white "Examples:"
+            echo-white "  ${PODIUM_CMD:-$0} grafana"
+            echo-white "  ${PODIUM_CMD:-$0} livewire sign-tools"
+            echo-white "  ${PODIUM_CMD:-$0} --list"
+            exit 0
+            ;;
         --one-off) SKIP_INTERACTIVE=1; shift ;;
         --image)
             if [ -n "$2" ] && [[ ! "$2" =~ ^-- ]]; then

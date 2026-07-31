@@ -193,6 +193,35 @@ check-mongo() { [ "$(docker ps -q -f name="$MONGO_CONTAINER_NAME")" ] && return 
 check-postgres() { [ "$(docker ps -q -f name="$POSTGRES_CONTAINER_NAME")" ] && return 0 || return 1; }
 check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && return 0 || return 1; }
 
+# Send a command to Memcached and print the reply.
+#
+# The memcached image ships no netcat, so this talks to the daemon over bash's
+# /dev/tcp built-in from inside the container. The protocol needs CRLF line
+# endings, and a trailing `quit` so the server closes the socket rather than
+# leaving `cat` blocked waiting for more input.
+#
+# $1 = command line to send. $2 = optional payload for storage commands, which
+# are two-line: the header declares the byte count, then the data follows.
+memcache-send() {
+    local command="$1"
+    local payload="${2-}"
+
+    if ! check-memcached; then
+        echo-red "Memcached is not running. Start it with: podium start-services"
+        return 1
+    fi
+
+    docker container exec -i "$MEMCACHED_CONTAINER_NAME" bash -c '
+        exec 3<>/dev/tcp/127.0.0.1/11211 || exit 1
+        if [ -n "$2" ]; then
+            printf "%s\r\n%s\r\nquit\r\n" "$1" "$2" >&3
+        else
+            printf "%s\r\nquit\r\n" "$1" >&3
+        fi
+        cat <&3
+    ' _ "$command" "$payload" | tr -d "\r"
+}
+
 # Utility functions
 divider() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo; echo-white '==============================='; echo; fi; }
 whatismyip() { dig +short "$WHATISMYIP_DNS_NAME" @"$WHATISMYIP_DNS_SERVER" 2>/dev/null || echo "Unable to get IP"; }

@@ -9,6 +9,11 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 # Resolve symlink if this script is symlinked
 while [ -L "$SCRIPT_PATH" ]; do
     SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# Program name for help text. Scripts print "${PODIUM_CMD:-$0}" so copy-pasted
+# usage is runnable — bare $0 is the sourced script's absolute path, which is
+# not a command anyone can type.
+export PODIUM_CMD="podium${1:+ $1}"
     SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
     [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
 done
@@ -134,9 +139,13 @@ show_help() {
     echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
     echo "  --no-colors               - Disable colored output"
     echo
+    echo-white "CREATE PROJECT OPTIONS:"
+    echo "  --classify-only           - Work out the stack, print it, and stop (creates nothing,"
+    echo "                              never prompts; add --json-output for machine-readable)"
+    echo "  --one-off                 - Stop after creation; skip the AI handoff"
+    echo "  -f, --file <path>         - Read the project idea from a file"
+    echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --framework <name>        - Framework: laravel (default), kavera, octobercms, wordpress, php, fastapi, flask, django,"
-    echo "                             express, nestjs, fastify, node"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
@@ -161,7 +170,6 @@ show_help() {
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "REMOVE PROJECT OPTIONS:"
-    echo "  --force                   - Skip confirmation prompts"
     echo "  --force-db-delete         - Force database deletion without prompt"
     echo "  --preserve-database       - Keep database (skip deletion)"
     echo
@@ -540,10 +548,18 @@ case "$1" in
         ;;
     "redis")
         shift
-        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli "$@"
+        # Only the argument-less REPL needs a TTY. `redis-cli INFO` is a one-shot
+        # command, and -t makes it fail outright whenever stdin is not a terminal
+        # — which is every GUI, script and agent caller.
+        if [ $# -eq 0 ] && [ -t 0 ]; then
+            docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli
+        else
+            docker container exec -i "$REDIS_CONTAINER_NAME" redis-cli "$@"
+        fi
         ;;
     "redis-flush")
-        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
+        # Never interactive.
+        docker container exec -i "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
         echo-green "Redis flushed!"
         ;;
     "memcache")
@@ -558,16 +574,27 @@ case "$1" in
             echo
             echo-white "Usage: podium memcache <command>"
             echo-white "Example: podium memcache stats"
+        elif [ "$1" = "set" ]; then
+            # Storage commands are two-line: the header declares the payload
+            # length, then the payload follows. The single-line form this help
+            # text has always advertised could never have worked.
+            if [ $# -lt 3 ]; then
+                echo-red "Usage: $PODIUM_CMD set <key> <value>"
+                exit 1
+            fi
+            memcache_key="$2"; shift 2
+            memcache_value="$*"
+            memcache-send "set $memcache_key 0 0 ${#memcache_value}" "$memcache_value"
         else
-            echo "$@" | docker container exec -i memcached nc localhost 11211
+            memcache-send "$*"
         fi
         ;;
     "memcache-flush")
-        echo "flush_all" | docker container exec -i memcached nc localhost 11211
+        memcache-send "flush_all"
         echo-green "Memcached flushed!"
         ;;
     "memcache-stats")
-        echo "stats" | docker container exec -i memcached nc localhost 11211
+        memcache-send "stats"
         ;;
     "supervisor")
         validate_project_context || exit 1
@@ -673,7 +700,7 @@ case "$1" in
         "$SCRIPT_DIR/scripts/update.sh" "${@:2}"
         ;;
     "start-services")
-        "$SCRIPT_DIR/scripts/start_services.sh"
+        "$SCRIPT_DIR/scripts/start_services.sh" "${@:2}"
         ;;
     "enable-service")
         shift
@@ -684,14 +711,21 @@ case "$1" in
         PODIUM_SERVICE_MODE=disable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
         ;;
     "stop-services")
-        "$SCRIPT_DIR/scripts/stop_services.sh"
+        "$SCRIPT_DIR/scripts/stop_services.sh" "${@:2}"
         ;;
     "uninstall")
         "$SCRIPT_DIR/scripts/uninstall.sh" "${@:2}"
         ;;
     "projects-dir")
-        # Helper command to show projects directory path
-        echo "$(get_projects_dir)"
+        # Helper command to show projects directory path. Handled inline, so it
+        # has to honour --json-output itself or the "global" flag isn't global.
+        # The flag is stripped from "$@" at the top of this file and exported as
+        # JSON_OUTPUT, so test the variable rather than the arguments.
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            echo "{\"action\": \"projects_dir\", \"projects_dir\": \"$(get_projects_dir)\", \"status\": \"success\"}"
+        else
+            echo "$(get_projects_dir)"
+        fi
         ;;
     
     # Help and default

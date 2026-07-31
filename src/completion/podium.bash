@@ -126,7 +126,7 @@ up up-all update update-installer wp"
                 COMPREPLY=( $(compgen -W "--framework --database --db-name --overwrite-env --no-migration --overwrite-docker-compose --no-startup --github-org --public --private --no-storage-symlink --one-off --json-output --no-colors --debug" -- "$cur") )
             fi ;;
         create)
-            COMPREPLY=( $(compgen -W "--one-off -f --file" -- "$cur") ) ;;
+            COMPREPLY=( $(compgen -W "--one-off --classify-only -f --file --json-output" -- "$cur") ) ;;
         create-installer)
             COMPREPLY=( $(compgen -W "--one-off --print" -- "$cur") ) ;;
         ai)

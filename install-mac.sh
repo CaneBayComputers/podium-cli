@@ -400,7 +400,7 @@ if command -v podium &> /dev/null; then
     echo -e "  3. Create your first project:"
     echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""
     echo -e "     or use a specific framework:"
-    echo -e "       ${BLUE}podium new my-project --framework laravel${NC}"
+    echo -e "       ${BLUE}podium new laravel my-project${NC}"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
     echo "   https://github.com/CaneBayComputers/podium-cli"

@@ -24,7 +24,7 @@ source "$DEV_DIR/scripts/pre_check.sh"
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 [project_name] [database_engine] [options]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [database_engine] [options]"
     echo-white "Sets up a project in the projects directory"
     echo-white ""
     echo-white "With no project name, shows an interactive picker (skipped in --json-output mode)."
@@ -46,10 +46,8 @@ usage() {
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 my-project mysql"
-    echo-white "  $0 my-project postgres --json-output"
-    
-    error "usage" 1
+    echo-white "  ${PODIUM_CMD:-$0} my-project mysql"
+    echo-white "  ${PODIUM_CMD:-$0} my-project postgres --json-output"
 }
 
 
@@ -132,6 +130,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             error "Unknown option: $1. Use --help for usage information"
