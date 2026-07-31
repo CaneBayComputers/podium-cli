@@ -105,8 +105,8 @@ framework_setup_env() {
             podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
             podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=postgres" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=postgres" .env
+            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
             ;;
         "mongodb")
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
@@ -114,7 +114,7 @@ framework_setup_env() {
             podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
             podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
             podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=root" .env
+            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
             ;;
         *)
             podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env

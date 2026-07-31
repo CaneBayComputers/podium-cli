@@ -88,7 +88,7 @@ framework_setup_env() {
             ;;
         "mongo"|"mongodb")
             db_connection="mongodb"; db_host="$MONGO_CONTAINER_NAME"; db_port="27017"
-            db_username="root"; db_password=""
+            db_username="root"; db_password="password"
             ;;
         *)
             db_connection="mysql"; db_host="$MARIADB_CONTAINER_NAME"; db_port="3306"
