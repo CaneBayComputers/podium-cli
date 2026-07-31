@@ -676,10 +676,29 @@ PYEOF
     # Install npm dependencies for Node projects
     if [ "$FRAMEWORK_IS_NODE" = "1" ] && [ -f "package.json" ]; then
         echo-cyan "Installing Node dependencies with npm ..."; echo-white
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install" > /dev/null 2>&1
-        else
-            docker exec "$PROJECT_NAME" bash -c "cd /usr/share/nginx/html && npm install"
+        # npm can die with ENOTEMPTY here: if the install is interrupted, its own
+        # rollback tries to rmdir directories that are not empty on overlayfs and
+        # cannot recover the tree in place. Retrying on top of the wreckage fails
+        # the same way, so the retry clears node_modules first.
+        #
+        # --no-audit/--no-fund cut network round-trips, and --no-progress keeps npm
+        # from rendering a progress bar into a pipe -- this reproduces when podium
+        # is spawned with piped stdio (a GUI) but not from a terminal.
+        _npm_install_in_container() {
+            local quiet="$1"
+            local cmd="cd /usr/share/nginx/html && npm install --no-audit --no-fund --no-progress"
+            if [ "$quiet" = "1" ]; then
+                docker exec "$PROJECT_NAME" bash -c "$cmd" > /dev/null 2>&1
+            else
+                docker exec "$PROJECT_NAME" bash -c "$cmd"
+            fi
+        }
+        _npm_quiet=0
+        [[ "$JSON_OUTPUT" == "1" ]] && _npm_quiet=1
+        if ! _npm_install_in_container "$_npm_quiet"; then
+            echo-yellow "npm install failed — clearing node_modules and retrying once ..."; echo-white
+            docker exec "$PROJECT_NAME" bash -c "rm -rf /usr/share/nginx/html/node_modules" 2>/dev/null || true
+            _npm_install_in_container "$_npm_quiet"
         fi
         echo-green "Node dependencies installed!"; echo-white
         # Fix ownership so the host user can run podium npm install afterwards without EACCES
