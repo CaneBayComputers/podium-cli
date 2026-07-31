@@ -33,7 +33,6 @@ usage() {
     echo-white "  ${PODIUM_CMD:-$0} my-project --force-db-delete   # Remove project and database without prompting"
     echo-white "  ${PODIUM_CMD:-$0} my-project --preserve-database # Remove project, keep database"
     echo-white "  ${PODIUM_CMD:-$0} my-project --json-output       # Remove with JSON output"
-    error "usage" 1
 }
 
 # Initialize variables
@@ -82,10 +81,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             echo-red "Unknown option: $1"
             usage
+            exit 1
             ;;
         *)
             if [ -z "$PROJECT_NAME" ]; then
@@ -93,6 +94,7 @@ while [[ $# -gt 0 ]]; do
             else
                 echo-red "Too many arguments"
                 usage
+                exit 1
             fi
             shift
             ;;

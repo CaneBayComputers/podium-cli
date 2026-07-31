@@ -56,7 +56,7 @@ validate_wordpress_version() {
 
 # Function to display usage
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-${PODIUM_CMD:-$0}} <framework> <name> [options]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} <framework> <name> [options]"
     echo-white "Creates a new greenfield project from a framework skeleton"
     echo-white ""
     echo-white "Arguments:"
@@ -81,10 +81,9 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} laravel my-app --database postgres --github"
-    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} wordpress my-blog --github-org myorg"
-    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} flask my-api --database sqlite"
-    error "usage" 1
+    echo-white "  ${PODIUM_CMD:-$0} laravel my-app --database postgres --github"
+    echo-white "  ${PODIUM_CMD:-$0} wordpress my-blog --github-org myorg"
+    echo-white "  ${PODIUM_CMD:-$0} flask my-api --database sqlite"
 }
 
 # Resolve Laravel repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
@@ -186,10 +185,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             echo-red "Unknown option: $1"
             usage
+            exit 1
             ;;
         *)
             # Positional order: <framework> <name>
@@ -200,6 +201,7 @@ while [[ $# -gt 0 ]]; do
             else
                 echo-red "Too many arguments"
                 usage
+                exit 1
             fi
             shift
             ;;

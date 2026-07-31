@@ -48,8 +48,6 @@ usage() {
     echo-white "Examples:"
     echo-white "  ${PODIUM_CMD:-$0} my-project mysql"
     echo-white "  ${PODIUM_CMD:-$0} my-project postgres --json-output"
-    
-    error "usage" 1
 }
 
 
@@ -132,6 +130,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             error "Unknown option: $1. Use --help for usage information"

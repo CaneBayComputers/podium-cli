@@ -38,8 +38,6 @@ usage() {
     echo-white "  ${PODIUM_CMD:-$0} --all              # Show every project"
     echo-white "  ${PODIUM_CMD:-$0} my-project         # Show specific project (shown even if stopped)"
     echo-white "  ${PODIUM_CMD:-$0} --json-output      # JSON output for active projects"
-
-    error "usage" 1
 }
 
 # Initialize variables
@@ -77,6 +75,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             error "Unknown option: $1"

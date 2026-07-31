@@ -15,7 +15,7 @@ CUSTOM_IMAGE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --help|-h)
-            echo-white "Usage: ${PODIUM_CMD:-${PODIUM_CMD:-$0}} <app> [name] [options]"
+            echo-white "Usage: ${PODIUM_CMD:-$0} <app> [name] [options]"
             echo-white "Installs a curated open-source app, fully configured and running"
             echo-white ""
             echo-white "Arguments:"
@@ -31,9 +31,9 @@ while [[ $# -gt 0 ]]; do
             echo-white "  --help, -h      Show this help message"
             echo-white ""
             echo-white "Examples:"
-            echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} grafana"
-            echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} livewire sign-tools"
-            echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} --list"
+            echo-white "  ${PODIUM_CMD:-$0} grafana"
+            echo-white "  ${PODIUM_CMD:-$0} livewire sign-tools"
+            echo-white "  ${PODIUM_CMD:-$0} --list"
             exit 0
             ;;
         --one-off) SKIP_INTERACTIVE=1; shift ;;

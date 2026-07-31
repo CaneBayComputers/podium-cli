@@ -73,8 +73,6 @@ usage() {
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
     echo-white "  --help                       Show this help message"
-    
-    error "usage" 1
 }
 
 # Capture original arguments for debug logging
@@ -194,6 +192,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help)
             usage
+            exit 0
             ;;
         -*)
             error "Unknown option: $1"

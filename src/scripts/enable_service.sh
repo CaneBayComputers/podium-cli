@@ -34,13 +34,12 @@ usage() {
     echo-white ""
     echo-white "Enabled services start with every 'podium up' and are reachable by"
     echo-white "hostname from inside any project container, like the core services."
-    error "usage" 1
 }
 
 SERVICE=""
 for arg in "$@"; do
     case "$arg" in
-        --help|-h) usage ;;
+        --help|-h) usage; exit 0 ;;
         --json-output) export JSON_OUTPUT=1 ;;
         --no-colors) export NO_COLOR=1 ;;
         -*) error "Unknown option: $arg" ;;
@@ -48,7 +47,10 @@ for arg in "$@"; do
     esac
 done
 
-[[ -z "$SERVICE" ]] && usage
+if [[ -z "$SERVICE" ]]; then
+    usage
+    exit 1
+fi
 
 if ! printf '%s\n' $AVAILABLE_OPTIONAL_SERVICES | grep -qx "$SERVICE"; then
     error "Unknown optional service '$SERVICE'. Available: $AVAILABLE_OPTIONAL_SERVICES"
