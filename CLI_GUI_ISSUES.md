@@ -219,6 +219,69 @@ using the container names from `/etc/podium-cli/.env`.
 
 ## Minor (no action needed for the GUI)
 
+> **Status check — 2026-07-31, after `c192837`.** Re-tested all eight entries
+> above from the GUI side. §1, §2, §3, §4 and both minors are fixed and verified
+> working; `CLI_GUI_FIXES.md` records them as APPLIED.
+>
+> **§5 (memcache container name) and §6 (redis TTY) have no entry in
+> `CLI_GUI_FIXES.md` at all** — not APPLIED, not OPEN, not REJECTED. They appear
+> to have been missed rather than declined: batch 1 describes its source as
+> "§1–4 plus its two minors", which maps its own #5/#6 onto the two minors below
+> and skips these two entirely. They were appended after that batch was drafted.
+>
+> Both still reproduce on the current tree:
+>
+> ```
+> $ podium memcache-stats
+> Error response from daemon: No such container: memcached
+> $ podium redis INFO
+> cannot attach stdin to a TTY-enabled container because stdin is not a terminal
+> ```
+>
+> `src/podium` is unchanged at the relevant lines — 545 and 548 still pass `-it`,
+> and 564, 568, 572 still hardcode `memcached`. The GUI works around both (direct
+> `docker exec` for Redis, a TCP socket for Memcached, container names read from
+> `/etc/podium-cli/.env`) so nothing is blocked — but the CLI commands themselves
+> remain broken for every caller.
+
+> **Update — 2026-07-31, on the in-progress `src/podium` edit.** Caught this
+> while the fix was still uncommitted, so it can be corrected before it lands.
+>
+> **The redis half is correct.** Gating the TTY on `[ $# -eq 0 ] && [ -t 0 ]` and
+> using `-i` otherwise is exactly right — `podium redis INFO` works from a
+> non-terminal, and the argument-less REPL keeps its TTY.
+>
+> **The memcache half is necessary but not sufficient.** Swapping the hardcoded
+> `memcached` for `$MEMCACHED_CONTAINER_NAME` fixes the container name, but all
+> three commands still fail — **the memcached image has no `nc`**:
+>
+> ```
+> $ echo "stats" | docker container exec -i podium-memcached nc localhost 11211
+> OCI runtime exec failed: exec: "nc": executable file not found in $PATH
+> $ echo $?
+> 127
+> ```
+>
+> So `memcache`, `memcache-flush` and `memcache-stats` go from "wrong container"
+> (exit 1) to "right container, missing binary" (exit 127). Same user-visible
+> outcome: broken.
+>
+> The image does ship `bash`, so its `/dev/tcp` built-in works with no new
+> dependency. Verified against the running container:
+>
+> ```bash
+> docker container exec -i "$MEMCACHED_CONTAINER_NAME" bash -c \
+>   'exec 3<>/dev/tcp/127.0.0.1/11211; printf "stats\r\nquit\r\n" >&3; cat <&3'
+> # STAT pid 1
+> # STAT uptime 1701
+> # ... exit 0
+> ```
+>
+> Note the memcached protocol wants CRLF line endings and a trailing `quit` so
+> the socket closes instead of hanging on `cat`. Whatever shape you pick, please
+> test `podium memcache-stats` end-to-end before marking §5 APPLIED — the
+> container-name change alone reads as fixed in a diff but isn't.
+
 - `podium projects-dir --json-output` ignores the flag and prints a bare path.
   The dispatcher handles `projects-dir` inline with `echo` and never looks at
   arguments. Harmless — the GUI reads the plain path — but it means the global

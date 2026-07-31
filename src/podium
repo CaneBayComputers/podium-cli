@@ -542,10 +542,18 @@ case "$1" in
         ;;
     "redis")
         shift
-        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli "$@"
+        # Only the argument-less REPL needs a TTY. `redis-cli INFO` is a one-shot
+        # command, and -t makes it fail outright whenever stdin is not a terminal
+        # — which is every GUI, script and agent caller.
+        if [ $# -eq 0 ] && [ -t 0 ]; then
+            docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli
+        else
+            docker container exec -i "$REDIS_CONTAINER_NAME" redis-cli "$@"
+        fi
         ;;
     "redis-flush")
-        docker container exec -it "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
+        # Never interactive.
+        docker container exec -i "$REDIS_CONTAINER_NAME" redis-cli FLUSHALL
         echo-green "Redis flushed!"
         ;;
     "memcache")
@@ -560,16 +568,27 @@ case "$1" in
             echo
             echo-white "Usage: podium memcache <command>"
             echo-white "Example: podium memcache stats"
+        elif [ "$1" = "set" ]; then
+            # Storage commands are two-line: the header declares the payload
+            # length, then the payload follows. The single-line form this help
+            # text has always advertised could never have worked.
+            if [ $# -lt 3 ]; then
+                echo-red "Usage: $PODIUM_CMD set <key> <value>"
+                exit 1
+            fi
+            memcache_key="$2"; shift 2
+            memcache_value="$*"
+            memcache-send "set $memcache_key 0 0 ${#memcache_value}" "$memcache_value"
         else
-            echo "$@" | docker container exec -i memcached nc localhost 11211
+            memcache-send "$*"
         fi
         ;;
     "memcache-flush")
-        echo "flush_all" | docker container exec -i memcached nc localhost 11211
+        memcache-send "flush_all"
         echo-green "Memcached flushed!"
         ;;
     "memcache-stats")
-        echo "stats" | docker container exec -i memcached nc localhost 11211
+        memcache-send "stats"
         ;;
     "supervisor")
         validate_project_context || exit 1
