@@ -1,0 +1,256 @@
+# CLI fixes arising from the GUI re-sync
+
+Companion to `CLI_GUI_ISSUES.md`. That file is what the GUI session *reported*;
+this file is what was *verified* and what the fix is.
+
+**This file is append-only.** Add new entries at the bottom under a new dated
+batch heading. Do not rewrite earlier entries — amend them by appending a
+`**Update <date>:**` line inside the entry, so the history of what we believed
+and when stays readable.
+
+Status values: `VERIFIED` (reproduced, fix agreed, not yet applied) ·
+`APPLIED` (in the tree) · `REJECTED` (report was wrong, or fix conflicts with
+current architecture) · `DEFERRED`.
+
+---
+
+# Batch 1 — 2026-07-31
+
+Source: `CLI_GUI_ISSUES.md` §1–4 plus its two minors. All six reproduced against
+branch `beta`. **Nothing in this batch conflicts with current architecture** —
+every one is a mismatch between what the CLI documents and what it parses, not
+the GUI misreading Podium.
+
+Fix order below is by blast radius, not by the order they were reported.
+
+---
+
+## 1. `stop-services` / `start-services` discard every argument
+
+**Status: VERIFIED — fix first, this one is destructive.**
+
+`podium stop-services --help` **stops the services** instead of printing help.
+It did this to a live machine during the audit, and again to the shared services
+on this box.
+
+Cause is the dispatcher, not the scripts. `src/podium`:
+
+```bash
+"start-services")
+    "$SCRIPT_DIR/scripts/start_services.sh"          # no "${@:2}"
+"stop-services")
+    "$SCRIPT_DIR/scripts/stop_services.sh"           # no "${@:2}"
+```
+
+Both scripts already parse `--help`, `--json-output` and `--no-colors` correctly
+(`stop_services.sh:37`, `start_services.sh:33`). They are simply never handed the
+arguments, so every flag is silently dropped and the script runs its default
+path.
+
+**Fix:** append `"${@:2}"` to both arms, matching every neighbouring case.
+
+**Scope check:** these are the *only* two arms in the dispatcher that drop
+arguments. `uninstall` and `remove` — the other destructive commands — forward
+correctly, so `uninstall --help` is safe.
+
+---
+
+## 2. `remove --force` is documented as "skip prompts" but deletes the database
+
+**Status: VERIFIED — fix second, this is a data-loss shape.**
+
+`podium help` says:
+
+```
+  --force                   - Skip confirmation prompts
+```
+
+`remove_project.sh:63`:
+
+```bash
+--force)
+    # Legacy flag - now only affects database deletion since trash is default
+    FORCE_DB_DELETE=true
+```
+
+The interactive confirmation it claims to skip **no longer exists**
+(`remove_project.sh:150`: "No interactive confirmation. The database is
+PRESERVED by default"). So the flag's documented purpose is gone and its only
+surviving effect is destroying data. Any caller carrying `--force` forward from
+the old skip-the-prompt contract silently inverts preserve-by-default — the GUI
+was doing exactly this.
+
+**Fix:** remove `--force` from `podium help`'s REMOVE PROJECT OPTIONS so
+`--force-db-delete` is the only documented way to drop a database. Keep the
+parser case for backward compatibility, but retitle its comment to say plainly
+that it is a destructive alias.
+
+**Precedence is already safe:** `--preserve-database` is evaluated before
+`FORCE_DB_DELETE` (`remove_project.sh:248`), so passing both preserves. No change
+needed there.
+
+---
+
+## 3. `podium new --framework <name>` is documented but not parsed
+
+**Status: VERIFIED — hard stop, and partly self-inflicted.**
+
+Two places advertise the flag; the parser has no case for it, so it hits the
+`-*` catch-all and exits 1 having created nothing:
+
+```
+$ podium new --framework laravel my-app
+Unknown option: --framework
+```
+
+**The important nuance — do NOT blanket-remove this flag.** `--framework` is
+legitimate on two other commands and must stay there:
+
+| Command | Parses `--framework`? | `podium help` line |
+|---|---|---|
+| `new` | **no** | 138 — **wrong, fix this one** |
+| `clone` | yes | 148 — correct, leave alone |
+| `setup` | yes | 157 — correct, leave alone |
+
+**Fix:** align the docs to the parser rather than adding a flag alias. The
+positional form `podium new <framework> <name>` is already the contract in
+README, AGENTS.md, the docs site and the completion script; adding `--framework`
+back would create two ways to do one thing in the one command that doesn't need
+it.
+
+1. Delete line 138 from `src/podium` (NEW PROJECT OPTIONS only).
+2. Rewrite `new_project.sh` `usage()` — it still describes the pre-2026
+   signature `<project_name> [organization] [version]`, and **all three of its
+   examples use `--framework`**, so every example it prints is a command that
+   fails.
+3. That help block also omits `flask` from the framework list.
+
+**Self-inflicted note:** the framework lists on lines 138/148/157 were edited
+earlier this session to add `flask`, `kavera` and `octobercms`. Line 138 was
+already wrong and that edit made a wrong doc more wrong. Worth remembering that
+updating a help string is not evidence the flag it describes exists.
+
+---
+
+## 4. `podium install --help` is parsed as an app name
+
+**Status: VERIFIED — hard stop.**
+
+```
+$ podium install --help
+No installer found for: --help
+```
+
+`install.sh` has no `--help` case, so the flag falls through to the positional
+that becomes `$APP`. It is the only subcommand where the option list cannot be
+read from the command itself. `--list` works and is a reasonable fallback, but a
+flag should never be treated as a slug.
+
+**Fix:** add a `--help|-h` case to `install.sh`'s argument loop documenting
+`<app> [name]`, `--image <ref>`, `--one-off` and `--list`.
+
+---
+
+## 5. `podium projects-dir --json-output` ignores the flag
+
+**Status: VERIFIED — minor.**
+
+Handled inline in the dispatcher (`src/podium:692`) with a bare `echo`; arguments
+are never examined. Harmless in practice — the GUI reads the plain path — but it
+means the "global" `--json-output` is not actually global.
+
+**Fix:** either emit `{"projects_dir": "..."}` when the flag is present, or drop
+the claim that `--json-output` is global from `podium help`. Prefer the former;
+it is two lines and keeps the global contract honest.
+
+---
+
+## 6. `usage()` prints an absolute script path as the program name
+
+**Status: VERIFIED — cosmetic, affects every script.**
+
+```
+Usage: /usr/local/share/podium-cli/src/scripts/new_project.sh <project_name> ...
+```
+
+Every `usage()` uses `$0`, which is the sourced script, not the command the user
+typed. Copy-pasting any printed help gives an unrunnable command for anyone who
+installed normally.
+
+**Fix:** print `podium <command>` instead. Cheapest approach is for the
+dispatcher to export something like `PODIUM_CMD="podium $1"` and have `usage()`
+use `${PODIUM_CMD:-$0}`, so the scripts still work when invoked directly.
+
+---
+
+## Batch 1 status
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 1 | `start`/`stop-services` drop args | destructive | **APPLIED** |
+| 2 | `remove --force` deletes DB | data loss | **APPLIED** |
+| 3 | `new --framework` documented, unparsed | hard stop | **APPLIED** |
+| 4 | `install --help` treated as slug | hard stop | **APPLIED** |
+| 5 | `projects-dir` ignores `--json-output` | minor | **APPLIED** |
+| 6 | `usage()` prints `$0` | cosmetic | **APPLIED** |
+
+**Update 2026-07-31:** all six applied and verified. Notes on what the fixing
+turned up:
+
+- **#2 grew.** `remove_project.sh`'s own `usage()` also still described the
+  removed prompt ("User is prompted about database deletion") and an interactive
+  picker that no longer exists. Both corrected alongside the help entry.
+- **#5 was fixed wrong the first time.** The obvious implementation — test
+  `"${@:2}"` for `--json-output` — silently never matched, because `src/podium`
+  strips that flag from `"$@"` at line 29 and exports `JSON_OUTPUT=1` instead.
+  Testing the variable is both correct and consistent with every other script.
+- **#3 held to the narrow fix.** Only the NEW PROJECT OPTIONS entry was removed;
+  the `clone` and `setup` entries stayed, and `podium --help` still shows exactly
+  two `--framework NAME` lines. Confirmed by count, not by eye.
+- **#6 needed a mechanism, not a string edit.** The dispatcher now exports
+  `PODIUM_CMD="podium <subcommand>"` and 12 scripts print `${PODIUM_CMD:-$0}`,
+  so they still work when invoked directly.
+
+Verified after: `stop-services --help` exits 0 with **9 of 9 services still
+running**, `install --help` exits 0, `projects-dir --json-output` emits JSON,
+`new --help` prints `Usage: podium new <framework> <name>`, and every script
+still parses.
+
+---
+
+## 7. `--help` exit codes are inconsistent
+
+**Status: VERIFIED — not fixed, needs a design decision.**
+
+Found while regression-testing batch 1. `--help` exits differently depending on
+which command you ask:
+
+| Command | `--help` exit |
+|---|---|
+| `configure`, `install`, `start-services`, `stop-services` | 0 |
+| `new`, `remove`, `clone`, `setup` | **1** |
+
+The scripts in the second group route `--help` through `usage()`, which ends in
+`error "usage" 1`. That is correct when `usage()` is reached because the
+arguments were bad, and wrong when the user explicitly asked for help.
+
+This matters for the GUI specifically: anything checking exit codes reads a
+successful `--help` as a failure.
+
+**Why it is not fixed here:** `usage()` serves both callers, so the fix is not a
+one-line change — it needs either a parameter (`usage 0` from the `--help` case,
+`usage 1` from the error paths) or a separate `show_help()`. Both are reasonable;
+picking one is a call for whoever owns the CLI's conventions, not something to
+decide inside a bug-fix pass.
+
+**Pre-existing** — batch 1 did not introduce it. Note that `install --help`,
+added in #4, deliberately exits 0 and so currently sits on the correct side of an
+inconsistency it did not create.
+
+
+**Cross-cutting observation:** five of six are the same class — a documented
+option that the parser does not accept, or accepts with different meaning.
+There is no test anywhere that asserts `podium help` agrees with the parsers.
+A ~20-line check that extracts every `--flag` from the help text and greps for a
+matching case in the corresponding script would have caught 1, 3, 4 and 5 before
+they shipped. Worth considering as its own piece of work.

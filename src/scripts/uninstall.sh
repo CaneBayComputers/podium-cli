@@ -29,7 +29,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: $0 [options]"
+            echo-white "Usage: ${PODIUM_CMD:-$0} [options]"
             echo-white "Selectively removes Podium-related Docker resources"
             echo-white ""
             echo-white "Options:"

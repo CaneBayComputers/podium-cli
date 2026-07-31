@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: $0 [OPTIONS]"
+            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS]"
             echo-white "Stop Podium shared services"
             echo-white ""
             echo-white "Options:"

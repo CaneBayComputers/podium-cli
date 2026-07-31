@@ -13,14 +13,13 @@ echo-return; echo-return
 
 # Usage function to explain the script
 usage() {
-    echo-white "Usage: $0 [project_name] [options]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [options]"
     echo-white "Removes a project and associated settings"
     echo-white ""
-    echo-white "With no project name, shows an interactive picker (skipped in --json-output mode)."
     echo-white ""
     echo-white "By default:"
     echo-white "  • Project files are moved to trash (recoverable)"
-    echo-white "  • User is prompted about database deletion"
+    echo-white "  • The database is PRESERVED (pass --force-db-delete to drop it)"
     echo-white ""
     echo-white "Options:"
     echo-white "  --force-db-delete        Delete database without confirmation"
@@ -30,11 +29,10 @@ usage() {
     echo-white "  --no-colors              Disable colored output"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0                                # Interactive picker, then remove"
-    echo-white "  $0 my-project                     # Remove project, prompt for database"
-    echo-white "  $0 my-project --force-db-delete   # Remove project and database without prompting"
-    echo-white "  $0 my-project --preserve-database # Remove project, keep database"
-    echo-white "  $0 my-project --json-output       # Remove with JSON output"
+    echo-white "  ${PODIUM_CMD:-$0} my-project                     # Remove project, keep the database"
+    echo-white "  ${PODIUM_CMD:-$0} my-project --force-db-delete   # Remove project and database without prompting"
+    echo-white "  ${PODIUM_CMD:-$0} my-project --preserve-database # Remove project, keep database"
+    echo-white "  ${PODIUM_CMD:-$0} my-project --json-output       # Remove with JSON output"
     error "usage" 1
 }
 
@@ -61,7 +59,12 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --force)
-            # Legacy flag - now only affects database deletion since trash is default
+            # DESTRUCTIVE legacy alias for --force-db-delete. It once meant "skip
+            # the confirmation prompts"; those prompts no longer exist, so its
+            # only surviving effect is dropping the database. Kept for backward
+            # compatibility and deliberately undocumented — anything carrying it
+            # forward from the old contract would silently invert the
+            # preserve-by-default behaviour. --preserve-database still wins.
             FORCE_DB_DELETE=true
             shift
             ;;

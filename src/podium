@@ -9,6 +9,11 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 # Resolve symlink if this script is symlinked
 while [ -L "$SCRIPT_PATH" ]; do
     SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# Program name for help text. Scripts print "${PODIUM_CMD:-$0}" so copy-pasted
+# usage is runnable — bare $0 is the sourced script's absolute path, which is
+# not a command anyone can type.
+export PODIUM_CMD="podium${1:+ $1}"
     SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
     [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
 done
@@ -135,8 +140,6 @@ show_help() {
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --framework <name>        - Framework: laravel (default), kavera, octobercms, wordpress, php, fastapi, flask, django,"
-    echo "                             express, nestjs, fastify, node"
     echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
@@ -161,7 +164,6 @@ show_help() {
     echo "  --no-colors               - Disable colored output"
     echo
     echo-white "REMOVE PROJECT OPTIONS:"
-    echo "  --force                   - Skip confirmation prompts"
     echo "  --force-db-delete         - Force database deletion without prompt"
     echo "  --preserve-database       - Keep database (skip deletion)"
     echo
@@ -673,7 +675,7 @@ case "$1" in
         "$SCRIPT_DIR/scripts/update.sh" "${@:2}"
         ;;
     "start-services")
-        "$SCRIPT_DIR/scripts/start_services.sh"
+        "$SCRIPT_DIR/scripts/start_services.sh" "${@:2}"
         ;;
     "enable-service")
         shift
@@ -684,14 +686,21 @@ case "$1" in
         PODIUM_SERVICE_MODE=disable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
         ;;
     "stop-services")
-        "$SCRIPT_DIR/scripts/stop_services.sh"
+        "$SCRIPT_DIR/scripts/stop_services.sh" "${@:2}"
         ;;
     "uninstall")
         "$SCRIPT_DIR/scripts/uninstall.sh" "${@:2}"
         ;;
     "projects-dir")
-        # Helper command to show projects directory path
-        echo "$(get_projects_dir)"
+        # Helper command to show projects directory path. Handled inline, so it
+        # has to honour --json-output itself or the "global" flag isn't global.
+        # The flag is stripped from "$@" at the top of this file and exported as
+        # JSON_OUTPUT, so test the variable rather than the arguments.
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            echo "{\"action\": \"projects_dir\", \"projects_dir\": \"$(get_projects_dir)\", \"status\": \"success\"}"
+        else
+            echo "$(get_projects_dir)"
+        fi
         ;;
     
     # Help and default

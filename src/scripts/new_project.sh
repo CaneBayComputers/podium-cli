@@ -56,16 +56,15 @@ validate_wordpress_version() {
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <project_name> [organization] [version] [options]"
-    echo-white "Creates a new Laravel, WordPress, PHP, FastAPI, Django, Express, NestJS, Fastify, or Node project"
+    echo-white "Usage: ${PODIUM_CMD:-${PODIUM_CMD:-$0}} <framework> <name> [options]"
+    echo-white "Creates a new greenfield project from a framework skeleton"
     echo-white ""
     echo-white "Arguments:"
-    echo-white "  project_name    Name of the project to create"
-    echo-white "  organization    GitHub organization (optional)"
-    echo-white "  version         Framework version (optional)"
+    echo-white "  framework       laravel, kavera, octobercms, wordpress, php, fastapi, flask,"
+    echo-white "                  django, python, express, nestjs, fastify, node"
+    echo-white "  name            Name of the project to create (directory and hostname)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --framework TYPE        Framework type: laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node (required with --json-output)"
     echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
@@ -82,9 +81,9 @@ usage() {
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 my-app --framework laravel --database postgres --github"
-    echo-white "  $0 my-blog --framework wordpress --github-org myorg"
-    echo-white "  $0 my-api --framework fastapi"
+    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} laravel my-app --database postgres --github"
+    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} wordpress my-blog --github-org myorg"
+    echo-white "  ${PODIUM_CMD:-${PODIUM_CMD:-$0}} flask my-api --database sqlite"
     error "usage" 1
 }
 

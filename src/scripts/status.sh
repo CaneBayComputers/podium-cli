@@ -19,7 +19,7 @@ source scripts/pre_check.sh
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 [project_name] [options]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [options]"
     echo-white "Shows status of running Docker projects"
     echo-white ""
     echo-white "Arguments:"
@@ -34,10 +34,10 @@ usage() {
     echo-white "  --help           Show this help message"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0                    # Show only active (running) projects"
-    echo-white "  $0 --all              # Show every project"
-    echo-white "  $0 my-project         # Show specific project (shown even if stopped)"
-    echo-white "  $0 --json-output      # JSON output for active projects"
+    echo-white "  ${PODIUM_CMD:-$0}                    # Show only active (running) projects"
+    echo-white "  ${PODIUM_CMD:-$0} --all              # Show every project"
+    echo-white "  ${PODIUM_CMD:-$0} my-project         # Show specific project (shown even if stopped)"
+    echo-white "  ${PODIUM_CMD:-$0} --json-output      # JSON output for active projects"
 
     error "usage" 1
 }

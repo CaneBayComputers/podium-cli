@@ -36,7 +36,7 @@ GIT_CLONE_ARGS=()
 
 # Function to display usage
 usage() {
-    echo-white "Usage: $0 <mode> <repository> [project_name] [OPTIONS]"
+    echo-white "Usage: ${PODIUM_CMD:-$0} <mode> <repository> [project_name] [OPTIONS]"
     echo-white "Clone a Git repository and set it up as a Podium project"
     echo-white ""
     echo-white "Arguments:"
@@ -48,9 +48,9 @@ usage() {
     echo-white "  project_name      Optional: Local project name (defaults to repo name)"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  $0 work-directly https://github.com/user/app"
-    echo-white "  $0 fork https://github.com/user/app"
-    echo-white "  $0 new-repo https://github.com/user/app my-app"
+    echo-white "  ${PODIUM_CMD:-$0} work-directly https://github.com/user/app"
+    echo-white "  ${PODIUM_CMD:-$0} fork https://github.com/user/app"
+    echo-white "  ${PODIUM_CMD:-$0} new-repo https://github.com/user/app my-app"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output                Output results in JSON format"
