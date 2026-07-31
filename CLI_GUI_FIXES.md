@@ -202,7 +202,7 @@ use `${PODIUM_CMD:-$0}`, so the scripts still work when invoked directly.
 | 4 | `install --help` treated as slug | hard stop | **APPLIED** |
 | 5 | `projects-dir` ignores `--json-output` | minor | **APPLIED** |
 | 6 | `usage()` prints `$0` | cosmetic | **APPLIED** |
-| 7 | `--help` exit codes inconsistent | GUI-affecting | **OPEN** |
+| 7 | `--help` exit codes inconsistent | GUI-affecting | **APPLIED** (batch 3) |
 
 **Update 2026-07-31:** all six applied and verified. Notes on what the fixing
 turned up:
@@ -230,7 +230,7 @@ still parses.
 
 ## 7. `--help` exit codes are inconsistent
 
-**Status: OPEN — deliberately not fixed. Needs a convention decision.**
+**Status: APPLIED** (`3bdcb9d`) — see the update at the end of this entry.
 
 Found while regression-testing batch 1. `--help` exits differently depending on
 which command you ask:
@@ -256,6 +256,10 @@ decide inside a bug-fix pass.
 **Pre-existing** — batch 1 did not introduce it. Note that `install --help`,
 added in #4, deliberately exits 0 and so currently sits on the correct side of an
 inconsistency it did not create.
+
+**Update 2026-07-31 — resolved, see batch 3 below.** The owner's call was "do what
+makes sense", so the decision was made on the evidence in the tree rather than
+invented: **both conventions were already present**, and the newer one won.
 
 
 **Cross-cutting observation:** five of six are the same class — a documented
@@ -370,3 +374,80 @@ The `[ -t 0 ]` half is an addition to the reported fix: without it, a bare
 
 **Note on §7 (`--help` exit codes):** still **OPEN**. Unchanged by this batch —
 it needs a convention decision, not a bug fix.
+
+---
+
+# Batch 3 — 2026-07-31
+
+**Outcome: §7 resolved and APPLIED, pushed to `beta` as `3bdcb9d`.**
+
+Not a GUI report — this is the convention decision §7 was waiting on, made after
+the owner said "no preference, do what makes sense."
+
+---
+
+## 7 (resolved). `--help` exit codes are now 0 everywhere
+
+**Status: APPLIED** (`3bdcb9d`).
+
+### The decision, and why it wasn't a coin flip
+
+§7 framed this as a choice between parameterising `usage()` and adding a separate
+`show_help()`. That framing missed the useful fact: **the tree already contained
+both conventions**, so this was a question of which existing one to standardise
+on, not which new one to invent.
+
+| Convention | Scripts | `usage()` |
+|---|---|---|
+| Caller owns the exit code | `ai`, `ai_set`, `create`, `create_installer`, `update_installer` | pure output |
+| Exit baked into `usage()` | `clone`, `enable_service`, `new`, `remove`, `setup`, `status` | ends `error "usage" 1` |
+
+The first group is the newer code, matches ordinary Unix behaviour, and puts the
+exit code where a reader can see it instead of hiding it inside a function called
+from six places with two different meanings. The six older scripts were moved to
+it. No new mechanism was added.
+
+### The part that was actually dangerous
+
+Deleting `error "usage" 1` from a `usage()` **removes a control-flow exit**. Every
+call site that relied on `usage()` never returning now falls through and keeps
+going with arguments it has already rejected — and two of those call sites are
+`podium new` and `podium remove`. This is a strictly larger change than the
+one-line edit §7 anticipated.
+
+All 17 `usage` invocations across `src/scripts` were enumerated and each given an
+explicit exit: `--help` paths exit 0, error paths (unknown option, too many
+arguments, missing service) exit 1. Verified mechanically rather than by eye —
+a script asserted that every invocation is followed by an `exit`.
+
+`enable_service`'s `[[ -z "$SERVICE" ]] && usage` became an `if` block while
+gaining its exit. A `set -e` concern was raised against the old `&&` form and
+then **tested and disproved** — `set -e` exempts a failing command inside an
+`&&` list, so it had never aborted. The rewrite is readability only, not a fix,
+and is recorded as such so nobody later "re-fixes" a bug that was not there.
+
+### Adjacent tidy
+
+Collapsed 8 doubled `${PODIUM_CMD:-${PODIUM_CMD:-$0}}` expansions in
+`new_project.sh` and `install.sh` — batch 1's fix #6 applied its substitution to
+text that already had it. Evaluates identically, so this was cosmetic.
+
+### Verified
+
+- `--help` exits **0** for all 14 commands — `configure`, `install`,
+  `start-services`, `stop-services`, `new`, `remove`, `clone`, `setup`, `status`,
+  `enable-service`, `disable-service`, `ai`, `ai-set`, `create` — each printing
+  `Usage: podium <cmd> …` (fix #6 still holding).
+- Error paths exit **1**: `new --bogus`, `new a b c d`, `remove --bogus`,
+  `remove a b c`, `clone --bogus`, `setup --bogus`, `status --bogus`,
+  `enable-service` (no arg), `enable-service nosuchsvc`.
+- **No fall-through:** no project created, none removed, 9 of 9 shared services
+  still running, `enable-service` still idempotent.
+- Every script in `src/` parses.
+
+### Worth noting for whoever picks this up next
+
+Batch 1 closed with the observation that nothing asserts `podium help` agrees
+with the parsers. Batch 3 is the same gap from the other side: nothing asserts
+that `--help` *exits 0*. Both are cheap to check in one script, and between them
+they would have caught issues 1, 3, 4, 5 and 7. Still unwritten.
