@@ -65,7 +65,7 @@ usage() {
     echo-white "  name            Name of the project to create (directory and hostname)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --version VERSION       Framework/PHP version (laravel/wordpress: latest, php: 8 or 7)"
+    echo-white "  --version VERSION       Framework version (laravel, wordpress). Ignored by other frameworks."
     echo-white "  --database TYPE         Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
@@ -648,12 +648,22 @@ fi
 mkdir "$PROJECT_NAME"
 _PROJECT_DIR_CREATED=1
 
-# Remove partially-built project directory on any subsequent failure
-_new_project_cleanup() {
-    local code=$?
-    [ $code -eq 0 ] || [ "$_PROJECT_DIR_CREATED" != "1" ] && return
+# Remove partially-built project directory on any subsequent failure.
+#
+# Split out from the trap handler because setup_project.sh is *sourced*, and a
+# sourced `trap ... ERR` REPLACES this one in the same shell. When setup fails
+# it therefore cleans up its own state and calls this directly -- otherwise the
+# directory survives with no docker-compose.yaml and a retry starts dirty.
+_remove_incomplete_project() {
+    [ "$_PROJECT_DIR_CREATED" = "1" ] || return 0
     echo-yellow "Cleaning up incomplete project directory: $PROJECT_NAME"
     rm -rf "$PROJECTS_DIR/$PROJECT_NAME" 2>/dev/null || true
+}
+
+_new_project_cleanup() {
+    local code=$?
+    [ $code -eq 0 ] && return
+    _remove_incomplete_project
 }
 trap _new_project_cleanup ERR
 

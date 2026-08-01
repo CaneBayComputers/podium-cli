@@ -50,6 +50,17 @@ framework_run_migrations() {
     else
         art-docker october:migrate || art-docker migrate --force || true
     fi
+
+    # october:migrate does NOT create Tailor blueprint tables. The stock demo
+    # theme defines blueprints (Blog\Post, Page\Article, ...), each stored in a
+    # hash-named xc_* table, so without this the homepage throws
+    # "Base table or view not found: xc_<hash>" and the site is a 500 even though
+    # every migration reports as applied.
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        art-docker tailor:migrate > /dev/null 2>&1 || true
+    else
+        art-docker tailor:migrate || true
+    fi
     echo-green 'Migrations complete.'; echo-white
     echo-white "Backend is at http://$PROJECT_NAME/backend — create the admin user with:"
     echo-white "  podium art october:passwd <email> <password>"

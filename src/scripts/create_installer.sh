@@ -170,7 +170,7 @@ case "$AI_AGENT_CLI_NAME" in
     codex)
         codex_args=()
         [[ -n "$AI_MODEL" ]] && codex_args+=("--model" "$AI_MODEL")
-        [[ -n "$AI_API_KEY" ]] && codex_args+=("--api-key" "$AI_API_KEY")
+        _export_agent_key OPENAI_API_KEY "sk-"
         codex_args+=(--dangerously-bypass-approvals-and-sandbox)
         if [[ "$ONE_OFF" == "1" ]]; then
             codex exec "${codex_args[@]}" "$PROMPT"
@@ -182,7 +182,7 @@ case "$AI_AGENT_CLI_NAME" in
         claude_args=(--dangerously-skip-permissions)
         [[ "$ONE_OFF" == "1" ]] && claude_args+=(-p)
         [[ -n "$AI_MODEL" ]] && claude_args+=("--model" "$AI_MODEL")
-        [[ -n "$AI_API_KEY" ]] && claude_args+=("--api-key" "$AI_API_KEY")
+        _export_agent_key ANTHROPIC_API_KEY "sk-ant-"
         claude_args+=("$PROMPT")
         claude "${claude_args[@]}"
         ;;

@@ -125,7 +125,17 @@ EOF
 
     cat > start.sh << 'EOF'
 #!/bin/sh
-[ -d node_modules ] || npm install
+# npm's own rollback can fail with ENOTEMPTY on overlayfs when an install is
+# interrupted or the host is loaded, leaving node_modules half-written and
+# unrecoverable in place. Retry once from a clean slate rather than letting the
+# container die -- nest's dependency tree is by far the heaviest here.
+if [ ! -d node_modules ]; then
+    npm install --no-audit --no-fund || {
+        echo "npm install failed; clearing node_modules and retrying once ..."
+        rm -rf node_modules
+        npm install --no-audit --no-fund
+    }
+fi
 npm run start
 EOF
     chmod +x start.sh

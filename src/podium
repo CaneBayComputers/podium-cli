@@ -146,7 +146,7 @@ show_help() {
     echo "  -f, --file <path>         - Read the project idea from a file"
     echo
     echo-white "NEW PROJECT OPTIONS:"
-    echo "  --version <ver>           - Laravel/WordPress: latest (default) | PHP: 8 (PHP 8.3), 7 (PHP 7.4)"
+    echo "  --version <ver>           - Laravel/WordPress only: defaults to latest. Ignored by other frameworks"
     echo "  --database <type>         - Database: mysql (default), postgres, mongodb, sqlite"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
     echo "  --github                  - Create GitHub repository in user account"
@@ -187,7 +187,7 @@ show_help() {
     echo "  podium setup project --overwrite-docker-compose"
     echo "                                             # Force setup even with existing Docker config"
     echo "  podium new laravel my-shop                 # Laravel project (database auto-selected: mysql)"
-    echo "  podium new django survey --database postgres --version latest"
+    echo "  podium new laravel survey --database postgres --version latest"
     echo "                                             # Django project with PostgreSQL"
     echo "  podium new express my-api --json-output    # Express project with clean JSON output"
     echo "  podium remove myproject --preserve-database"
@@ -281,9 +281,9 @@ docker_exec() {
     local tty_flags="-it"
     [ -t 0 ] || tty_flags="-i"
     if [ "$user" = "root" ]; then
-        docker container exec $tty_flags --user root -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec $tty_flags --user root -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
     else
-        docker container exec $tty_flags --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec $tty_flags --user "$(id -u):$(id -g)" -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
     fi
 }
 
@@ -298,9 +298,9 @@ docker_exec_notty() {
         set -- bash -c "$1"
     fi
     if [ "$user" = "root" ]; then
-        docker container exec -i --user root -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec -i --user root -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
     else
-        docker container exec -i --user "$(id -u):$(id -g)" -w /usr/share/nginx/html "$project_name" "$@"
+        docker container exec -i --user "$(id -u):$(id -g)" -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
     fi
 }
 
@@ -331,12 +331,12 @@ case "$1" in
     "composer")
         validate_project_context || exit 1
         shift
-        docker_exec developer composer -d /usr/share/nginx/html "$@"
+        docker_exec developer composer -d "$(podium_container_workdir)" "$@"
         ;;
     "art"|"artisan")
         validate_project_context || exit 1
         shift
-        docker_exec developer php /usr/share/nginx/html/artisan "$@"
+        docker_exec developer php artisan "$@"
         ;;
     "wp")
         validate_project_context || exit 1
@@ -384,10 +384,10 @@ case "$1" in
         _framework=$(detect_project_framework)
         case "$_framework" in
             "laravel")
-                docker_exec developer php /usr/share/nginx/html/artisan tinker
+                docker_exec developer php artisan tinker
                 ;;
             "django")
-                docker_exec developer python3 /usr/share/nginx/html/manage.py shell
+                docker_exec developer python3 manage.py shell
                 ;;
             "nestjs")
                 if [ -f "src/repl.ts" ]; then
@@ -418,14 +418,14 @@ case "$1" in
                     exit 1
                 fi
                 shift
-                docker_exec_notty developer python3 /usr/share/nginx/html/manage.py "$@"
+                docker_exec_notty developer python3 manage.py "$@"
                 ;;
             "shell")
                 if [ ! -f "manage.py" ]; then
                     echo-red "No manage.py found. Are you in a Django project directory?"
                     exit 1
                 fi
-                docker_exec developer python3 /usr/share/nginx/html/manage.py shell
+                docker_exec developer python3 manage.py shell
                 ;;
             "")
                 echo-yellow "Usage: podium django <subcommand>"
@@ -516,24 +516,24 @@ case "$1" in
     "tinker")
         validate_project_context || exit 1
         shift
-        docker_exec developer php /usr/share/nginx/html/artisan tinker "$@"
+        docker_exec developer php artisan tinker "$@"
         ;;
     
     # Enhanced Laravel commands
     "db-refresh")
         validate_project_context || exit 1
         echo-yellow "Refreshing database..."
-        docker_exec developer php /usr/share/nginx/html/artisan migrate:fresh
-        docker_exec developer php /usr/share/nginx/html/artisan db:seed
+        docker_exec developer php artisan migrate:fresh
+        docker_exec developer php artisan db:seed
         echo-green "Database refreshed!"
         ;;
     "cache-refresh")
         validate_project_context || exit 1
         echo-yellow "Clearing Laravel caches..."
-        docker_exec developer php /usr/share/nginx/html/artisan cache:clear
-        docker_exec developer php /usr/share/nginx/html/artisan route:clear
-        docker_exec developer php /usr/share/nginx/html/artisan config:clear
-        docker_exec developer composer -d /usr/share/nginx/html dump-autoload
+        docker_exec developer php artisan cache:clear
+        docker_exec developer php artisan route:clear
+        docker_exec developer php artisan config:clear
+        docker_exec developer composer -d "$(podium_container_workdir)" dump-autoload
         echo-green "Caches cleared!"
         ;;
     

@@ -163,24 +163,46 @@ json_error() {
 }
 
 # Project-specific Docker commands (run inside project containers)
+# Where the project root sits INSIDE the container.
+#
+# setup_project.sh mounts a project at html/ when it ships its own docroot
+# (`public/`, or a Python/Node app), and at html/public when the project root IS
+# the docroot -- plain PHP, WordPress, and October CMS, which puts index.php at
+# its root. nginx's docroot is always html/public, so both layouts serve.
+#
+# Rather than re-deriving that decision (and getting it wrong for Python, which
+# has no public/ yet still mounts at html/), ask Docker where the project is
+# actually mounted. That is authoritative and cannot drift from the mount.
+#
+# October CMS is what exposed this: it is Laravel-shaped but ships no public/, so
+# composer and artisan ran one directory above the project and failed.
+podium_container_workdir() {
+    local project_name="${1:-$(basename "$(pwd)")}"
+    local dest
+    dest=$(docker container inspect "$project_name" \
+        --format '{{range .Mounts}}{{.Destination}}{{"\n"}}{{end}}' 2>/dev/null \
+        | grep -m1 '^/usr/share/nginx/html')
+    echo "${dest:-/usr/share/nginx/html}"
+}
+
 composer-docker() { 
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$project_name" composer "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
     else
         # Non-interactive mode (no TTY, for scripts)
-        docker container exec --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$project_name" composer "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
     fi
 }
 art-docker() { 
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$project_name" php artisan "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php artisan "$@"
     else
         # Non-interactive mode (no TTY, for scripts)
-        docker container exec --user "$(id -u):$(id -g)" --workdir /usr/share/nginx/html "$project_name" php artisan "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php artisan "$@"
     fi
 }
 
@@ -192,6 +214,25 @@ check-memcached() { [ "$(docker ps -q -f name="$MEMCACHED_CONTAINER_NAME")" ] &&
 check-mongo() { [ "$(docker ps -q -f name="$MONGO_CONTAINER_NAME")" ] && return 0 || return 1; }
 check-postgres() { [ "$(docker ps -q -f name="$POSTGRES_CONTAINER_NAME")" ] && return 0 || return 1; }
 check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && return 0 || return 1; }
+
+# Hand the configured API key to an agent CLI through the environment.
+#
+# Both the claude and codex CLIs REMOVED their `--api-key` flags; passing one is
+# a hard error ("unknown option '--api-key'"). Lives here rather than in ai.sh
+# because resume.sh builds the same argv and drifted out of sync when the fix
+# landed in only one of them.
+#
+# The prefix guard matters: a key for the wrong provider is worse than no key,
+# because it replaces the CLI's own working sign-in with one that cannot work.
+_export_agent_key() {
+    local var="$1" want="$2"
+    [[ -z "$AI_API_KEY" ]] && return 0
+    if [[ -n "$want" && "$AI_API_KEY" != ${want}* ]]; then
+        echo-yellow "Configured AI_API_KEY doesn't look like a $AI_AGENT_CLI_NAME key (expected ${want}...) - ignoring it and using the CLI's own sign-in." >&2
+        return 0
+    fi
+    export "$var=$AI_API_KEY"
+}
 
 # Send a command to Memcached and print the reply.
 #
