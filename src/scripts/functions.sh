@@ -224,6 +224,20 @@ check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && ret
 #
 # The prefix guard matters: a key for the wrong provider is worse than no key,
 # because it replaces the CLI's own working sign-in with one that cannot work.
+# Point an agent CLI at a custom endpoint. Podium stores it as AI_API_BASE
+# (`podium ai-set --api-base URL`); each CLI reads it from a different variable.
+#
+# This is what makes cheap and local models work: an OpenAI-compatible endpoint
+# covers OpenRouter, DeepInfra, Together, Ollama, LM Studio and vLLM. Claude Code
+# speaks Anthropic's shape rather than OpenAI's, so pointing it at a local model
+# needs a translating proxy (LiteLLM) in front -- the variable is still the right
+# way to reach it.
+_export_agent_base() {
+    local var="$1"
+    [[ -z "$AI_API_BASE" ]] && return 0
+    export "$var=$AI_API_BASE"
+}
+
 _export_agent_key() {
     local var="$1" want="$2"
     [[ -z "$AI_API_KEY" ]] && return 0
