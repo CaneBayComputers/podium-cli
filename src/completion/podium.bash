@@ -64,7 +64,7 @@ up up-all update update-installer wp"
         --database)
             COMPREPLY=( $(compgen -W "auto mysql postgres mongodb sqlite" -- "$cur") ); return 0 ;;
         --agent)
-            COMPREPLY=( $(compgen -W "claude codex gemini" -- "$cur") ); return 0 ;;
+            COMPREPLY=( $(compgen -W "claude codex gemini qwen aider" -- "$cur") ); return 0 ;;
         --db-name|--version|--github-org|--model|--api-key|--git-name|--git-email|--projects-dir|--vpc-subnet|-f|--file|--prompt-file)
             return 0 ;;  # freeform value — nothing sensible to suggest
     esac

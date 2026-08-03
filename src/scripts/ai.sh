@@ -86,6 +86,7 @@ case "$AI_AGENT_CLI_NAME" in
             codex_args+=("--model" "$AI_MODEL")
         fi
         _export_agent_key OPENAI_API_KEY "sk-"
+        _export_agent_base OPENAI_BASE_URL
         codex_args+=(--dangerously-bypass-approvals-and-sandbox)
         if [[ "$ONE_OFF" == "1" ]]; then
             codex exec "${codex_args[@]}" "$INIT_PROMPT"
@@ -102,8 +103,27 @@ case "$AI_AGENT_CLI_NAME" in
             claude_args+=("--model" "$AI_MODEL")
         fi
         _export_agent_key ANTHROPIC_API_KEY "sk-ant-"
+        _export_agent_base ANTHROPIC_BASE_URL
         claude_args+=("$INIT_PROMPT")
         claude "${claude_args[@]}"
+        ;;
+    qwen)
+        # Qwen Code is a fork of Gemini CLI, so the invocation mirrors it. It is
+        # OpenAI-compatible by design and reads OPENAI_API_KEY / OPENAI_BASE_URL,
+        # which is why it pairs well with `--api-base` pointed at OpenRouter,
+        # DeepInfra or a local Ollama.
+        _export_agent_key OPENAI_API_KEY ""
+        _export_agent_base OPENAI_BASE_URL
+        qwen_args=(--yolo)
+        if [[ -n "$AI_MODEL" ]]; then
+            qwen_args+=("--model" "$AI_MODEL")
+        fi
+        if [[ "$ONE_OFF" == "1" ]]; then
+            qwen_args+=(--prompt "$INIT_PROMPT")
+        else
+            qwen_args+=("-i" "$INIT_PROMPT")
+        fi
+        qwen "${qwen_args[@]}"
         ;;
     gemini)
         gemini_args=(--yolo --skip-trust)

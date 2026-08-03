@@ -1,7 +1,7 @@
 ---
 title: Command reference
 layout: default
-nav_order: 7
+nav_order: 8
 ---
 
 # Command reference
@@ -129,7 +129,7 @@ podium ai-set --json-output
 
 Supported flags:
 
-- `--agent <name>` – Set the AI agent CLI (`codex`, `claude`, `gemini`, or `aider`).
+- `--agent <name>` – Set the AI agent CLI (`codex`, `claude`, `gemini`, `qwen`, or `aider`).
 - `--model <name>` – Set the model name (optional for Codex, Claude and Gemini; required in practice for Aider).
 - `--api-key <key>` – Set the AI API key (optional for Codex and Claude; not used by Gemini which uses Google account auth; required for Aider).
 - `--api-base <url>` – Set an OpenAI-compatible API endpoint. Aider only.
