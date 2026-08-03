@@ -31,3 +31,7 @@ machines.local
 # Inter-session working notes (GUI <-> CLI). Local only -- this repo is public.
 CLI_GUI_ISSUES.md
 CLI_GUI_FIXES.md
+CLI_GUI_COMMS.md
+CLI_GUI_ARCHIVE.md
+CLI_GUI_TO_CLI.md
+CLI_GUI_TO_GUI.md

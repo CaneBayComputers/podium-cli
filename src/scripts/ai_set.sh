@@ -17,6 +17,7 @@ NEW_AGENT=""
 NEW_MODEL=""
 NEW_API_KEY=""
 API_KEY_PROVIDED=0
+API_BASE_PROVIDED=0
 NEW_API_BASE=""
 
 # AI agent configuration rules (summary)
@@ -54,11 +55,13 @@ usage() {
     echo-white "Configure or inspect the global AI agent settings used by Podium."
     echo-white ""
     echo-white "Options:"
-    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, or aider)."
-    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini; required for aider)."
+    echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, qwen, or aider)."
+    echo-white "  --model NAME       Set the AI model name (optional for codex, claude, gemini; required for qwen and aider)."
     echo-white "  --api-key KEY      Set the AI API key (optional for codex and claude; required for aider)."
     echo-white "                     Pass an empty value (--api-key \"\") to clear a stored key."
-    echo-white "  --api-base URL     Set an OpenAI-compatible API endpoint (aider only)."
+    echo-white "  --api-base URL     Set a custom API endpoint. Works with codex, qwen and aider"
+    echo-white "                     (OpenAI-compatible: OpenRouter, Ollama, vLLM, LM Studio),"
+    echo-white "                     and with claude via an Anthropic-compatible proxy."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
     echo-white ""
     echo-white "Notes:"
@@ -90,6 +93,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --api-base)
             NEW_API_BASE="$2"
+            API_BASE_PROVIDED=1
             shift 2
             ;;
         --help|-h)
@@ -127,8 +131,15 @@ fi
 if [[ "$API_KEY_PROVIDED" == "1" ]]; then
     AI_API_KEY="$NEW_API_KEY"
 fi
-if [[ -n "$NEW_API_BASE" ]]; then
-    AI_API_BASE="$NEW_API_BASE"
+if [[ "$API_BASE_PROVIDED" == "1" ]]; then
+    # "none" and "" both mean clear it. The interactive prompt has always
+    # accepted "none"; the flag stored it as a literal endpoint, which then got
+    # exported as OPENAI_BASE_URL=none and broke the agent.
+    if [[ "$NEW_API_BASE" == "none" ]]; then
+        AI_API_BASE=""
+    else
+        AI_API_BASE="$NEW_API_BASE"
+    fi
 fi
 
 NONINTERACTIVE=0
@@ -151,8 +162,9 @@ select_ai_agent() {
         echo-white '  2) claude'
         echo-white '  3) gemini'
         echo-white '  4) aider   (bring your own API key — any model/provider)'
+        echo-white '  5) qwen    (Qwen Code — cheap/local models via an OpenAI-compatible endpoint)'
         echo-return
-        echo-yellow -ne 'Enter your choice (1-4): '
+        echo-yellow -ne 'Enter your choice (1-5): '
         echo-white -ne
         read AI_AGENT_CHOICE
         echo-return
@@ -178,8 +190,13 @@ select_ai_agent() {
                 sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
                 break
                 ;;
+            5)
+                AI_AGENT="qwen"
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                break
+                ;;
             *)
-                echo-yellow "Invalid selection. Please enter 1, 2, 3, or 4."
+                echo-yellow "Invalid selection. Please enter 1, 2, 3, 4, or 5."
                 ;;
         esac
     done

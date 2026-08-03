@@ -158,6 +158,7 @@ case "$AI_AGENT_CLI_NAME" in
         codex_args=()
         [[ -n "$AI_MODEL" ]] && codex_args+=("--model" "$AI_MODEL")
         _export_agent_key OPENAI_API_KEY "sk-"
+        _export_agent_base OPENAI_BASE_URL
         codex_args+=(--dangerously-bypass-approvals-and-sandbox)
         if [[ "$ONE_OFF" == "1" ]]; then
             codex exec "${codex_args[@]}" "$PROMPT"
@@ -170,8 +171,21 @@ case "$AI_AGENT_CLI_NAME" in
         [[ "$ONE_OFF" == "1" ]] && claude_args+=(-p)
         [[ -n "$AI_MODEL" ]] && claude_args+=("--model" "$AI_MODEL")
         _export_agent_key ANTHROPIC_API_KEY "sk-ant-"
+        _export_agent_base ANTHROPIC_BASE_URL
         claude_args+=("$PROMPT")
         claude "${claude_args[@]}"
+        ;;
+    qwen)
+        _export_agent_key OPENAI_API_KEY ""
+        _export_agent_base OPENAI_BASE_URL
+        export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
+        qwen_args=(--yolo --auth-type openai)
+        [[ -n "$AI_MODEL" ]] && qwen_args+=("--model" "$AI_MODEL")
+        if [[ "$ONE_OFF" == "1" ]]; then
+            qwen "${qwen_args[@]}" --prompt "$PROMPT"
+        else
+            qwen "${qwen_args[@]}" -i "$PROMPT"
+        fi
         ;;
     gemini)
         gemini_args=(--yolo --skip-trust)

@@ -76,6 +76,21 @@ while [[ $# -gt 0 ]]; do
             usage
             exit 0
             ;;
+        --)
+            # Explicit end of options, so an idea may still begin with a dash.
+            shift
+            while [[ $# -gt 0 ]]; do IDEA_ARGS+=("$1"); shift; done
+            ;;
+        -*)
+            # Previously any argument, flags included, was swallowed into the
+            # idea text. That made a typo silently change the prompt, and made
+            # an older CLI handed a newer flag BUILD A PROJECT rather than
+            # reject the flag -- `podium create --classify-only "..."` on a CLI
+            # without that flag created the project instead of classifying it.
+            echo-red "Unknown option: $1"
+            echo-white "Use '$PODIUM_CMD --help' for the option list, or '--' before an idea that starts with a dash."
+            exit 1
+            ;;
         *)
             IDEA_ARGS+=("$1")
             shift
@@ -292,6 +307,11 @@ echo-return
 echo-green "Project ready: $CHOSEN_NAME"
 echo-white "Local URL: http://$CHOSEN_NAME/"
 echo-white "Directory: $PROJECT_DIR"
+echo-return
+# Asked for once, here, at the moment something actually worked -- not on `up`,
+# `status` or anything else people run all day. echo-white is a no-op under
+# --json-output, so machine consumers never see it.
+echo-white "Podium is free and always will be. If it saved you time: https://ko-fi.com/canebaycomputers"
 echo-return
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then

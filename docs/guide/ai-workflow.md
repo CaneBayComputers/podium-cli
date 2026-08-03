@@ -17,15 +17,20 @@ podium ai-set --agent claude --model claude-opus-4-7
 podium ai-set --agent codex  --model gpt-4.1
 podium ai-set --agent gemini
 podium ai-set --agent aider  --model openai/gpt-4o --api-key sk-...
+podium ai-set --agent qwen   --model qwen/qwen3-coder-next --api-base https://openrouter.ai/api/v1 --api-key sk-or-...
 podium ai-set --json-output          # inspect current settings
 ```
 
 | Flag | Description |
 |---|---|
-| `--agent <name>` | `codex`, `claude`, `gemini`, or `aider` |
-| `--model <name>` | Model name (optional, except for Aider) |
-| `--api-key <key>` | API key (optional; Gemini uses Google account auth, Aider requires a key) |
-| `--api-base <url>` | OpenAI-compatible endpoint — Aider only |
+| `--agent <name>` | `codex`, `claude`, `gemini`, `qwen`, or `aider` |
+| `--model <name>` | Model name (optional, except for Qwen Code and Aider) |
+| `--api-key <key>` | API key (optional; Gemini uses Google account auth, Qwen Code and Aider require one) |
+| `--api-base <url>` | Custom endpoint. OpenAI-compatible for `codex`, `qwen` and `aider`; Anthropic-compatible for `claude` |
+
+**Running cheaper or local models?** See
+[Cheap and local models](cheap-models/) — Qwen Coder is roughly 30x cheaper than
+Claude Sonnet, and Ollama is free.
 
 Settings live in `/etc/podium-cli/.env`. Always change them with `podium ai-set` rather than editing the file.
 
@@ -47,6 +52,29 @@ podium ai-set --agent aider --model openai/llama3.1 \
 vLLM); leave it blank to use a provider's own hosted API. Aider normally commits
 each edit itself — Podium runs it with `--no-auto-commits` so its changes sit in
 your working tree like every other agent's.
+
+### Qwen Code
+
+[Qwen Code](https://github.com/QwenLM/qwen-code) is an open-source terminal agent
+— a fork of Gemini CLI — built around the Qwen Coder models. Install it with
+`npm install -g @qwen-code/qwen-code`.
+
+It is OpenAI-compatible by design, so it is the least friction route to a cheap
+hosted model or a local one:
+
+```bash
+# hosted, pay-as-you-go
+podium ai-set --agent qwen --model qwen/qwen3-coder-next \
+  --api-base https://openrouter.ai/api/v1 --api-key sk-or-...
+
+# local Ollama, free
+podium ai-set --agent qwen --model qwen2.5-coder:32b \
+  --api-base http://localhost:11434/v1 --api-key ollama
+```
+
+Qwen's free OAuth sign-in was discontinued in April 2026, so it needs either a
+key or an endpoint — there is no no-account path. It also wants **Node 22+**;
+it runs on Node 20 with an `EBADENGINE` warning, but that is unsupported.
 
 {: .warning }
 Podium starts your agent in a high-trust mode (`--dangerously-skip-permissions`, `--yolo`, or equivalent). Only use `podium ai` in project directories you're comfortable letting an AI modify extensively.

@@ -88,6 +88,7 @@ case "$AI_AGENT_CLI_NAME" in
             common_args+=("--model" "$AI_MODEL")
         fi
         _export_agent_key OPENAI_API_KEY "sk-"
+        _export_agent_base OPENAI_BASE_URL
         common_args+=(--dangerously-bypass-approvals-and-sandbox)
         if ! codex resume --last "${common_args[@]}"; then
             notify_resume_fallback
@@ -100,9 +101,26 @@ case "$AI_AGENT_CLI_NAME" in
             common_args+=("--model" "$AI_MODEL")
         fi
         _export_agent_key ANTHROPIC_API_KEY "sk-ant-"
+        _export_agent_base ANTHROPIC_BASE_URL
         if ! claude --continue "${common_args[@]}"; then
             notify_resume_fallback
             exec claude "${common_args[@]}"
+        fi
+        ;;
+    qwen)
+        _export_agent_key OPENAI_API_KEY ""
+        _export_agent_base OPENAI_BASE_URL
+        export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
+        common_args=(--yolo --auth-type openai)
+        if [[ -n "$AI_MODEL" ]]; then
+            common_args+=("--model" "$AI_MODEL")
+        fi
+        # `--continue` resumes the most recent session. NOT `--resume latest`:
+        # qwen's --resume takes a session ID/title, so "latest" is looked up as a
+        # literal title and reports "No saved session found".
+        if ! qwen --continue "${common_args[@]}"; then
+            notify_resume_fallback
+            exec qwen "${common_args[@]}"
         fi
         ;;
     gemini)
