@@ -110,11 +110,15 @@ case "$AI_AGENT_CLI_NAME" in
     qwen)
         _export_agent_key OPENAI_API_KEY ""
         _export_agent_base OPENAI_BASE_URL
-        common_args=(--yolo)
+        export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
+        common_args=(--yolo --auth-type openai)
         if [[ -n "$AI_MODEL" ]]; then
             common_args+=("--model" "$AI_MODEL")
         fi
-        if ! qwen --resume latest "${common_args[@]}"; then
+        # `--continue` resumes the most recent session. NOT `--resume latest`:
+        # qwen's --resume takes a session ID/title, so "latest" is looked up as a
+        # literal title and reports "No saved session found".
+        if ! qwen --continue "${common_args[@]}"; then
             notify_resume_fallback
             exec qwen "${common_args[@]}"
         fi

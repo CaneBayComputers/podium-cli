@@ -73,7 +73,8 @@ podium ai-set --agent qwen --model qwen2.5-coder:32b \
 ```
 
 Qwen's free OAuth sign-in was discontinued in April 2026, so it needs either a
-key or an endpoint — there is no no-account path.
+key or an endpoint — there is no no-account path. It also wants **Node 22+**;
+it runs on Node 20 with an `EBADENGINE` warning, but that is unsupported.
 
 {: .warning }
 Podium starts your agent in a high-trust mode (`--dangerously-skip-permissions`, `--yolo`, or equivalent). Only use `podium ai` in project directories you're comfortable letting an AI modify extensively.

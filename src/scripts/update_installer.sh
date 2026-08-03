@@ -178,7 +178,8 @@ case "$AI_AGENT_CLI_NAME" in
     qwen)
         _export_agent_key OPENAI_API_KEY ""
         _export_agent_base OPENAI_BASE_URL
-        qwen_args=(--yolo)
+        export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
+        qwen_args=(--yolo --auth-type openai)
         [[ -n "$AI_MODEL" ]] && qwen_args+=("--model" "$AI_MODEL")
         if [[ "$ONE_OFF" == "1" ]]; then
             qwen "${qwen_args[@]}" --prompt "$PROMPT"

@@ -77,10 +77,19 @@ The key is a placeholder — Ollama ignores it, but the CLIs expect something.
 
 Nothing leaves your machine, which matters for client work under NDA.
 
-**Model size matters more than you would like.** A 7B model will struggle to
-drive `podium create` end to end; 32B quantised on 24GB of VRAM is roughly the
-floor for agentic work. If builds fail in ways that look like the model losing
-the plot, that is usually what it is.
+**Model size matters more than you would like**, and this is measured rather
+than assumed. Tested here against `qwen2.5-coder:1.5b`, `podium create
+--classify-only` returned *valid, correctly shaped JSON* — the plumbing is fine —
+but recommended a **budgeting app for a guitar pedal tracker**, with the reason
+"Laravel is great for building budgeting apps". Coherent output, incoherent
+thinking.
+
+So small models fail in the worst way: they succeed mechanically and are wrong
+on the substance. 32B quantised on 24GB of VRAM is roughly the floor for agentic
+work; below that, expect plausible nonsense rather than errors.
+
+Qwen Code also requires **Node 22 or newer**. It installs and runs on Node 20 —
+npm warns `EBADENGINE` and it works anyway — but that is unsupported.
 
 ## LM Studio or vLLM
 

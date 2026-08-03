@@ -114,7 +114,13 @@ case "$AI_AGENT_CLI_NAME" in
         # DeepInfra or a local Ollama.
         _export_agent_key OPENAI_API_KEY ""
         _export_agent_base OPENAI_BASE_URL
-        qwen_args=(--yolo)
+        # --auth-type is required: without it qwen refuses non-interactive runs
+        # with "No auth type is selected", even when the key and endpoint are set.
+        # The yolo warning is printed on every headless run and would land in the
+        # middle of `podium create`'s JSON reply, so it is suppressed rather than
+        # left to corrupt the classifier.
+        export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
+        qwen_args=(--yolo --auth-type openai)
         if [[ -n "$AI_MODEL" ]]; then
             qwen_args+=("--model" "$AI_MODEL")
         fi
