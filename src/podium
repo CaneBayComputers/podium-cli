@@ -729,6 +729,14 @@ case "$1" in
         ;;
     
     # Help and default
+    "version"|"--version"|"-v")
+        _v="$(podium_version)"
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            echo "{\"action\": \"version\", \"status\": \"success\", \"version\": \"$_v\"}"
+        else
+            echo "podium $_v"
+        fi
+        ;;
     "help"|"-h"|"--help"|"")
         show_help
         ;;

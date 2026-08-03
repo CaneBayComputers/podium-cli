@@ -163,6 +163,21 @@ json_error() {
 }
 
 # Project-specific Docker commands (run inside project containers)
+# Podium's own version, from the VERSION file at the repo root.
+#
+# SCRIPT_DIR is <repo>/src, so VERSION sits one level up. Falls back to
+# "unknown" rather than failing: a missing VERSION should never break a command,
+# and callers can distinguish it from a real version string.
+podium_version() {
+    local f="${SCRIPT_DIR%/scripts}/../VERSION"
+    [ -f "$f" ] || f="$DEV_DIR/../VERSION"
+    if [ -f "$f" ]; then
+        tr -d ' \t\n\r' < "$f"
+    else
+        echo "unknown"
+    fi
+}
+
 # Where the project root sits INSIDE the container.
 #
 # setup_project.sh mounts a project at html/ when it ships its own docroot
