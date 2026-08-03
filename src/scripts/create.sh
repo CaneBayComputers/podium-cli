@@ -308,6 +308,11 @@ echo-green "Project ready: $CHOSEN_NAME"
 echo-white "Local URL: http://$CHOSEN_NAME/"
 echo-white "Directory: $PROJECT_DIR"
 echo-return
+# Asked for once, here, at the moment something actually worked -- not on `up`,
+# `status` or anything else people run all day. echo-white is a no-op under
+# --json-output, so machine consumers never see it.
+echo-white "Podium is free and always will be. If it saved you time: https://ko-fi.com/canebaycomputers"
+echo-return
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     echo "{\"action\": \"create\", \"project_name\": \"$CHOSEN_NAME\", \"kind\": \"$CHOSEN_KIND\", \"slug\": \"$CHOSEN_SLUG\", \"database\": \"$CHOSEN_DB\", \"status\": \"success\"}"
