@@ -36,22 +36,41 @@ usage() {
 # --one-off is still accepted so existing scripts and callers keep working.
 ONE_OFF=1
 PROMPT_ARGS=()
+# `--` ends Podium's option parsing. Note it does not make a dash-leading
+# prompt work end to end: the prompt is passed to the agent CLI as an
+# argument, and that CLI parses the leading dash as its own flag. The latch
+# is here so Podium does not reject such a prompt itself.
+END_OF_OPTS=0
 for arg in "$@"; do
-    case "$arg" in
-        --one-off)
-            ONE_OFF=1
-            ;;
-        --interactive|-i)
-            ONE_OFF=0
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            PROMPT_ARGS+=("$arg")
-            ;;
-    esac
+    if [[ "$END_OF_OPTS" == "0" ]]; then
+        case "$arg" in
+            --)
+                END_OF_OPTS=1
+                continue
+                ;;
+            --one-off)
+                ONE_OFF=1
+                continue
+                ;;
+            --interactive|-i)
+                ONE_OFF=0
+                continue
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -*)
+                # Unknown flags used to be appended to the prompt, so a typo
+                # silently changed what the agent was asked, and a newer flag on
+                # an older CLI became part of the request instead of an error.
+                echo-red "Unknown option: $arg"
+                echo-white "Use '$PODIUM_CMD --help' for the option list."
+                exit 1
+                ;;
+        esac
+    fi
+    PROMPT_ARGS+=("$arg")
 done
 
 INIT_PROMPT="${PROMPT_ARGS[*]}"

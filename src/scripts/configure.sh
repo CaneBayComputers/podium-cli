@@ -77,6 +77,13 @@ while [[ $# -gt 0 ]]; do
             echo "  --help                  Show this help message"
             exit 0
             ;;
+        -*)
+            # Previously any unrecognised argument was silently shifted away, so
+            # a mistyped flag looked like it had been applied when it had not.
+            echo-red "Unknown option: $1"
+            echo-white "Use '$PODIUM_CMD --help' for the option list."
+            exit 1
+            ;;
         *)
             shift
             ;;
