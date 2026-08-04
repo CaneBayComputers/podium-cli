@@ -250,6 +250,23 @@ except Exception: pass
     echo-yellow "Podium $newer is available (you have $(podium_version)) — run 'podium update'"
 }
 
+# Was this CLI installed by a package manager, or from a git checkout?
+#
+# The two update paths are mutually destructive: `podium update` does a git pull,
+# while `apt upgrade` replaces the same files from a .deb. Whichever runs last
+# wins and the other's state is silently wrong. So `podium update` has to know
+# which kind of install it is standing in and defer rather than fight.
+#
+# dpkg is asked directly rather than inferred from the path -- a packaged install
+# and a git checkout can sit at the same location, and only dpkg knows the truth.
+podium_install_is_packaged() {
+    command -v dpkg-query >/dev/null 2>&1 || return 1
+    dpkg-query -W -f='${Status}' podium-cli 2>/dev/null | grep -q "install ok installed" || return 1
+    # A checkout inside a packaged path is still git-managed; .git decides.
+    [ -d "${SCRIPT_DIR%/scripts}/../.git" ] && return 1
+    return 0
+}
+
 # Podium's own version, from the VERSION file at the repo root.
 #
 # SCRIPT_DIR is <repo>/src, so VERSION sits one level up. Falls back to

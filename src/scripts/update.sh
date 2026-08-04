@@ -181,6 +181,20 @@ else
     # DEV_DIR is .../podium-cli/src — the install dir is its parent.
     INSTALL_DIR="$(dirname "$DEV_DIR")"
 
+    # A dpkg-managed install must not be git-pulled over: apt owns these files
+    # and the next `apt upgrade` would overwrite whatever we pulled, or worse,
+    # leave a half-git half-package tree. Hand the user back to apt instead.
+    if podium_install_is_packaged; then
+        echo-yellow "This Podium CLI was installed from a package, so it updates through your"
+        echo-yellow "package manager rather than git."
+        echo-return
+        echo-white "  sudo apt update && sudo apt upgrade podium-cli"
+        echo-return
+        echo-white "Docker images and shared services can still be refreshed with:"
+        echo-white "  ${PODIUM_CMD:-podium} update --full"
+        exit 0
+    fi
+
     if [[ ! -d "$INSTALL_DIR/.git" ]]; then
         echo-yellow "Podium CLI install dir is not a git checkout: $INSTALL_DIR"
         echo-yellow "Run 'podium update --full' to reinstall via the platform installer."
