@@ -35,69 +35,102 @@
 
   <!-- Schema.org structured data -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://podiumcli.com/#software",
-        "name": "Podium CLI",
-        "alternateName": "podium-cli",
-        "applicationCategory": "DeveloperApplication",
-        "applicationSubCategory": "CLI tool",
-        "operatingSystem": ["Linux", "macOS"],
-        "url": "https://podiumcli.com/",
-        "downloadUrl": "https://github.com/CaneBayComputers/podium-cli",
-        "softwareVersion": "1.0",
-        "description": "Docker-based local development environment manager for PHP, Python, and Node projects. Designed for developers running multiple projects on one machine and for AI agents that need a stable platform to operate inside. Includes 100+ curated installers for popular open-source apps and a shared-services architecture that consolidates Postgres, MariaDB, Redis, and MongoDB across all projects.",
-        "license": "https://github.com/CaneBayComputers/podium-cli/blob/master/LICENSE",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "5",
-          "reviewCount": "1",
-          "bestRating": "5",
-          "worstRating": "1"
-        },
-        "author": {
-          "@id": "https://podiumcli.com/#org"
-        },
-        "publisher": {
-          "@id": "https://podiumcli.com/#org"
-        },
-        "featureList": [
-          "Shared database, cache, and storage services across every project",
-          "100+ one-command installers for popular OSS apps",
-          "AI agent integration (Claude, Codex, Gemini)",
-          "Hostname-based routing for browsers and containers",
-          "Greenfield framework scaffolding (Laravel, FastAPI, Django, Express, NestJS, Fastify, Node)",
-          "Automatic adaptation of upstream docker-compose.yaml"
-        ]
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://podiumcli.com/#software",
+      "name": "Podium CLI",
+      "alternateName": "podium-cli",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "CLI tool",
+      "operatingSystem": [
+        "Linux",
+        "macOS"
+      ],
+      "url": "https://podiumcli.com/",
+      "downloadUrl": "https://github.com/CaneBayComputers/podium-cli",
+      "softwareVersion": "1.0.0-beta.1",
+      "description": "Docker-based local development environment manager for PHP, Python, and Node projects. Designed for developers running multiple projects on one machine and for AI agents that need a stable platform to operate inside. Includes 100+ curated installers for popular open-source apps and a shared-services architecture that consolidates Postgres, MariaDB, Redis, and MongoDB across all projects.",
+      "license": "https://github.com/CaneBayComputers/podium-cli/blob/master/LICENSE",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
       },
-      {
-        "@type": "Organization",
-        "@id": "https://podiumcli.com/#org",
-        "name": "CaneBayComputers",
-        "url": "https://github.com/CaneBayComputers",
-        "logo": "https://podiumcli.com/logo.png"
+      "author": {
+        "@id": "https://podiumcli.com/#org"
       },
-      {
-        "@type": "WebSite",
-        "@id": "https://podiumcli.com/#website",
-        "name": "Podium CLI",
-        "url": "https://podiumcli.com/",
-        "publisher": {
-          "@id": "https://podiumcli.com/#org"
-        },
-        "inLanguage": "en-US"
-      }
-    ]
-  }
-  </script>
+      "publisher": {
+        "@id": "https://podiumcli.com/#org"
+      },
+      "featureList": [
+        "Shared database, cache, and storage services across every project",
+        "100+ one-command installers for popular OSS apps",
+        "AI agent integration (Claude, Codex, Gemini)",
+        "Hostname-based routing for browsers and containers",
+        "Greenfield framework scaffolding (Laravel, FastAPI, Django, Express, NestJS, Fastify, Node)",
+        "Automatic adaptation of upstream docker-compose.yaml"
+      ],
+      "softwareHelp": {
+        "@id": "https://podiumcli.com/guide/"
+      },
+      "isAccessibleForFree": true
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://podiumcli.com/#org",
+      "name": "CaneBayComputers",
+      "url": "https://github.com/CaneBayComputers",
+      "logo": "https://podiumcli.com/logo.png",
+      "sameAs": [
+        "https://github.com/CaneBayComputers",
+        "https://github.com/sponsors/shrimpwagon"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://podiumcli.com/#website",
+      "name": "Podium CLI",
+      "url": "https://podiumcli.com/",
+      "publisher": {
+        "@id": "https://podiumcli.com/#org"
+      },
+      "inLanguage": "en-US"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://podiumcli.com/#gui",
+      "name": "Podium GUI",
+      "applicationCategory": "DeveloperApplication",
+      "applicationSubCategory": "Desktop application",
+      "operatingSystem": [
+        "Linux"
+      ],
+      "softwareVersion": "1.0.0-beta.1",
+      "description": "Optional desktop front end for Podium CLI. Create projects with AI, install from the app library, manage shared services and reopen AI sessions without using the terminal.",
+      "downloadUrl": "https://podiumcli.com/guide/downloads/",
+      "installUrl": "https://podiumcli.com/guide/downloads/",
+      "license": "https://github.com/CaneBayComputers/podium-gui/blob/master/LICENSE",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@id": "https://podiumcli.com/#org"
+      },
+      "publisher": {
+        "@id": "https://podiumcli.com/#org"
+      },
+      "requirements": "Requires Podium CLI, which it installs automatically if missing.",
+      "url": "https://podiumcli.com/#download"
+    }
+  ]
+}
+    </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
