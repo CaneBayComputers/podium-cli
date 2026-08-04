@@ -104,13 +104,13 @@ project does not currently have.
 
 ## Versions
 
-`podium --version` reports the CLI version. The GUI's About panel shows both, and
-warns if they have drifted apart.
+`podium --version` reports the CLI version. The GUI's About panel shows both.
 
-A mismatch is a **warning, not an error**. The GUI checks for individual CLI
-capabilities rather than gating on a version number, so a newer GUI against an
-older CLI loses specific features rather than refusing to start. You do not need
-to upgrade both at the same time.
+**The two version independently and are not expected to match.** Compatibility is
+handled by feature detection, not by comparing version numbers — the GUI asks the
+installed CLI what it can do and hides anything it cannot, so an older CLI loses
+individual features rather than failing outright. Upgrade either one on its own
+whenever you like.
 
 ---
 
