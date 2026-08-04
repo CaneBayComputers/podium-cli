@@ -720,3 +720,23 @@ pre.has-copy:focus-within .code-copy {
 .footer-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
 .footer-row .copy { color: var(--muted); font-size: 0.92rem; margin: 0; }
 .footer-row a { color: var(--accent-2); }
+
+/* Platform / package chooser + download button (landing page step 1 and 5) */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
+.fw-chip.active {
+  background: rgba(14, 165, 233, 0.28);
+  border-color: var(--accent);
+  color: #eaf7ff;
+}
+.btn-download {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  color: #04081d;
+  font-weight: 650;
+  padding: 10px 20px;
+  border-radius: 9px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: transform .12s, box-shadow .12s;
+}
+.btn-download:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,165,233,.35); }

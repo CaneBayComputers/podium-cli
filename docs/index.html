@@ -336,14 +336,18 @@
           <li>
             <div class="step-num">1</div>
             <div class="step-body">
-              <h3>Install Podium</h3>
-              <p class="step-sub">Pick your platform &mdash; one curl, no manual setup.</p>
-              <p class="install-label">Linux (Ubuntu / Debian)</p>
-              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
-              <p class="install-label">macOS</p>
-              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash</code></pre>
-              <p class="install-label">Arch Linux</p>
-              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash</code></pre>
+              <h3>Install the Podium CLI</h3>
+              <p class="step-sub">This is Podium itself &mdash; the command line tool that does all the work. Pick your platform; one curl, no manual setup.</p>
+
+              <p class="install-label">Choose your platform</p>
+              <p class="chip-row" aria-label="Choose your platform">
+                <button type="button" class="fw-chip distro-chip active" data-script="install-ubuntu.sh">Ubuntu / Debian / Mint</button>
+                <button type="button" class="fw-chip distro-chip" data-script="install-fedora.sh">Fedora / RHEL</button>
+                <button type="button" class="fw-chip distro-chip" data-script="install-arch.sh">Arch / Manjaro</button>
+                <button type="button" class="fw-chip distro-chip" data-script="install-mac.sh">macOS</button>
+              </p>
+              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/<span id="cliScript">install-ubuntu.sh</span> | bash</code></pre>
+              <p class="step-sub" style="margin-top:10px">Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.</p>
             </div>
           </li>
 
@@ -412,6 +416,26 @@
                   <button type="button" class="fw-chip" data-framework="node">node</button>
                 </p>
               </div>
+            </div>
+          </li>
+        
+          <li>
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h3>Optional: the desktop app</h3>
+              <p class="step-sub">Everything above is the CLI and is all you need. <strong>Podium GUI</strong> is a separate, optional desktop front end for it &mdash; same projects, same services, just visible and clickable.</p>
+
+              <p class="install-label">Download the GUI &mdash; v1.0.0-beta.1 <span class="muted-cmd">(Linux x86_64, beta)</span></p>
+              <p class="chip-row" aria-label="Choose your package format">
+                <button type="button" class="fw-chip gui-chip active" data-pkg="podium-gui_1.0.0-beta.1_amd64.deb" data-note="Installed and launched on a real machine.">.deb &mdash; Debian / Ubuntu / Mint</button>
+                <button type="button" class="fw-chip gui-chip" data-pkg="podium-gui-1.0.0-beta.1.x86_64.rpm" data-note="Built and inspected, but not yet installed on a Fedora machine.">.rpm &mdash; Fedora / RHEL</button>
+                <button type="button" class="fw-chip gui-chip" data-pkg="podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst" data-note="Built and inspected, but not yet installed on an Arch machine.">.pkg.tar.zst &mdash; Arch</button>
+              </p>
+              <p style="margin:12px 0 6px">
+                <a class="btn-download" id="guiDownload" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb">Download <span id="guiPkgName">.deb</span></a>
+              </p>
+              <p class="step-sub" id="guiNote">Installed and launched on a real machine.</p>
+              <p class="step-sub">No macOS or arm64 build yet &mdash; the packages are built on Linux and a <code>.dmg</code> needs a macOS host. The <strong>CLI works fine on macOS</strong>; only the desktop app is missing. <a href="/guide/downloads/">Checksums and full details &rarr;</a></p>
             </div>
           </li>
         </ol>
@@ -602,6 +626,39 @@
         } catch (e) { /* noop */ }
         document.body.removeChild(ta);
       }
+    })();
+
+    /* GUI package chip -> swap the download link, name and honesty note */
+    (function () {
+      var link = document.getElementById('guiDownload');
+      var name = document.getElementById('guiPkgName');
+      var note = document.getElementById('guiNote');
+      if (!link) return;
+      var base = 'https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/';
+      var chips = document.querySelectorAll('.gui-chip[data-pkg]');
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          link.href = base + chip.dataset.pkg;
+          name.textContent = '.' + chip.dataset.pkg.split('.').slice(1).join('.');
+          note.textContent = chip.dataset.note;
+        });
+      });
+    })();
+
+    /* Platform chip -> swap the CLI install script name */
+    (function () {
+      var slot = document.getElementById('cliScript');
+      if (!slot) return;
+      var chips = document.querySelectorAll('.distro-chip[data-script]');
+      chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          chips.forEach(function (c) { c.classList.remove('active'); });
+          chip.classList.add('active');
+          slot.textContent = chip.dataset.script;
+        });
+      });
     })();
 
     /* Framework chip click -> update the example command */
