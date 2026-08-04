@@ -193,7 +193,11 @@ except Exception: pass
 podium_update_refresh_async() {
     local now checked
     now=$(date +%s)
-    checked=$(_podium_cache_field checked 2>/dev/null)
+    # `|| true` is load-bearing: with no cache file the helper returns 1, and
+    # under `set -e` an assignment from a failing command substitution aborts
+    # the whole script. That made `podium --version` exit 1 printing nothing on
+    # any machine without a cache -- i.e. every machine, on first run.
+    checked=$(_podium_cache_field checked 2>/dev/null || true)
     [ -n "$checked" ] && [ $(( now - checked )) -lt $PODIUM_UPDATE_MAX_AGE ] && return 0
     mkdir -p "$(dirname "$PODIUM_UPDATE_CACHE")" 2>/dev/null || return 0
     (
