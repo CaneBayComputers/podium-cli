@@ -794,3 +794,24 @@ pre.has-copy:focus-within .code-copy {
 .band-note { text-align: center; color: var(--muted); margin: 22px auto 0; max-width: 720px; font-size: .92rem; }
 .band-fine { display: inline-block; margin-top: 8px; font-size: .82rem; color: #7a85a3; }
 .band-note a { color: var(--accent-2); }
+
+/* Support / donation options */
+.support { padding: 60px 0; }
+.give-grid {
+  display: grid; gap: 14px; max-width: 980px; margin: 26px auto 0;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.give-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px 20px; border-radius: 12px; text-decoration: none;
+  background: rgba(15, 26, 69, 0.55);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  transition: transform .12s, border-color .12s, background .12s;
+}
+.give-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: rgba(15, 26, 69, 0.8);
+}
+.give-name { color: #eaf7ff; font-weight: 650; font-size: 1rem; }
+.give-note { color: var(--muted); font-size: .85rem; line-height: 1.5; }

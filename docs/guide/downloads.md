@@ -106,5 +106,12 @@ to upgrade both at the same time.
 - [CaneBayComputers/podium-cli](https://github.com/CaneBayComputers/podium-cli) — MIT
 - [CaneBayComputers/podium-gui](https://github.com/CaneBayComputers/podium-gui) — MIT
 
-Podium is free and always will be. If it saves you time,
-[buy me a coffee](https://ko-fi.com/canebaycomputers).
+## Support
+
+Podium is free and always will be — both parts are MIT. If it saves you time and
+you want to chip in:
+
+- [GitHub Sponsors](https://github.com/sponsors/shrimpwagon) — GitHub covers the fees
+- [Ko-fi](https://ko-fi.com/canebaycomputers) — quickest, no account needed
+- [Patreon](https://patreon.com/canebaycomputers) — monthly
+- [Credit card](https://securelink-prod.valorpaytech.com:4430/?redirect=1&uid=6e840752-8751-11f0-a74f-12a0879a85b1) — direct, via Cane Bay Computers' processor
