@@ -58,6 +58,14 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 Installing the GUI also installs the CLI if `podium` is not already on your
 machine, so you do not need both downloads.
 
+### What's in it
+
+Create with AI, the full app library, new project and clone, start/stop of the
+shared services, embedded tabbed terminals for AI sessions, and a Settings panel
+with AI agent configuration and a theme picker. Five themes ship — Retro (the
+default), Dark, Light, Matrix and Podium — each with its own 16-colour terminal
+palette so output stays readable, including on Light.
+
 ### What is actually tested
 
 Being straight about this, because "it built" and "it works" are different
