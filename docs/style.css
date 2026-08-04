@@ -753,3 +753,44 @@ pre.has-copy:focus-within .code-copy {
 .shot figcaption {
   color: var(--muted); font-size: 0.86rem; text-align: center; margin-top: 12px;
 }
+
+/* Prominent GUI download band, directly below the hero */
+.download-band {
+  padding: 46px 0 52px;
+  background: linear-gradient(180deg, rgba(14,165,233,.07), transparent 70%);
+  border-top: 1px solid rgba(56,189,248,.14);
+  border-bottom: 1px solid rgba(56,189,248,.10);
+}
+.band-title { font-size: clamp(1.5rem, 3vw, 2rem); text-align: center; margin: 0 0 8px; }
+.band-sub { color: var(--muted); text-align: center; margin: 0 auto 26px; max-width: 640px; }
+.band-beta {
+  display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 999px;
+  background: rgba(14,165,233,.14); border: 1px solid rgba(56,189,248,.3);
+  color: var(--accent-2); font-size: .78rem; white-space: nowrap;
+}
+.dl-grid {
+  display: grid; gap: 14px; max-width: 980px; margin: 0 auto;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+}
+.dl-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 18px 20px; border-radius: 12px; text-decoration: none;
+  background: linear-gradient(135deg, rgba(103,232,249,.10), rgba(14,165,233,.06));
+  border: 1px solid rgba(56,189,248,.28);
+  transition: transform .12s, border-color .12s, box-shadow .12s, background .12s;
+}
+.dl-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(103,232,249,.18), rgba(14,165,233,.12));
+  box-shadow: 0 10px 30px rgba(14,165,233,.22);
+}
+.dl-for { color: #eaf7ff; font-weight: 650; font-size: 1.02rem; }
+.dl-distros { color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.dl-ext {
+  margin-top: 6px; color: var(--accent-2); font-size: .8rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.band-note { text-align: center; color: var(--muted); margin: 22px auto 0; max-width: 720px; font-size: .92rem; }
+.band-fine { display: inline-block; margin-top: 8px; font-size: .82rem; color: #7a85a3; }
+.band-note a { color: var(--accent-2); }
