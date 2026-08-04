@@ -1,7 +1,7 @@
 ---
 title: App library
 layout: default
-nav_order: 5
+nav_order: 6
 ---
 
 # App library — `podium install`

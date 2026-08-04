@@ -197,9 +197,20 @@ podium_update_refresh_async() {
     [ -n "$checked" ] && [ $(( now - checked )) -lt $PODIUM_UPDATE_MAX_AGE ] && return 0
     mkdir -p "$(dirname "$PODIUM_UPDATE_CACHE")" 2>/dev/null || return 0
     (
+        # NOT /releases/latest -- that endpoint EXCLUDES pre-releases and 404s
+        # when every release is one, which is the case for the whole beta. Using
+        # it would have made this check silently do nothing until 1.0 final.
+        # The list endpoint is newest-first and includes pre-releases.
         tag=$(curl -fsS --max-time 8 \
-            https://api.github.com/repos/CaneBayComputers/podium-cli/releases/latest 2>/dev/null \
-            | python3 -c "import json,sys; print(json.load(sys.stdin).get('tag_name','') or '')" 2>/dev/null) || tag=""
+            "https://api.github.com/repos/CaneBayComputers/podium-cli/releases?per_page=10" 2>/dev/null \
+            | python3 -c "
+import json,sys
+try:
+    rs=[r for r in json.load(sys.stdin) if not r.get('draft')]
+    print(rs[0].get('tag_name','') if rs else '')
+except Exception:
+    print('')
+" 2>/dev/null) || tag=""
         printf '{"latest": "%s", "checked": %s, "notified": %s}\n' \
             "$tag" "$(date +%s)" "$(_podium_cache_field notified 2>/dev/null || echo 0)" \
             > "$PODIUM_UPDATE_CACHE" 2>/dev/null

@@ -1,7 +1,7 @@
 ---
 title: Cheap and local models
 layout: default
-nav_order: 7
+nav_order: 8
 ---
 
 # Cheap and local models

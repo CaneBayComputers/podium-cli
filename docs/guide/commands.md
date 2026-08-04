@@ -1,7 +1,7 @@
 ---
 title: Command reference
 layout: default
-nav_order: 8
+nav_order: 9
 ---
 
 # Command reference
