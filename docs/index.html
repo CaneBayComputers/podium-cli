@@ -205,12 +205,22 @@
             <span class="dl-distros">Manjaro &middot; EndeavourOS &middot; Garuda &middot; CachyOS</span>
             <span class="dl-ext">.pkg.tar.zst</span>
           </a>
+          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1-arm64.dmg">
+            <span class="dl-for">Download for macOS</span>
+            <span class="dl-distros">Apple Silicon &mdash; M1, M2, M3, M4</span>
+            <span class="dl-ext">.dmg</span>
+          </a>
+          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1.dmg">
+            <span class="dl-for">Download for macOS</span>
+            <span class="dl-distros">Intel Macs</span>
+            <span class="dl-ext">.dmg</span>
+          </a>
         </div>
 
         <p class="band-note">
           Prefer the terminal? <a href="#install">Install the CLI on its own</a> with one curl &mdash; the GUI is optional.
           <br>
-          <span class="band-fine">No macOS or arm64 build yet; the CLI works on macOS. The <code>.deb</code> is tested on a live machine, the other two are built but not yet installed on a real box &mdash; <a href="/guide/downloads/">details and checksums</a>.</span>
+          <span class="band-fine"><strong>macOS builds are unsigned</strong> &mdash; Gatekeeper blocks them on first launch. Right-click &rarr; Open, or <code>xattr -dr com.apple.quarantine /Applications/Podium.app</code>. Only the <code>.deb</code> has been installed on real hardware; the rest are built and inspected. No Linux arm64 build. <a href="/guide/downloads/">Details and checksums</a>.</span>
         </p>
       </div>
     </section>
@@ -364,7 +374,7 @@
         <h2 id="gui-title" class="section-title">Prefer not to live in the terminal?</h2>
         <p class="section-sub">Podium GUI is an optional desktop app for the same CLI &mdash; same projects, same shared services, same URLs. Use either, or both.</p>
         <figure class="shot">
-          <img src="/screenshot-podium-theme.png" alt="Podium GUI showing project tiles with Start, Modify with AI, Edit and Trash actions, and the shared services panel below" width="1280" height="860" loading="lazy">
+          <img src="/screenshot-podium-theme.png" srcset="/screenshot-podium-theme.png 1x, /screenshot-podium-theme@2x.png 2x" alt="Podium GUI showing project tiles with Start, Modify with AI, Edit and Trash actions, and the shared services panel below" width="1280" height="860" loading="lazy">
           <figcaption>Podium GUI in the Podium theme. Sample projects shown. Five themes ship: Retro, Dark, Light, Matrix and Podium.</figcaption>
         </figure>
         <p class="section-sub" style="text-align:center">
