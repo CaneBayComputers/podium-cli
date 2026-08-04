@@ -38,14 +38,16 @@ ships as packages.
 ## Podium GUI — v1.0.0-beta.1
 
 {: .warning }
-> **Beta.** Linux only, x86_64 only. See the caveats below before installing.
+> **Beta.** Linux x86_64 and macOS. Read the macOS note and the testing status below before installing.
 
-| Platform | Download |
-|---|---|
-| Debian / Ubuntu / Mint | [`podium-gui_1.0.0-beta.1_amd64.deb`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb) |
-| Fedora / RHEL / Rocky | [`podium-gui-1.0.0-beta.1.x86_64.rpm`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1.x86_64.rpm) |
-| Arch / Manjaro | [`podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst) |
-| Checksums | [`SHA256SUMS.txt`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/SHA256SUMS.txt) |
+| Platform | Download | Size |
+|---|---|---|
+| Debian / Ubuntu / Mint / Zorin / Pop!_OS | [`.deb`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb) | 71 MB |
+| Fedora / RHEL / Rocky / openSUSE | [`.rpm`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1.x86_64.rpm) | 71 MB |
+| Arch / Manjaro / EndeavourOS | [`.pkg.tar.zst`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst) | 77 MB |
+| macOS — Apple Silicon | [`arm64.dmg`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1-arm64.dmg) | 92 MB |
+| macOS — Intel | [`.dmg`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1.dmg) | 97 MB |
+| Checksums | [`SHA256SUMS.txt`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/SHA256SUMS.txt) | |
 
 [All release assets →](https://github.com/CaneBayComputers/podium-gui/releases/tag/v1.0.0-beta.1)
 
@@ -73,19 +75,30 @@ claims:
 
 - **`.deb` — installed and launched on a real machine** (Linux Mint): correct
   metadata, desktop entry appears, application starts.
-- **`.rpm` and `.pkg.tar.zst` — built and inspected, not installed.** No Fedora
-  or Arch machine was available to test on. They are very likely fine; they are
-  not proven. If one fails, [open an issue](https://github.com/CaneBayComputers/podium-gui/issues)
+- **`.rpm`, `.pkg.tar.zst` and both `.dmg` — built and inspected, never installed.**
+  No Fedora, Arch or macOS machine was available. The `.dmg` files in particular
+  have never been opened on a Mac, so they are the least proven thing here. If
+  one fails, [open an issue](https://github.com/CaneBayComputers/podium-gui/issues)
   and it will get fixed quickly.
+
+### macOS: the app is unsigned
+
+There is no Apple Developer ID behind these builds, so **Gatekeeper will refuse
+to open the app on first launch** with an "unidentified developer" message. That
+is a property of unsigned software, not a broken download. Two ways past it:
+
+- Right-click the app in Applications → **Open** → **Open**, or
+- ```bash
+  xattr -dr com.apple.quarantine /Applications/Podium.app
+  ```
+
+Signing and notarizing requires a paid Apple Developer account, which this
+project does not currently have.
 
 ### Not available yet
 
-- **macOS.** There is no `.dmg`. The packages are built on Linux, and macOS
-  packaging requires a macOS host. Until that is set up, run the GUI from source
-  on a Mac — see the [repository README](https://github.com/CaneBayComputers/podium-gui).
-  The **CLI works fine on macOS** via `install-mac.sh`; only the desktop app is
-  missing.
-- **arm64.** x86_64 only for now, so no Raspberry Pi or Apple Silicon build.
+- **Linux arm64.** The Linux packages are x86_64 only, so no Raspberry Pi build.
+  Apple Silicon *is* covered by the arm64 `.dmg` above.
 
 ---
 
