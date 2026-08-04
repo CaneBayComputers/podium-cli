@@ -9,15 +9,20 @@ SCRIPT_PATH="${BASH_SOURCE[0]}"
 # Resolve symlink if this script is symlinked
 while [ -L "$SCRIPT_PATH" ]; do
     SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
-
-# Program name for help text. Scripts print "${PODIUM_CMD:-$0}" so copy-pasted
-# usage is runnable — bare $0 is the sourced script's absolute path, which is
-# not a command anyone can type.
-export PODIUM_CMD="podium${1:+ $1}"
     SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
     [[ $SCRIPT_PATH != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# Program name for help text. Scripts print "${PODIUM_CMD:-$0}" so copy-pasted
+# usage is runnable — bare $0 is the sourced script's absolute path, which is
+# not a command anyone can type.
+#
+# This lived INSIDE the symlink loop above until 2026-08-03, so it was only ever
+# set when podium was invoked through a symlink. A direct invocation left it
+# empty and every usage() silently fell back to $0 -- the very bug the export was
+# added to fix. The `:-$0` fallback is what hid it.
+export PODIUM_CMD="podium${1:+ $1}"
 
 # Source functions
 source "$SCRIPT_DIR/scripts/functions.sh"
@@ -34,6 +39,12 @@ for arg in "$@"; do
     fi
 done
 set -- "${new_args[@]}"
+
+# Update check. Must come after functions.sh is sourced and after JSON_OUTPUT is
+# parsed -- it was briefly placed above both, where the functions did not exist
+# yet and `|| true` turned that into a silent no-op.
+podium_update_refresh_async 2>/dev/null || true
+podium_update_notice 2>/dev/null || true
 
 # Initialize projects directory
 init_projects_dir
@@ -731,10 +742,16 @@ case "$1" in
     # Help and default
     "version"|"--version"|"-v")
         _v="$(podium_version)"
+        podium_update_refresh_async
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             echo "{\"action\": \"version\", \"status\": \"success\", \"version\": \"$_v\"}"
         else
             echo "podium $_v"
+            # `set -e`: a bare `x=$(...) && echo` chain returns 1 when no update
+            # is available and takes the whole script down. Guard with `if`.
+            if _newer="$(podium_update_available)"; then
+                echo-yellow "  update available: $_newer — run 'podium update'"
+            fi
         fi
         ;;
     "help"|"-h"|"--help"|"")

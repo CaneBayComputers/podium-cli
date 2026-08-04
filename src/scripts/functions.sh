@@ -163,6 +163,82 @@ json_error() {
 }
 
 # Project-specific Docker commands (run inside project containers)
+# ---------------------------------------------------------------------------
+# Update check
+# ---------------------------------------------------------------------------
+# Three rules, all learned the hard way elsewhere in this tree:
+#
+#   1. NEVER block a command on the network. The refresh runs detached and
+#      writes a cache; every command only ever reads that cache. An offline or
+#      slow-DNS machine costs nothing -- `podium status` is on the GUI's hot
+#      path and already had a 60s hang once.
+#   2. Silent on failure. No release yet, no network, rate-limited -- all mean
+#      "say nothing", never a warning on every command.
+#   3. Notify at most once a day. A nag on every invocation trains people to
+#      ignore it.
+PODIUM_UPDATE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/podium/update.json"
+PODIUM_UPDATE_MAX_AGE=86400   # refresh at most daily
+PODIUM_NOTIFY_MAX_AGE=86400   # tell the user at most daily
+
+_podium_cache_field() {
+    [ -f "$PODIUM_UPDATE_CACHE" ] || return 1
+    python3 -c "
+import json,sys
+try: print(json.load(open('$PODIUM_UPDATE_CACHE')).get('$1','') or '')
+except Exception: pass
+" 2>/dev/null
+}
+
+# Fire-and-forget refresh. Detached, output discarded, never awaited.
+podium_update_refresh_async() {
+    local now checked
+    now=$(date +%s)
+    checked=$(_podium_cache_field checked 2>/dev/null)
+    [ -n "$checked" ] && [ $(( now - checked )) -lt $PODIUM_UPDATE_MAX_AGE ] && return 0
+    mkdir -p "$(dirname "$PODIUM_UPDATE_CACHE")" 2>/dev/null || return 0
+    (
+        tag=$(curl -fsS --max-time 8 \
+            https://api.github.com/repos/CaneBayComputers/podium-cli/releases/latest 2>/dev/null \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('tag_name','') or '')" 2>/dev/null) || tag=""
+        printf '{"latest": "%s", "checked": %s, "notified": %s}\n' \
+            "$tag" "$(date +%s)" "$(_podium_cache_field notified 2>/dev/null || echo 0)" \
+            > "$PODIUM_UPDATE_CACHE" 2>/dev/null
+    ) >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+}
+
+# Is a newer release available? Cache read only -- no network, no blocking.
+podium_update_available() {
+    local latest current
+    latest=$(_podium_cache_field latest 2>/dev/null) || return 1
+    [ -n "$latest" ] || return 1
+    current="$(podium_version)"
+    [ "$current" = "unknown" ] && return 1
+    latest="${latest#v}"; current="${current#v}"
+    [ "$latest" = "$current" ] && return 1
+    # newest-first sort: if latest sorts above current, it is newer
+    [ "$(printf '%s\n%s\n' "$latest" "$current" | sort -rV | head -1)" = "$latest" ] || return 1
+    echo "$latest"
+}
+
+# One line, at most daily, never under --json-output.
+podium_update_notice() {
+    [[ "$JSON_OUTPUT" == "1" ]] && return 0
+    local newer now notified
+    newer=$(podium_update_available) || return 0
+    now=$(date +%s)
+    notified=$(_podium_cache_field notified 2>/dev/null || echo 0)
+    [ -n "$notified" ] && [ $(( now - notified )) -lt $PODIUM_NOTIFY_MAX_AGE ] && return 0
+    python3 -c "
+import json
+p='$PODIUM_UPDATE_CACHE'
+try:
+    d=json.load(open(p)); d['notified']=$now; json.dump(d,open(p,'w'))
+except Exception: pass
+" 2>/dev/null
+    echo-yellow "Podium $newer is available (you have $(podium_version)) — run 'podium update'"
+}
+
 # Podium's own version, from the VERSION file at the repo root.
 #
 # SCRIPT_DIR is <repo>/src, so VERSION sits one level up. Falls back to
