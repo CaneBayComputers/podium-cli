@@ -125,6 +125,18 @@ start_project() {
           ;;
   esac
 
+  # Already up? Then this call has nothing to do. Reported by the GUI session:
+  # `podium resume` on a running project ran a full start, which costs seconds
+  # and can trigger a sudo prompt to change nothing — so "continue my AI
+  # conversation" read as "restarted my project and asked for my password".
+  # Every caller benefits, not just resume.
+  if docker container inspect -f '{{.State.Running}}' "$PROJECT_FOLDER_NAME" 2>/dev/null | grep -q true; then
+      cd ..
+      record_last_on "$PROJECT_FOLDER_NAME" || true
+      echo-green "Project $PROJECT_FOLDER_NAME is already running."; echo-return
+      return 0
+  fi
+
   dockerup
 
   cd ..
@@ -150,8 +162,20 @@ if [[ "$DEBUG" == "1" ]]; then
     START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --debug"
 fi
 
+# If a single named project is already running, its shared services are
+# necessarily up too — starting them again is pure cost. Skipping this is what
+# removes the spurious sudo prompt, not just the compose call below.
+PROJECT_ALREADY_RUNNING=0
+if [[ -n "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
+    if docker container inspect -f '{{.State.Running}}' "$PROJECT_NAME" 2>/dev/null | grep -q true; then
+        PROJECT_ALREADY_RUNNING=1
+    fi
+fi
+
 # Capture JSON output from start_services.sh if in JSON mode
-if [[ "$JSON_OUTPUT" == "1" ]]; then
+if [[ "$PROJECT_ALREADY_RUNNING" == "1" ]]; then
+    debug "Project $PROJECT_NAME already running; skipping shared-service startup"
+elif [[ "$JSON_OUTPUT" == "1" ]]; then
     START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS 2>&1)
     START_SERVICES_EXIT_CODE=$?
     if [ $START_SERVICES_EXIT_CODE -ne 0 ]; then
