@@ -2196,3 +2196,121 @@ sync_installed_compose() {
     echo-yellow "Could not update $dst — shared services keep their previous definitions."
     return 1
 }
+
+# =============================================================================
+# Preserving x-metadata across compose regeneration
+# =============================================================================
+# `podium setup` regenerates docker-compose.yaml from a template — it deletes the
+# existing file outright. The GUI stores each project's emoji, display name and
+# description in an `x-metadata:` block inside that file, so re-running setup
+# silently wiped a user's tile customisation with no way to connect the loss to
+# the command that caused it. Confirmed live: 5 of 17 projects on this machine
+# carried metadata, including display names that differ from the directory name
+# and descriptions that cannot be reconstructed.
+#
+# Text-based on purpose. Round-tripping through a YAML parser would reformat the
+# whole file — requoting, reordering, dropping comments — which is a large and
+# invisible change to make to every project just to keep six lines.
+
+# Echo the x-metadata block (with its own indentation) from a compose file.
+# Empty output means there was none.
+capture_x_metadata() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    python3 - "$file" << 'PYEOF' 2>/dev/null || true
+import re, sys
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except Exception:
+    sys.exit(0)
+out, indent = [], None
+for line in lines:
+    if indent is None:
+        m = re.match(r'^(\s*)x-metadata:\s*$', line)
+        if m:
+            indent = len(m.group(1))
+            out.append(line)
+        continue
+    # The block ends at the first non-blank line indented no further than the key
+    if line.strip() == "":
+        out.append(line)
+        continue
+    if len(line) - len(line.lstrip()) <= indent:
+        break
+    out.append(line)
+while out and out[-1].strip() == "":
+    out.pop()
+print("\n".join(out))
+PYEOF
+}
+
+# Insert a previously captured x-metadata block into a regenerated compose,
+# placing it inside the service whose container_name matches the project.
+#   $1 compose file   $2 project name   $3 block text
+restore_x_metadata() {
+    local file="$1" project="$2" block="$3"
+    [ -n "$block" ] || return 0
+    [ -f "$file" ] || return 0
+
+    BLOCK="$block" PROJECT="$project" python3 - "$file" << 'PYEOF' 2>/dev/null || return 1
+import os, re, sys
+path = sys.argv[1]
+block = os.environ.get("BLOCK", "").rstrip("\n")
+project = os.environ.get("PROJECT", "")
+if not block:
+    sys.exit(0)
+
+lines = open(path).read().splitlines()
+
+# Already present (an adapted compose may have carried it through) — leave the
+# existing one alone rather than creating a duplicate key.
+if any(re.match(r'^\s*x-metadata:\s*$', l) for l in lines):
+    sys.exit(0)
+
+# Anchor on the service that owns this project. Podium sets container_name to the
+# project name, so this finds the web service even in a multi-service compose,
+# where appending at the end of the file would land it in the wrong one.
+anchor = None
+for i, l in enumerate(lines):
+    if re.match(r'^\s*container_name:\s*["\']?' + re.escape(project) + r'["\']?\s*$', l):
+        anchor = i
+        break
+if anchor is None:
+    sys.exit(1)
+
+svc_indent = len(lines[anchor]) - len(lines[anchor].lstrip())
+
+# End of that service = first later non-blank line indented no further than its keys
+end = len(lines)
+for j in range(anchor + 1, len(lines)):
+    if lines[j].strip() == "":
+        continue
+    if len(lines[j]) - len(lines[j].lstrip()) < svc_indent:
+        end = j
+        break
+    if len(lines[j]) - len(lines[j].lstrip()) == svc_indent and lines[j].lstrip().startswith("x-"):
+        continue
+else:
+    end = len(lines)
+
+# Re-indent the captured block to this file's service-key indentation
+blines = block.splitlines()
+old_indent = len(blines[0]) - len(blines[0].lstrip())
+shift = svc_indent - old_indent
+adjusted = []
+for b in blines:
+    if not b.strip():
+        adjusted.append("")
+    elif shift >= 0:
+        adjusted.append(" " * shift + b)
+    else:
+        adjusted.append(b[-shift:] if len(b) + shift > 0 else b.lstrip())
+
+# Trim trailing blanks at the insertion point so the block sits flush
+while end > 0 and lines[end - 1].strip() == "":
+    end -= 1
+
+new = lines[:end] + adjusted + lines[end:]
+open(path, "w").write("\n".join(new) + "\n")
+PYEOF
+}

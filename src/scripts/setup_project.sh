@@ -394,6 +394,14 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     if [ ! -f "docker-compose.upstream.yaml" ]; then
         cp "$EXISTING_COMPOSE_FILE" docker-compose.upstream.yaml
     fi
+    # Capture the GUI's x-metadata (emoji, display name, description) before the
+    # file that holds it is deleted. Without this, re-running setup silently
+    # wipes a user's project tile customisation.
+    PRESERVED_X_METADATA="$(capture_x_metadata "$EXISTING_COMPOSE_FILE")"
+    if [ -n "$PRESERVED_X_METADATA" ]; then
+        echo-cyan "Preserving project metadata (emoji, name, description) ..."
+    fi
+
     # Remove any existing docker-compose files so the Podium-managed one is the only source.
     rm -f docker-compose.yml docker-compose.yaml
 fi
@@ -574,6 +582,19 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" != "1" ]; then
     if [ -n "$CUSTOM_IMAGE" ]; then
         podium-sed "s|^\([[:space:]]*image:\)[[:space:]].*|\1 $CUSTOM_IMAGE|" docker-compose.yaml
         echo-cyan "Using custom image: $CUSTOM_IMAGE"
+    fi
+fi
+
+# Put the GUI's x-metadata back into the regenerated compose. Runs for BOTH the
+# template path and the adapted-upstream path, so metadata survives either kind
+# of regeneration.
+if [ -n "${PRESERVED_X_METADATA:-}" ] && [ -f "docker-compose.yaml" ]; then
+    if restore_x_metadata "docker-compose.yaml" "$PROJECT_NAME" "$PRESERVED_X_METADATA"; then
+        echo-green "Project metadata preserved."
+    else
+        echo-yellow "Could not reattach project metadata — the GUI may show default emoji/name."
+        echo-white  "Previous values:"
+        printf '%s\n' "$PRESERVED_X_METADATA" | sed 's/^/    /'
     fi
 fi
 
