@@ -352,10 +352,12 @@ case "$1" in
         ;;
     "drush")
         # Drupal's artisan. drush is a Composer dependency, not a global binary,
-        # so it runs through vendor/bin relative to the container workdir.
+        # so it runs from vendor/bin relative to the container workdir — and it is
+        # invoked directly, NOT as `php vendor/bin/drush`: Composer 2 installs it
+        # as a `#!/usr/bin/env sh` proxy, so a php prefix just prints the wrapper.
         validate_project_context || exit 1
         shift
-        docker_exec developer php vendor/bin/drush "$@"
+        docker_exec developer vendor/bin/drush "$@"
         ;;
     "wp")
         validate_project_context || exit 1

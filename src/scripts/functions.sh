@@ -319,13 +319,19 @@ composer-docker() {
     fi
 }
 # Drupal's equivalent of art-docker. drush is a Composer dependency rather than
-# a global binary, so it is invoked through vendor/bin relative to the workdir.
+# a global binary, so it runs from vendor/bin relative to the workdir.
+#
+# Invoked DIRECTLY, not as `php vendor/bin/drush`. Composer 2 installs binaries
+# as proxies and drush's is a `#!/usr/bin/env sh` wrapper, so prefixing php makes
+# PHP echo the wrapper's source instead of running anything — the command
+# "succeeds", prints shell script, and does nothing. That is what made the first
+# real site:install here fail silently.
 drush-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php vendor/bin/drush "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
     else
-        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php vendor/bin/drush "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
     fi
 }
 art-docker() {

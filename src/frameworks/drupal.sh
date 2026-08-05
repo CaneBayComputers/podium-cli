@@ -33,9 +33,17 @@ framework_scaffold() {
     # rather than patched in afterwards with sed.
     #
     # allow-plugins matters more than it looks: Composer 2.2+ blocks plugins by
-    # default, and a blocked core-composer-scaffold silently skips writing
-    # index.php and .htaccess — you get a complete vendor/ and a docroot with no
-    # entry point, which looks like a broken install rather than a config issue.
+    # default, and a blocked plugin aborts the install outright — leaving a
+    # populated vendor/ and a docroot with no index.php, which reads as a broken
+    # install rather than a config issue.
+    #
+    # The list must cover every composer-plugin in the RESOLVED tree, not just
+    # Drupal's own. symfony/runtime is the easy one to miss: nothing in the
+    # require block names it, it arrives transitively through drush, and omitting
+    # it failed the first real `podium new drupal` here. If a future dependency
+    # adds another plugin, find it with:
+    #   python3 -c "import json;print([p['name'] for p in
+    #     json.load(open('composer.lock'))['packages'] if p.get('type')=='composer-plugin'])"
     cat > composer.json << 'COMPOSEREOF'
 {
     "name": "podium/drupal-project",
@@ -59,6 +67,7 @@ framework_scaffold() {
             "composer/installers": true,
             "drupal/core-composer-scaffold": true,
             "drupal/core-project-message": true,
+            "symfony/runtime": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "php-http/discovery": true,
             "phpstan/extension-installer": true
@@ -151,16 +160,32 @@ framework_run_migrations() {
     local db_url; db_url="$(_drupal_db_url)"
 
     echo-cyan "Installing Drupal (drush site:install) ..."; echo-white
+    local install_ok=1
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         drush-docker site:install standard \
             --db-url="$db_url" --site-name="$PROJECT_NAME" \
             --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
-            -y > /dev/null 2>&1 || true
+            -y > /dev/null 2>&1 || install_ok=0
     else
         drush-docker site:install standard \
             --db-url="$db_url" --site-name="$PROJECT_NAME" \
             --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
-            -y || true
+            -y || install_ok=0
+    fi
+
+    # Check the outcome rather than the exit code alone. This was `|| true`, which
+    # meant a failed install reported success and left the user at Drupal's web
+    # installer with a site Podium claimed was ready — the exact thing that hid
+    # the drush invocation bug on the first real run. settings.php is the
+    # artifact site:install writes last, so its absence is the reliable signal.
+    if [ "$install_ok" = "0" ] || [ ! -f "public/sites/default/settings.php" ]; then
+        echo-return
+        echo-red "drush site:install did not complete."
+        echo-white "Composer finished, so the codebase is fine — this is the install step."
+        echo-white "The site will show Drupal's web installer until it succeeds. Retry with:"
+        echo-white "  cd $PROJECTS_DIR_PATH/$PROJECT_NAME"
+        echo-white "  podium drush site:install standard --db-url=$db_url -y"
+        return 1
     fi
 
     # site:install locks the settings file down, so appending needs it writable
@@ -168,7 +193,11 @@ framework_run_migrations() {
     # and the status report shows an error, which reads as a broken install.
     if [ -f "public/sites/default/settings.php" ]; then
         chmod u+w public/sites/default public/sites/default/settings.php 2>/dev/null || true
-        if ! grep -q "trusted_host_patterns" public/sites/default/settings.php 2>/dev/null; then
+        # Match an ACTIVE assignment, not the string. Drupal's stock settings.php
+        # documents trusted_host_patterns in six comment lines, so a plain
+        # `grep -q trusted_host_patterns` always matches and this block would
+        # never run — the setting would silently never be applied.
+        if ! grep -qE "^[[:space:]]*\\\$settings\['trusted_host_patterns'\]" public/sites/default/settings.php 2>/dev/null; then
             cat >> public/sites/default/settings.php << EOF
 
 /**

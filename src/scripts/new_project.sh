@@ -536,6 +536,11 @@ case $FRAMEWORK in
         echo-return; echo-cyan "October CMS project selected!"
         echo-green "October CMS will be downloaded from source."
         ;;
+    drupal)
+        echo-return; echo-cyan "Drupal project selected!"
+        echo-green "Drupal core will be installed by Composer, then drush site:install runs."
+        echo-white "This is the slowest framework to create — expect several minutes."
+        ;;
     php)
         echo-return; echo-cyan "PHP project selected!"
         
