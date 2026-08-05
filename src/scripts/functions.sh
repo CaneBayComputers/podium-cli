@@ -1248,3 +1248,460 @@ debug_append_json() {
         echo "=== END JSON RESULT ===" >> "$debug_log_file"
     fi
 }
+
+# =============================================================================
+# Folding an arbitrary repository into Podium
+# =============================================================================
+# `podium clone` used to force every repo through framework classification and a
+# regex-based compose adapter. That works for repos shaped like Podium's own
+# templates and fails for everything else: service names that don't match the
+# patterns survive as bundled databases, connection strings inside DSNs are never
+# rewritten, and credentials are never reconciled against the shared services.
+#
+# The fold replaces the guessing with a one-off AI pass that reads the actual
+# repo. The deterministic parts — IP allocation, /etc/hosts, registration — stay
+# in bash, because they are shared state across projects rather than judgment
+# calls. See podium_fold_project below.
+
+# Emit the live shared-service inventory as prompt-ready text: hostname, port and
+# the real credentials, so the agent rewrites config to something that actually
+# connects instead of inventing plausible values.
+#
+# Credentials mirror docker-stack/docker-compose.services.yaml. If that file
+# changes, change this too — a wrong password here produces a project that looks
+# adapted and cannot connect.
+podium_shared_service_facts() {
+    local optional="${OPTIONAL_SERVICES:-}"
+
+    cat << EOF
+ALWAYS RUNNING (use these — do not bundle your own):
+  MariaDB/MySQL   host: ${MARIADB_CONTAINER_NAME:-podium-mariadb}      port: 3306   user: root   password: (empty)
+  PostgreSQL      host: ${POSTGRES_CONTAINER_NAME:-podium-postgres}    port: 5432   user: root   password: password   default db: postgres
+  MongoDB         host: ${MONGO_CONTAINER_NAME:-podium-mongo}          port: 27017  user: root   password: password
+  Redis           host: ${REDIS_CONTAINER_NAME:-podium-redis}          port: 6379   no auth
+  Memcached       host: ${MEMCACHED_CONTAINER_NAME:-podium-memcached}  port: 11211  no auth
+  SMTP (Mailpit)  host: ${MAILHOG_CONTAINER_NAME:-podium-mailhog}      port: 1025   no auth   web UI on host port 8025
+EOF
+
+    if [[ " $optional " == *" minio "* ]]; then
+        echo "  MinIO (S3)      host: ${MINIO_CONTAINER_NAME:-podium-minio}          port: 9000   user: ${MINIO_ROOT_USER:-root}   password: ${MINIO_ROOT_PASSWORD:-password}"
+    fi
+    if [[ " $optional " == *" meilisearch "* ]]; then
+        echo "  Meilisearch     host: ${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}  port: 7700   master key: ${MEILI_MASTER_KEY:-podium-dev-master-key}"
+    fi
+
+    local disabled=""
+    [[ " $optional " != *" minio "* ]]       && disabled="$disabled minio"
+    [[ " $optional " != *" meilisearch "* ]] && disabled="$disabled meilisearch"
+    if [ -n "$disabled" ]; then
+        echo ""
+        echo "NOT ENABLED on this machine:$disabled"
+        echo "  Do not point the app at these. If the app genuinely needs one, say so in your"
+        echo "  summary and tell the user to run: podium enable-service <name>"
+    fi
+}
+
+# Install project dependencies based on FILES PRESENT, not on framework
+# classification. This is the fix for "doesn't fit the Podium mold": the old
+# gating ran npm only when FRAMEWORK_IS_NODE was set and pip only when
+# FRAMEWORK_IS_PYTHON was set, so a cloned repo that classified as something else
+# — or as nothing — silently got no dependencies installed.
+#
+# Runs inside the project container so the toolchain versions match what the app
+# will actually run against, falling back to the host only when the container
+# lacks the tool.
+#   $1 project name
+install_project_dependencies() {
+    local project_name="$1"
+    local workdir; workdir="$(podium_container_workdir)"
+    local ran=0
+
+    _in_container() { docker container exec --user "$(id -u):$(id -g)" --workdir "$workdir" "$project_name" "$@"; }
+    _has_in_container() { docker container exec "$project_name" sh -c "command -v $1 >/dev/null 2>&1"; }
+
+    # --- PHP -----------------------------------------------------------------
+    # composer install includes dev requirements unless --no-dev is passed, so
+    # this already covers "with devs".
+    if [ -f "composer.json" ]; then
+        echo-cyan "composer.json found — installing PHP dependencies ..."; echo-white
+        if _has_in_container composer; then
+            _in_container composer install --no-interaction || echo-yellow "composer install failed — continuing."
+        else
+            echo-yellow "composer not present in the container; skipping."
+        fi
+        ran=1
+    fi
+
+    # --- Node ----------------------------------------------------------------
+    # Lockfile decides the package manager. Guessing npm when the repo ships a
+    # pnpm or yarn lockfile produces a different dependency tree than the authors
+    # tested with, which is worse than not installing.
+    if [ -f "package.json" ]; then
+        local pm="npm" pm_args="install --no-audit --no-fund --no-progress"
+        if   [ -f "pnpm-lock.yaml" ]; then pm="pnpm"; pm_args="install"
+        elif [ -f "yarn.lock" ];      then pm="yarn"; pm_args="install"
+        fi
+        echo-cyan "package.json found — installing Node dependencies with $pm ..."; echo-white
+        if _has_in_container "$pm"; then
+            _in_container "$pm" $pm_args || echo-yellow "$pm install failed — continuing."
+        elif command -v "$pm" >/dev/null 2>&1; then
+            echo-yellow "$pm not in the container; installing on the host instead."
+            $pm $pm_args || echo-yellow "$pm install failed — continuing."
+        else
+            echo-yellow "$pm available neither in the container nor on the host; skipping."
+        fi
+        ran=1
+    fi
+
+    # --- Python --------------------------------------------------------------
+    if [ -f "requirements.txt" ]; then
+        echo-cyan "requirements.txt found — installing Python dependencies ..."; echo-white
+        _in_container pip3 install --break-system-packages -r requirements.txt \
+            || echo-yellow "pip install failed — continuing."
+        ran=1
+    elif [ -f "pyproject.toml" ]; then
+        echo-cyan "pyproject.toml found — installing Python project ..."; echo-white
+        _in_container pip3 install --break-system-packages -e . \
+            || echo-yellow "pip install -e . failed — continuing."
+        ran=1
+    fi
+    if [ -f "Pipfile" ] && [ ! -f "requirements.txt" ]; then
+        echo-yellow "Pipfile found but pipenv is not managed by Podium — install manually if needed."
+    fi
+
+    unset -f _in_container _has_in_container
+    [ "$ran" = "0" ] && echo-cyan "No composer.json, package.json or Python requirements found — nothing to install."
+    return 0
+}
+
+# Build the pre-prompt that folds a freshly cloned repo into Podium.
+#   $1 project name   $2 static IP   $3 host port
+podium_fold_prompt() {
+    local project_name="$1" ip="$2" port="$3"
+    local upstream_note=""
+
+    if [ -f "docker-compose.upstream.yaml" ]; then
+        upstream_note="This repo SHIPPED ITS OWN COMPOSE. The original is preserved at
+docker-compose.upstream.yaml — read it first; it is the authoritative description of what
+services this app expects. docker-compose.yaml is Podium's automated first attempt at
+adapting it and may well be wrong. Treat the upstream file as the source of truth and
+rewrite docker-compose.yaml from it."
+    else
+        upstream_note="This repo shipped NO compose file. docker-compose.yaml was generated by
+Podium from a framework template. Verify it actually matches how this app runs — check for a
+Procfile, Dockerfile, Makefile, CI config or README run instructions before trusting it."
+    fi
+
+    cat << EOF
+You are folding a freshly cloned repository into Podium. Work only in this directory.
+
+## What Podium is
+
+Podium runs many projects side by side on one machine against a set of SHARED backing
+services. Every project is a container on the external Docker network 'podium-cli_vpc',
+reachable by hostname. Projects do NOT run their own database, cache or mail container —
+they connect to the shared ones, which are already running.
+
+## This project's identity (already allocated — do not change these)
+
+  Project name : $project_name
+  Hostname/URL : http://$project_name/   (resolves via /etc/hosts to $ip)
+  Static IP    : $ip
+  Host port    : $port
+
+## Shared services available
+
+$(podium_shared_service_facts)
+
+## Your job
+
+$upstream_note
+
+## The web service MUST use a Podium base image (this is the important one)
+
+Use one of these for the main application service:
+
+  canebaycomputers/cbc:nginx-php8      PHP 8.3 + nginx + supervisor
+  canebaycomputers/cbc:nginx-python3   Python 3 + nginx + supervisor
+  canebaycomputers/cbc:nginx-node      Node 22 + nginx + supervisor
+
+Pick the one matching the app's language and DISCARD the upstream image or Dockerfile for
+that service. This is not cosmetic. Podium's tooling — 'podium php', 'podium python',
+'podium npm', 'podium composer', 'podium shell' — runs
+'docker exec --user developer' against this container. An arbitrary upstream image has no
+'developer' user, so every one of those commands fails outright. These images also serve the
+app through nginx on port 80, which is what makes http://$project_name/ resolve at all; an
+app listening on its own port in its own image is simply unreachable.
+
+Adapt the app to the image, not the image to the app: put its start command under supervisor
+and let nginx serve or proxy it, exactly as the upstream Dockerfile's CMD would have run it.
+
+These three images are deliberately broad — nginx, supervisor and the database drivers are
+already compiled in — and they cover essentially any PHP, Python or Node web application.
+**If the app is written in PHP, Python or Node, use the matching image. No exceptions.**
+
+A pinned version is NOT a reason to escape. A repo asking for Node 18, Python 3.9 or PHP 8.1
+still runs on these images in all but pathological cases. Try it and let it fail before
+concluding otherwise — an unnecessary escape silently costs the user every 'podium' command
+for the life of the project.
+
+ESCAPE HATCH — reserved for a genuinely different runtime that these images cannot execute at
+all: a compiled binary (Go, Rust), or a JVM/.NET application. Nothing else qualifies. If you
+take it, keep the upstream image, make it listen on port 80, and state prominently in your
+summary that 'podium php/python/npm/composer/shell' will NOT work for this project and why.
+
+Helper services (workers, schedulers) may keep their own images — the passthrough commands
+only target the main container.
+
+Produce a working docker-compose.yaml and matching app configuration:
+
+1. **Delete bundled backing services.** Any database, cache, queue broker, search or mail
+   container defined in the compose must go, replaced by the shared equivalents above.
+   mysql AND mariadb both map to ${MARIADB_CONTAINER_NAME:-podium-mariadb}. Keep application
+   services (web, worker, scheduler, websocket) — those are the app itself.
+
+2. **Rewrite every reference to a deleted service.** This is the part that is usually missed:
+   look inside connection strings and DSNs, not just plain host variables. A value like
+   DATABASE_URL=postgres://app:secret@db:5432/app must become
+   postgres://root:password@${POSTGRES_CONTAINER_NAME:-podium-postgres}:5432/<dbname>.
+   Search the whole repo — .env, .env.example, config files, settings modules, and any
+   defaults compiled into the app.
+
+3. **Use the real shared credentials** listed above. Do not keep the upstream compose's
+   invented usernames and passwords; those accounts do not exist on the shared servers.
+
+4. **Wire the networking exactly:**
+   - The web service gets: container_name: $project_name
+   - and a static address on the shared network:
+       networks:
+         default:
+           ipv4_address: $ip
+   - Other services attach with a plain: networks: [default]
+   - The network block at the bottom must be:
+       networks:
+         default:
+           external: true
+           name: podium-cli_vpc
+   - Do NOT publish ports with 'ports:' on any service. Projects are reached by hostname on
+     the shared network; published ports collide with other Podium projects.
+
+5. **Create the database if the app needs one.** The shared servers are running but this
+   project's database may not exist yet. Use the project name with dashes replaced by
+   underscores unless the app's config clearly expects a different name.
+
+   You cannot run migrations yourself — the container is not up while you work. Instead, end
+   your summary with a MIGRATE: line giving the exact command, e.g.
+     MIGRATE: podium art migrate
+     MIGRATE: podium python manage.py migrate
+   or 'MIGRATE: none' if the app has no migrations. This is the only way the user finds out
+   how to finish setup, so do not omit it.
+
+6. **Do not run** podium new, podium clone, podium install, or create another project.
+   Do not start containers yourself — Podium starts them after you finish.
+
+## When you are done
+
+Print a short summary: which services you removed, what you pointed them at, which files you
+edited beyond docker-compose.yaml, and anything you could not resolve that the user must
+handle. Be explicit about guesses — a wrong guess stated plainly is far more useful than a
+confident one.
+EOF
+}
+
+# Run the fold, then verify it. Verification matters: without it we would have
+# traded a bad deterministic adaptation for an unverified generated one.
+#   $1 project name   $2 static IP   $3 host port
+podium_fold_project() {
+    local project_name="$1" ip="$2" port="$3"
+    local ai_script="$DEV_DIR/scripts/ai.sh"
+
+    if [ ! -f "$ai_script" ]; then
+        echo-yellow "ai.sh not found — skipping fold."
+        return 1
+    fi
+
+    echo-return
+    echo-cyan "Folding $project_name into Podium with the AI agent ($AI_AGENT) ..."
+    echo-white "This reads the repo and rewrites docker-compose.yaml and app config."
+    echo-return
+
+    local prompt; prompt="$(podium_fold_prompt "$project_name" "$ip" "$port")"
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        bash "$ai_script" "$prompt" > /tmp/podium-fold-$$.log 2>&1 || true
+    else
+        bash "$ai_script" "$prompt" || true
+    fi
+
+    # --- verify -------------------------------------------------------------
+    if [ ! -f "docker-compose.yaml" ] && [ ! -f "docker-compose.yml" ]; then
+        echo-red "Fold produced no docker-compose file."
+        return 1
+    fi
+
+    if ! docker compose config >/dev/null 2>&1; then
+        echo-yellow "docker compose config rejected the generated file — asking the agent to fix it ..."
+        local err; err="$(docker compose config 2>&1 | head -20)"
+        bash "$ai_script" "The docker-compose.yaml you just wrote is invalid. Fix it in place.
+Do not change the networking contract described earlier: external network podium-cli_vpc,
+container_name $project_name, ipv4_address $ip, and no published ports.
+
+docker compose config reported:
+$err" || true
+
+        if ! docker compose config >/dev/null 2>&1; then
+            echo-red "docker-compose.yaml is still invalid after one repair attempt."
+            echo-white "The original is preserved at docker-compose.upstream.yaml."
+            return 1
+        fi
+    fi
+
+    # Guard the two contract items an agent most often drops. These are cheap to
+    # check and expensive to debug later: a project on the wrong network appears
+    # to start and then cannot reach any shared service.
+    if ! grep -q "podium-cli_vpc" docker-compose.yaml 2>/dev/null; then
+        echo-yellow "Warning: generated compose does not reference podium-cli_vpc — shared services will be unreachable."
+    fi
+    if ! grep -q "$ip" docker-compose.yaml 2>/dev/null; then
+        echo-yellow "Warning: generated compose does not pin $ip — http://$project_name/ may not resolve to this project."
+    fi
+
+    echo-green "Fold complete and compose validates."
+    return 0
+}
+
+# Report which `podium <tool>` passthroughs will actually work against this
+# project's container. Run AFTER the container is up.
+#
+# Every passthrough is `docker exec --user developer`, so a project on a
+# non-Podium image loses all of them at once — and the failure surfaces later as
+# a confusing "unable to find user: developer" rather than at setup time. Saying
+# it plainly here is the difference between a known limitation and a bug report.
+#   $1 project name
+podium_report_container_capabilities() {
+    local project_name="$1"
+
+    docker container inspect "$project_name" >/dev/null 2>&1 || return 0
+
+    if ! docker container exec "$project_name" id developer >/dev/null 2>&1; then
+        echo-return
+        echo-yellow "Heads up: this project runs on a non-Podium image (no 'developer' user)."
+        echo-yellow "These will NOT work for it:"
+        echo-white  "  podium php / python / npm / node / composer / art / shell / exec"
+        echo-white  "Use 'docker exec -it $project_name <cmd>' instead, or re-run with"
+        echo-white  "  podium clone ... --image canebaycomputers/cbc:nginx-php8"
+        echo-white  "to force a Podium base image."
+        return 0
+    fi
+
+    local available="" missing=""
+    local tool
+    for tool in php python3 node npm composer; do
+        if docker container exec "$project_name" sh -c "command -v $tool >/dev/null 2>&1"; then
+            available="$available $tool"
+        else
+            missing="$missing $tool"
+        fi
+    done
+    [ -n "$available" ] && echo-green "Container toolchain:$available"
+    [ -n "$missing" ]   && echo-cyan  "Not in this image:$missing (expected — images are language-specific)"
+    return 0
+}
+
+# Pre-flight compatibility check, run on a freshly cloned repo BEFORE the fold.
+#
+# Podium serves every project from one of three base images (PHP 8.3, Python 3,
+# Node 22). That is not a soft preference — the passthrough commands exec as the
+# 'developer' user and nginx serves on port 80, neither of which survives a
+# foreign image. So "is this repo PHP, Python or Node?" is the whole
+# compatibility question, and it is answerable from the file tree.
+#
+# Catching it here is worth real money: without this, an incompatible repo burns
+# a full AI fold and leaves a registered project that can never start.
+#
+# Echoes findings. Returns 0 compatible, 1 incompatible.
+podium_preflight_check() {
+    local hard="" soft="" lang=""
+
+    # --- is there anything here at all? -------------------------------------
+    if [ -z "$(ls -A . 2>/dev/null | grep -v '^\.git$')" ]; then
+        echo-red "Repository is empty."
+        return 1
+    fi
+
+    # --- primary runtime ----------------------------------------------------
+    # Order matters: a Rails app ships a package.json for assets, so the
+    # disqualifying markers are checked before the supported ones.
+    if   [ -f "go.mod" ];                                    then hard="Go (go.mod)"
+    elif [ -f "Cargo.toml" ];                                then hard="Rust (Cargo.toml)"
+    elif [ -f "pom.xml" ] || ls build.gradle* >/dev/null 2>&1; then hard="Java/Kotlin (Maven/Gradle)"
+    elif ls ./*.csproj ./*.sln >/dev/null 2>&1;              then hard=".NET"
+    elif [ -f "mix.exs" ];                                   then hard="Elixir (mix.exs)"
+    elif [ -f "Gemfile" ] || [ -f "config.ru" ];             then hard="Ruby (Gemfile) — Podium has no Ruby image"
+    elif [ -f "pubspec.yaml" ];                              then hard="Dart/Flutter"
+    elif [ -d "android" ] && [ -d "ios" ];                   then hard="a mobile app, not a web app"
+    fi
+
+    if [ -z "$hard" ]; then
+        if   [ -f "composer.json" ] || [ -f "artisan" ] || [ -f "index.php" ] || [ -f "wp-config.php" ]; then
+            lang="PHP"
+        elif [ -f "manage.py" ] || [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "Pipfile" ]; then
+            lang="Python"
+        elif [ -f "package.json" ]; then
+            lang="Node"
+        elif ls ./*.php >/dev/null 2>&1;                     then lang="PHP"
+        elif ls ./*.py  >/dev/null 2>&1;                     then lang="Python"
+        else
+            hard="no recognisable PHP, Python or Node application"
+        fi
+    fi
+
+    if [ -n "$hard" ]; then
+        echo-return
+        echo-red   "Incompatible with Podium: this repo is $hard."
+        echo-white "Podium serves projects from PHP 8.3, Python 3 or Node 22 base images. Its"
+        echo-white "tooling (podium php/python/npm/composer/shell) execs as the 'developer' user"
+        echo-white "inside those images, and nginx serves the app on port 80 — neither works on a"
+        echo-white "foreign runtime."
+        echo-white ""
+        echo-white "Clone it outside Podium and run it with its own docker-compose, or re-run with"
+        echo-white "  --no-preflight   to attempt it anyway (expect the passthrough commands to fail)"
+        return 1
+    fi
+
+    # --- soft warnings: proceed, but say what will need attention ------------
+    local compose=""
+    [ -f "docker-compose.yaml" ] && compose="docker-compose.yaml"
+    [ -f "docker-compose.yml" ]  && compose="docker-compose.yml"
+
+    if [ -n "$compose" ]; then
+        local unsupported
+        unsupported=$(grep -ioE 'image:[[:space:]]*[a-z0-9./_-]*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul)' "$compose" 2>/dev/null \
+                      | sed -E 's/.*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul).*/\1/I' | sort -u | tr '\n' ' ')
+        [ -n "$unsupported" ] && soft="$soft\n  • Needs services Podium does not provide:$unsupported\n    These stay as project-local containers; they will not be shared."
+
+        if grep -qE '(minio|s3)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" minio "* ]]; then
+            soft="$soft\n  • Wants object storage. Enable it first:  podium enable-service minio"
+        fi
+        if grep -qiE '(meilisearch|typesense)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" meilisearch "* ]]; then
+            soft="$soft\n  • Wants a search engine. Enable it first:  podium enable-service meilisearch"
+        fi
+        if grep -qE 'capabilities:.*gpu|runtime:[[:space:]]*nvidia' "$compose" 2>/dev/null; then
+            soft="$soft\n  • Requests GPU access. Podium projects run CPU-only."
+        fi
+        grep -q 'laravel/sail' "$compose" 2>/dev/null && \
+            soft="$soft\n  • Laravel Sail compose — it will be discarded for a Podium image (Sail cannot build before composer install)."
+    fi
+
+    [ -f ".gitmodules" ] && soft="$soft\n  • Has git submodules — run 'git submodule update --init' if the app needs them."
+    if [ -f "package.json" ] && grep -qE '"(workspaces|nx|turbo)"' package.json 2>/dev/null; then
+        soft="$soft\n  • Looks like a monorepo — the app to serve may be ambiguous; check the result."
+    fi
+
+    echo-green "Pre-flight OK — detected a $lang application."
+    if [ -n "$soft" ]; then
+        echo-yellow "Worth knowing before it is set up:"
+        printf "%b\n" "$soft" | sed '/^$/d'
+    fi
+    return 0
+}

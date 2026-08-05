@@ -33,6 +33,11 @@ DB_NAME_OVERRIDE=""
 OVERWRITE_ENV=0
 RUN_MIGRATIONS=1
 GIT_CLONE_ARGS=()
+# Fold = hand the cloned repo to the AI agent to adapt for Podium instead of
+# running it through framework classification and the regex compose adapter.
+# Default on when an agent is configured; falls back automatically when not.
+FOLD=""
+SKIP_PREFLIGHT=0
 
 # Function to display usage
 usage() {
@@ -69,6 +74,9 @@ usage() {
     echo-white "  --no-startup                 Clone and register project but do not start the container"
     echo-white "  --image REF                  Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"
+    echo-white "  --fold                       Force the AI fold (adapt the repo for Podium). Default when an agent is set."
+    echo-white "  --no-fold                    Skip the AI fold; use the built-in framework/compose heuristics instead"
+    echo-white "  --no-preflight               Skip the compatibility check and set up the repo regardless"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
     echo-white "  --branch NAME                Check out only the given branch (passed to git clone)"
     echo-white "  --single-branch              Clone only the history leading to the branch tip (git clone --single-branch)"
@@ -107,6 +115,18 @@ while [[ $# -gt 0 ]]; do
             ;;
         --one-off)
             SKIP_INTERACTIVE=1
+            shift
+            ;;
+        --fold)
+            FOLD=1
+            shift
+            ;;
+        --no-preflight)
+            SKIP_PREFLIGHT=1
+            shift
+            ;;
+        --no-fold)
+            FOLD=0
             shift
             ;;
         --no-github)
@@ -404,7 +424,54 @@ fi
 
 echo-return
 
+# --- pre-flight ---------------------------------------------------------------
+# Check compatibility against the real file tree before anything is registered or
+# any AI call is spent. Caught here an incompatible repo costs nothing; caught
+# after the fold it has already burned a model call and left a dead project.
+if [ "$SKIP_PREFLIGHT" != "1" ]; then
+    cd "$PROJECT_NAME"
+    if ! podium_preflight_check; then
+        cd "$PROJECTS_DIR_PATH"
+        echo-return
+        echo-white "The clone is left in place for inspection:"
+        echo-white "  $PROJECTS_DIR_PATH/$PROJECT_NAME"
+        echo-white "Nothing was registered with Podium — delete that directory to undo it."
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            json_error "Repository is not compatible with Podium (see preflight output)"
+        fi
+        exit 1
+    fi
+    cd "$PROJECTS_DIR_PATH"
+fi
+
 cd ..
+
+# Decide whether to fold. The fold is the good path — it reads the actual repo
+# instead of pattern-matching service names — but it needs an agent. With none
+# configured, fall back to the framework/compose heuristics so `podium clone`
+# still works for someone with no AI credentials at all.
+if [ -z "$FOLD" ]; then
+    if [ -n "$AI_AGENT" ]; then FOLD=1; else FOLD=0; fi
+fi
+if [ "$FOLD" = "1" ] && [ -z "$AI_AGENT" ]; then
+    echo-yellow "--fold requested but no AI agent is configured. Falling back to built-in heuristics."
+    echo-white  "Configure one with: podium ai-set --agent claude"
+    FOLD=0
+fi
+if [ "$FOLD" = "0" ] && [ -z "$AI_AGENT" ]; then
+    echo-yellow "No AI agent configured — using built-in framework/compose heuristics."
+    echo-white  "These guess from service names and do not rewrite connection strings inside DSNs."
+    echo-white  "For arbitrary repos, 'podium ai-set --agent claude' then re-clone gives a much better result."
+fi
+
+# When folding, setup_project must NOT start the container: its generated compose
+# is only a first draft, and a draft that fails to start would abort setup before
+# the fold ever runs — which is precisely the case the fold exists to fix.
+# Startup, dependencies and migrations are done here afterwards instead.
+USER_NO_STARTUP="$NO_STARTUP"
+if [ "$FOLD" = "1" ]; then
+    NO_STARTUP=1
+fi
 
 # Build setup options to pass along (positional arguments expected by setup_project.sh)
 # Use an array to preserve spaces and avoid quoting issues.
@@ -470,6 +537,58 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     fi
 else
     source "$DEV_DIR/scripts/setup_project.sh" "${SETUP_ARGS[@]}"
+fi
+
+# --- AI fold -----------------------------------------------------------------
+# setup_project has allocated the IP, written /etc/hosts, preserved the upstream
+# compose as docker-compose.upstream.yaml and produced a first-draft compose.
+# Now hand the repo to the agent to make it actually correct, then start it.
+if [ "$FOLD" = "1" ]; then
+    cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
+
+    # Read the allocation back from /etc/hosts rather than relying on
+    # setup_project's variables: in JSON mode it runs in a subshell, so its
+    # locals never reach this scope.
+    FOLD_IP=$(grep -m1 "[[:space:]]$PROJECT_NAME\$" /etc/hosts 2>/dev/null | awk '{print $1}')
+    FOLD_PORT="${FOLD_IP##*.}"
+
+    if [ -z "$FOLD_IP" ]; then
+        echo-yellow "Could not determine the allocated IP for $PROJECT_NAME — skipping fold."
+    else
+        if podium_fold_project "$PROJECT_NAME" "$FOLD_IP" "$FOLD_PORT"; then
+            FOLD_OK=1
+        else
+            FOLD_OK=0
+            echo-yellow "Fold did not complete cleanly. The project is registered and the"
+            echo-yellow "original compose is at docker-compose.upstream.yaml — fix and run:"
+            echo-white  "  podium up $PROJECT_NAME"
+        fi
+
+        # Start, install dependencies and migrate — the steps setup_project
+        # deferred. Only when the caller did not ask for --no-startup.
+        if [ "$FOLD_OK" = "1" ] && [ "$USER_NO_STARTUP" != "1" ]; then
+            echo-return
+            echo-cyan "Starting $PROJECT_NAME ..."
+            cd "$PROJECTS_DIR_PATH"
+            if source "$DEV_DIR/scripts/startup.sh" "$PROJECT_NAME"; then
+                cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
+
+                # File-presence driven, so repos that match no framework still
+                # get their dependencies.
+                install_project_dependencies "$PROJECT_NAME"
+
+                if [ "$RUN_MIGRATIONS" = "1" ] && command -v framework_run_migrations >/dev/null 2>&1; then
+                    MIGRATE_SAFE=1 framework_run_migrations || \
+                        echo-yellow "Migrations failed — run them manually once the app config is settled."
+                fi
+
+                podium_report_container_capabilities "$PROJECT_NAME"
+            else
+                echo-yellow "Container failed to start. Inspect docker-compose.yaml, then: podium up $PROJECT_NAME"
+            fi
+        fi
+    fi
+    cd "$PROJECTS_DIR_PATH"
 fi
 
 # GitHub repository creation — the clone MODE already set CREATE_GITHUB
