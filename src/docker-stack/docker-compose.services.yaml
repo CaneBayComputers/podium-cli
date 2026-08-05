@@ -1,6 +1,21 @@
+# Every image is PINNED to a major version. This is not tidiness -- it prevents
+# data loss.
+#
+# `podium update --full` deliberately REMOVES the shared-service images so they
+# re-pull fresh. With unpinned images that re-pull grabs whatever is newest, and
+# a database refuses to start on a data directory written by an older major:
+# PostgreSQL says outright "The data directory was initialized by PostgreSQL
+# version N, which is not compatible with this version". At the time of pinning,
+# postgres:latest had already moved to 18 while installed machines held PG 17
+# data -- so `podium update --full` would have bricked every Postgres project and
+# locked the data behind a server that would not boot.
+#
+# Pins are set to the major ALREADY RUNNING on installed machines, so applying
+# this requires no migration. Raising one later is a deliberate, one-way decision
+# that needs a dump/restore first -- data directories cannot be downgraded.
 services:
   mysql:
-    image: mariadb
+    image: mariadb:12.0
     container_name: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
@@ -14,7 +29,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.2"
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin:5
     container_name: "${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
     restart: always
     environment:
@@ -26,7 +41,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.3"
 
   redis:
-    image: redis
+    image: redis:8
     container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
     restart: always
     expose:
@@ -38,7 +53,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.5"
 
   memcached:
-    image: memcached
+    image: memcached:1.6
     container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
     restart: always
     expose:
@@ -48,7 +63,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.7"
 
   mongo:
-    image: mongo
+    image: mongo:8.0
     container_name: "${MONGO_CONTAINER_NAME:-podium-mongo}"
     restart: always
     environment:
@@ -63,7 +78,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.4"
 
   postgres:
-    image: postgres
+    image: postgres:17
     container_name: "${POSTGRES_CONTAINER_NAME:-podium-postgres}"
     restart: always
     environment:
@@ -79,7 +94,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.6"
 
   mailhog:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.30
     container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
     restart: always
     ports:

@@ -2160,3 +2160,39 @@ github_remotes_to_ssh() {
     done
     return 0
 }
+
+# Refresh /etc/podium-cli/docker-compose.yaml from the repo.
+#
+# That file is a COPY, written once by `podium configure`, and nothing else ever
+# updated it. So a fix to the shared-service definitions in the repo reached
+# nobody who had already installed — including image pins, which is how an
+# unpinned `postgres` survived in installed copies after the repo pinned it.
+#
+# Backs up the previous file rather than overwriting blind: it is under /etc and
+# a user may have hand-edited it.
+sync_installed_compose() {
+    local src="$DEV_DIR/docker-stack/docker-compose.services.yaml"
+    local dst="/etc/podium-cli/docker-compose.yaml"
+
+    [ -f "$src" ] || return 0
+    [ -d "$(dirname "$dst")" ] || return 0
+
+    # Nothing to do when they already match.
+    if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+        return 0
+    fi
+
+    if [ -f "$dst" ]; then
+        sudo cp -f "$dst" "${dst}.bak" 2>/dev/null || true
+        echo-cyan "Updating shared-service definitions (previous saved as ${dst}.bak) ..."
+    else
+        echo-cyan "Installing shared-service definitions ..."
+    fi
+
+    if sudo cp -f "$src" "$dst" 2>/dev/null; then
+        echo-green "Shared-service definitions updated."
+        return 0
+    fi
+    echo-yellow "Could not update $dst — shared services keep their previous definitions."
+    return 1
+}

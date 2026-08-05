@@ -82,6 +82,12 @@ if [[ "$FULL_UPDATE" == "1" ]]; then
     if ! command -v docker >/dev/null 2>&1; then
         echo-yellow "Docker is not available on this system. Skipping image updates."
     else
+        # Sync the installed compose FIRST. The removal below reads image names
+        # from it, so a stale unpinned copy would make us delete and re-pull
+        # `latest` -- exactly how a machine holding PG 17 data ends up pulling
+        # PG 18 and then refusing to start.
+        sync_installed_compose
+
         # Remove shared service images so they are re-pulled fresh
         COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
         if [ -f "$COMPOSE_FILE" ]; then
@@ -208,6 +214,9 @@ else
 
         if "${GIT_PULL[@]}"; then
             echo-green "Podium CLI code updated."
+            # The installed compose is a copy; without this, shared-service
+            # changes (image pins especially) never reach an existing install.
+            sync_installed_compose
         else
             echo-yellow "git pull failed in $INSTALL_DIR."
             echo-yellow "If the working tree has local changes or has diverged, resolve them"
