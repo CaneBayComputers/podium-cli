@@ -265,10 +265,30 @@ if [ -z "$REPOSITORY" ]; then
     error "Error: Repository is required."
 fi
 
-# Normalize GitHub shorthand (owner/repo or owner/repo.git) into full HTTPS URL
+# Normalize GitHub shorthand (owner/repo or owner/repo.git) into a full URL
 if ! is_github_repo "$REPOSITORY"; then
     if [[ "$REPOSITORY" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(\.git)?$ ]]; then
         REPOSITORY="https://github.com/$REPOSITORY"
+    fi
+fi
+
+# Prefer SSH for GitHub when the user's key actually authenticates.
+#
+# An HTTPS remote needs a credential helper or a token for anything private and
+# for every push; SSH just uses the key they already have. Since the cloned
+# repo keeps whatever remote it was cloned with, an HTTPS clone quietly commits
+# the user to re-authenticating on their first push — the URL Podium picks here
+# is a long-lived decision, not a transport detail.
+#
+# Only GitHub URLs are touched, and only when the probe succeeds; otherwise this
+# leaves the URL exactly as given.
+if is_github_repo "$REPOSITORY" && [[ "$REPOSITORY" != git@* ]]; then
+    if github_ssh_works; then
+        _ssh_url="$(github_url_to_ssh "$REPOSITORY")"
+        if [ "$_ssh_url" != "$REPOSITORY" ]; then
+            echo-cyan "Using SSH for GitHub (your key authenticates): $_ssh_url"
+            REPOSITORY="$_ssh_url"
+        fi
     fi
 fi
 
@@ -402,6 +422,11 @@ if [[ "$FORK_USED" -eq 1 ]]; then
                     git remote rename upstream "$ORIGINAL_REMOTE_NAME" >/dev/null 2>&1 || true
                 fi
             fi
+
+            # gh clones using its own git_protocol (https by default), so the
+            # fork would otherwise keep an HTTPS origin the user has to
+            # authenticate against on every push despite having a working key.
+            github_remotes_to_ssh
             
             cd "$PROJECTS_DIR_PATH"
 

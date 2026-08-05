@@ -31,6 +31,21 @@ FORK_USED=0
 # the network, or anything they could act on. Shawn hit exactly this.
 get_latest_laravel_version() {
     local json version
+
+    # git ls-remote first: it speaks the git protocol, so it is not subject to
+    # the REST API's rate limit AT ALL — this removes the dependency rather than
+    # just raising the ceiling — and it is faster than the API call. Uses SSH
+    # when the user's key works, since that is authenticated and needs no token.
+    local repo="https://github.com/laravel/laravel"
+    if github_ssh_works; then
+        repo="git@github.com:laravel/laravel.git"
+    fi
+    if version="$(github_latest_tag "$repo")"; then
+        printf '%s' "$version"
+        return 0
+    fi
+
+    # Fall back to the API only if git could not reach the remote at all.
     json="$(github_api_get "https://api.github.com/repos/laravel/laravel/tags")" || return 1
 
     version="$(printf '%s' "$json" | grep '"name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/')"
@@ -55,6 +70,17 @@ validate_laravel_version() {
     local version_with_v="$version"
     if [[ ! "$version" =~ ^v ]]; then
         version_with_v="v${version}"
+    fi
+
+    # Same reasoning as get_latest_laravel_version: ls-remote is rate-limit-free,
+    # so the common case never consumes API budget.
+    local repo="https://github.com/laravel/laravel"
+    github_ssh_works && repo="git@github.com:laravel/laravel.git"
+
+    local tags
+    if tags="$(git ls-remote --tags --refs "$repo" 2>/dev/null)" && [ -n "$tags" ]; then
+        printf '%s' "$tags" | grep -q "refs/tags/${version_with_v}\$"
+        return $?
     fi
 
     local json

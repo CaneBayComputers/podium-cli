@@ -2083,3 +2083,80 @@ github_api_get() {
     fi
     return 1
 }
+
+# Prefer SSH for GitHub when the user's key actually works.
+#
+# HTTPS remotes need a credential helper or a token for anything private and for
+# every push; an SSH remote just uses the key the user already has. Shawn's is
+# authorised, so cloning over HTTPS was making him re-authenticate for no reason.
+#
+# The probe costs a network round trip, so the answer is cached for the life of
+# the process — this is called once per clone, but callers should not have to
+# know that.
+PODIUM_GH_SSH_OK=""
+github_ssh_works() {
+    if [ -z "$PODIUM_GH_SSH_OK" ]; then
+        if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+               -o ConnectTimeout=8 git@github.com 2>&1 | grep -q "successfully authenticated"; then
+            PODIUM_GH_SSH_OK=1
+        else
+            PODIUM_GH_SSH_OK=0
+        fi
+    fi
+    [ "$PODIUM_GH_SSH_OK" = "1" ]
+}
+
+# Rewrite a GitHub HTTPS URL (or owner/repo shorthand) to its SSH form.
+# Non-GitHub URLs are returned unchanged — this is not a general rewriter.
+github_url_to_ssh() {
+    local url="$1"
+    case "$url" in
+        git@github.com:*) printf '%s' "$url" ;;
+        https://github.com/*|http://github.com/*)
+            local path="${url#*github.com/}"
+            path="${path%.git}"
+            printf 'git@github.com:%s.git' "$path" ;;
+        *) printf '%s' "$url" ;;
+    esac
+}
+
+# Latest tag of a remote repo WITHOUT touching the REST API.
+#
+# `git ls-remote` speaks the git protocol, so it is not subject to the API's
+# 60-requests-per-hour-per-IP cap at all — this removes the rate-limit dependency
+# rather than merely raising the ceiling, and it is faster (~0.2s) than the API
+# call it replaces. --sort=-v:refname gives a real version sort; without it the
+# ordering is lexical and "v9.5.2" sorts above "v13.8.0".
+#   $1 repo URL   echoes the newest tag with any leading 'v' stripped
+github_latest_tag() {
+    local url="$1" tag
+    tag="$(git ls-remote --tags --refs --sort=-v:refname "$url" 2>/dev/null \
+           | head -1 | sed 's#.*refs/tags/##; s/^v//')"
+    [ -n "$tag" ] || return 1
+    printf '%s' "$tag"
+}
+
+# Convert every GitHub remote in the CURRENT repo to its SSH form.
+#
+# Needed because `gh repo fork --clone` clones using gh's own git_protocol
+# setting, which defaults to https. The fork then carries an HTTPS origin the
+# user has to authenticate against on their first push, even though their SSH key
+# works — and the remote a repo is created with is the one it keeps.
+#
+# Deliberately does NOT change gh's global config: that is the user's setting for
+# all their other work, not ours to rewrite.
+github_remotes_to_ssh() {
+    github_ssh_works || return 0
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+
+    local remote url ssh_url
+    for remote in $(git remote 2>/dev/null); do
+        url="$(git remote get-url "$remote" 2>/dev/null || true)"
+        [ -n "$url" ] || continue
+        ssh_url="$(github_url_to_ssh "$url")"
+        if [ "$ssh_url" != "$url" ]; then
+            git remote set-url "$remote" "$ssh_url" >/dev/null 2>&1 || true
+        fi
+    done
+    return 0
+}
