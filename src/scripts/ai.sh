@@ -98,6 +98,17 @@ if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
     exit 1
 fi
 
+# Podium no longer forces each agent's approval prompts off. Disabling another
+# tool's safety mechanism on someone's machine is a decision for the user, not
+# for us, so it is asked once at install time and recorded in the agent's own
+# config file (see podium_offer_agent_autonomy). The user can inspect and revoke
+# it there using the agent's own documentation.
+#
+# PODIUM_AI_AUTO_APPROVE=1 re-adds the flags per invocation. It exists for
+# throwaway containers and CI, where writing to a home-directory config is
+# pointless, and so anyone depending on the old behaviour has a way back.
+AUTO_APPROVE="${PODIUM_AI_AUTO_APPROVE:-0}"
+
 case "$AI_AGENT_CLI_NAME" in
     codex)
         codex_args=()
@@ -106,7 +117,7 @@ case "$AI_AGENT_CLI_NAME" in
         fi
         _export_agent_key OPENAI_API_KEY "sk-"
         _export_agent_base OPENAI_BASE_URL
-        codex_args+=(--dangerously-bypass-approvals-and-sandbox)
+        [[ "$AUTO_APPROVE" == "1" ]] && codex_args+=(--dangerously-bypass-approvals-and-sandbox)
         if [[ "$ONE_OFF" == "1" ]]; then
             codex exec "${codex_args[@]}" "$INIT_PROMPT"
         else
@@ -114,7 +125,8 @@ case "$AI_AGENT_CLI_NAME" in
         fi
         ;;
     claude)
-        claude_args=(--dangerously-skip-permissions)
+        claude_args=()
+        [[ "$AUTO_APPROVE" == "1" ]] && claude_args+=(--dangerously-skip-permissions)
         if [[ "$ONE_OFF" == "1" ]]; then
             claude_args+=(-p)
         fi
@@ -139,7 +151,10 @@ case "$AI_AGENT_CLI_NAME" in
         # middle of `podium create`'s JSON reply, so it is suppressed rather than
         # left to corrupt the classifier.
         export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
-        qwen_args=(--yolo --auth-type openai)
+        # --auth-type is required for headless runs and is not a safety setting,
+        # so it stays unconditional; --yolo is the approval bypass and is gated.
+        qwen_args=(--auth-type openai)
+        [[ "$AUTO_APPROVE" == "1" ]] && qwen_args+=(--yolo)
         if [[ -n "$AI_MODEL" ]]; then
             qwen_args+=("--model" "$AI_MODEL")
         fi
@@ -151,7 +166,10 @@ case "$AI_AGENT_CLI_NAME" in
         qwen "${qwen_args[@]}"
         ;;
     gemini)
-        gemini_args=(--yolo --skip-trust)
+        # Both --yolo (action approval) and --skip-trust (directory trust) are
+        # safety prompts, so both are gated rather than only the obvious one.
+        gemini_args=()
+        [[ "$AUTO_APPROVE" == "1" ]] && gemini_args+=(--yolo --skip-trust)
         if [[ -n "$AI_MODEL" ]]; then
             gemini_args+=("--model" "$AI_MODEL")
         fi

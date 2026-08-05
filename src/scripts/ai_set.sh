@@ -437,10 +437,12 @@ ensure_ai_agent_installed() {
         return 0
     fi
 
-    # If the CLI is already available, nothing to do
+    # If the CLI is already available, nothing to do beyond checking that it can
+    # actually run unattended — Podium's AI commands stall otherwise.
     if command -v "$exec_command" >/dev/null 2>&1; then
         echo-green "AI agent CLI '$cli_command' is already installed (command: $exec_command)."
         echo-white
+        podium_offer_agent_autonomy "$cli_command"
         return 0
     fi
 
@@ -473,6 +475,7 @@ ensure_ai_agent_installed() {
     if command -v "$exec_command" >/dev/null 2>&1; then
         echo-green "AI agent CLI '$cli_command' installed successfully (command: $exec_command)."
         echo-white
+        podium_offer_agent_autonomy "$cli_command"
         return 0
     fi
 

@@ -12,6 +12,39 @@ nav_order: 10
 
 One set of service containers serves every project on the machine.
 
+This is Podium's central design decision, and it is a **trade-off rather than a
+free win** — worth understanding before you build a workflow on it.
+
+**What you gain.** Most per-project Docker setups start a database container per
+project. Twenty projects running means twenty database containers. Podium runs
+one. On a developer workstation that is frequently the difference between
+"I can have all my client sites up" and "I can have three." It is also why a
+project's `.env` needs no per-project database plumbing: the hostnames below are
+the same in every project, forever.
+
+**What you give up.** These follow directly from the same decision:
+
+- **One version of each engine, machine-wide.** A project needing MySQL 5.7 and
+  another needing MySQL 8 cannot both run against the shared server. Pin the
+  version per project and you are back to a container per project.
+- **Shared lifecycle.** `podium down` stops the services for *every* project, not
+  just the one you were working on.
+- **Shared blast radius.** A corrupted data volume, a runaway migration, or a
+  `DROP DATABASE` affects one server that everything else is also using. Project
+  databases are isolated by name, not by process.
+- **Shared credentials.** Every project connects as `root`. This is a local
+  development tool and the services are not exposed outside the Docker network,
+  but it is not a model to copy into production.
+
+**When Podium is the wrong choice:** you need per-project database versions, or
+you need your local environment to mirror production topology exactly. Tools that
+run a full stack per project — DDEV, Lando, or plain Docker Compose — are a
+better fit for both, at the cost of the resource usage described above.
+
+**When it is the right one:** you run many small-to-medium projects on one
+machine and would rather spend that memory on the projects than on twenty copies
+of MariaDB.
+
 | Service | Hostname | Port | User | Password |
 |---|---|---|---|---|
 | PostgreSQL | `podium-postgres` | 5432 | `root` | `password` |

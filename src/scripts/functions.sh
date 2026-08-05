@@ -999,7 +999,11 @@ ensure_database() {
 #
 # Fills the global AIDER_ARGS array with everything except the prompt.
 build_aider_args() {
-    AIDER_ARGS=(--yes-always --no-check-update)
+    # --yes-always auto-confirms every aider prompt. Gated like the other agents'
+    # approval bypasses: consent is asked once at install time and recorded in
+    # ~/.aider.conf.yml, not forced here on every run.
+    AIDER_ARGS=(--no-check-update)
+    [[ "${PODIUM_AI_AUTO_APPROVE:-0}" == "1" ]] && AIDER_ARGS+=(--yes-always)
 
     # Aider renders through a rich console that hard-wraps at the terminal width
     # and pads with trailing spaces. That corrupts any machine-readable reply —
@@ -1703,5 +1707,139 @@ podium_preflight_check() {
         echo-yellow "Worth knowing before it is set up:"
         printf "%b\n" "$soft" | sed '/^$/d'
     fi
+    return 0
+}
+
+# =============================================================================
+# Agent autonomy consent
+# =============================================================================
+# Podium runs agents non-interactively: `podium create` and `podium clone --fold`
+# hand a prompt to the agent and expect it to edit files and finish without a
+# human at the keyboard. That requires the agent to skip its own per-action
+# approval prompts.
+#
+# Podium used to force this by passing --dangerously-skip-permissions and
+# --dangerously-bypass-approvals-and-sandbox on every invocation. That is a
+# reasonable personal default and an unreasonable thing to impose on someone
+# else's machine without asking — a tool that silently disables another tool's
+# safety prompts is a fair thing to be angry about.
+#
+# So the flags are gone from the invocation. Instead we ASK ONCE, at install
+# time, and record the answer in the agent's OWN config file, where the user can
+# see it, audit it and revoke it with the agent's own documentation.
+#
+#   $1 agent name
+podium_offer_agent_autonomy() {
+    local agent="$1"
+    local cfg desc
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json"; desc='"permissions": {"defaultMode": "bypassPermissions"}' ;;
+        codex)  cfg="$HOME/.codex/config.toml";    desc='approval_policy = "never", sandbox_mode = "danger-full-access"' ;;
+        gemini) cfg="$HOME/.gemini/settings.json"; desc='"autoAccept": true' ;;
+        qwen)   cfg="$HOME/.qwen/settings.json";   desc='"autoAccept": true' ;;
+        aider)  cfg="$HOME/.aider.conf.yml";       desc='yes-always: true' ;;
+        *) return 0 ;;
+    esac
+
+    # Never prompt in automation — silence there means "no", which is the safe
+    # default for a permissions question.
+    if [[ "$JSON_OUTPUT" == "1" ]] || [ ! -t 0 ]; then
+        echo-cyan "Note: $agent may prompt for approval on each action, which stalls non-interactive"
+        echo-cyan "runs like 'podium create'. Run 'podium ai-set --agent $agent' from a terminal to set this up."
+        return 0
+    fi
+
+    echo-return
+    echo-yellow "One question about how $agent should run under Podium."
+    echo-white  ""
+    echo-white  "Podium drives the agent non-interactively — 'podium create' and 'podium clone'"
+    echo-white  "hand it a task and expect it to finish unattended. By default $agent asks for"
+    echo-white  "approval before each file edit or command, which stalls those runs."
+    echo-white  ""
+    echo-white  "Podium can record your preference in $agent's own config:"
+    echo-white  "  $cfg"
+    echo-white  "  $desc"
+    echo-white  ""
+    echo-white  "This lets the agent edit files and run commands in your projects WITHOUT asking."
+    echo-white  "That is what makes Podium's AI features work, and it is a real reduction in"
+    echo-white  "safety — the agent can change anything your user account can. It is written to"
+    echo-white  "$agent's own config, so you can inspect or undo it there at any time."
+    echo-white  ""
+    echo-white  "Say no and Podium still works; the agent will just prompt you, and unattended"
+    echo-white  "commands may stall waiting for input."
+    echo-return
+
+    local answer=""
+    read -r -p "Allow $agent to run unattended? [y/N] " answer
+    case "$answer" in
+        [Yy]*) ;;
+        *) echo-cyan "Left $agent's settings alone. You can change this later in $cfg."
+           return 0 ;;
+    esac
+
+    podium_write_agent_autonomy "$agent" "$cfg"
+}
+
+# Write the autonomy setting into the agent's own config, merging rather than
+# clobbering — these files hold the user's model choice, hooks and auth.
+#   $1 agent   $2 config path
+podium_write_agent_autonomy() {
+    local agent="$1" cfg="$2"
+    mkdir -p "$(dirname "$cfg")"
+
+    case "$agent" in
+        claude|gemini|qwen)
+            local key="permissions" 
+            [ "$agent" = "claude" ] || key="autoAccept"
+            if ! command -v python3 >/dev/null 2>&1; then
+                echo-yellow "python3 not available — set this manually in $cfg."
+                return 1
+            fi
+            python3 - "$cfg" "$agent" << 'PYEOF'
+import json, os, sys
+path, agent = sys.argv[1], sys.argv[2]
+data = {}
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            data = json.load(f) or {}
+    except Exception:
+        # Never destroy a config we cannot parse.
+        print("UNPARSEABLE"); sys.exit(2)
+if agent == "claude":
+    data.setdefault("permissions", {})["defaultMode"] = "bypassPermissions"
+else:
+    data["autoAccept"] = True
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+print("OK")
+PYEOF
+            local rc=$?
+            if [ $rc -eq 2 ]; then
+                echo-yellow "$cfg exists but is not valid JSON — leaving it untouched."
+                echo-white  "Add this yourself once it parses."
+                return 1
+            fi
+            ;;
+        codex)
+            # TOML: append only the keys that are missing, so an existing
+            # config's other settings and [projects.*] tables survive.
+            touch "$cfg"
+            grep -q '^approval_policy' "$cfg" 2>/dev/null \
+                || echo 'approval_policy = "never"' >> "$cfg"
+            grep -q '^sandbox_mode' "$cfg" 2>/dev/null \
+                || echo 'sandbox_mode = "danger-full-access"' >> "$cfg"
+            ;;
+        aider)
+            touch "$cfg"
+            grep -q '^yes-always:' "$cfg" 2>/dev/null \
+                || echo 'yes-always: true' >> "$cfg"
+            ;;
+    esac
+
+    echo-green "Recorded in $cfg — $agent will now run unattended under Podium."
+    echo-white  "Undo it by editing that file."
     return 0
 }
