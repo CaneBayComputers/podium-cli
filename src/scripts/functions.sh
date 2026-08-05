@@ -2314,3 +2314,96 @@ new = lines[:end] + adjusted + lines[end:]
 open(path, "w").write("\n".join(new) + "\n")
 PYEOF
 }
+
+# Set a single key inside a project's x-metadata block.
+#
+# Text-based like capture/restore, for the same reason: a YAML round trip would
+# requote and reorder the whole compose to change one line, and the GUI parses
+# this block with regexes.
+#
+# Creates the block if absent, anchored on the service whose container_name is
+# the project — appending at the end of the file would land it in the wrong
+# service in a multi-service compose.
+#   $1 compose file   $2 project name   $3 key   $4 value
+set_x_metadata_key() {
+    local file="$1" project="$2" key="$3" value="$4"
+    [ -f "$file" ] || return 1
+    command -v python3 >/dev/null 2>&1 || return 1
+
+    XM_FILE="$file" XM_PROJECT="$project" XM_KEY="$key" XM_VALUE="$value" python3 - << 'PYEOF' 2>/dev/null
+import os, re, sys
+path    = os.environ["XM_FILE"]
+project = os.environ["XM_PROJECT"]
+key     = os.environ["XM_KEY"]
+value   = os.environ["XM_VALUE"]
+
+lines = open(path).read().splitlines()
+
+# Locate an existing x-metadata block.
+mi = next((i for i, l in enumerate(lines) if re.match(r'^\s*x-metadata:\s*$', l)), None)
+
+if mi is not None:
+    indent = len(lines[mi]) - len(lines[mi].lstrip())
+    end = len(lines)
+    for j in range(mi + 1, len(lines)):
+        if lines[j].strip() == "":
+            continue
+        if len(lines[j]) - len(lines[j].lstrip()) <= indent:
+            end = j
+            break
+    key_re = re.compile(r'^\s*' + re.escape(key) + r':\s')
+    for j in range(mi + 1, end):
+        if key_re.match(lines[j]):
+            ki = len(lines[j]) - len(lines[j].lstrip())
+            lines[j] = " " * ki + f'{key}: "{value}"'
+            break
+    else:
+        inner = indent + 2
+        for j in range(mi + 1, end):
+            if lines[j].strip():
+                inner = len(lines[j]) - len(lines[j].lstrip())
+                break
+        while end > mi + 1 and lines[end - 1].strip() == "":
+            end -= 1
+        lines.insert(end, " " * inner + f'{key}: "{value}"')
+else:
+    # No block yet — create one inside the project's own service.
+    anchor = next((i for i, l in enumerate(lines)
+                   if re.match(r'^\s*container_name:\s*["\']?' + re.escape(project) + r'["\']?\s*$', l)), None)
+    if anchor is None:
+        sys.exit(1)
+    si = len(lines[anchor]) - len(lines[anchor].lstrip())
+    end = len(lines)
+    for j in range(anchor + 1, len(lines)):
+        if lines[j].strip() == "":
+            continue
+        if len(lines[j]) - len(lines[j].lstrip()) < si:
+            end = j
+            break
+    while end > 0 and lines[end - 1].strip() == "":
+        end -= 1
+    lines[end:end] = [" " * si + "x-metadata:", " " * (si + 2) + f'{key}: "{value}"']
+
+open(path, "w").write("\n".join(lines) + "\n")
+PYEOF
+}
+
+# Record that a project was up, as ISO-8601 UTC.
+#
+# Written on BOTH start and stop, deliberately: on stop the value becomes the
+# moment it stopped, so it means "last time this was running" rather than "last
+# time somebody started it" — which is what the GUI sorts on. Best-effort; a
+# failure here must never stop a project starting or stopping.
+#   $1 project name
+record_last_on() {
+    local project="$1"
+    [ -n "$project" ] || return 0
+    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
+    local file=""
+    [ -f "$dir/docker-compose.yaml" ] && file="$dir/docker-compose.yaml"
+    [ -z "$file" ] && [ -f "$dir/docker-compose.yml" ] && file="$dir/docker-compose.yml"
+    [ -n "$file" ] || return 0
+
+    set_x_metadata_key "$file" "$project" "last_on" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+    return 0
+}

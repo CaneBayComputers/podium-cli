@@ -129,6 +129,10 @@ start_project() {
 
   cd ..
 
+  # Stamp when this project was last up, for the GUI's "last running" sort.
+  # Best-effort: never let a metadata write affect whether a project starts.
+  record_last_on "$PROJECT_FOLDER_NAME" || true
+
   echo-green "Project $PROJECT_FOLDER_NAME started successfully!"; echo-return
 }
 

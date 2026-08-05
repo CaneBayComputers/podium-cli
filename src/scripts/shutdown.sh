@@ -133,6 +133,10 @@ shutdown_project() {
         cd "$PROJECT_FOLDER"
         dockerdown
         cd "$CURRENT_DIR"
+
+        # Re-stamp on stop: the value then reads as "last time this was
+        # running", not "last time somebody started it".
+        record_last_on "$PROJECT_NAME" || true
         
         echo-green "Successfully shut down $PROJECT_NAME!"; echo-white; echo-return
         
