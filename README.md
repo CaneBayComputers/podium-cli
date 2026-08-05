@@ -23,7 +23,7 @@
 
 - **It's a project manager.** Every project gets a name, a hostname, and the same shared services. Ten projects, one Postgres.
 - **It keeps AI in bounds.** Left alone, an agent invents its own ports, database and compose file, ignoring everything else on your machine. Podium hands it a fixed environment instead.
-- **It saves tokens.** Networking, scaffolding, secrets and 100+ app installs are pre-baked. The agent builds your app, not the plumbing.
+- **It saves tokens.** Networking, scaffolding, secrets and 200+ app installs are pre-baked. The agent builds your app, not the plumbing.
 - **The containers are already built.** PHP 8.3, Python 3, Node 22 — nginx, supervisor and every database driver compiled in. No image hunting, no Dockerfiles.
 - **Nothing to configure.** No YAML, no env spelunking, no per-project setup.
 
@@ -82,7 +82,7 @@ podium clone work-directly <repo-url>
 podium up my-api               # start it
 ```
 
-Everything else — frameworks, the 100+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://podiumcli.com/guide/)**.
+Everything else — frameworks, the 200+ app library, the full command reference, architecture, and scripting — is in the **[docs](https://podiumcli.com/guide/)**.
 
 ---
 

@@ -63,7 +63,7 @@ show_help() {
     echo "  used by all projects on the machine."
     echo
     echo "  Greenfield scaffolding (laravel/kavera/octobercms/drupal/wordpress/php/fastapi/flask/django/python/"
-    echo "  express/nestjs/fastify/node), 100+ one-command installers for popular OSS apps, AI-driven"
+    echo "  express/nestjs/fastify/node), 200+ one-command installers for popular OSS apps, AI-driven"
     echo "  project creation (podium create), and an interactive AI session in every"
     echo "  new/cloned/installed project are first-class."
     echo

@@ -35,7 +35,7 @@ See [Architecture]({{ site.baseurl }}/guide/architecture/) for what each image s
 Left alone, an AI agent will scaffold a project however it likes — its own ports, its own bundled database, its own compose file — with no regard for the other twelve projects on your machine. Podium gives the agent a fixed environment to work in:
 
 - **A stable platform.** Shared services, hostname routing, `/etc/hosts` wiring, and known runtime images mean the agent builds your app instead of reinventing infrastructure.
-- **Fewer tokens.** Framework scaffolding, networking, secret generation and 100+ app installs are pre-baked. The agent doesn't rediscover how to wire nginx + php-fpm every session.
+- **Fewer tokens.** Framework scaffolding, networking, secret generation and 200+ app installs are pre-baked. The agent doesn't rediscover how to wire nginx + php-fpm every session.
 - **Context that survives.** Every project gets an `AGENTS.md` describing its URL, database and commands, so a new agent session picks the project up cold.
 
 ---
@@ -47,7 +47,7 @@ Left alone, an AI agent will scaffold a project however it likes — its own por
 | [Installation]({{ site.baseurl }}/guide/installation/) | Install Podium on Linux or macOS |
 | [Quick start]({{ site.baseurl }}/guide/quick-start/) | Your first project in one command |
 | [Frameworks]({{ site.baseurl }}/guide/frameworks/) | `podium new` — scaffold a project you write |
-| [App library]({{ site.baseurl }}/guide/app-library/) | `podium install` — 100+ ready-to-run apps |
+| [App library]({{ site.baseurl }}/guide/app-library/) | `podium install` — 200+ ready-to-run apps |
 | [AI workflow]({{ site.baseurl }}/guide/ai-workflow/) | `podium create`, `ai`, `resume` |
 | [Command reference]({{ site.baseurl }}/guide/commands/) | Every command and flag |
 | [Architecture]({{ site.baseurl }}/guide/architecture/) | Services, networking, base images |
