@@ -19,6 +19,8 @@ NEW_API_KEY=""
 API_KEY_PROVIDED=0
 API_BASE_PROVIDED=0
 NEW_API_BASE=""
+# "" = not requested (leave the agent's config alone), "allow", or "revoke".
+UNATTENDED_REQUEST=""
 
 # AI agent configuration rules (summary)
 # --------------------------------------
@@ -42,12 +44,15 @@ NEW_API_BASE=""
 #         OpenAI-compatible servers (Ollama, LM Studio, OpenRouter, vLLM)
 #
 # Initial-prompt behavior (driven by `podium ai "<prompt>"`):
-#   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] --dangerously-bypass-approvals-and-sandbox "<prompt>"`
-#   - claude : `claude --dangerously-skip-permissions [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
-#   - gemini : `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"`
-#   - aider  : `aider --yes-always --no-auto-commits --no-check-update [--model …] [--api-key …] [--openai-api-base …] --message "<prompt>"`
+#   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+#   - claude : `claude [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
+#   - gemini : `gemini [--model "$AI_MODEL"] -i "<prompt>"`
+#   - aider  : `aider --no-auto-commits --no-check-update [--model …] [--api-key …] [--openai-api-base …] --message "<prompt>"`
 #              (interactive seeds the session with `--load` + `/code <prompt>`, since
 #               aider's --message processes the prompt and exits)
+#
+# Approval-bypass flags are NOT passed. Whether an agent runs unattended is the
+# user's decision, recorded in that agent's own config — see `podium ai-unattended`.
 
 usage() {
     echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--api-base URL] [--json-output]"
@@ -63,6 +68,9 @@ usage() {
     echo-white "                     (OpenAI-compatible: OpenRouter, Ollama, vLLM, LM Studio),"
     echo-white "                     and with claude via an Anthropic-compatible proxy."
     echo-white "  --json-output      Output configuration in JSON format (non-interactive)."
+    echo-white "  --allow-unattended    Let the agent run without approval prompts. Writes the setting"
+    echo-white "                        to the agent's OWN config; applies non-interactively."
+    echo-white "  --no-allow-unattended Turn that back off. Omit both to leave the setting unchanged."
     echo-white ""
     echo-white "Notes:"
     echo-white "  - When --json-output is used, no interactive prompts are shown."
@@ -74,6 +82,18 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --json-output)
             export JSON_OUTPUT=1
+            shift
+            ;;
+        # Tri-state on purpose: ABSENT means "leave unchanged". A GUI form that
+        # submits its whole state on Save needs to be able to turn this OFF as
+        # easily as on — a safety setting that is one-way is the wrong direction
+        # to be one-way in.
+        --allow-unattended)
+            UNATTENDED_REQUEST="allow"
+            shift
+            ;;
+        --no-allow-unattended)
+            UNATTENDED_REQUEST="revoke"
             shift
             ;;
         --agent)
@@ -147,7 +167,7 @@ NONINTERACTIVE=0
 # either abort under `set -e` or spin the selection loop forever. Treat it as
 # non-interactive so scripted runs (and `podium configure < /dev/null`) keep the
 # existing configuration instead of hanging or dying.
-if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || -n "$NEW_API_BASE" || ! -t 0 ]]; then
+if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || -n "$NEW_API_BASE" || -n "$UNATTENDED_REQUEST" || ! -t 0 ]]; then
     NONINTERACTIVE=1
 fi
 
@@ -485,7 +505,17 @@ ensure_ai_agent_installed() {
 }
 
 if [[ "$NONINTERACTIVE" -eq 1 ]]; then
+    # An explicit --allow-unattended / --no-allow-unattended suppresses the
+    # interactive consent prompt inside ensure_ai_agent_installed: the caller has
+    # already answered, so asking twice is noise.
+    [ -n "$UNATTENDED_REQUEST" ] && export PODIUM_UNATTENDED_EXPLICIT=1
+
     ensure_ai_agent_installed "$AI_AGENT"
+
+    case "$UNATTENDED_REQUEST" in
+        allow)  podium_allow_agent_autonomy  "$AI_AGENT" ;;
+        revoke) podium_revoke_agent_autonomy "$AI_AGENT" ;;
+    esac
 
     # Persist configuration
     if [[ -n "$AI_AGENT" ]]; then
@@ -505,7 +535,11 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
         if [[ -n "$AI_API_KEY" ]]; then
             has_api_key="true"
         fi
-        echo "{\"action\": \"ai_set\", \"status\": \"success\", \"agent\": \"${AI_AGENT:-}\", \"model\": \"${AI_MODEL:-}\", \"api_base\": \"${AI_API_BASE:-}\", \"has_api_key\": $has_api_key}"
+        # `unattended` is true/false/unknown — never an error. The GUI renders
+        # "unknown" as unchecked with a note, which beats a failed call: a config
+        # it cannot parse should not stop the whole settings panel from loading.
+        unattended=$(podium_read_agent_autonomy "${AI_AGENT:-}")
+        echo "{\"action\": \"ai_set\", \"status\": \"success\", \"agent\": \"${AI_AGENT:-}\", \"model\": \"${AI_MODEL:-}\", \"api_base\": \"${AI_API_BASE:-}\", \"has_api_key\": $has_api_key, \"unattended\": \"$unattended\"}"
     else
         echo-green "AI agent configuration updated."
         echo-white "  Agent: ${AI_AGENT:-<none>}"
@@ -552,7 +586,17 @@ if [[ "$AI_AGENT" == "aider" ]]; then
     prompt_ai_api_base
 fi
 
+# An explicit --allow-unattended / --no-allow-unattended suppresses the
+# interactive consent prompt inside ensure_ai_agent_installed: the caller has
+# already answered, so asking twice is noise.
+[ -n "$UNATTENDED_REQUEST" ] && export PODIUM_UNATTENDED_EXPLICIT=1
+
 ensure_ai_agent_installed "$AI_AGENT"
+
+case "$UNATTENDED_REQUEST" in
+    allow)  podium_allow_agent_autonomy  "$AI_AGENT" ;;
+    revoke) podium_revoke_agent_autonomy "$AI_AGENT" ;;
+esac
 
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
@@ -578,9 +622,19 @@ else
 fi
 echo-return
 
-echo-yellow "IMPORTANT:"
-echo-white "  All 'podium ai' commands start the selected AI CLI in a high-trust, \"dangerous\" mode (for example: --dangerously-skip-permissions, --yolo, or equivalent)."
-echo-white "  Only use 'podium ai' from project directories you are comfortable letting the AI modify extensively."
+_unattended_state=$(podium_read_agent_autonomy "$AI_AGENT")
+if [ "$_unattended_state" = "true" ]; then
+    echo-yellow "IMPORTANT:"
+    echo-white "  $AI_AGENT is configured to run WITHOUT approval prompts, so it can edit files"
+    echo-white "  and run commands in your projects unattended. Only use 'podium ai' and"
+    echo-white "  'podium create' in directories you are comfortable letting it modify freely."
+    echo-white "  Turn this off with: podium ai-unattended $AI_AGENT --revoke"
+else
+    echo-cyan "Note:"
+    echo-white "  $AI_AGENT will ask before each action. That is the safe default, but it stalls"
+    echo-white "  unattended runs such as 'podium create'."
+    echo-white "  Allow it to run unattended with: podium ai-unattended $AI_AGENT"
+fi
 echo-return
 
 cd "$ORIG_DIR"

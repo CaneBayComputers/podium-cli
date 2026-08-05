@@ -707,6 +707,9 @@ case "$1" in
     "ai-set")
         "$SCRIPT_DIR/scripts/ai_set.sh" "${@:2}"
         ;;
+    "ai-unattended")
+        "$SCRIPT_DIR/scripts/ai_unattended.sh" "${@:2}"
+        ;;
     "update")
         "$SCRIPT_DIR/scripts/update.sh" "${@:2}"
         ;;

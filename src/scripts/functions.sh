@@ -1742,6 +1742,10 @@ podium_offer_agent_autonomy() {
         *) return 0 ;;
     esac
 
+    # Caller already stated intent (--allow-unattended / --no-allow-unattended),
+    # so asking again would be noise.
+    [ "${PODIUM_UNATTENDED_EXPLICIT:-0}" = "1" ] && return 0
+
     # Never prompt in automation — silence there means "no", which is the safe
     # default for a permissions question.
     if [[ "$JSON_OUTPUT" == "1" ]] || [ ! -t 0 ]; then
@@ -1824,22 +1828,173 @@ PYEOF
             fi
             ;;
         codex)
-            # TOML: append only the keys that are missing, so an existing
-            # config's other settings and [projects.*] tables survive.
+            # Replace the key if present, append if not. Append-only looks safer
+            # but silently no-ops when the key already exists with another value
+            # — "allow" would report success and change nothing. Only these two
+            # keys are touched, so other settings and [projects.*] tables survive.
             touch "$cfg"
-            grep -q '^approval_policy' "$cfg" 2>/dev/null \
-                || echo 'approval_policy = "never"' >> "$cfg"
-            grep -q '^sandbox_mode' "$cfg" 2>/dev/null \
-                || echo 'sandbox_mode = "danger-full-access"' >> "$cfg"
+            if grep -qE '^[[:space:]]*approval_policy' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "never"|' "$cfg"
+            else
+                echo 'approval_policy = "never"' >> "$cfg"
+            fi
+            if grep -qE '^[[:space:]]*sandbox_mode' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "danger-full-access"|' "$cfg"
+            else
+                echo 'sandbox_mode = "danger-full-access"' >> "$cfg"
+            fi
             ;;
         aider)
             touch "$cfg"
-            grep -q '^yes-always:' "$cfg" 2>/dev/null \
-                || echo 'yes-always: true' >> "$cfg"
+            if grep -qE '^[[:space:]]*yes-always' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: true|' "$cfg"
+            else
+                echo 'yes-always: true' >> "$cfg"
+            fi
             ;;
     esac
 
     echo-green "Recorded in $cfg — $agent will now run unattended under Podium."
     echo-white  "Undo it by editing that file."
     return 0
+}
+
+# Read whether an agent is currently configured to run unattended.
+# Echoes: true | false | unknown   (never errors — the GUI renders "unknown"
+# as unchecked-with-a-note, which is more useful than a failed call.)
+#   $1 agent
+podium_read_agent_autonomy() {
+    local agent="$1" cfg
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json" ;;
+        codex)  cfg="$HOME/.codex/config.toml" ;;
+        gemini) cfg="$HOME/.gemini/settings.json" ;;
+        qwen)   cfg="$HOME/.qwen/settings.json" ;;
+        aider)  cfg="$HOME/.aider.conf.yml" ;;
+        *) echo "unknown"; return 0 ;;
+    esac
+
+    [ -f "$cfg" ] || { echo "false"; return 0; }
+
+    case "$agent" in
+        claude|gemini|qwen)
+            command -v python3 >/dev/null 2>&1 || { echo "unknown"; return 0; }
+            python3 - "$cfg" "$agent" << 'PYEOF' 2>/dev/null || echo "unknown"
+import json, sys
+path, agent = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f) or {}
+except Exception:
+    print("unknown"); sys.exit(0)
+if agent == "claude":
+    print("true" if data.get("permissions", {}).get("defaultMode") == "bypassPermissions" else "false")
+else:
+    print("true" if data.get("autoAccept") is True else "false")
+PYEOF
+            ;;
+        codex)
+            if grep -qE '^[[:space:]]*approval_policy[[:space:]]*=[[:space:]]*"never"' "$cfg" 2>/dev/null; then
+                echo "true"
+            else
+                echo "false"
+            fi
+            ;;
+        aider)
+            if grep -qE '^[[:space:]]*yes-always[[:space:]]*:[[:space:]]*true' "$cfg" 2>/dev/null; then
+                echo "true"
+            else
+                echo "false"
+            fi
+            ;;
+    esac
+}
+
+# Turn unattended mode back off.
+#
+# Sets explicit safe values rather than deleting lines. Deleting looks tidier but
+# is dangerous here: a user may have set these keys themselves before Podium ever
+# ran (approval_policy and sandbox_mode commonly are), and removing them would
+# silently destroy their own configuration. Setting a value is honest about what
+# changed, and every change is printed.
+#   $1 agent
+podium_revoke_agent_autonomy() {
+    local agent="$1" cfg
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json" ;;
+        codex)  cfg="$HOME/.codex/config.toml" ;;
+        gemini) cfg="$HOME/.gemini/settings.json" ;;
+        qwen)   cfg="$HOME/.qwen/settings.json" ;;
+        aider)  cfg="$HOME/.aider.conf.yml" ;;
+        *) echo-yellow "Unknown agent '$agent'."; return 1 ;;
+    esac
+
+    if [ ! -f "$cfg" ]; then
+        echo-cyan "$cfg does not exist — $agent already prompts for approval."
+        return 0
+    fi
+
+    case "$agent" in
+        claude|gemini|qwen)
+            command -v python3 >/dev/null 2>&1 || { echo-yellow "python3 unavailable — edit $cfg by hand."; return 1; }
+            python3 - "$cfg" "$agent" << 'PYEOF'
+import json, sys
+path, agent = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f) or {}
+except Exception:
+    print("UNPARSEABLE"); sys.exit(2)
+if agent == "claude":
+    if data.get("permissions", {}).get("defaultMode") == "bypassPermissions":
+        data["permissions"]["defaultMode"] = "default"
+else:
+    data["autoAccept"] = False
+with open(path, "w") as f:
+    json.dump(data, f, indent=2); f.write("\n")
+print("OK")
+PYEOF
+            [ $? -eq 2 ] && { echo-yellow "$cfg is not valid JSON — left untouched."; return 1; }
+            ;;
+        codex)
+            if grep -qE '^[[:space:]]*approval_policy' "$cfg"; then
+                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "on-request"|' "$cfg"
+            fi
+            if grep -qE '^[[:space:]]*sandbox_mode' "$cfg"; then
+                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "workspace-write"|' "$cfg"
+                echo-yellow "Note: sandbox_mode was also reset to \"workspace-write\"."
+            fi
+            ;;
+        aider)
+            if grep -qE '^[[:space:]]*yes-always' "$cfg"; then
+                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: false|' "$cfg"
+            fi
+            ;;
+    esac
+
+    echo-green "$agent will prompt for approval again (updated $cfg)."
+    return 0
+}
+
+# Resolve an agent's config path. Single source of truth — the path appears in
+# offer/write/read/revoke and drifts the moment one of them is edited alone.
+podium_agent_config_path() {
+    case "$1" in
+        claude) echo "$HOME/.claude/settings.json" ;;
+        codex)  echo "$HOME/.codex/config.toml" ;;
+        gemini) echo "$HOME/.gemini/settings.json" ;;
+        qwen)   echo "$HOME/.qwen/settings.json" ;;
+        aider)  echo "$HOME/.aider.conf.yml" ;;
+        *) return 1 ;;
+    esac
+}
+
+# Non-interactive "allow" — the counterpart to podium_revoke_agent_autonomy, for
+# --allow-unattended and for the GUI, which collects consent in its own UI.
+podium_allow_agent_autonomy() {
+    local agent="$1" cfg
+    cfg="$(podium_agent_config_path "$agent")" || { echo-yellow "Unknown agent '$agent'."; return 1; }
+    podium_write_agent_autonomy "$agent" "$cfg"
 }
