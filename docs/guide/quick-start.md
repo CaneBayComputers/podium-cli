@@ -78,7 +78,7 @@ podium install gitea
 podium install n8n
 ```
 
-Fully configured and reachable at `http://grafana/` in under two minutes. Browse all 100+: [App library]({{ site.baseurl }}/guide/app-library/).
+Fully configured and reachable at `http://grafana/` in under two minutes. Browse all 200+: [App library]({{ site.baseurl }}/guide/app-library/).
 
 **`new` vs `install`:** `new` scaffolds an empty project *you write*. `install` deploys a finished app *someone else wrote*. If you guess wrong, Podium tells you the right command.
 
