@@ -76,7 +76,9 @@ code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas,
 /* Hero */
 .hero {
   position: relative;
-  padding: clamp(60px, 10vw, 120px) 0 clamp(80px, 10vw, 140px);
+  /* Bottom padding trimmed: the GUI panel now sits directly below, and the
+     original 140px left a visible void once the second CTA button was removed. */
+  padding: clamp(60px, 10vw, 120px) 0 clamp(40px, 5vw, 64px);
   overflow: hidden;
 }
 .bg-glow {
@@ -815,3 +817,137 @@ pre.has-copy:focus-within .code-copy {
 }
 .give-name { color: #eaf7ff; font-weight: 650; font-size: 1rem; }
 .give-note { color: var(--muted); font-size: .85rem; line-height: 1.5; }
+
+/* ---------------------------------------------------------------------------
+   Nav donate button
+   Deliberately the only nav item that reads as a control — the rest are plain
+   links, so a filled pill is enough to make it the obvious action without
+   competing with the hero CTA below it.
+--------------------------------------------------------------------------- */
+.site-header nav a.nav-donate {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border: 1px solid var(--line-strong); border-radius: 999px;
+  background: linear-gradient(135deg, rgba(103, 232, 249, 0.14), rgba(14, 165, 233, 0.14));
+  color: var(--text); font-weight: 700; font-size: 0.92rem; line-height: 1;
+  transition: background .18s, border-color .18s, transform .18s, box-shadow .18s;
+}
+.site-header nav a.nav-donate:hover {
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  border-color: transparent; color: #04081d; transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(14, 165, 233, 0.32);
+}
+.nav-donate-heart { font-size: 1rem; color: #ff6b8a; transition: color .18s; }
+.site-header nav a.nav-donate:hover .nav-donate-heart { color: #04081d; }
+
+/* The nav collapses on narrow screens, but Donate is a call to action and
+   should survive — show it alone rather than losing it entirely. */
+@media (max-width: 540px) {
+  .site-header nav { display: flex; gap: 0; }
+  .site-header nav a { display: none; }
+  .site-header nav a.nav-donate { display: inline-flex; }
+}
+
+/* ---------------------------------------------------------------------------
+   GUI showcase — an INSET well, not a card
+   The screenshot used to sit full-width on a raised drop shadow, which made it
+   read as one enormous clickable tile. Sinking it into the page, shrinking it
+   and pairing it with copy makes it obviously an illustration. No hover state,
+   no pointer cursor, and the image itself ignores pointer events so nothing
+   about it invites a click.
+--------------------------------------------------------------------------- */
+/* Tight to the hero above: the hero already carries generous bottom padding,
+   and stacking both left an obvious void once the second CTA button was removed. */
+.gui-showcase { padding: 8px 0 8px; }
+.gui-panel {
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center;
+  padding: 38px 40px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  background:
+    radial-gradient(120% 140% at 85% 20%, rgba(14, 165, 233, 0.07), transparent 60%),
+    #060c24;
+  box-shadow:
+    inset 0 2px 22px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+.gui-panel-copy h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem); line-height: 1.18;
+  letter-spacing: -0.02em; margin: 6px 0 14px;
+}
+.gui-panel-copy .eyebrow { margin: 0; }
+.lead-sm { color: var(--muted); font-size: 1rem; line-height: 1.65; margin: 0 0 14px; }
+.lead-sm strong { color: var(--text); }
+.gui-panel-copy .btn { margin-top: 6px; }
+
+.gui-panel-shot { margin: 0; justify-self: end; max-width: 560px; }
+.gui-panel-shot img {
+  width: 100%; height: auto; display: block;
+  border: 1px solid rgba(56, 189, 248, 0.16);
+  border-radius: 10px;
+  /* No drop shadow and no transform: a raised, animated image is what made the
+     old one look like a button. */
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  pointer-events: none; user-select: none;
+}
+.gui-panel-shot figcaption {
+  color: var(--muted); font-size: 0.8rem; text-align: right; margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .gui-panel { grid-template-columns: 1fr; gap: 26px; padding: 28px 22px; }
+  .gui-panel-shot { justify-self: stretch; max-width: none; }
+  .gui-panel-shot figcaption { text-align: left; }
+}
+
+/* ---------------------------------------------------------------------------
+   Donate page
+--------------------------------------------------------------------------- */
+.nav-donate.is-current { border-color: var(--accent); }
+
+.donate-hero { position: relative; padding: 72px 0 40px; overflow: hidden; }
+.donate-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.1rem); line-height: 1.08;
+  letter-spacing: -0.03em; margin: 8px 0 16px;
+}
+/* Centered: the page is short and the hero has no visual on the right, so
+   left-hugging text left a large dead area beside it. */
+.donate-hero .wrap { text-align: center; }
+.donate-lead { max-width: 660px; margin-left: auto; margin-right: auto; }
+.give-icon-heart { color: #ff6b8a; }
+
+.donate-channels { padding: 24px 0 8px; }
+.donate-grid { max-width: 1000px; }
+
+/* The channel cards ARE links, so unlike the screenshot panel they should look
+   clickable — icon, and an explicit action line that underlines on hover. */
+.give-icon { font-size: 1.35rem; line-height: 1; margin-bottom: 2px; }
+.give-go {
+  margin-top: auto; padding-top: 10px;
+  color: var(--accent); font-size: .85rem; font-weight: 650;
+}
+.give-card:hover .give-go { color: var(--accent-2); text-decoration: underline; }
+
+.donate-fine {
+  max-width: 720px; margin: 26px auto 0; text-align: center;
+  color: var(--muted); font-size: .92rem; line-height: 1.65;
+}
+
+.donate-story { padding: 56px 0 72px; }
+.story-body {
+  max-width: 680px; margin: 22px auto 0;
+  color: #cfd8ef; font-size: 1.03rem; line-height: 1.75;
+}
+.story-body p { margin: 0 0 18px; }
+.story-body strong { color: var(--text); }
+.story-body em { color: var(--accent-2); font-style: italic; }
+.story-sign { color: var(--muted); font-size: .95rem; margin-top: 26px; }
+
+.story-cta {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  margin-top: 34px;
+}
+
+@media (max-width: 540px) {
+  .donate-hero { padding: 48px 0 28px; }
+  .story-cta .btn { width: 100%; text-align: center; }
+}

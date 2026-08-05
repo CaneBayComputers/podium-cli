@@ -154,6 +154,9 @@
         <a href="#apps">Apps</a>
         <a href="guide/">Docs</a>
         <a href="https://github.com/CaneBayComputers/podium-cli" rel="external noopener" target="_blank">GitHub</a>
+        <a class="nav-donate" href="donate.html">
+          <span class="nav-donate-heart" aria-hidden="true">♥</span> Donate
+        </a>
       </nav>
     </div>
   </header>
@@ -174,14 +177,47 @@
             <strong>AI agents</strong> that need a stable platform to operate inside.
           </p>
           <div class="cta">
-            <a class="btn primary" href="#download">Download the app</a>
-            <a class="btn ghost" href="#install">Install the CLI</a>
+            <a class="btn primary" href="#download">Download</a>
           </div>
           <p class="meta">Open source &middot; Linux &amp; macOS &middot; Free forever</p>
         </div>
 
         <div class="hero-visual" aria-hidden="true">
           <img src="logo.png" alt="" width="380" height="380" class="logo-large">
+        </div>
+      </div>
+    </section>
+
+    <section class="gui-showcase" id="gui" aria-labelledby="gui-title">
+      <div class="wrap">
+        <!-- Inset well, not a card. The screenshot previously sat on a raised
+             drop-shadow at full width, which read as a giant clickable tile.
+             Sinking it into the page and shrinking it makes it obviously an
+             illustration rather than a control. -->
+        <div class="gui-panel">
+          <div class="gui-panel-copy">
+            <p class="eyebrow">THE DESKTOP APP</p>
+            <h2 id="gui-title">Point and click, or stay in the terminal.</h2>
+            <p class="lead-sm">
+              Everything the CLI does, without typing a command &mdash; create with AI,
+              install from the app library, start and stop services, and see every
+              project on the machine at a glance.
+            </p>
+            <p class="lead-sm">
+              <strong>Agent terminals are built in.</strong> AI sessions run in real
+              tabbed terminals inside the window, so you can watch your agent work
+              and jump in whenever you want.
+            </p>
+            <a class="btn primary" href="#download">Download</a>
+          </div>
+
+          <figure class="gui-panel-shot">
+            <img src="/screenshot-podium-theme.png"
+                 srcset="/screenshot-podium-theme.png 1x, /screenshot-podium-theme@2x.png 2x"
+                 alt="Podium GUI showing project tiles with Start, Modify with AI, Edit and Trash actions, and the shared services panel below"
+                 width="1280" height="860" loading="lazy" draggable="false">
+            <figcaption>Podium theme &mdash; one of five. Sample projects shown.</figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -222,7 +258,7 @@
         <p class="band-note">
           Prefer the terminal? <a href="#install">Install the CLI on its own</a> with one curl &mdash; the GUI is optional.
           <br>
-          <span class="band-fine"><strong>macOS builds are unsigned</strong> &mdash; Gatekeeper blocks them on first launch. Right-click &rarr; Open, or <code>xattr -dr com.apple.quarantine /Applications/Podium.app</code>. Only the <code>.deb</code> has been installed on real hardware; the rest are built and inspected. No Linux arm64 build. <a href="/guide/downloads/">Details and checksums</a>.</span>
+          <span class="band-fine"><a href="/guide/downloads/">Checksums, platform notes and what has actually been tested</a>.</span>
         </p>
       </div>
     </section>
@@ -371,20 +407,6 @@
       </div>
     </section>
 
-    <section class="gui-showcase" id="gui" aria-labelledby="gui-title">
-      <div class="wrap">
-        <h2 id="gui-title" class="section-title">Prefer not to live in the terminal?</h2>
-        <p class="section-sub">Podium GUI is an optional desktop app for the same CLI &mdash; same projects, same shared services, same URLs. Use either, or both.</p>
-        <figure class="shot">
-          <img src="/screenshot-podium-theme.png" srcset="/screenshot-podium-theme.png 1x, /screenshot-podium-theme@2x.png 2x" alt="Podium GUI showing project tiles with Start, Modify with AI, Edit and Trash actions, and the shared services panel below" width="1280" height="860" loading="lazy">
-          <figcaption>Podium GUI in the Podium theme. Sample projects shown. Five themes ship: Retro, Dark, Light, Matrix and Podium.</figcaption>
-        </figure>
-        <p class="section-sub" style="text-align:center">
-          Create with AI, install any of the apps below, start and stop services, and reopen an AI session on any project &mdash; without typing a command.
-          <a href="#install">Download it in step 5 &darr;</a>
-        </p>
-      </div>
-    </section>
 
     <section class="commands" id="install" aria-labelledby="commands-title">
       <div class="wrap">
@@ -496,6 +518,7 @@
                   <button type="button" class="fw-chip" data-framework="kavera">kavera</button>
                   <button type="button" class="fw-chip" data-framework="wordpress">wordpress</button>
                   <button type="button" class="fw-chip" data-framework="octobercms">octobercms</button>
+                  <button type="button" class="fw-chip" data-framework="drupal">drupal</button>
                   <button type="button" class="fw-chip" data-framework="php">php</button>
                   <button type="button" class="fw-chip" data-framework="django">django</button>
                   <button type="button" class="fw-chip" data-framework="flask">flask</button>
