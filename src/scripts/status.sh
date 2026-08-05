@@ -105,8 +105,29 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS - use route to find default interface IP
     LAN_IP=$(route get default | grep interface | awk '{print $2}' | xargs ifconfig | grep 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | head -1)
 else
-    # Linux - use hostname -I
-    LAN_IP=$(hostname -I | awk '{print $1}')
+    # Linux. `hostname -I` comes from inetutils/net-tools, which a minimal Arch
+    # install does not have — there `hostname` is a different binary with no -I
+    # flag, so this produced an EMPTY string and the status screen printed
+    # "LAN ACCESS: http://:246", handing the user a dead URL. It failed silently
+    # because the empty result is indistinguishable from "no LAN IP".
+    #
+    # `ip` is in iproute2, which is present on any machine that can run Docker,
+    # so it is the more reliable primary. hostname -I stays as a fallback.
+    # Ask the routing table which local address is used to reach the network.
+    # This is the actual LAN IP by definition, and unlike filtering by address
+    # range it cannot mistake a Docker bridge for the LAN, or — the reason not to
+    # filter — mistake a real 10.0.0.0/8 LAN for a Docker network. No traffic is
+    # sent; the lookup is local.
+    LAN_IP=$(ip -4 route get 1.1.1.1 2>/dev/null \
+             | awk '{for (i = 1; i < NF; i++) if ($i == "src") { print $(i+1); exit }}')
+
+    # Fallbacks: first global address, then hostname -I where that exists.
+    if [ -z "$LAN_IP" ]; then
+        LAN_IP=$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
+    fi
+    if [ -z "$LAN_IP" ] && command -v hostname >/dev/null 2>&1; then
+        LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+    fi
 fi
 
 # Docker handles port mapping automatically
