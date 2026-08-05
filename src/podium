@@ -62,8 +62,8 @@ show_help() {
     echo "  podium-mariadb, one podium-redis, one podium-mongo, one podium-memcached —"
     echo "  used by all projects on the machine."
     echo
-    echo "  Greenfield scaffolding (laravel/kavera/octobercms/wordpress/php/fastapi/flask/django/python/express/"
-    echo "  nestjs/fastify/node), 100+ one-command installers for popular OSS apps, AI-driven"
+    echo "  Greenfield scaffolding (laravel/kavera/octobercms/drupal/wordpress/php/fastapi/flask/django/python/"
+    echo "  express/nestjs/fastify/node), 100+ one-command installers for popular OSS apps, AI-driven"
     echo "  project creation (podium create), and an interactive AI session in every"
     echo "  new/cloned/installed project are first-class."
     echo
@@ -79,6 +79,7 @@ show_help() {
     echo "  podium composer <args>    - Run Composer inside container"
     echo "  podium art <args>         - Run Laravel Artisan inside container"
     echo "  podium wp <args>          - Run WP-CLI inside container"
+    echo "  podium drush <args>       - Run Drush (Drupal) inside container"
     echo "  podium php <args>         - Run PHP inside container"
     echo "  podium npm <args>         - Run npm inside container"
     echo "  podium npx <args>         - Run npx inside container"
@@ -165,7 +166,7 @@ show_help() {
     echo
     echo-white "CLONE PROJECT OPTIONS:"
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
-    echo "  --framework NAME          - Force framework (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
+    echo "  --framework NAME          - Force framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
     echo "  --no-github               - Skip GitHub repository creation (default)"
     echo "  --no-startup              - Register project without starting the container (useful for verifying adapted docker-compose)"
@@ -174,7 +175,7 @@ show_help() {
     echo
     echo-white "SETUP PROJECT OPTIONS:"
     echo "  --overwrite-docker-compose - Overwrite existing docker-compose.yaml without prompting"
-    echo "  --framework NAME          - Force framework (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
+    echo "  --framework NAME          - Force framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
     echo "  --image <ref>             - Override the project's Docker image (default: framework cbc base image)"
     echo "  --no-startup              - Register project without starting the container"
     echo "  --json-output             - Output results in JSON format"
@@ -214,7 +215,7 @@ show_help() {
     echo "  • 'podium up'/'down' need a <project>; use 'podium up-all'/'podium down-all' for every project. 'podium down' leaves shared services up (use 'podium stop-services')."
     echo "  • 'podium remove' preserves the database by default — pass --force-db-delete to drop it."
     echo "  • 'podium create', 'podium new', 'podium clone', and 'podium install' all drop into an interactive AI session in the new project on completion. Pass --one-off to skip."
-    echo "  • Project-specific tools (composer, art, wp, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
+    echo "  • Project-specific tools (composer, art, wp, drush, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"
     echo "  • Non-interactive mode uses sensible defaults for automated deployment"
@@ -348,6 +349,13 @@ case "$1" in
         validate_project_context || exit 1
         shift
         docker_exec developer php artisan "$@"
+        ;;
+    "drush")
+        # Drupal's artisan. drush is a Composer dependency, not a global binary,
+        # so it runs through vendor/bin relative to the container workdir.
+        validate_project_context || exit 1
+        shift
+        docker_exec developer php vendor/bin/drush "$@"
         ;;
     "wp")
         validate_project_context || exit 1

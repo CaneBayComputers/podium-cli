@@ -38,7 +38,7 @@ usage() {
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
@@ -241,6 +241,15 @@ if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="django"
     elif [ -f "wp-config-sample.php" ] || [ -f "wp-config.php" ]; then
         FRAMEWORK="wordpress"
+    elif [ -f "composer.json" ] && grep -q '"drupal/core' composer.json 2>/dev/null; then
+        # Matches drupal/core-recommended and drupal/core-composer-scaffold, so it
+        # catches both Podium-scaffolded projects and cloned ones using the stock
+        # web/ docroot. Checked before artisan because Drupal has no artisan and
+        # would otherwise fall through to the plain-PHP default.
+        FRAMEWORK="drupal"
+    elif [ -d "web/core/lib/Drupal" ] || [ -d "public/core/lib/Drupal" ] || [ -f "core/lib/Drupal.php" ]; then
+        # Already-built trees whose composer.json is absent or nonstandard.
+        FRAMEWORK="drupal"
     elif [ -f "artisan" ]; then
         FRAMEWORK="laravel"
     elif [ -f "package.json" ] && [ ! -f "composer.json" ] && [ ! -f "artisan" ]; then

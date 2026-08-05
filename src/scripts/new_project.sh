@@ -60,7 +60,7 @@ usage() {
     echo-white "Creates a new greenfield project from a framework skeleton"
     echo-white ""
     echo-white "Arguments:"
-    echo-white "  framework       laravel, kavera, octobercms, wordpress, php, fastapi, flask,"
+    echo-white "  framework       laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask,"
     echo-white "                  django, python, express, nestjs, fastify, node"
     echo-white "  name            Name of the project to create (directory and hostname)"
     echo-white ""
@@ -217,7 +217,7 @@ if [ -z "$FRAMEWORK" ]; then
 Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node"
 fi
 case "$FRAMEWORK" in
-    laravel|kavera|octobercms|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
+    laravel|kavera|octobercms|drupal|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
     *)
         # `new` scaffolds a framework you write; `install` deploys a prebuilt
         # app. Nobody should have to know which bucket a name lives in, so if
@@ -233,7 +233,7 @@ case "$FRAMEWORK" in
             echo-return
             error "Wrong command for '$FRAMEWORK' — use 'podium install'."
         fi
-        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
+        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
         ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
@@ -290,11 +290,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"kavera"|"octobercms"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
+        "laravel"|"kavera"|"octobercms"|"drupal"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
             ;;
     esac
 

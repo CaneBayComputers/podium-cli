@@ -1,0 +1,230 @@
+#!/bin/bash
+# Drupal framework hooks
+#
+# Drupal ships as a Composer project (drupal/recommended-project), so the
+# scaffold only writes composer.json — `composer install` runs later, inside the
+# container, via setup_project's dependency step. Same shape as Laravel.
+#
+# THE DOCROOT. Drupal's convention is `web/`, and Podium's nginx always serves
+# /usr/share/nginx/html/public: a project with a public/ dir is mounted at html
+# (so project/public lands on the docroot), one without is mounted straight into
+# html/public. `web/` fits neither.
+#
+# Rather than add a third mount case to setup_project, this relocates Drupal's
+# docroot to public/ at scaffold time. That is a supported, first-class Composer
+# setting — every path below is the stock recommended-project layout with web/
+# swapped for public/ — and it makes Drupal indistinguishable from Laravel as far
+# as the rest of Podium is concerned. Nothing in the container or compose
+# templates needs to know Drupal exists.
+
+FRAMEWORK_IS_PYTHON=0
+FRAMEWORK_DOCKER_TEMPLATE="project"
+
+DRUPAL_CORE_CONSTRAINT="${DRUPAL_CORE_CONSTRAINT:-^11}"
+DRUPAL_ADMIN_USER="${DRUPAL_ADMIN_USER:-admin}"
+DRUPAL_ADMIN_PASS="${DRUPAL_ADMIN_PASS:-admin}"
+
+framework_scaffold() {
+    echo-return; echo-cyan "Drupal project selected!"
+    echo-white "Composer-managed. Core and contrib modules install into public/."
+    echo-return
+
+    # Written rather than downloaded so the docroot relocation is guaranteed
+    # rather than patched in afterwards with sed.
+    #
+    # allow-plugins matters more than it looks: Composer 2.2+ blocks plugins by
+    # default, and a blocked core-composer-scaffold silently skips writing
+    # index.php and .htaccess — you get a complete vendor/ and a docroot with no
+    # entry point, which looks like a broken install rather than a config issue.
+    cat > composer.json << 'COMPOSEREOF'
+{
+    "name": "podium/drupal-project",
+    "description": "Drupal project managed by Podium",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "composer/installers": "^2.3",
+        "drupal/core-composer-scaffold": "^11",
+        "drupal/core-project-message": "^11",
+        "drupal/core-recommended": "^11",
+        "drush/drush": "^13"
+    },
+    "conflict": {
+        "drupal/drupal": "*"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "drupal/core-composer-scaffold": true,
+            "drupal/core-project-message": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "drupal-scaffold": {
+            "locations": {
+                "web-root": "public/"
+            }
+        },
+        "installer-paths": {
+            "public/core": ["type:drupal-core"],
+            "public/libraries/{$name}": ["type:drupal-library"],
+            "public/modules/contrib/{$name}": ["type:drupal-module"],
+            "public/profiles/contrib/{$name}": ["type:drupal-profile"],
+            "public/themes/contrib/{$name}": ["type:drupal-theme"],
+            "drush/Commands/contrib/{$name}": ["type:drupal-drush"],
+            "public/modules/custom/{$name}": ["type:drupal-custom-module"],
+            "public/profiles/custom/{$name}": ["type:drupal-custom-profile"],
+            "public/themes/custom/{$name}": ["type:drupal-custom-theme"]
+        }
+    }
+}
+COMPOSEREOF
+
+    if [ "$DRUPAL_CORE_CONSTRAINT" != "^11" ]; then
+        podium-sed "s|\"\\^11\"|\"$DRUPAL_CORE_CONSTRAINT\"|g" composer.json
+    fi
+
+    mkdir -p public/sites/default
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        git init > /dev/null 2>&1
+        git add . > /dev/null 2>&1
+        git commit -m "Initial Drupal project setup" > /dev/null 2>&1
+    else
+        git init; git add .; git commit -m "Initial Drupal project setup"
+    fi
+
+    echo-green "Drupal project scaffolded — core installs on the next step."
+}
+
+framework_python_start_command() { echo ""; }
+
+# Drupal has no .env. Connection settings live in settings.php, which
+# `drush site:install` generates from the --db-url passed in
+# framework_run_migrations, so there is nothing to write here.
+framework_setup_env() {
+    mkdir -p public/sites/default/files
+    chmod -R 777 public/sites/default 2>/dev/null || true
+    return 0
+}
+
+# Build the DSN drush wants for the shared service backing this project.
+_drupal_db_url() {
+    case "$DATABASE_ENGINE" in
+        postgres|postgresql|pgsql)
+            echo "pgsql://root:password@${POSTGRES_CONTAINER_NAME}:5432/${DB_NAME}" ;;
+        sqlite|sqlite3)
+            echo "sqlite://sites/default/files/.ht.sqlite" ;;
+        *)
+            # Shared MariaDB runs with an empty root password; the trailing colon
+            # is required or drush reads the host as the password.
+            echo "mysql://root:@${MARIADB_CONTAINER_NAME}:3306/${DB_NAME}" ;;
+    esac
+}
+
+framework_run_migrations() {
+    [ ! -f "composer.json" ] && return
+    if [ ! -f "vendor/bin/drush" ]; then
+        echo-yellow "drush not found in vendor/ — skipping site install."
+        echo-white "Run 'podium composer install' then 'podium drush site:install' by hand."
+        return
+    fi
+
+    # Drupal has no migrations in the Laravel sense — the equivalent first step
+    # is site:install, which creates the schema, writes settings.php and makes
+    # the admin account. Skip it when the site is already installed, so re-running
+    # setup on an existing project does not wipe its content.
+    if [ -f "public/sites/default/settings.php" ] && \
+       grep -q "databases\['default'\]" public/sites/default/settings.php 2>/dev/null; then
+        echo-cyan "Drupal is already installed — leaving the existing site alone."
+        echo-white "Re-install from scratch with:"
+        echo-white "  podium drush site:install --existing-config -y"
+        return
+    fi
+
+    local db_url; db_url="$(_drupal_db_url)"
+
+    echo-cyan "Installing Drupal (drush site:install) ..."; echo-white
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        drush-docker site:install standard \
+            --db-url="$db_url" --site-name="$PROJECT_NAME" \
+            --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
+            -y > /dev/null 2>&1 || true
+    else
+        drush-docker site:install standard \
+            --db-url="$db_url" --site-name="$PROJECT_NAME" \
+            --account-name="$DRUPAL_ADMIN_USER" --account-pass="$DRUPAL_ADMIN_PASS" \
+            -y || true
+    fi
+
+    # site:install locks the settings file down, so appending needs it writable
+    # again. Without trusted_host_patterns Drupal logs a warning on every request
+    # and the status report shows an error, which reads as a broken install.
+    if [ -f "public/sites/default/settings.php" ]; then
+        chmod u+w public/sites/default public/sites/default/settings.php 2>/dev/null || true
+        if ! grep -q "trusted_host_patterns" public/sites/default/settings.php 2>/dev/null; then
+            cat >> public/sites/default/settings.php << EOF
+
+/**
+ * Added by Podium — the project is served at http://$PROJECT_NAME/.
+ */
+\$settings['trusted_host_patterns'] = [
+  '^${PROJECT_NAME//./\\.}\$',
+  '^localhost\$',
+];
+EOF
+        fi
+    fi
+
+    echo-green "Drupal installed."; echo-white
+    echo-white "  Site:  http://$PROJECT_NAME/"
+    echo-white "  Admin: http://$PROJECT_NAME/user/login  ($DRUPAL_ADMIN_USER / $DRUPAL_ADMIN_PASS)"
+    echo-white "  Change the password with: podium drush user:password $DRUPAL_ADMIN_USER '<new>'"
+}
+
+framework_setup_gitignore() {
+    [ -f ".gitignore" ] && grep -q "docker-compose.yaml" .gitignore && return
+
+    cat > .gitignore << 'GITEOF'
+# Docker infrastructure
+docker-compose.yaml
+
+# Composer dependencies and scaffolded core
+/vendor/
+/public/core/
+/public/modules/contrib/
+/public/themes/contrib/
+/public/profiles/contrib/
+/public/libraries/
+/drush/Commands/contrib/
+
+# Drupal scaffold files (regenerated by composer)
+/public/index.php
+/public/update.php
+/public/.htaccess
+/public/robots.txt
+/public/web.config
+/public/sites/default/default.settings.php
+/public/sites/default/default.services.yml
+
+# Site-specific settings and uploads
+/public/sites/*/settings.php
+/public/sites/*/settings.local.php
+/public/sites/*/services.yml
+/public/sites/*/files/
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+GITEOF
+
+    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Drupal project!"
+}

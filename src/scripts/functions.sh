@@ -318,7 +318,17 @@ composer-docker() {
         docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
     fi
 }
-art-docker() { 
+# Drupal's equivalent of art-docker. drush is a Composer dependency rather than
+# a global binary, so it is invoked through vendor/bin relative to the workdir.
+drush-docker() {
+    local project_name="$(basename "$(pwd)")"
+    if [ -t 0 ]; then
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php vendor/bin/drush "$@"
+    else
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php vendor/bin/drush "$@"
+    fi
+}
+art-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)

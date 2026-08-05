@@ -41,7 +41,18 @@
         "postgres",
         "sqlite"
       ],
-      "note": "Laravel-based CMS you build sites in \u2014 themes, plugins and page templates live in the project source tree, editable by an agent. Has a backend admin UI for content editors. Choose it over Kavera when the client needs a login-based admin to edit content themselves; choose Kavera for a pure flat-file site. Free for local development; production needs a licence from octobercms.com."
+      "note": "Laravel-based CMS you build sites in — themes, plugins and page templates live in the project source tree, editable by an agent. Has a backend admin UI for content editors. Choose it over Kavera when the client needs a login-based admin to edit content themselves; choose Kavera for a pure flat-file site. Free for local development; production needs a licence from octobercms.com."
+    },
+    {
+      "slug": "drupal",
+      "display": "Drupal",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "note": "Enterprise CMS with a full admin UI, granular permissions, workflow and a very large contrib module ecosystem. Composer-managed; core and contrib install into public/. Choose it over WordPress for structured content, complex editorial roles or multi-team sites, and over October CMS when the client needs mature governance rather than a lighter developer-facing CMS. Heavier than all of them - for a simple brochure site prefer Kavera. MongoDB is not supported by Drupal core."
     },
     {
       "slug": "php",
