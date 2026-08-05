@@ -239,8 +239,16 @@ if [[ "$NO_COLOR" == "1" ]]; then
     STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
 fi
 
-# Allow containers time to finish booting before running status checks
-sleep 12
+# Allow containers time to finish booting before running status checks.
+#
+# Skipped when nothing was started: the GUI session traced 12.00s of a 12.58s
+# no-op `podium up` to exactly this line. The early return above exits the
+# per-project function, but this sits in the main body and ran regardless — so a
+# command that did nothing still waited 12 seconds for containers that had been
+# up for hours.
+if [[ "$PROJECT_ALREADY_RUNNING" != "1" ]]; then
+    sleep 12
+fi
 
 # Containers are recreated from their base image on every `up`, so anything pip
 # installed INTO the container filesystem during setup is gone — only the
