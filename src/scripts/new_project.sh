@@ -20,27 +20,47 @@ NEW_PROJECT_FORCE_FORK="${NEW_PROJECT_FORCE_FORK:-0}"
 FORK_USED=0
 
 
-# Function to get latest Laravel version from GitHub API
+# Function to get latest Laravel version from GitHub API.
+# Returns non-zero and sets GITHUB_API_ERROR if the version cannot be determined.
+#
+# This used to be a bare `curl -s | grep | sed` whose failure was silent: a
+# rate-limited API returns a 14-byte JSON error, the sed matches nothing, and the
+# caller happily built a download URL with an EMPTY version in it. curl then
+# fetched GitHub's 404 page and piped it to tar, so the user's entire diagnosis
+# was "gzip: stdin: not in gzip format" — which says nothing about rate limits,
+# the network, or anything they could act on. Shawn hit exactly this.
 get_latest_laravel_version() {
-    curl -s https://api.github.com/repos/laravel/laravel/tags | grep '"name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/'
+    local json version
+    json="$(github_api_get "https://api.github.com/repos/laravel/laravel/tags")" || return 1
+
+    version="$(printf '%s' "$json" | grep '"name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/')"
+    if [ -z "$version" ]; then
+        GITHUB_API_ERROR="GitHub returned a response with no recognisable Laravel version tag."
+        return 1
+    fi
+    printf '%s' "$version"
 }
 
-# Function to validate Laravel version exists
+# Validate that a Laravel version exists.
+#   0 = exists   1 = does not exist   2 = COULD NOT CHECK (API unavailable)
+#
+# The third state matters: without it, a rate-limited API makes a perfectly valid
+# version look invalid, and the user is told their input is wrong when it is not.
 validate_laravel_version() {
     local version="$1"
     if [ "$version" = "latest" ]; then
         return 0
     fi
-    
-    # Handle version with or without 'v' prefix
+
     local version_with_v="$version"
     if [[ ! "$version" =~ ^v ]]; then
         version_with_v="v${version}"
     fi
-    
-    # Check if the version exists by querying the GitHub API with larger page size
-    local tag_exists=$(curl -s "https://api.github.com/repos/laravel/laravel/tags?per_page=100" | grep -c "\"name\": \"${version_with_v}\"")
-    [ "$tag_exists" -gt 0 ]
+
+    local json
+    json="$(github_api_get "https://api.github.com/repos/laravel/laravel/tags?per_page=100")" || return 2
+
+    printf '%s' "$json" | grep -q "\"name\": \"${version_with_v}\""
 }
 
 # Function to validate WordPress version exists
@@ -461,7 +481,9 @@ case $FRAMEWORK in
             
             # Set the version for download in JSON mode
             if [ "$VERSION" = "latest" ]; then
-                LATEST_VERSION=$(get_latest_laravel_version)
+                if ! LATEST_VERSION=$(get_latest_laravel_version); then
+                    json_error "Could not determine the latest Laravel version. $GITHUB_API_ERROR"
+                fi
                 CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
             else
                 # Ensure version has 'v' prefix for download URL
@@ -473,14 +495,26 @@ case $FRAMEWORK in
             fi
         else
             # No prompt — validate the provided/default version and fail if invalid.
-            if ! validate_laravel_version "$VERSION"; then
+            # Exit 2 means the API could not be reached, NOT that the version is
+            # bad; telling the user their input is wrong in that case is a lie.
+            validate_laravel_version "$VERSION"; _ver_rc=$?
+            if [ "$_ver_rc" = "2" ]; then
+                error "Could not verify Laravel version '$VERSION'. $GITHUB_API_ERROR"
+            elif [ "$_ver_rc" != "0" ]; then
                 error "Error: invalid Laravel version '$VERSION'. Use 'latest' or a valid Laravel version tag."
             fi
         fi
         
         # Set the version for download
         if [ "$VERSION" = "latest" ]; then
-            LATEST_VERSION=$(get_latest_laravel_version)
+            if ! LATEST_VERSION=$(get_latest_laravel_version); then
+                echo-red "Could not determine the latest Laravel version."
+                echo-white "  $GITHUB_API_ERROR"
+                echo-white ""
+                echo-white "Workaround: pin a version explicitly, which skips the lookup entirely:"
+                echo-white "  podium new laravel $PROJECT_NAME --version 12.0.0"
+                error "Aborting — refusing to download with an unknown version."
+            fi
             CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
             echo-green "Using latest Laravel version: $LATEST_VERSION"
         else

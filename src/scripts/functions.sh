@@ -205,7 +205,14 @@ podium_update_refresh_async() {
         # when every release is one, which is the case for the whole beta. Using
         # it would have made this check silently do nothing until 1.0 final.
         # The list endpoint is newest-first and includes pre-releases.
-        tag=$(curl -fsS --max-time 8 \
+        # Authenticated when a token is available. This runs on (cached)
+        # invocations of every podium command, so it draws on the same
+        # 60-requests-per-hour unauthenticated budget as everything else --
+        # shared across every machine behind one WAN address. Staying silent on
+        # failure is correct for an update check, but it should not be quietly
+        # spending a scarce allowance that `podium new laravel` also needs.
+        _gh_hdr="$(github_auth_header)"
+        tag=$(curl -fsS --max-time 8 ${_gh_hdr:+-H "$_gh_hdr"} \
             "https://api.github.com/repos/CaneBayComputers/podium-cli/releases?per_page=10" 2>/dev/null \
             | python3 -c "
 import json,sys
@@ -2013,4 +2020,66 @@ podium_allow_agent_autonomy() {
     local agent="$1" cfg
     cfg="$(podium_agent_config_path "$agent")" || { echo-yellow "Unknown agent '$agent'."; return 1; }
     podium_write_agent_autonomy "$agent" "$cfg"
+}
+
+# =============================================================================
+# GitHub API access
+# =============================================================================
+# Unauthenticated GitHub allows 60 requests/hour PER IP — and that is the whole
+# site's WAN address, so every machine behind one router shares a single budget.
+# Authenticating raises it to 5,000/hour.
+#
+# Set by github_api_get when a request fails, so callers can report the real
+# reason instead of whatever garbage the empty result causes downstream.
+GITHUB_API_ERROR=""
+
+# Emit an Authorization header if a token can be found. gh's token is preferred
+# because anyone using Podium's GitHub features is already logged in with it.
+github_auth_header() {
+    local token=""
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        token="$GITHUB_TOKEN"
+    elif command -v gh >/dev/null 2>&1; then
+        token="$(gh auth token 2>/dev/null || true)"
+    fi
+    [ -n "$token" ] && printf 'Authorization: Bearer %s' "$token"
+    return 0
+}
+
+# GET a GitHub API URL. Echoes the body and returns 0 on success; on failure
+# returns 1 and sets GITHUB_API_ERROR to something a user can act on.
+github_api_get() {
+    local url="$1" hdr body status tmp
+    GITHUB_API_ERROR=""
+    hdr="$(github_auth_header)"
+    tmp="$(mktemp)"
+
+    if [ -n "$hdr" ]; then
+        status=$(curl -sS --max-time 15 -o "$tmp" -w '%{http_code}' \
+                 -H "$hdr" -H "Accept: application/vnd.github+json" "$url" 2>/dev/null) || status="000"
+    else
+        status=$(curl -sS --max-time 15 -o "$tmp" -w '%{http_code}' \
+                 -H "Accept: application/vnd.github+json" "$url" 2>/dev/null) || status="000"
+    fi
+
+    body="$(cat "$tmp" 2>/dev/null)"
+    rm -f "$tmp"
+
+    if [ "$status" = "200" ]; then
+        printf '%s' "$body"
+        return 0
+    fi
+
+    if printf '%s' "$body" | grep -qi 'rate limit'; then
+        if [ -n "$hdr" ]; then
+            GITHUB_API_ERROR="GitHub API rate limit exceeded even when authenticated. It resets hourly."
+        else
+            GITHUB_API_ERROR="GitHub API rate limit exceeded. Unauthenticated requests are capped at 60/hour per IP address, which every machine on this network shares. Run 'gh auth login' to raise it to 5,000/hour, or wait for the hourly reset."
+        fi
+    elif [ "$status" = "000" ]; then
+        GITHUB_API_ERROR="Could not reach api.github.com (network error or timeout)."
+    else
+        GITHUB_API_ERROR="GitHub API request failed with HTTP $status."
+    fi
+    return 1
 }
