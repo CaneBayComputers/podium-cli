@@ -5,6 +5,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS standard_notes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     docker exec podium-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'standard_notes'@'%' IDENTIFIED BY 'SnDbPass123!';
+        ALTER USER 'standard_notes'@'%' IDENTIFIED BY 'SnDbPass123!';
         GRANT ALL PRIVILEGES ON standard_notes.* TO 'standard_notes'@'%';
         FLUSH PRIVILEGES;
     "

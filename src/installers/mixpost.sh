@@ -6,6 +6,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS mixpost CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'mixpost'@'%' IDENTIFIED BY 'mixpost';
+        ALTER USER 'mixpost'@'%' IDENTIFIED BY 'mixpost';
         GRANT ALL PRIVILEGES ON mixpost.* TO 'mixpost'@'%';
         FLUSH PRIVILEGES;
     "

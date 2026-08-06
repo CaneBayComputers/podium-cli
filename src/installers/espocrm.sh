@@ -6,6 +6,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS espocrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'espocrm'@'%' IDENTIFIED BY 'espocrm';
+        ALTER USER 'espocrm'@'%' IDENTIFIED BY 'espocrm';
         GRANT ALL PRIVILEGES ON espocrm.* TO 'espocrm'@'%';
         FLUSH PRIVILEGES;
     "

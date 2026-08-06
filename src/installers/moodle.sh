@@ -6,6 +6,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS moodle CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'moodle'@'%' IDENTIFIED BY 'moodle';
+        ALTER USER 'moodle'@'%' IDENTIFIED BY 'moodle';
         GRANT ALL PRIVILEGES ON moodle.* TO 'moodle'@'%';
         FLUSH PRIVILEGES;
     "

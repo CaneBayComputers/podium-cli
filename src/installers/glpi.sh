@@ -6,6 +6,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'glpi'@'%' IDENTIFIED BY 'glpi';
+        ALTER USER 'glpi'@'%' IDENTIFIED BY 'glpi';
         GRANT ALL PRIVILEGES ON glpi.* TO 'glpi'@'%';
         GRANT SELECT ON mysql.time_zone_name TO 'glpi'@'%';
         FLUSH PRIVILEGES;

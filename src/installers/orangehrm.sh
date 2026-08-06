@@ -6,6 +6,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS orangehrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'orangehrm'@'%' IDENTIFIED BY 'orangehrm';
+        ALTER USER 'orangehrm'@'%' IDENTIFIED BY 'orangehrm';
         GRANT ALL PRIVILEGES ON orangehrm.* TO 'orangehrm'@'%';
         FLUSH PRIVILEGES;
     "

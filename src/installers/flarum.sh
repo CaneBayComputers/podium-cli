@@ -7,6 +7,7 @@ pre_install() {
     # Flarum requires its own dedicated user — root login fails with this image
     docker exec podium-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'flarum'@'%' IDENTIFIED BY 'FlarumDbPassword123!';
+        ALTER USER 'flarum'@'%' IDENTIFIED BY 'FlarumDbPassword123!';
         GRANT ALL PRIVILEGES ON flarum.* TO 'flarum'@'%';
         FLUSH PRIVILEGES;
     "
