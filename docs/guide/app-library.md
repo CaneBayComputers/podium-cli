@@ -62,6 +62,9 @@ Both emit a prepared prompt telling an agent to fetch upstream, diff against the
 
 Every installer here was **installed on a real machine, checked over HTTP, and removed** before it was added — none were added on the strength of being generated. Images are pinned to specific versions.
 
+{: .note }
+> A few apps (Karakeep, Open Archiver, Langfuse) bring their own Meilisearch or MinIO container. Those two are *optional* shared services and off by default, so each app ships what it needs rather than assuming you enabled them. If you have enabled the shared one, you will have two — harmless, just not shared.
+
 {: .warning }
 > **Verified means "installs and responds", not "usable".** A handful of apps need a browser *secure context* for `crypto.subtle` or service workers, which `http://<app>/` cannot provide — those were deliberately left out rather than shipped as something that boots and then fails in the browser.
 
@@ -186,7 +189,6 @@ Every installer here was **installed on a real machine, checked over HTTP, and r
 | Lowcoder | `podium install lowcoder` | Low-code |
 | Lychee | `podium install lychee` | Photos |
 | Mage AI | `podium install mage-ai` | Data |
-| Mailpit | `podium install mailpit` | Email |
 | marimo | `podium install marimo` | Data |
 | Mastodon | `podium install mastodon` | Social |
 | Matomo | `podium install matomo` | Analytics |

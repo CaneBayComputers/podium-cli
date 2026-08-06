@@ -681,12 +681,6 @@
       "note": "The pipeline project lives in /home/src/podium_project inside the container."
     },
     {
-      "slug": "mailpit",
-      "display": "Mailpit",
-      "database": "",
-      "note": "SMTP sink on mailpit:1025 — point an app's mail host at it, then read the messages at http://mailpit/"
-    },
-    {
       "slug": "marimo",
       "display": "marimo",
       "database": "",
