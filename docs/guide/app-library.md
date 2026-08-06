@@ -60,7 +60,12 @@ Both emit a prepared prompt telling an agent to fetch upstream, diff against the
 
 ## Available apps
 
-Every installer here was **installed on a real machine, checked over HTTP, and removed** before it was added — none were added on the strength of being generated. Images are pinned to specific versions.
+Being straight about what has and has not been checked, because "200+ apps" is easy to say and hard to stand behind:
+
+- **126 have been installed on a real machine**, checked over HTTP, and removed — 115 added in the 2026-08 catalogue expansion, plus 11 older ones spot-checked since. Every one of those pins its images to specific versions.
+- **90 are older entries that predate that process.** They were written and used, but have not been through it, and most still track floating tags like `:latest`. They may well work; nobody has recently proved it.
+
+If an older app misbehaves, [say so](https://github.com/CaneBayComputers/podium-cli/issues) — that is the fastest way for it to get fixed.
 
 {: .note }
 > A few apps (Karakeep, Open Archiver, Langfuse) bring their own Meilisearch or MinIO container. Those two are *optional* shared services and off by default, so each app ships what it needs rather than assuming you enabled them. If you have enabled the shared one, you will have two — harmless, just not shared.
