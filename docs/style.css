@@ -480,28 +480,30 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
 
 .app-grid {
   list-style: none; padding: 0; margin: 0;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr));
+  gap: 6px;
 }
 .app-grid li { display: block; }
 .app-grid button {
   width: 100%;
-  background: rgba(15, 26, 69, 0.55);
+  background: rgba(15, 26, 69, 0.5);
   border: 1px solid var(--line);
-  padding: 13px 14px;
-  border-radius: 10px;
+  padding: 7px 8px;
+  border-radius: 7px;
   text-align: center;
   font-weight: 500;
-  color: #cbd5e1;
-  font-size: 0.93rem;
+  color: #c3cee2;
+  font-size: 0.78rem;
+  line-height: 1.25;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color .12s, color .12s, background .12s, transform .12s;
+  /* Long names must not widen the track or the grid loses its rhythm. */
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: border-color .12s, color .12s, background .12s;
 }
 .app-grid button:hover {
   border-color: var(--accent);
   color: #fff;
-  transform: translateY(-1px);
 }
 .app-grid button.active {
   border-color: var(--accent);
@@ -950,4 +952,11 @@ pre.has-copy:focus-within .code-copy {
 @media (max-width: 540px) {
   .donate-hero { padding: 48px 0 28px; }
   .story-cta .btn { width: 100%; text-align: center; }
+}
+
+/* Denser still on small screens — 217 chips at 122px would otherwise be a very
+   long scroll on a phone. */
+@media (max-width: 640px) {
+  .app-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 5px; }
+  .app-grid button { padding: 6px 6px; font-size: 0.72rem; }
 }
