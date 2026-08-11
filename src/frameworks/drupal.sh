@@ -255,5 +255,5 @@ docker-compose.yaml
 .DS_Store
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Drupal project!"
+    echo-green ".gitignore created for Drupal project!"
 }

@@ -55,7 +55,7 @@ framework_setup_gitignore() {
 echo "Hello, World! This is your PHP project.";
 ?>
 EOF
-        [[ "$JSON_OUTPUT" != "1" ]] && echo-green "Created public/index.php entry point!"
+        echo-green "Created public/index.php entry point!"
     fi
 
     [ -f ".gitignore" ] && {
@@ -93,5 +93,5 @@ ehthumbs.db
 Thumbs.db
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for PHP project!"
+    echo-green ".gitignore created for PHP project!"
 }

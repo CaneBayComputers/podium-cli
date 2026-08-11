@@ -300,15 +300,28 @@ export DB_NAME
 
 
 # Get a random D class number and make sure it doesn' already exist in hosts file
+#
+# Upper bound stops at 239: .250-.254 is reserved for optional shared services,
+# with .240-.249 left as headroom. Shared services used to sit on low addresses
+# and projects could be handed one, which surfaced as a shared service failing
+# to start with "Address already in use" long after the project claimed the IP.
 echo-return -n "Docker IP Address: "
 
 while true; do
 
-    D_CLASS=$((RANDOM % (250 - 100 + 1) + 100))
+    D_CLASS=$((RANDOM % (239 - 100 + 1) + 100))
 
     IP_ADDRESS="$VPC_SUBNET.$D_CLASS"
 
-    if ! cat /etc/hosts | grep "$IP_ADDRESS"; then break; fi
+    # -q matters: an unquiet grep prints the colliding /etc/hosts line to
+    # stdout, and in --json-output mode that lands in the middle of the JSON
+    # document. It only happened when the random pick actually collided, so it
+    # was an intermittent "invalid JSON" the caller could not reproduce.
+    #
+    # Anchored and escaped so .19 does not match .195 and mark a free address
+    # as taken.
+    _ip_re="^$(printf '%s' "$IP_ADDRESS" | sed 's/\./\\./g')[[:space:]]"
+    if ! grep -qE "$_ip_re" /etc/hosts; then break; fi
 
 done
 
@@ -889,6 +902,12 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     if [ -n "$STARTUP_OUTPUT" ]; then
         JSON_RESPONSE="$JSON_RESPONSE, \"startup_result\": $STARTUP_OUTPUT"
     fi
+
+    # Tell the caller which shared services THIS run had to enable, and which
+    # admin UIs could manage them. The GUI uses it to offer "you just got a
+    # Postgres — want something to browse it with?" at the one moment the user
+    # is thinking about it.
+    JSON_RESPONSE="$JSON_RESPONSE$(podium_services_json_fragment)"
 
     JSON_RESPONSE="$JSON_RESPONSE}"
     echo "$JSON_RESPONSE"

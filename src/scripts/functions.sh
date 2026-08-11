@@ -65,16 +65,20 @@ if [[ -z "${NO_COLOR:-}" ]] && ! tput setaf 1 >/dev/null 2>&1; then
 fi
 
 # Color output functions (suppressed in JSON mode)
-echo-red() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 1 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-green() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 2 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-yellow() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 3 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-blue() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 4 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-magenta() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 5 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-cyan() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 6 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 7 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
+echo-red() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 1 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-green() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 2 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-yellow() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 3 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-blue() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 4 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-magenta() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 5 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-cyan() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 6 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 7 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
 
 # JSON-aware echo function for regular output
-echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
+# MUST end with `return 0`. Without it, JSON mode leaves the failed `[[ ]]` as
+# the exit status, so a function whose last statement is echo-return returns
+# 1 and `set -e` kills the script — with all output suppressed, which made it
+# look like the command simply produced nothing.
+echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
 # Docker aliases used by scripts (JSON-aware for clean output)
 # Compose profile flags for whatever optional shared services are enabled on
@@ -525,7 +529,11 @@ error() {
 }
 
 # Output spacing function that respects JSON_OUTPUT
-echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
+# MUST end with `return 0`. Without it, JSON mode leaves the failed `[[ ]]` as
+# the exit status, so a function whose last statement is echo-return returns
+# 1 and `set -e` kills the script — with all output suppressed, which made it
+# look like the command simply produced nothing.
+echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
 # Docker Compose checking functions
 check_docker_compose_type() {
@@ -933,19 +941,27 @@ resolve_framework_database() {
     resolved=$(python3 - "$catalog" "$framework" "$requested" << 'PYEOF_DB'
 import json, sys
 catalog, framework, requested = sys.argv[1], sys.argv[2], (sys.argv[3] or "").lower()
+# Two vocabularies meet here. frameworks.json spells it "mongodb" (matching
+# what the frameworks' own docs call it); every other part of the CLI — the
+# --database validator, the compose service, the container name — says "mongo".
+# Normalize INTO catalog spelling to compare against the allowed list, then
+# back OUT to CLI spelling, because the caller feeds this straight to code
+# that only accepts the CLI names.
 ALIAS = {"mariadb": "mysql", "postgresql": "postgres", "pgsql": "postgres",
          "mongo": "mongodb", "sqlite3": "sqlite"}
+UNALIAS = {"mongodb": "mongo"}
 requested = ALIAS.get(requested, requested)
+out = lambda v: UNALIAS.get(v, v)
 fws = {f["slug"]: f for f in json.load(open(catalog))["frameworks"]}
 fw = fws.get(framework)
 if not fw:
-    print(requested or "")
+    print(out(requested) or "")
     sys.exit(0)
 allowed = fw.get("databases") or []
 if not allowed or not requested or requested in allowed:
-    print(requested or (allowed[0] if allowed else ""))
+    print(out(requested) or (out(allowed[0]) if allowed else ""))
     sys.exit(0)
-print(f"{allowed[0]}\t{fw['display']}\t{fw.get('note', '')}")
+print(f"{out(allowed[0])}\t{fw['display']}\t{fw.get('note', '')}")
 PYEOF_DB
 )
     if [[ "$resolved" == *$'\t'* ]]; then
@@ -2545,22 +2561,15 @@ ensure_services_running() {
 
     current="${OPTIONAL_SERVICES:-}"
 
+    local newly=""
     for svc in $wanted; do
         case " $current " in
             *" $svc "*) ;;
             *) current="${current:+$current }$svc"; changed=1
+               newly="${newly:+$newly }$svc"
                echo-cyan "Enabling shared service '$svc' (a project needs it) ..." ;;
         esac
     done
-
-    if [ "$changed" = "1" ]; then
-        if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
-            sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$current\"" /etc/podium-cli/.env
-        else
-            echo "OPTIONAL_SERVICES=\"$current\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
-        fi
-        export OPTIONAL_SERVICES="$current"
-    fi
 
     # Start anything wanted that is not already up. Checked per service so an
     # already-running stack costs nothing.
@@ -2570,12 +2579,47 @@ ensure_services_running() {
         [ "$svc" = "mysql" ] && cname="podium-mariadb"
         docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true || need_start=1
     done
-    [ "$need_start" = "1" ] || return 0
 
-    echo-cyan "Starting required shared services ..."
-    ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
-      mapfile -t _p < <(podium_profile_args)
-      docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
+    if [ "$need_start" = "1" ]; then
+        echo-cyan "Starting required shared services ..."
+        # Run with the PROPOSED list rather than the persisted one, because
+        # nothing is persisted yet — see below.
+        ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
+          OPTIONAL_SERVICES="$current"
+          mapfile -t _p < <(podium_profile_args)
+          docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
+    fi
+
+    # Record only what actually came up. Persisting first meant a service whose
+    # image failed to pull stayed listed as enabled forever with no container
+    # behind it, so `OPTIONAL_SERVICES` stopped being a statement about reality.
+    local confirmed="${OPTIONAL_SERVICES:-}" failed=""
+    for svc in $newly; do
+        cname="podium-$svc"
+        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        if docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true; then
+            confirmed="${confirmed:+$confirmed }$svc"
+            PODIUM_SERVICES_ENABLED_THIS_RUN="$PODIUM_SERVICES_ENABLED_THIS_RUN $svc"
+        else
+            failed="${failed:+$failed }$svc"
+        fi
+    done
+
+    if [ -n "$failed" ]; then
+        echo-red "Could not start:$failed — left disabled." >&2
+        echo-white "  Check: docker compose -f /etc/podium-cli/docker-compose.yaml logs" >&2
+    fi
+
+    if [ "$confirmed" != "${OPTIONAL_SERVICES:-}" ]; then
+        if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
+            sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$confirmed\"" /etc/podium-cli/.env
+        else
+            echo "OPTIONAL_SERVICES=\"$confirmed\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
+        fi
+        export OPTIONAL_SERVICES="$confirmed"
+    fi
+
+    [ -n "$failed" ] && return 1
     return 0
 }
 
@@ -2613,4 +2657,53 @@ ensure_services_for_engine() {
         *)                    : ;;
     esac
     return 0
+}
+
+# Services enabled during THIS command, so a front end can tell "postgres was
+# already here" from "we just turned postgres on for you". Accumulated by
+# ensure_services_running; read by setup_project when building its JSON.
+PODIUM_SERVICES_ENABLED_THIS_RUN=""
+
+# Admin UIs that can manage a given database service, excluding any already
+# enabled. Adminer is listed first deliberately — one ~50MB container covers
+# every engine Podium ships, so it is the right default suggestion.
+#   $1 database service name
+podium_admin_uis_for() {
+    local svc="$1" candidates="" ui out=""
+    case "$svc" in
+        mysql)    candidates="adminer phpmyadmin" ;;
+        postgres) candidates="adminer" ;;
+        mongo)    candidates="adminer mongo-express" ;;
+        *)        return 0 ;;
+    esac
+    for ui in $candidates; do
+        case " ${OPTIONAL_SERVICES:-} " in
+            *" $ui "*) continue ;;    # already on; nothing to suggest
+        esac
+        out="${out:+$out }$ui"
+    done
+    printf '%s' "$out"
+}
+
+# JSON fragment describing what was just enabled and what could manage it.
+# Empty when nothing was enabled, so callers can append it unconditionally.
+podium_services_json_fragment() {
+    local enabled="${PODIUM_SERVICES_ENABLED_THIS_RUN# }"
+    [ -n "$enabled" ] || return 0
+
+    local svc ui uis seen="" ui_json="" svc_json=""
+    for svc in $enabled; do
+        svc_json="${svc_json:+$svc_json, }\"$svc\""
+        uis="$(podium_admin_uis_for "$svc")"
+        for ui in $uis; do
+            case " $seen " in *" $ui "*) continue ;; esac
+            seen="$seen $ui"
+            case "$ui" in
+                adminer)       ui_json="${ui_json:+$ui_json, }{\"slug\": \"adminer\", \"display\": \"Adminer\", \"covers\": \"PostgreSQL, MariaDB/MySQL, SQLite, MongoDB\", \"size\": \"~50MB\"}" ;;
+                phpmyadmin)    ui_json="${ui_json:+$ui_json, }{\"slug\": \"phpmyadmin\", \"display\": \"phpMyAdmin\", \"covers\": \"MariaDB/MySQL\", \"size\": \"~70MB\"}" ;;
+                mongo-express) ui_json="${ui_json:+$ui_json, }{\"slug\": \"mongo-express\", \"display\": \"Mongo Express\", \"covers\": \"MongoDB\", \"size\": \"~25MB\"}" ;;
+            esac
+        done
+    done
+    printf ', "services_enabled": [%s], "admin_uis_suggested": [%s]' "$svc_json" "$ui_json"
 }

@@ -271,5 +271,5 @@ staticfiles/
 media/
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Django project!"
+    echo-green ".gitignore created for Django project!"
 }

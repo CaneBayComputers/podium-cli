@@ -133,7 +133,7 @@ services:
       - minio_data:/data
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.9"
+        ipv4_address: "${VPC_SUBNET}.250"
 
   meilisearch:
     image: getmeili/meilisearch:v1.51.0
@@ -147,7 +147,7 @@ services:
       - meilisearch_data:/meili_data
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.10"
+        ipv4_address: "${VPC_SUBNET}.251"
 
 
   # ---------------------------------------------------------------------------
@@ -160,7 +160,7 @@ services:
   # UI you have to hand-configure a connection for has given back most of the
   # convenience it exists to provide.
   adminer:
-    image: adminer:5.4
+    image: adminer:5.5.1
     container_name: "${ADMINER_CONTAINER_NAME:-podium-adminer}"
     profiles: ["adminer"]
     restart: unless-stopped
@@ -172,7 +172,7 @@ services:
       ADMINER_DESIGN: dracula
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.11"
+        ipv4_address: "${VPC_SUBNET}.252"
 
   mongo-express:
     image: mongo-express:1.0.2
@@ -184,10 +184,10 @@ services:
       ME_CONFIG_BASICAUTH: "false"
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.12"
+        ipv4_address: "${VPC_SUBNET}.253"
 
   redisinsight:
-    image: redis/redisinsight:2.70
+    image: redis/redisinsight:3.8.0
     container_name: "${REDISINSIGHT_CONTAINER_NAME:-podium-redisinsight}"
     profiles: ["redisinsight"]
     restart: unless-stopped
@@ -197,7 +197,7 @@ services:
       - redisinsight_data:/data
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.13"
+        ipv4_address: "${VPC_SUBNET}.254"
 
 
 volumes:
@@ -216,7 +216,7 @@ networks:
       config:
         - subnet: "${VPC_SUBNET}.0/24"
           # Dynamic IPs come from .32-.63 only. Static IPs assigned via
-          # ipv4_address (.2-.8 shared services, .100-.250 project entry-points)
+          # ipv4_address (.2-.8 core, .250-.254 optional services, .100-.239 projects)
           # are still allowed anywhere in the subnet — Docker honors them even
           # when they sit outside ip_range. Helper containers in multi-service
           # projects pick up dynamic addresses; without ip_range they would
