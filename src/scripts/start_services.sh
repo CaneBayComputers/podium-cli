@@ -74,24 +74,23 @@ source "$DEV_DIR/scripts/pre_check.sh"
 # with nothing enabled has nothing to start — and that is a legitimate state, not
 # an error. `docker compose up` with no profiles selected exits non-zero with
 # "no service selected", which used to abort project creation on a fresh box.
-if [ -z "${OPTIONAL_SERVICES:-}" ]; then
-    debug "No shared services enabled; nothing to start"
-else
-    # check-mariadb is only meaningful when mysql is among the enabled set;
-    # otherwise it reports a service the machine has deliberately not enabled.
-    _services_up=1
-    for _svc in $OPTIONAL_SERVICES; do
-        _cname="podium-$_svc"
-        [ "$_svc" = "mysql" ] && _cname="podium-mariadb"
-        docker container inspect -f '{{.State.Running}}' "$_cname" 2>/dev/null | grep -q true || _services_up=0
-    done
+# Redis, Memcached and Mailhog carry no profile, so they always start. Databases
+# and admin UIs are profile-gated and only join once something asks for them.
+#
+# check-mariadb is no longer the right probe: MariaDB not running is normal on a
+# Postgres-only machine. Check the always-on trio plus whatever is enabled.
+_services_up=1
+for _svc in redis memcached mailhog ${OPTIONAL_SERVICES:-}; do
+    _cname="podium-$_svc"
+    [ "$_svc" = "mysql" ] && _cname="podium-mariadb"
+    docker container inspect -f '{{.State.Running}}' "$_cname" 2>/dev/null | grep -q true || _services_up=0
+done
 
-    if [ "$_services_up" = "0" ]; then
-        echo-cyan "Starting services ..."; echo-white
-        cd /etc/podium-cli
-        dockerup
-        cd "$DEV_DIR"
-    fi
+if [ "$_services_up" = "0" ]; then
+    echo-cyan "Starting services ..."; echo-white
+    cd /etc/podium-cli
+    dockerup
+    cd "$DEV_DIR"
 fi
 
 # JSON output for service start

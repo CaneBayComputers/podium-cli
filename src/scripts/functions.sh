@@ -2526,9 +2526,23 @@ services_referenced_in() {
 # Ensure the named services are enabled and running. Enabling persists, so the
 # next `podium up` keeps them without re-deriving.
 #   $@ service names
+# Services that carry no compose profile and therefore always run. Listing one
+# in OPTIONAL_SERVICES would be meaningless and the "enabling ..." line would be
+# a lie, so they are filtered out before anything is written or announced.
+PODIUM_ALWAYS_ON_SERVICES="redis memcached mailhog"
+
 ensure_services_running() {
-    local wanted="$*" svc changed=0 current
+    local requested="$*" wanted="" svc changed=0 current
+    [ -n "$requested" ] || return 0
+
+    for svc in $requested; do
+        case " $PODIUM_ALWAYS_ON_SERVICES " in
+            *" $svc "*) continue ;;   # always on; nothing to enable
+        esac
+        wanted="${wanted:+$wanted }$svc"
+    done
     [ -n "$wanted" ] || return 0
+
     current="${OPTIONAL_SERVICES:-}"
 
     for svc in $wanted; do

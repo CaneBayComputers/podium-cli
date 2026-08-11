@@ -45,7 +45,6 @@ services:
   redis:
     image: redis:8
     container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
-    profiles: ["redis"]
     restart: always
     expose:
       - "6379"
@@ -58,7 +57,6 @@ services:
   memcached:
     image: memcached:1.6
     container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
-    profiles: ["memcached"]
     restart: always
     expose:
       - "11211"
@@ -102,7 +100,6 @@ services:
   mailhog:
     image: axllent/mailpit:v1.30
     container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
-    profiles: ["mailhog"]
     restart: always
     ports:
       - "8025:8025"

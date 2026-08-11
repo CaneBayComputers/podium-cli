@@ -21,7 +21,10 @@ DEV_DIR=$(pwd)
 source "$DEV_DIR/scripts/pre_check.sh"
 
 # Keep in step with the profiles declared in docker-stack/docker-compose.services.yaml
-AVAILABLE_OPTIONAL_SERVICES="mysql postgres mongo redis memcached mailhog minio meilisearch phpmyadmin adminer mongo-express redisinsight"
+# redis, memcached and mailhog are deliberately absent: they are always on.
+# They cost 8.7MB combined, nearly every framework touches one, and their
+# absence surfaces as a confusing 500 rather than a clear connection error.
+AVAILABLE_OPTIONAL_SERVICES="mysql postgres mongo minio meilisearch phpmyadmin adminer mongo-express redisinsight"
 
 MODE="${PODIUM_SERVICE_MODE:-enable}"   # set by the podium dispatcher
 
