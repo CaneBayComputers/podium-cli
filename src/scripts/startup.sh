@@ -202,6 +202,19 @@ fi
 # Decide which projects to start.
 # Note: shared services have already been started above regardless of branch.
 if [[ -n "$PROJECT_NAME" ]]; then
+    # Refuse a disabled project rather than starting it. Disabling is an explicit
+    # act, so silently overriding it here would make the state meaningless.
+    if podium_project_is_disabled "$PROJECT_NAME"; then
+        echo-return
+        echo-yellow "Project '$PROJECT_NAME' is disabled and was not started."
+        echo-white  "Re-enable it first:"
+        echo-white  "  podium enable $PROJECT_NAME"
+        echo-return
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            echo "{\"action\": \"startup\", \"status\": \"error\", \"error\": \"project_disabled\", \"project\": \"$PROJECT_NAME\", \"details\": \"Project is disabled. Run 'podium enable $PROJECT_NAME' first.\"}"
+        fi
+        exit 1
+    fi
     debug "Starting specific project: $PROJECT_NAME"
     if start_project "$PROJECT_NAME"; then true; fi
 
@@ -218,6 +231,14 @@ elif [[ "$START_ALL" == "1" ]]; then
         # Skip non-directories and hidden directories
         [[ -d "$PROJECT_FOLDER_NAME" ]] || continue
         [[ "$PROJECT_FOLDER_NAME" == .* ]] && continue
+
+        # A disabled project is parked: up-all must pass over it. Announced
+        # rather than silent, so "why didn't that one start" is answerable
+        # without going and reading the compose file.
+        if podium_project_is_disabled "$PROJECT_FOLDER_NAME"; then
+            echo-yellow "Skipping '$PROJECT_FOLDER_NAME' — disabled."
+            continue
+        fi
 
         debug "Attempting to start project: $PROJECT_FOLDER_NAME"
         start_project "$PROJECT_FOLDER_NAME" || true

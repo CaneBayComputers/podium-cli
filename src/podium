@@ -134,6 +134,8 @@ show_help() {
     echo "  podium clone <work-directly|fork|new-repo> <repo> [name] - Clone an existing repo"
     echo "  podium setup <project> [options] - Set up an existing project directory"
     echo "  podium remove <project> [options] - Remove a project (DB preserved unless --force-db-delete)"
+    echo "  podium disable <project>  - Stop and park a project: skipped by up-all, hidden in the GUI"
+    echo "  podium enable <project>   - Re-enable a disabled project"
     echo
     echo-white "SYSTEM MANAGEMENT:"
     echo "  podium configure          - Configure Podium environment"
@@ -716,6 +718,12 @@ case "$1" in
         ;;
     "ai-set")
         "$SCRIPT_DIR/scripts/ai_set.sh" "${@:2}"
+        ;;
+    "disable")
+        PODIUM_TOGGLE_ACTION=disable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
+        ;;
+    "enable")
+        PODIUM_TOGGLE_ACTION=enable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
         ;;
     "ai-unattended")
         "$SCRIPT_DIR/scripts/ai_unattended.sh" "${@:2}"

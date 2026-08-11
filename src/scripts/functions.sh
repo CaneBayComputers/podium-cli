@@ -2407,3 +2407,68 @@ record_last_on() {
     set_x_metadata_key "$file" "$project" "last_on" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
     return 0
 }
+
+# =============================================================================
+# Disabled projects
+# =============================================================================
+# A disabled project is one the user has parked: stopped, hidden from `up-all`
+# and from the GUI's default view, and refused by `up` until re-enabled. The
+# state lives in the project's own x-metadata `status` key, so it travels with
+# the project and the GUI reads it the same way it reads emoji and last_on.
+#
+# UNKNOWN OR MISSING MEANS ENABLED. Every project that predates this feature has
+# no status key, and a project must never become unstartable because a metadata
+# read failed or returned something unexpected.
+
+# Echo the value of an x-metadata key, or empty.
+#   $1 compose file   $2 key
+read_x_metadata_key() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || return 0
+    python3 - "$file" "$key" << 'PYEOF' 2>/dev/null
+import re, sys
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except Exception:
+    sys.exit(0)
+key = sys.argv[2]
+mi = next((i for i, l in enumerate(lines) if re.match(r'^\s*x-metadata:\s*$', l)), None)
+if mi is None:
+    sys.exit(0)
+indent = len(lines[mi]) - len(lines[mi].lstrip())
+for l in lines[mi + 1:]:
+    if l.strip() == "":
+        continue
+    if len(l) - len(l.lstrip()) <= indent:
+        break
+    m = re.match(r'^\s*' + re.escape(key) + r':\s*(.*)$', l)
+    if m:
+        print(m.group(1).strip().strip('"\''))
+        break
+PYEOF
+}
+
+# Resolve a project's compose file, or empty if it has none.
+podium_project_compose() {
+    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$1"
+    [ -f "$dir/docker-compose.yaml" ] && { printf '%s' "$dir/docker-compose.yaml"; return 0; }
+    [ -f "$dir/docker-compose.yml" ]  && { printf '%s' "$dir/docker-compose.yml";  return 0; }
+    return 0
+}
+
+# Echo "disabled" or "enabled". Anything unrecognised is enabled, deliberately.
+podium_project_status() {
+    local project="$1" file status
+    file="$(podium_project_compose "$project")"
+    [ -n "$file" ] || { printf 'enabled'; return 0; }
+    status="$(read_x_metadata_key "$file" status)"
+    case "$status" in
+        disabled) printf 'disabled' ;;
+        *)        printf 'enabled'  ;;
+    esac
+}
+
+# Convenience predicate: true when the project is disabled.
+podium_project_is_disabled() {
+    [ "$(podium_project_status "$1")" = "disabled" ]
+}
