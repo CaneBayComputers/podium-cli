@@ -485,9 +485,15 @@ if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
     error "Development environment has not been configured! Run: podium configure"
 fi
 
-# Check if services are running
-if ! check-mariadb; then
-    error "Development environment is not started! Run: podium start-services"
+# Services are profile-gated and enabled on demand, so "mariadb is not running"
+# is a normal state on a Postgres-only or SQLite-only machine — not a broken
+# environment. Only say something when NOTHING is enabled at all, and say it as
+# information rather than an error.
+if [ -z "${OPTIONAL_SERVICES:-}" ]; then
+    echo-yellow "No shared services are enabled yet."
+    echo-white  "They are enabled automatically when a project needs one, or turn one on with:"
+    echo-white  "  podium enable-service <name>"
+    echo-return
 fi
 
 

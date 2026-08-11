@@ -2472,3 +2472,131 @@ podium_project_status() {
 podium_project_is_disabled() {
     [ "$(podium_project_status "$1")" = "disabled" ]
 }
+
+# =============================================================================
+# On-demand shared services
+# =============================================================================
+# Every shared service is profile-gated, so nothing runs unless something asks
+# for it. A machine that only builds static PHP sites should not be paying for
+# MongoDB — measured on a dev box, the old always-on set was 517MB resident, of
+# which mongo alone was 200MB.
+#
+# The trade is that a project must be able to bring up what it needs without the
+# user knowing which services exist. That is what this does: read the project's
+# OWN compose, see which podium-* hostnames it talks to, and ensure exactly
+# those are enabled and running.
+#
+# Deliberately derived from the compose rather than from a declared list. A
+# framework project, an app installer and an AI-folded clone all end up
+# referencing the hostnames the same way, so one rule covers all three and
+# nothing has to be kept in step by hand.
+#
+# Admin UIs (adminer, mongo-express, redisinsight) are never matched here: no
+# project references them, so they stay pure opt-in.
+
+# Map a podium-* hostname to its compose service name. These differ — the
+# MariaDB service is called `mysql` but its container is `podium-mariadb`.
+_podium_host_to_service() {
+    case "$1" in
+        podium-mariadb)   printf 'mysql' ;;
+        podium-postgres)  printf 'postgres' ;;
+        podium-mongo)     printf 'mongo' ;;
+        podium-redis)     printf 'redis' ;;
+        podium-memcached) printf 'memcached' ;;
+        podium-mailhog)   printf 'mailhog' ;;
+        podium-minio)     printf 'minio' ;;
+        podium-meilisearch) printf 'meilisearch' ;;
+        *) return 1 ;;
+    esac
+}
+
+# Echo the service names referenced anywhere in the given text.
+services_referenced_in() {
+    local text="$1" host svc out=""
+    for host in podium-mariadb podium-postgres podium-mongo podium-redis \
+                podium-memcached podium-mailhog podium-minio podium-meilisearch; do
+        case "$text" in
+            *"$host"*)
+                svc="$(_podium_host_to_service "$host")" && out="$out $svc" ;;
+        esac
+    done
+    printf '%s' "${out# }"
+}
+
+# Ensure the named services are enabled and running. Enabling persists, so the
+# next `podium up` keeps them without re-deriving.
+#   $@ service names
+ensure_services_running() {
+    local wanted="$*" svc changed=0 current
+    [ -n "$wanted" ] || return 0
+    current="${OPTIONAL_SERVICES:-}"
+
+    for svc in $wanted; do
+        case " $current " in
+            *" $svc "*) ;;
+            *) current="${current:+$current }$svc"; changed=1
+               echo-cyan "Enabling shared service '$svc' (a project needs it) ..." ;;
+        esac
+    done
+
+    if [ "$changed" = "1" ]; then
+        if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
+            sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$current\"" /etc/podium-cli/.env
+        else
+            echo "OPTIONAL_SERVICES=\"$current\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
+        fi
+        export OPTIONAL_SERVICES="$current"
+    fi
+
+    # Start anything wanted that is not already up. Checked per service so an
+    # already-running stack costs nothing.
+    local need_start=0 cname
+    for svc in $wanted; do
+        cname="podium-$svc"
+        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true || need_start=1
+    done
+    [ "$need_start" = "1" ] || return 0
+
+    echo-cyan "Starting required shared services ..."
+    ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
+      mapfile -t _p < <(podium_profile_args)
+      docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
+    return 0
+}
+
+# Convenience: derive from a project's compose and ensure.
+ensure_services_for_project() {
+    local project="$1" dir file text svcs
+    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
+    file="$(podium_project_compose "$project")"
+
+    # Read BOTH the compose and the .env. Installers name the shared hostnames in
+    # their compose; framework projects name them only in .env — Laravel defaults
+    # its session and cache to Redis, so a Laravel project needs podium-redis and
+    # says so nowhere else. Missing that produced a working database and a 500
+    # from "RedisException: No route to host".
+    text=""
+    [ -n "$file" ] && text="$(cat "$file" 2>/dev/null)"
+    [ -f "$dir/.env" ] && text="$text
+$(cat "$dir/.env" 2>/dev/null)"
+
+    svcs="$(services_referenced_in "$text")"
+    [ -n "$svcs" ] || return 0
+    ensure_services_running $svcs
+}
+
+# Map a database engine to its shared service. Framework projects declare their
+# engine up front (`--database postgres`) and only write it into .env later, so
+# the compose scan cannot see it — this is the authoritative signal for them.
+ensure_services_for_engine() {
+    local engine="$1"
+    case "$engine" in
+        mysql|mariadb)        ensure_services_running mysql ;;
+        postgres|postgresql|pgsql) ensure_services_running postgres ;;
+        mongo|mongodb)        ensure_services_running mongo ;;
+        sqlite|sqlite3|"")    : ;;   # no server needed
+        *)                    : ;;
+    esac
+    return 0
+}

@@ -21,7 +21,7 @@ DEV_DIR=$(pwd)
 source "$DEV_DIR/scripts/pre_check.sh"
 
 # Keep in step with the profiles declared in docker-stack/docker-compose.services.yaml
-AVAILABLE_OPTIONAL_SERVICES="minio meilisearch"
+AVAILABLE_OPTIONAL_SERVICES="mysql postgres mongo redis memcached mailhog minio meilisearch phpmyadmin adminer mongo-express redisinsight"
 
 MODE="${PODIUM_SERVICE_MODE:-enable}"   # set by the podium dispatcher
 

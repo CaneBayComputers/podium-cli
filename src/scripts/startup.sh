@@ -125,6 +125,11 @@ start_project() {
           ;;
   esac
 
+  # Bring up whatever this project actually talks to. Services are profile-gated
+  # and nothing is running by default, so this is what makes a project startable
+  # on a machine that has never needed, say, Postgres before.
+  ensure_services_for_project "$PROJECT_FOLDER_NAME" || true
+
   # Already up? Then this call has nothing to do. Reported by the GUI session:
   # `podium resume` on a running project ran a full start, which costs seconds
   # and can trigger a sudo prompt to change nothing — so "continue my AI

@@ -17,6 +17,7 @@ services:
   mysql:
     image: mariadb:12.0
     container_name: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+    profiles: ["mysql"]
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
     volumes:
@@ -31,6 +32,7 @@ services:
   phpmyadmin:
     image: phpmyadmin:5
     container_name: "${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
+    profiles: ["phpmyadmin"]
     restart: always
     environment:
       PMA_HOST: "${VPC_SUBNET}.2"
@@ -43,6 +45,7 @@ services:
   redis:
     image: redis:8
     container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
+    profiles: ["redis"]
     restart: always
     expose:
       - "6379"
@@ -55,6 +58,7 @@ services:
   memcached:
     image: memcached:1.6
     container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
+    profiles: ["memcached"]
     restart: always
     expose:
       - "11211"
@@ -65,6 +69,7 @@ services:
   mongo:
     image: mongo:8.0
     container_name: "${MONGO_CONTAINER_NAME:-podium-mongo}"
+    profiles: ["mongo"]
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
@@ -80,6 +85,7 @@ services:
   postgres:
     image: postgres:17
     container_name: "${POSTGRES_CONTAINER_NAME:-podium-postgres}"
+    profiles: ["postgres"]
     restart: always
     environment:
       POSTGRES_USER: root
@@ -96,6 +102,7 @@ services:
   mailhog:
     image: axllent/mailpit:v1.30
     container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
+    profiles: ["mailhog"]
     restart: always
     ports:
       - "8025:8025"
@@ -146,7 +153,58 @@ services:
         ipv4_address: "${VPC_SUBNET}.10"
 
 
+  # ---------------------------------------------------------------------------
+  # Database admin UIs — opt-in only
+  # ---------------------------------------------------------------------------
+  # Never auto-provisioned: no project references them, so nothing can ask for
+  # them on your behalf. Turn one on when you want to poke at a database.
+  #
+  # Each is PRE-WIRED to the shared servers. That is the whole point — an admin
+  # UI you have to hand-configure a connection for has given back most of the
+  # convenience it exists to provide.
+  adminer:
+    image: adminer:5.4
+    container_name: "${ADMINER_CONTAINER_NAME:-podium-adminer}"
+    profiles: ["adminer"]
+    restart: unless-stopped
+    environment:
+      # Covers MariaDB/MySQL, PostgreSQL, SQLite and (basically) MongoDB from one
+      # ~50MB container. Default server is prefilled; switch engine at the login
+      # screen. Leave the username as root; passwords are in AGENTS.md.
+      ADMINER_DEFAULT_SERVER: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+      ADMINER_DESIGN: dracula
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.11"
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: "${MONGOEXPRESS_CONTAINER_NAME:-podium-mongo-express}"
+    profiles: ["mongo-express"]
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_URL: "mongodb://root:password@${MONGO_CONTAINER_NAME:-podium-mongo}:27017/"
+      ME_CONFIG_BASICAUTH: "false"
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.12"
+
+  redisinsight:
+    image: redis/redisinsight:2.70
+    container_name: "${REDISINSIGHT_CONTAINER_NAME:-podium-redisinsight}"
+    profiles: ["redisinsight"]
+    restart: unless-stopped
+    environment:
+      RI_APP_HOST: "0.0.0.0"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.13"
+
+
 volumes:
+  redisinsight_data:
   redis_data:
   mysql_data:
   mongo_data:

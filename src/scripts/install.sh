@@ -125,6 +125,12 @@ echo-return
 echo-green "Installing $INSTALL_DISPLAY..."
 echo-return
 
+# Bring up the services this installer talks to, BEFORE pre_install runs — that
+# hook creates databases and therefore needs the server already up. The project's
+# compose does not exist yet, so the installer file itself is what we read.
+_needed="$(services_referenced_in "$(cat "$INSTALLER" 2>/dev/null)")"
+[ -n "$_needed" ] && ensure_services_running $_needed
+
 # Pre-install hook (DB creation, key generation, etc.)
 if declare -f pre_install > /dev/null 2>&1; then
     pre_install

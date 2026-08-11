@@ -195,6 +195,12 @@ if ! [ -d "$PROJECT_DIR" ]; then
 fi
 
 
+# Bring up the database engine this project asked for. Services are profile-gated
+# and nothing runs by default, so this is what makes `--database postgres` work on
+# a machine that has never used Postgres. Framework projects only write the engine
+# into .env later, so the declared engine is the earliest reliable signal.
+ensure_services_for_engine "$DATABASE_ENGINE" || true
+
 # Start micro services
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" 2>&1)
@@ -850,6 +856,8 @@ PYEOF
     fi
 
     # Create new database (idempotent — if it already exists, just continue).
+    # The engine must be running before we can create a database in it.
+    ensure_services_for_project "$PROJECT_NAME" || true
     ensure_database "$DB_NAME" "$DATABASE_ENGINE"
 
     # Migrations run by default (driven by framework detection). For adopted
