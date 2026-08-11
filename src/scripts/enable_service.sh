@@ -204,6 +204,26 @@ if [[ "$MODE" == "enable" ]]; then
             echo-white "  API:       http://podium-meilisearch:7700"
             echo-white "  Master key: podium-dev-master-key"
             ;;
+        redisinsight)
+            echo-white "  Open: http://podium-redisinsight:5540"
+            echo-white "  The shared Redis is pre-registered as 'Podium Redis'. It stays"
+            echo-white "  hidden until you accept the terms on the first-run screen —"
+            echo-white "  RedisInsight only runs its discovery after that."
+            ;;
+        adminer)
+            echo-white "  Open: http://podium-adminer:8080"
+            echo-white "  Server is prefilled with podium-mariadb; change it and pick the"
+            echo-white "  engine at the login screen for PostgreSQL or MongoDB."
+            echo-white "  User: root"
+            ;;
+        mongo-express)
+            echo-white "  Open: http://podium-mongo-express:8081"
+            echo-white "  Already connected to podium-mongo; no login needed."
+            ;;
+        phpmyadmin)
+            echo-white "  Open: http://podium-phpmyadmin"
+            echo-white "  User: root  (no password)"
+            ;;
     esac
 else
     persist_optional_services "$NEW"

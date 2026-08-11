@@ -193,6 +193,16 @@ services:
     restart: unless-stopped
     environment:
       RI_APP_HOST: "0.0.0.0"
+      # Pre-register the shared Redis so nobody has to type a hostname they
+      # cannot guess. RedisInsight scans for any env named RI_REDIS_HOST* and
+      # adds one connection per match; a bare suffix is connection "0".
+      #
+      # It will NOT appear until the first-run EULA screen is accepted --
+      # discovery is gated on that agreement and runs silently before it. An
+      # empty database list on first launch is expected, not a fault.
+      RI_REDIS_HOST: "${REDIS_CONTAINER_NAME:-podium-redis}"
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: "Podium Redis"
     volumes:
       - redisinsight_data:/data
     networks:
