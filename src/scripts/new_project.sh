@@ -260,10 +260,10 @@ debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
 # --- Required arguments (no interactive prompts; 'configure' is the only wizard) ---
 if [ -z "$FRAMEWORK" ]; then
     error "Error: framework is required. Usage: podium new <framework> <name> [--database <type>] [--version X]
-Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node"
+Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node nextjs nuxt sveltekit astro hono react vue"
 fi
 case "$FRAMEWORK" in
-    laravel|kavera|octobercms|drupal|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
+    laravel|kavera|octobercms|drupal|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node|nextjs|nuxt|sveltekit|astro|hono|react|vue) ;;
     *)
         # `new` scaffolds a framework you write; `install` deploys a prebuilt
         # app. Nobody should have to know which bucket a name lives in, so if
@@ -279,7 +279,7 @@ case "$FRAMEWORK" in
             echo-return
             error "Wrong command for '$FRAMEWORK' — use 'podium install'."
         fi
-        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
+        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue."
         ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
@@ -290,6 +290,10 @@ fi
 if [ -z "$DATABASE" ] || [ "$DATABASE" = "auto" ]; then
     case "$FRAMEWORK" in
         django|fastapi|flask|python) DATABASE="postgres" ;;
+        # Front-end-leaning frameworks default to SQLite so a new project does
+        # not start a database server it never queries. Pass --database
+        # explicitly to get one.
+        nextjs|nuxt|sveltekit|astro|hono|react|vue) DATABASE="sqlite" ;;
         *)                     DATABASE="mysql" ;;
     esac
     echo-cyan "Auto-selected database for $FRAMEWORK: $DATABASE"
@@ -336,11 +340,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"kavera"|"octobercms"|"drupal"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
+        "laravel"|"kavera"|"octobercms"|"drupal"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node"|"nextjs"|"nuxt"|"sveltekit"|"astro"|"hono"|"react"|"vue")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, or vue)"
             ;;
     esac
 
@@ -638,6 +642,11 @@ case $FRAMEWORK in
     node)
         echo-return; echo-cyan "Node.js project selected!"
         echo-green "Node.js project will be created with basic structure"
+        ;;
+    nextjs|nuxt|sveltekit|astro|hono|react|vue)
+        # These print their own banner from framework_scaffold; announcing them
+        # here as well only produced the message twice.
+        :
         ;;
     *)
         error "Unknown framework '$FRAMEWORK'. Exiting..."

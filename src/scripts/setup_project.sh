@@ -38,7 +38,7 @@ usage() {
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
@@ -259,12 +259,30 @@ if [ -z "$FRAMEWORK" ]; then
     elif [ -f "artisan" ]; then
         FRAMEWORK="laravel"
     elif [ -f "package.json" ] && [ ! -f "composer.json" ] && [ ! -f "artisan" ]; then
+        # Order matters. Meta-frameworks are checked first because they carry
+        # the lower-level packages as transitive dependencies — a Next.js
+        # project lists react, a SvelteKit project lists vite, and matching on
+        # those first would classify every one of them as a plain SPA.
         if grep -q '"@nestjs/core"' package.json 2>/dev/null; then
             FRAMEWORK="nestjs"
+        elif grep -q '"next"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="nextjs"
+        elif grep -q '"nuxt"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="nuxt"
+        elif grep -q '"@sveltejs/kit"' package.json 2>/dev/null; then
+            FRAMEWORK="sveltekit"
+        elif grep -q '"astro"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="astro"
+        elif grep -q '"hono"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="hono"
         elif grep -q '"fastify"' package.json 2>/dev/null; then
             FRAMEWORK="fastify"
         elif grep -q '"express"' package.json 2>/dev/null; then
             FRAMEWORK="express"
+        elif grep -q '"@vitejs/plugin-react"' package.json 2>/dev/null; then
+            FRAMEWORK="react"
+        elif grep -q '"@vitejs/plugin-vue"' package.json 2>/dev/null; then
+            FRAMEWORK="vue"
         else
             FRAMEWORK="node"
         fi
@@ -752,12 +770,42 @@ PYEOF
         echo-green "Node dependencies installed!"; echo-white
         # Fix ownership so the host user can run podium npm install afterwards without EACCES
         docker exec "$PROJECT_NAME" bash -c "chown -R $(id -u):$(id -g) /usr/share/nginx/html/node_modules /usr/share/nginx/html/package-lock.json 2>/dev/null || true"
-        # Restart the node-app supervisor program so it picks up the freshly installed packages
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            docker exec "$PROJECT_NAME" supervisorctl restart node-app > /dev/null 2>&1
-        else
-            docker exec "$PROJECT_NAME" supervisorctl restart node-app
-        fi
+        # Discard dev-server build caches before restarting.
+        #
+        # supervisor starts node-app as soon as the container is up, long before
+        # npm install has finished writing node_modules. Those early attempts
+        # fail harmlessly ("nuxt: not found") until one gets far enough to begin
+        # dependency pre-bundling and is then cut off mid-scan. Nuxt writes a
+        # half-built cache at that point and never recovers: every request
+        # returns 500 with a missing vite socket, on a project whose install
+        # exited 0.
+        #
+        # These are all regenerated on next boot, so clearing them costs a few
+        # seconds of first load and removes the whole failure mode.
+        docker exec "$PROJECT_NAME" bash -c \
+            "cd /usr/share/nginx/html && rm -rf .nuxt .next .svelte-kit .astro node_modules/.vite node_modules/.cache" \
+            > /dev/null 2>&1 || true
+        # Restart the whole container, not just the supervisor program, so the
+        # dev server picks up the freshly installed packages.
+        #
+        # `supervisorctl restart node-app` is not enough. This image's supervisor
+        # config has no stopasgroup/killasgroup, so a dev server that spawns
+        # children (Nuxt forks Vite; Vite forks esbuild) leaves them running when
+        # the program is stopped. The orphan keeps holding port 3000, every
+        # replacement instance fails to bind, and the project serves nothing --
+        # after an install that exited 0. Single-process servers like Express and
+        # Hono never showed this, which is why it stayed hidden.
+        #
+        # Restarting the container kills the whole PID namespace's strays and is
+        # what `podium up` does later anyway, so it is the state we want to land
+        # in regardless.
+        docker restart "$PROJECT_NAME" > /dev/null 2>&1 || true
+        # Wait for the container to accept exec again before anything downstream
+        # tries to use it.
+        for _i in $(seq 1 30); do
+            docker exec "$PROJECT_NAME" true > /dev/null 2>&1 && break
+            sleep 1
+        done
     fi
 
     # Install Python dependencies for Python projects

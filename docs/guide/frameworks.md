@@ -35,8 +35,39 @@ For ready-made third-party apps you *run* rather than write, see [App library]({
 | `nestjs` | Node 22 | MySQL |
 | `fastify` | Node 22 | MySQL |
 | `node` | Node 22 | MySQL |
+| `nextjs` | Node 22 | SQLite |
+| `nuxt` | Node 22 | SQLite |
+| `sveltekit` | Node 22 | SQLite |
+| `astro` | Node 22 | SQLite |
+| `hono` | Node 22 | SQLite |
+| `react` | Node 22 | SQLite |
+| `vue` | Node 22 | SQLite |
 
 ---
+
+### Front-end frameworks
+
+`nextjs`, `nuxt`, `sveltekit`, `astro`, `react` and `vue` are scaffolded as
+running dev servers with hot reload, proxied through nginx on port 80. Edit a
+file and the page updates — no build step, no port to remember.
+
+They default to **SQLite**, unlike every other framework here, because a
+front-end project should not start a database server it never queries. Ask for
+one explicitly when you need it:
+
+```bash
+podium new nextjs my-app --database postgres
+```
+
+`react` and `vue` are plain single-page apps on Vite with no server rendering.
+`hono` is an API framework rather than a UI one, and is grouped with them only
+because it shares the same Node base image.
+
+{: .note }
+> Hot reload is wired for you. The dev server's own port is never published —
+> the browser reaches the app on port 80 through nginx — so each project's Vite
+> config pins the HMR socket to port 80. Change that and hot reload stops
+> connecting while the page still loads, which is a confusing failure.
 
 ### Kavera
 
