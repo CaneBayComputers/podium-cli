@@ -43,13 +43,13 @@ framework_scaffold() {
                         fi
                     fi
                     cd "$PROJECTS_DIR"
-                    [[ "$JSON_OUTPUT" != "1" ]] && echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
+                    echo-yellow "Note: GitHub controls fork visibility; forks are typically public by default."
                 fi
             fi
 
             cd "$PROJECTS_DIR/$PROJECT_NAME"
         else
-            [[ "$JSON_OUTPUT" != "1" ]] && echo-yellow "GitHub CLI not available. Downloading Laravel skeleton without forking."
+            echo-yellow "GitHub CLI not available. Downloading Laravel skeleton without forking."
         fi
     fi
 
@@ -224,6 +224,6 @@ GITEOF
     fi
     if ! grep -q "docker-compose.yaml" .gitignore; then
         printf '\n# Docker infrastructure\ndocker-compose.yaml\n' >> .gitignore
-        [[ "$JSON_OUTPUT" != "1" ]] && echo-green "Added docker-compose.yaml to .gitignore"
+        echo-green "Added docker-compose.yaml to .gitignore"
     fi
 }

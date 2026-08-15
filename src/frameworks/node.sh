@@ -139,5 +139,5 @@ node_modules/
 dist/
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Node.js project!"
+    echo-green ".gitignore created for Node.js project!"
 }

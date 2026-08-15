@@ -38,7 +38,7 @@ usage() {
     echo-white "  --no-colors             Disable colored output"
     echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
-    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node)"
+    echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
     echo-white "  --image REF             Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --overwrite-env         Regenerate the project's .env even if one already exists"
@@ -195,6 +195,12 @@ if ! [ -d "$PROJECT_DIR" ]; then
 fi
 
 
+# Bring up the database engine this project asked for. Services are profile-gated
+# and nothing runs by default, so this is what makes `--database postgres` work on
+# a machine that has never used Postgres. Framework projects only write the engine
+# into .env later, so the declared engine is the earliest reliable signal.
+ensure_services_for_engine "$DATABASE_ENGINE" || true
+
 # Start micro services
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" 2>&1)
@@ -241,15 +247,42 @@ if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="django"
     elif [ -f "wp-config-sample.php" ] || [ -f "wp-config.php" ]; then
         FRAMEWORK="wordpress"
+    elif [ -f "composer.json" ] && grep -q '"drupal/core' composer.json 2>/dev/null; then
+        # Matches drupal/core-recommended and drupal/core-composer-scaffold, so it
+        # catches both Podium-scaffolded projects and cloned ones using the stock
+        # web/ docroot. Checked before artisan because Drupal has no artisan and
+        # would otherwise fall through to the plain-PHP default.
+        FRAMEWORK="drupal"
+    elif [ -d "web/core/lib/Drupal" ] || [ -d "public/core/lib/Drupal" ] || [ -f "core/lib/Drupal.php" ]; then
+        # Already-built trees whose composer.json is absent or nonstandard.
+        FRAMEWORK="drupal"
     elif [ -f "artisan" ]; then
         FRAMEWORK="laravel"
     elif [ -f "package.json" ] && [ ! -f "composer.json" ] && [ ! -f "artisan" ]; then
+        # Order matters. Meta-frameworks are checked first because they carry
+        # the lower-level packages as transitive dependencies — a Next.js
+        # project lists react, a SvelteKit project lists vite, and matching on
+        # those first would classify every one of them as a plain SPA.
         if grep -q '"@nestjs/core"' package.json 2>/dev/null; then
             FRAMEWORK="nestjs"
+        elif grep -q '"next"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="nextjs"
+        elif grep -q '"nuxt"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="nuxt"
+        elif grep -q '"@sveltejs/kit"' package.json 2>/dev/null; then
+            FRAMEWORK="sveltekit"
+        elif grep -q '"astro"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="astro"
+        elif grep -q '"hono"[[:space:]]*:' package.json 2>/dev/null; then
+            FRAMEWORK="hono"
         elif grep -q '"fastify"' package.json 2>/dev/null; then
             FRAMEWORK="fastify"
         elif grep -q '"express"' package.json 2>/dev/null; then
             FRAMEWORK="express"
+        elif grep -q '"@vitejs/plugin-react"' package.json 2>/dev/null; then
+            FRAMEWORK="react"
+        elif grep -q '"@vitejs/plugin-vue"' package.json 2>/dev/null; then
+            FRAMEWORK="vue"
         else
             FRAMEWORK="node"
         fi
@@ -285,15 +318,28 @@ export DB_NAME
 
 
 # Get a random D class number and make sure it doesn' already exist in hosts file
+#
+# Upper bound stops at 239: .250-.254 is reserved for optional shared services,
+# with .240-.249 left as headroom. Shared services used to sit on low addresses
+# and projects could be handed one, which surfaced as a shared service failing
+# to start with "Address already in use" long after the project claimed the IP.
 echo-return -n "Docker IP Address: "
 
 while true; do
 
-    D_CLASS=$((RANDOM % (250 - 100 + 1) + 100))
+    D_CLASS=$((RANDOM % (239 - 100 + 1) + 100))
 
     IP_ADDRESS="$VPC_SUBNET.$D_CLASS"
 
-    if ! cat /etc/hosts | grep "$IP_ADDRESS"; then break; fi
+    # -q matters: an unquiet grep prints the colliding /etc/hosts line to
+    # stdout, and in --json-output mode that lands in the middle of the JSON
+    # document. It only happened when the random pick actually collided, so it
+    # was an intermittent "invalid JSON" the caller could not reproduce.
+    #
+    # Anchored and escaped so .19 does not match .195 and mark a free address
+    # as taken.
+    _ip_re="^$(printf '%s' "$IP_ADDRESS" | sed 's/\./\\./g')[[:space:]]"
+    if ! grep -qE "$_ip_re" /etc/hosts; then break; fi
 
 done
 
@@ -385,6 +431,14 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     if [ ! -f "docker-compose.upstream.yaml" ]; then
         cp "$EXISTING_COMPOSE_FILE" docker-compose.upstream.yaml
     fi
+    # Capture the GUI's x-metadata (emoji, display name, description) before the
+    # file that holds it is deleted. Without this, re-running setup silently
+    # wipes a user's project tile customisation.
+    PRESERVED_X_METADATA="$(capture_x_metadata "$EXISTING_COMPOSE_FILE")"
+    if [ -n "$PRESERVED_X_METADATA" ]; then
+        echo-cyan "Preserving project metadata (emoji, name, description) ..."
+    fi
+
     # Remove any existing docker-compose files so the Podium-managed one is the only source.
     rm -f docker-compose.yml docker-compose.yaml
 fi
@@ -568,6 +622,19 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" != "1" ]; then
     fi
 fi
 
+# Put the GUI's x-metadata back into the regenerated compose. Runs for BOTH the
+# template path and the adapted-upstream path, so metadata survives either kind
+# of regeneration.
+if [ -n "${PRESERVED_X_METADATA:-}" ] && [ -f "docker-compose.yaml" ]; then
+    if restore_x_metadata "docker-compose.yaml" "$PROJECT_NAME" "$PRESERVED_X_METADATA"; then
+        echo-green "Project metadata preserved."
+    else
+        echo-yellow "Could not reattach project metadata — the GUI may show default emoji/name."
+        echo-white  "Previous values:"
+        printf '%s\n' "$PRESERVED_X_METADATA" | sed 's/^/    /'
+    fi
+fi
+
 # When we replaced an upstream compose, the new docker-compose.yaml is
 # Podium-managed and shouldn't be committed back to the project's repo —
 # it would break non-Podium teammates. Add it to .gitignore (idempotent).
@@ -703,12 +770,42 @@ PYEOF
         echo-green "Node dependencies installed!"; echo-white
         # Fix ownership so the host user can run podium npm install afterwards without EACCES
         docker exec "$PROJECT_NAME" bash -c "chown -R $(id -u):$(id -g) /usr/share/nginx/html/node_modules /usr/share/nginx/html/package-lock.json 2>/dev/null || true"
-        # Restart the node-app supervisor program so it picks up the freshly installed packages
-        if [[ "$JSON_OUTPUT" == "1" ]]; then
-            docker exec "$PROJECT_NAME" supervisorctl restart node-app > /dev/null 2>&1
-        else
-            docker exec "$PROJECT_NAME" supervisorctl restart node-app
-        fi
+        # Discard dev-server build caches before restarting.
+        #
+        # supervisor starts node-app as soon as the container is up, long before
+        # npm install has finished writing node_modules. Those early attempts
+        # fail harmlessly ("nuxt: not found") until one gets far enough to begin
+        # dependency pre-bundling and is then cut off mid-scan. Nuxt writes a
+        # half-built cache at that point and never recovers: every request
+        # returns 500 with a missing vite socket, on a project whose install
+        # exited 0.
+        #
+        # These are all regenerated on next boot, so clearing them costs a few
+        # seconds of first load and removes the whole failure mode.
+        docker exec "$PROJECT_NAME" bash -c \
+            "cd /usr/share/nginx/html && rm -rf .nuxt .next .svelte-kit .astro node_modules/.vite node_modules/.cache" \
+            > /dev/null 2>&1 || true
+        # Restart the whole container, not just the supervisor program, so the
+        # dev server picks up the freshly installed packages.
+        #
+        # `supervisorctl restart node-app` is not enough. This image's supervisor
+        # config has no stopasgroup/killasgroup, so a dev server that spawns
+        # children (Nuxt forks Vite; Vite forks esbuild) leaves them running when
+        # the program is stopped. The orphan keeps holding port 3000, every
+        # replacement instance fails to bind, and the project serves nothing --
+        # after an install that exited 0. Single-process servers like Express and
+        # Hono never showed this, which is why it stayed hidden.
+        #
+        # Restarting the container kills the whole PID namespace's strays and is
+        # what `podium up` does later anyway, so it is the state we want to land
+        # in regardless.
+        docker restart "$PROJECT_NAME" > /dev/null 2>&1 || true
+        # Wait for the container to accept exec again before anything downstream
+        # tries to use it.
+        for _i in $(seq 1 30); do
+            docker exec "$PROJECT_NAME" true > /dev/null 2>&1 && break
+            sleep 1
+        done
     fi
 
     # Install Python dependencies for Python projects
@@ -820,6 +917,8 @@ PYEOF
     fi
 
     # Create new database (idempotent — if it already exists, just continue).
+    # The engine must be running before we can create a database in it.
+    ensure_services_for_project "$PROJECT_NAME" || true
     ensure_database "$DB_NAME" "$DATABASE_ENGINE"
 
     # Migrations run by default (driven by framework detection). For adopted
@@ -851,6 +950,12 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     if [ -n "$STARTUP_OUTPUT" ]; then
         JSON_RESPONSE="$JSON_RESPONSE, \"startup_result\": $STARTUP_OUTPUT"
     fi
+
+    # Tell the caller which shared services THIS run had to enable, and which
+    # admin UIs could manage them. The GUI uses it to offer "you just got a
+    # Postgres — want something to browse it with?" at the one moment the user
+    # is thinking about it.
+    JSON_RESPONSE="$JSON_RESPONSE$(podium_services_json_fragment)"
 
     JSON_RESPONSE="$JSON_RESPONSE}"
     echo "$JSON_RESPONSE"

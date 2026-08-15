@@ -131,5 +131,5 @@ venv/
 .DS_Store
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Python project!"
+    echo-green ".gitignore created for Python project!"
 }

@@ -44,6 +44,17 @@
       "note": "Laravel-based CMS you build sites in \u2014 themes, plugins and page templates live in the project source tree, editable by an agent. Has a backend admin UI for content editors. Choose it over Kavera when the client needs a login-based admin to edit content themselves; choose Kavera for a pure flat-file site. Free for local development; production needs a licence from octobercms.com."
     },
     {
+      "slug": "drupal",
+      "display": "Drupal",
+      "runtime": "PHP 8.3",
+      "databases": [
+        "mysql",
+        "postgres",
+        "sqlite"
+      ],
+      "note": "Enterprise CMS with a full admin UI, granular permissions, workflow and a very large contrib module ecosystem. Composer-managed; core and contrib install into public/. Choose it over WordPress for structured content, complex editorial roles or multi-team sites, and over October CMS when the client needs mature governance rather than a lighter developer-facing CMS. Heavier than all of them - for a simple brochure site prefer Kavera. MongoDB is not supported by Drupal core."
+    },
+    {
       "slug": "php",
       "display": "Plain PHP",
       "runtime": "PHP 8.3",
@@ -141,6 +152,90 @@
         "sqlite",
         "mongodb"
       ]
+    },
+    {
+      "slug": "nextjs",
+      "display": "Next.js",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "React framework with App Router, SSR and file-based routing. Runs the dev server with hot reload."
+    },
+    {
+      "slug": "nuxt",
+      "display": "Nuxt",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "Vue framework with SSR, file-based routing and auto-imports."
+    },
+    {
+      "slug": "sveltekit",
+      "display": "SvelteKit",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "Svelte 5 application framework on Vite."
+    },
+    {
+      "slug": "astro",
+      "display": "Astro",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "Content-focused static site builder; ships zero JS by default."
+    },
+    {
+      "slug": "hono",
+      "display": "Hono",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "Small, fast web framework for APIs built on Web Standards."
+    },
+    {
+      "slug": "react",
+      "display": "React",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "React SPA on Vite. No server rendering \u2014 a plain single-page app."
+    },
+    {
+      "slug": "vue",
+      "display": "Vue",
+      "runtime": "Node 22",
+      "databases": [
+        "sqlite",
+        "mysql",
+        "postgres",
+        "mongodb"
+      ],
+      "note": "Vue 3 SPA on Vite. No server rendering \u2014 a plain single-page app."
     }
   ]
 }

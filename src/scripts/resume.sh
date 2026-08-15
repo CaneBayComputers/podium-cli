@@ -46,9 +46,19 @@ if [[ ! -d "$PROJECT_DIR" ]]; then
     exit 1
 fi
 
-# Start the project
-echo-cyan "Starting $PROJECT_NAME..."
-(cd "$PROJECTS_DIR_PATH" && "$SCRIPT_DIR/startup.sh" "$PROJECT_NAME")
+# Start the project — but only if it is not already up.
+#
+# resume is "continue my AI conversation", not "restart my project". Calling
+# startup here unconditionally cost seconds, could prompt for sudo to change
+# nothing, and ran the connectivity checks TWICE, because startup.sh ends with
+# its own status.sh call and resume runs one immediately below. On a running
+# project that is all waste.
+if docker container inspect -f '{{.State.Running}}' "$PROJECT_NAME" 2>/dev/null | grep -q true; then
+    echo-cyan "$PROJECT_NAME is already running — continuing the session."
+else
+    echo-cyan "Starting $PROJECT_NAME..."
+    (cd "$PROJECTS_DIR_PATH" && "$SCRIPT_DIR/startup.sh" "$PROJECT_NAME")
+fi
 
 echo-return
 

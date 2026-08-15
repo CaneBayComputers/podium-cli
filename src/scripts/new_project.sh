@@ -20,27 +20,73 @@ NEW_PROJECT_FORCE_FORK="${NEW_PROJECT_FORCE_FORK:-0}"
 FORK_USED=0
 
 
-# Function to get latest Laravel version from GitHub API
+# Function to get latest Laravel version from GitHub API.
+# Returns non-zero and sets GITHUB_API_ERROR if the version cannot be determined.
+#
+# This used to be a bare `curl -s | grep | sed` whose failure was silent: a
+# rate-limited API returns a 14-byte JSON error, the sed matches nothing, and the
+# caller happily built a download URL with an EMPTY version in it. curl then
+# fetched GitHub's 404 page and piped it to tar, so the user's entire diagnosis
+# was "gzip: stdin: not in gzip format" — which says nothing about rate limits,
+# the network, or anything they could act on. Shawn hit exactly this.
 get_latest_laravel_version() {
-    curl -s https://api.github.com/repos/laravel/laravel/tags | grep '"name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/'
+    local json version
+
+    # git ls-remote first: it speaks the git protocol, so it is not subject to
+    # the REST API's rate limit AT ALL — this removes the dependency rather than
+    # just raising the ceiling — and it is faster than the API call. Uses SSH
+    # when the user's key works, since that is authenticated and needs no token.
+    local repo="https://github.com/laravel/laravel"
+    if github_ssh_works; then
+        repo="git@github.com:laravel/laravel.git"
+    fi
+    if version="$(github_latest_tag "$repo")"; then
+        printf '%s' "$version"
+        return 0
+    fi
+
+    # Fall back to the API only if git could not reach the remote at all.
+    json="$(github_api_get "https://api.github.com/repos/laravel/laravel/tags")" || return 1
+
+    version="$(printf '%s' "$json" | grep '"name"' | head -1 | sed 's/.*"v\([^"]*\)".*/\1/')"
+    if [ -z "$version" ]; then
+        GITHUB_API_ERROR="GitHub returned a response with no recognisable Laravel version tag."
+        return 1
+    fi
+    printf '%s' "$version"
 }
 
-# Function to validate Laravel version exists
+# Validate that a Laravel version exists.
+#   0 = exists   1 = does not exist   2 = COULD NOT CHECK (API unavailable)
+#
+# The third state matters: without it, a rate-limited API makes a perfectly valid
+# version look invalid, and the user is told their input is wrong when it is not.
 validate_laravel_version() {
     local version="$1"
     if [ "$version" = "latest" ]; then
         return 0
     fi
-    
-    # Handle version with or without 'v' prefix
+
     local version_with_v="$version"
     if [[ ! "$version" =~ ^v ]]; then
         version_with_v="v${version}"
     fi
-    
-    # Check if the version exists by querying the GitHub API with larger page size
-    local tag_exists=$(curl -s "https://api.github.com/repos/laravel/laravel/tags?per_page=100" | grep -c "\"name\": \"${version_with_v}\"")
-    [ "$tag_exists" -gt 0 ]
+
+    # Same reasoning as get_latest_laravel_version: ls-remote is rate-limit-free,
+    # so the common case never consumes API budget.
+    local repo="https://github.com/laravel/laravel"
+    github_ssh_works && repo="git@github.com:laravel/laravel.git"
+
+    local tags
+    if tags="$(git ls-remote --tags --refs "$repo" 2>/dev/null)" && [ -n "$tags" ]; then
+        printf '%s' "$tags" | grep -q "refs/tags/${version_with_v}\$"
+        return $?
+    fi
+
+    local json
+    json="$(github_api_get "https://api.github.com/repos/laravel/laravel/tags?per_page=100")" || return 2
+
+    printf '%s' "$json" | grep -q "\"name\": \"${version_with_v}\""
 }
 
 # Function to validate WordPress version exists
@@ -60,7 +106,7 @@ usage() {
     echo-white "Creates a new greenfield project from a framework skeleton"
     echo-white ""
     echo-white "Arguments:"
-    echo-white "  framework       laravel, kavera, octobercms, wordpress, php, fastapi, flask,"
+    echo-white "  framework       laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask,"
     echo-white "                  django, python, express, nestjs, fastify, node"
     echo-white "  name            Name of the project to create (directory and hostname)"
     echo-white ""
@@ -214,10 +260,10 @@ debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
 # --- Required arguments (no interactive prompts; 'configure' is the only wizard) ---
 if [ -z "$FRAMEWORK" ]; then
     error "Error: framework is required. Usage: podium new <framework> <name> [--database <type>] [--version X]
-Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node"
+Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node nextjs nuxt sveltekit astro hono react vue"
 fi
 case "$FRAMEWORK" in
-    laravel|kavera|octobercms|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node) ;;
+    laravel|kavera|octobercms|drupal|wordpress|php|fastapi|flask|django|python|express|nestjs|fastify|node|nextjs|nuxt|sveltekit|astro|hono|react|vue) ;;
     *)
         # `new` scaffolds a framework you write; `install` deploys a prebuilt
         # app. Nobody should have to know which bucket a name lives in, so if
@@ -233,7 +279,7 @@ case "$FRAMEWORK" in
             echo-return
             error "Wrong command for '$FRAMEWORK' — use 'podium install'."
         fi
-        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node."
+        error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue."
         ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
@@ -244,6 +290,10 @@ fi
 if [ -z "$DATABASE" ] || [ "$DATABASE" = "auto" ]; then
     case "$FRAMEWORK" in
         django|fastapi|flask|python) DATABASE="postgres" ;;
+        # Front-end-leaning frameworks default to SQLite so a new project does
+        # not start a database server it never queries. Pass --database
+        # explicitly to get one.
+        nextjs|nuxt|sveltekit|astro|hono|react|vue) DATABASE="sqlite" ;;
         *)                     DATABASE="mysql" ;;
     esac
     echo-cyan "Auto-selected database for $FRAMEWORK: $DATABASE"
@@ -290,11 +340,11 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     
     # Framework validation
     case "$FRAMEWORK" in
-        "laravel"|"kavera"|"octobercms"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node")
+        "laravel"|"kavera"|"octobercms"|"drupal"|"wordpress"|"php"|"fastapi"|"flask"|"django"|"python"|"express"|"nestjs"|"fastify"|"node"|"nextjs"|"nuxt"|"sveltekit"|"astro"|"hono"|"react"|"vue")
             # Valid frameworks
             ;;
         *)
-            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, or node)"
+            json_error "invalid framework: $FRAMEWORK (must be laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, or vue)"
             ;;
     esac
 
@@ -461,7 +511,9 @@ case $FRAMEWORK in
             
             # Set the version for download in JSON mode
             if [ "$VERSION" = "latest" ]; then
-                LATEST_VERSION=$(get_latest_laravel_version)
+                if ! LATEST_VERSION=$(get_latest_laravel_version); then
+                    json_error "Could not determine the latest Laravel version. $GITHUB_API_ERROR"
+                fi
                 CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
             else
                 # Ensure version has 'v' prefix for download URL
@@ -473,14 +525,26 @@ case $FRAMEWORK in
             fi
         else
             # No prompt — validate the provided/default version and fail if invalid.
-            if ! validate_laravel_version "$VERSION"; then
+            # Exit 2 means the API could not be reached, NOT that the version is
+            # bad; telling the user their input is wrong in that case is a lie.
+            validate_laravel_version "$VERSION"; _ver_rc=$?
+            if [ "$_ver_rc" = "2" ]; then
+                error "Could not verify Laravel version '$VERSION'. $GITHUB_API_ERROR"
+            elif [ "$_ver_rc" != "0" ]; then
                 error "Error: invalid Laravel version '$VERSION'. Use 'latest' or a valid Laravel version tag."
             fi
         fi
         
         # Set the version for download
         if [ "$VERSION" = "latest" ]; then
-            LATEST_VERSION=$(get_latest_laravel_version)
+            if ! LATEST_VERSION=$(get_latest_laravel_version); then
+                echo-red "Could not determine the latest Laravel version."
+                echo-white "  $GITHUB_API_ERROR"
+                echo-white ""
+                echo-white "Workaround: pin a version explicitly, which skips the lookup entirely:"
+                echo-white "  podium new laravel $PROJECT_NAME --version 12.0.0"
+                error "Aborting — refusing to download with an unknown version."
+            fi
             CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"
             echo-green "Using latest Laravel version: $LATEST_VERSION"
         else
@@ -536,6 +600,11 @@ case $FRAMEWORK in
         echo-return; echo-cyan "October CMS project selected!"
         echo-green "October CMS will be downloaded from source."
         ;;
+    drupal)
+        echo-return; echo-cyan "Drupal project selected!"
+        echo-green "Drupal core will be installed by Composer, then drush site:install runs."
+        echo-white "This is the slowest framework to create — expect several minutes."
+        ;;
     php)
         echo-return; echo-cyan "PHP project selected!"
         
@@ -573,6 +642,11 @@ case $FRAMEWORK in
     node)
         echo-return; echo-cyan "Node.js project selected!"
         echo-green "Node.js project will be created with basic structure"
+        ;;
+    nextjs|nuxt|sveltekit|astro|hono|react|vue)
+        # These print their own banner from framework_scaffold; announcing them
+        # here as well only produced the message twice.
+        :
         ;;
     *)
         error "Unknown framework '$FRAMEWORK'. Exiting..."

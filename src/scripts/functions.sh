@@ -65,16 +65,20 @@ if [[ -z "${NO_COLOR:-}" ]] && ! tput setaf 1 >/dev/null 2>&1; then
 fi
 
 # Color output functions (suppressed in JSON mode)
-echo-red() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 1 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-green() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 2 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-yellow() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 3 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-blue() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 4 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-magenta() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 5 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-cyan() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 6 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
-echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 7 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; }
+echo-red() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 1 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-green() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 2 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-yellow() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 3 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-blue() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 4 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-magenta() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 5 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-cyan() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 6 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
+echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR" != "1" ]]; then tput setaf 7 2>/dev/null; fi; echo "$@"; if [[ "$NO_COLOR" != "1" ]]; then tput sgr0 2>/dev/null; fi; return 0; }
 
 # JSON-aware echo function for regular output
-echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
+# MUST end with `return 0`. Without it, JSON mode leaves the failed `[[ ]]` as
+# the exit status, so a function whose last statement is echo-return returns
+# 1 and `set -e` kills the script — with all output suppressed, which made it
+# look like the command simply produced nothing.
+echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
 # Docker aliases used by scripts (JSON-aware for clean output)
 # Compose profile flags for whatever optional shared services are enabled on
@@ -193,7 +197,11 @@ except Exception: pass
 podium_update_refresh_async() {
     local now checked
     now=$(date +%s)
-    checked=$(_podium_cache_field checked 2>/dev/null)
+    # `|| true` is load-bearing: with no cache file the helper returns 1, and
+    # under `set -e` an assignment from a failing command substitution aborts
+    # the whole script. That made `podium --version` exit 1 printing nothing on
+    # any machine without a cache -- i.e. every machine, on first run.
+    checked=$(_podium_cache_field checked 2>/dev/null || true)
     [ -n "$checked" ] && [ $(( now - checked )) -lt $PODIUM_UPDATE_MAX_AGE ] && return 0
     mkdir -p "$(dirname "$PODIUM_UPDATE_CACHE")" 2>/dev/null || return 0
     (
@@ -201,7 +209,14 @@ podium_update_refresh_async() {
         # when every release is one, which is the case for the whole beta. Using
         # it would have made this check silently do nothing until 1.0 final.
         # The list endpoint is newest-first and includes pre-releases.
-        tag=$(curl -fsS --max-time 8 \
+        # Authenticated when a token is available. This runs on (cached)
+        # invocations of every podium command, so it draws on the same
+        # 60-requests-per-hour unauthenticated budget as everything else --
+        # shared across every machine behind one WAN address. Staying silent on
+        # failure is correct for an update check, but it should not be quietly
+        # spending a scarce allowance that `podium new laravel` also needs.
+        _gh_hdr="$(github_auth_header)"
+        tag=$(curl -fsS --max-time 8 ${_gh_hdr:+-H "$_gh_hdr"} \
             "https://api.github.com/repos/CaneBayComputers/podium-cli/releases?per_page=10" 2>/dev/null \
             | python3 -c "
 import json,sys
@@ -248,6 +263,23 @@ try:
 except Exception: pass
 " 2>/dev/null
     echo-yellow "Podium $newer is available (you have $(podium_version)) — run 'podium update'"
+}
+
+# Was this CLI installed by a package manager, or from a git checkout?
+#
+# The two update paths are mutually destructive: `podium update` does a git pull,
+# while `apt upgrade` replaces the same files from a .deb. Whichever runs last
+# wins and the other's state is silently wrong. So `podium update` has to know
+# which kind of install it is standing in and defer rather than fight.
+#
+# dpkg is asked directly rather than inferred from the path -- a packaged install
+# and a git checkout can sit at the same location, and only dpkg knows the truth.
+podium_install_is_packaged() {
+    command -v dpkg-query >/dev/null 2>&1 || return 1
+    dpkg-query -W -f='${Status}' podium-cli 2>/dev/null | grep -q "install ok installed" || return 1
+    # A checkout inside a packaged path is still git-managed; .git decides.
+    [ -d "${SCRIPT_DIR%/scripts}/../.git" ] && return 1
+    return 0
 }
 
 # Podium's own version, from the VERSION file at the repo root.
@@ -297,7 +329,23 @@ composer-docker() {
         docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
     fi
 }
-art-docker() { 
+# Drupal's equivalent of art-docker. drush is a Composer dependency rather than
+# a global binary, so it runs from vendor/bin relative to the workdir.
+#
+# Invoked DIRECTLY, not as `php vendor/bin/drush`. Composer 2 installs binaries
+# as proxies and drush's is a `#!/usr/bin/env sh` wrapper, so prefixing php makes
+# PHP echo the wrapper's source instead of running anything — the command
+# "succeeds", prints shell script, and does nothing. That is what made the first
+# real site:install here fail silently.
+drush-docker() {
+    local project_name="$(basename "$(pwd)")"
+    if [ -t 0 ]; then
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
+    else
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
+    fi
+}
+art-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)
@@ -481,7 +529,11 @@ error() {
 }
 
 # Output spacing function that respects JSON_OUTPUT
-echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; }
+# MUST end with `return 0`. Without it, JSON mode leaves the failed `[[ ]]` as
+# the exit status, so a function whose last statement is echo-return returns
+# 1 and `set -e` kills the script — with all output suppressed, which made it
+# look like the command simply produced nothing.
+echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
 # Docker Compose checking functions
 check_docker_compose_type() {
@@ -889,19 +941,27 @@ resolve_framework_database() {
     resolved=$(python3 - "$catalog" "$framework" "$requested" << 'PYEOF_DB'
 import json, sys
 catalog, framework, requested = sys.argv[1], sys.argv[2], (sys.argv[3] or "").lower()
+# Two vocabularies meet here. frameworks.json spells it "mongodb" (matching
+# what the frameworks' own docs call it); every other part of the CLI — the
+# --database validator, the compose service, the container name — says "mongo".
+# Normalize INTO catalog spelling to compare against the allowed list, then
+# back OUT to CLI spelling, because the caller feeds this straight to code
+# that only accepts the CLI names.
 ALIAS = {"mariadb": "mysql", "postgresql": "postgres", "pgsql": "postgres",
          "mongo": "mongodb", "sqlite3": "sqlite"}
+UNALIAS = {"mongodb": "mongo"}
 requested = ALIAS.get(requested, requested)
+out = lambda v: UNALIAS.get(v, v)
 fws = {f["slug"]: f for f in json.load(open(catalog))["frameworks"]}
 fw = fws.get(framework)
 if not fw:
-    print(requested or "")
+    print(out(requested) or "")
     sys.exit(0)
 allowed = fw.get("databases") or []
 if not allowed or not requested or requested in allowed:
-    print(requested or (allowed[0] if allowed else ""))
+    print(out(requested) or (out(allowed[0]) if allowed else ""))
     sys.exit(0)
-print(f"{allowed[0]}\t{fw['display']}\t{fw.get('note', '')}")
+print(f"{out(allowed[0])}\t{fw['display']}\t{fw.get('note', '')}")
 PYEOF_DB
 )
     if [[ "$resolved" == *$'\t'* ]]; then
@@ -978,7 +1038,11 @@ ensure_database() {
 #
 # Fills the global AIDER_ARGS array with everything except the prompt.
 build_aider_args() {
-    AIDER_ARGS=(--yes-always --no-check-update)
+    # --yes-always auto-confirms every aider prompt. Gated like the other agents'
+    # approval bypasses: consent is asked once at install time and recorded in
+    # ~/.aider.conf.yml, not forced here on every run.
+    AIDER_ARGS=(--no-check-update)
+    [[ "${PODIUM_AI_AUTO_APPROVE:-0}" == "1" ]] && AIDER_ARGS+=(--yes-always)
 
     # Aider renders through a rich console that hard-wraps at the terminal width
     # and pads with trailing spaces. That corrupts any machine-readable reply —
@@ -1226,4 +1290,1420 @@ debug_append_json() {
         echo "$1" >> "$debug_log_file"
         echo "=== END JSON RESULT ===" >> "$debug_log_file"
     fi
+}
+
+# =============================================================================
+# Folding an arbitrary repository into Podium
+# =============================================================================
+# `podium clone` used to force every repo through framework classification and a
+# regex-based compose adapter. That works for repos shaped like Podium's own
+# templates and fails for everything else: service names that don't match the
+# patterns survive as bundled databases, connection strings inside DSNs are never
+# rewritten, and credentials are never reconciled against the shared services.
+#
+# The fold replaces the guessing with a one-off AI pass that reads the actual
+# repo. The deterministic parts — IP allocation, /etc/hosts, registration — stay
+# in bash, because they are shared state across projects rather than judgment
+# calls. See podium_fold_project below.
+
+# Emit the live shared-service inventory as prompt-ready text: hostname, port and
+# the real credentials, so the agent rewrites config to something that actually
+# connects instead of inventing plausible values.
+#
+# Credentials mirror docker-stack/docker-compose.services.yaml. If that file
+# changes, change this too — a wrong password here produces a project that looks
+# adapted and cannot connect.
+podium_shared_service_facts() {
+    local optional="${OPTIONAL_SERVICES:-}"
+
+    cat << EOF
+ALWAYS RUNNING (use these — do not bundle your own):
+  MariaDB/MySQL   host: ${MARIADB_CONTAINER_NAME:-podium-mariadb}      port: 3306   user: root   password: (empty)
+  PostgreSQL      host: ${POSTGRES_CONTAINER_NAME:-podium-postgres}    port: 5432   user: root   password: password   default db: postgres
+  MongoDB         host: ${MONGO_CONTAINER_NAME:-podium-mongo}          port: 27017  user: root   password: password
+  Redis           host: ${REDIS_CONTAINER_NAME:-podium-redis}          port: 6379   no auth
+  Memcached       host: ${MEMCACHED_CONTAINER_NAME:-podium-memcached}  port: 11211  no auth
+  SMTP (Mailpit)  host: ${MAILHOG_CONTAINER_NAME:-podium-mailhog}      port: 1025   no auth   web UI on host port 8025
+EOF
+
+    if [[ " $optional " == *" minio "* ]]; then
+        echo "  MinIO (S3)      host: ${MINIO_CONTAINER_NAME:-podium-minio}          port: 9000   user: ${MINIO_ROOT_USER:-root}   password: ${MINIO_ROOT_PASSWORD:-password}"
+    fi
+    if [[ " $optional " == *" meilisearch "* ]]; then
+        echo "  Meilisearch     host: ${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}  port: 7700   master key: ${MEILI_MASTER_KEY:-podium-dev-master-key}"
+    fi
+
+    local disabled=""
+    [[ " $optional " != *" minio "* ]]       && disabled="$disabled minio"
+    [[ " $optional " != *" meilisearch "* ]] && disabled="$disabled meilisearch"
+    if [ -n "$disabled" ]; then
+        echo ""
+        echo "NOT ENABLED on this machine:$disabled"
+        echo "  Do not point the app at these. If the app genuinely needs one, say so in your"
+        echo "  summary and tell the user to run: podium enable-service <name>"
+    fi
+}
+
+# Install project dependencies based on FILES PRESENT, not on framework
+# classification. This is the fix for "doesn't fit the Podium mold": the old
+# gating ran npm only when FRAMEWORK_IS_NODE was set and pip only when
+# FRAMEWORK_IS_PYTHON was set, so a cloned repo that classified as something else
+# — or as nothing — silently got no dependencies installed.
+#
+# Runs inside the project container so the toolchain versions match what the app
+# will actually run against, falling back to the host only when the container
+# lacks the tool.
+#   $1 project name
+install_project_dependencies() {
+    local project_name="$1"
+    local workdir; workdir="$(podium_container_workdir)"
+    local ran=0
+
+    _in_container() { docker container exec --user "$(id -u):$(id -g)" --workdir "$workdir" "$project_name" "$@"; }
+    _has_in_container() { docker container exec "$project_name" sh -c "command -v $1 >/dev/null 2>&1"; }
+
+    # --- PHP -----------------------------------------------------------------
+    # composer install includes dev requirements unless --no-dev is passed, so
+    # this already covers "with devs".
+    if [ -f "composer.json" ]; then
+        echo-cyan "composer.json found — installing PHP dependencies ..."; echo-white
+        if _has_in_container composer; then
+            _in_container composer install --no-interaction || echo-yellow "composer install failed — continuing."
+        else
+            echo-yellow "composer not present in the container; skipping."
+        fi
+        ran=1
+    fi
+
+    # --- Node ----------------------------------------------------------------
+    # Lockfile decides the package manager. Guessing npm when the repo ships a
+    # pnpm or yarn lockfile produces a different dependency tree than the authors
+    # tested with, which is worse than not installing.
+    if [ -f "package.json" ]; then
+        local pm="npm" pm_args="install --no-audit --no-fund --no-progress"
+        if   [ -f "pnpm-lock.yaml" ]; then pm="pnpm"; pm_args="install"
+        elif [ -f "yarn.lock" ];      then pm="yarn"; pm_args="install"
+        fi
+        echo-cyan "package.json found — installing Node dependencies with $pm ..."; echo-white
+        if _has_in_container "$pm"; then
+            _in_container "$pm" $pm_args || echo-yellow "$pm install failed — continuing."
+        elif command -v "$pm" >/dev/null 2>&1; then
+            echo-yellow "$pm not in the container; installing on the host instead."
+            $pm $pm_args || echo-yellow "$pm install failed — continuing."
+        else
+            echo-yellow "$pm available neither in the container nor on the host; skipping."
+        fi
+        ran=1
+    fi
+
+    # --- Python --------------------------------------------------------------
+    if [ -f "requirements.txt" ]; then
+        echo-cyan "requirements.txt found — installing Python dependencies ..."; echo-white
+        _in_container pip3 install --break-system-packages -r requirements.txt \
+            || echo-yellow "pip install failed — continuing."
+        ran=1
+    elif [ -f "pyproject.toml" ]; then
+        echo-cyan "pyproject.toml found — installing Python project ..."; echo-white
+        _in_container pip3 install --break-system-packages -e . \
+            || echo-yellow "pip install -e . failed — continuing."
+        ran=1
+    fi
+    if [ -f "Pipfile" ] && [ ! -f "requirements.txt" ]; then
+        echo-yellow "Pipfile found but pipenv is not managed by Podium — install manually if needed."
+    fi
+
+    unset -f _in_container _has_in_container
+    [ "$ran" = "0" ] && echo-cyan "No composer.json, package.json or Python requirements found — nothing to install."
+    return 0
+}
+
+# Build the pre-prompt that folds a freshly cloned repo into Podium.
+#   $1 project name   $2 static IP   $3 host port
+podium_fold_prompt() {
+    local project_name="$1" ip="$2" port="$3"
+    local upstream_note=""
+
+    if [ -f "docker-compose.upstream.yaml" ]; then
+        upstream_note="This repo SHIPPED ITS OWN COMPOSE. The original is preserved at
+docker-compose.upstream.yaml — read it first; it is the authoritative description of what
+services this app expects. docker-compose.yaml is Podium's automated first attempt at
+adapting it and may well be wrong. Treat the upstream file as the source of truth and
+rewrite docker-compose.yaml from it."
+    else
+        upstream_note="This repo shipped NO compose file. docker-compose.yaml was generated by
+Podium from a framework template. Verify it actually matches how this app runs — check for a
+Procfile, Dockerfile, Makefile, CI config or README run instructions before trusting it."
+    fi
+
+    cat << EOF
+You are folding a freshly cloned repository into Podium. Work only in this directory.
+
+## What Podium is
+
+Podium runs many projects side by side on one machine against a set of SHARED backing
+services. Every project is a container on the external Docker network 'podium-cli_vpc',
+reachable by hostname. Projects do NOT run their own database, cache or mail container —
+they connect to the shared ones, which are already running.
+
+## This project's identity (already allocated — do not change these)
+
+  Project name : $project_name
+  Hostname/URL : http://$project_name/   (resolves via /etc/hosts to $ip)
+  Static IP    : $ip
+  Host port    : $port
+
+## Shared services available
+
+$(podium_shared_service_facts)
+
+## Your job
+
+$upstream_note
+
+## The web service MUST use a Podium base image (this is the important one)
+
+Use one of these for the main application service:
+
+  canebaycomputers/cbc:nginx-php8      PHP 8.3 + nginx + supervisor
+  canebaycomputers/cbc:nginx-python3   Python 3 + nginx + supervisor
+  canebaycomputers/cbc:nginx-node      Node 22 + nginx + supervisor
+
+Pick the one matching the app's language and DISCARD the upstream image or Dockerfile for
+that service. This is not cosmetic. Podium's tooling — 'podium php', 'podium python',
+'podium npm', 'podium composer', 'podium shell' — runs
+'docker exec --user developer' against this container. An arbitrary upstream image has no
+'developer' user, so every one of those commands fails outright. These images also serve the
+app through nginx on port 80, which is what makes http://$project_name/ resolve at all; an
+app listening on its own port in its own image is simply unreachable.
+
+Adapt the app to the image, not the image to the app: put its start command under supervisor
+and let nginx serve or proxy it, exactly as the upstream Dockerfile's CMD would have run it.
+
+These three images are deliberately broad — nginx, supervisor and the database drivers are
+already compiled in — and they cover essentially any PHP, Python or Node web application.
+**If the app is written in PHP, Python or Node, use the matching image. No exceptions.**
+
+A pinned version is NOT a reason to escape. A repo asking for Node 18, Python 3.9 or PHP 8.1
+still runs on these images in all but pathological cases. Try it and let it fail before
+concluding otherwise — an unnecessary escape silently costs the user every 'podium' command
+for the life of the project.
+
+ESCAPE HATCH — reserved for a genuinely different runtime that these images cannot execute at
+all: a compiled binary (Go, Rust), or a JVM/.NET application. Nothing else qualifies. If you
+take it, keep the upstream image, make it listen on port 80, and state prominently in your
+summary that 'podium php/python/npm/composer/shell' will NOT work for this project and why.
+
+Helper services (workers, schedulers) may keep their own images — the passthrough commands
+only target the main container.
+
+Produce a working docker-compose.yaml and matching app configuration:
+
+1. **Delete bundled backing services.** Any database, cache, queue broker, search or mail
+   container defined in the compose must go, replaced by the shared equivalents above.
+   mysql AND mariadb both map to ${MARIADB_CONTAINER_NAME:-podium-mariadb}. Keep application
+   services (web, worker, scheduler, websocket) — those are the app itself.
+
+2. **Rewrite every reference to a deleted service.** This is the part that is usually missed:
+   look inside connection strings and DSNs, not just plain host variables. A value like
+   DATABASE_URL=postgres://app:secret@db:5432/app must become
+   postgres://root:password@${POSTGRES_CONTAINER_NAME:-podium-postgres}:5432/<dbname>.
+   Search the whole repo — .env, .env.example, config files, settings modules, and any
+   defaults compiled into the app.
+
+3. **Use the real shared credentials** listed above. Do not keep the upstream compose's
+   invented usernames and passwords; those accounts do not exist on the shared servers.
+
+4. **Wire the networking exactly:**
+   - The web service gets: container_name: $project_name
+   - and a static address on the shared network:
+       networks:
+         default:
+           ipv4_address: $ip
+   - Other services attach with a plain: networks: [default]
+   - The network block at the bottom must be:
+       networks:
+         default:
+           external: true
+           name: podium-cli_vpc
+   - Do NOT publish ports with 'ports:' on any service. Projects are reached by hostname on
+     the shared network; published ports collide with other Podium projects.
+
+5. **Create the database if the app needs one.** The shared servers are running but this
+   project's database may not exist yet. Use the project name with dashes replaced by
+   underscores unless the app's config clearly expects a different name.
+
+   You cannot run migrations yourself — the container is not up while you work. Instead, end
+   your summary with a MIGRATE: line giving the exact command, e.g.
+     MIGRATE: podium art migrate
+     MIGRATE: podium python manage.py migrate
+   or 'MIGRATE: none' if the app has no migrations. This is the only way the user finds out
+   how to finish setup, so do not omit it.
+
+6. **Do not run** podium new, podium clone, podium install, or create another project.
+   Do not start containers yourself — Podium starts them after you finish.
+
+## When you are done
+
+Print a short summary: which services you removed, what you pointed them at, which files you
+edited beyond docker-compose.yaml, and anything you could not resolve that the user must
+handle. Be explicit about guesses — a wrong guess stated plainly is far more useful than a
+confident one.
+EOF
+}
+
+# Run the fold, then verify it. Verification matters: without it we would have
+# traded a bad deterministic adaptation for an unverified generated one.
+#   $1 project name   $2 static IP   $3 host port
+podium_fold_project() {
+    local project_name="$1" ip="$2" port="$3"
+    local ai_script="$DEV_DIR/scripts/ai.sh"
+
+    if [ ! -f "$ai_script" ]; then
+        echo-yellow "ai.sh not found — skipping fold."
+        return 1
+    fi
+
+    echo-return
+    echo-cyan "Folding $project_name into Podium with the AI agent ($AI_AGENT) ..."
+    echo-white "This reads the repo and rewrites docker-compose.yaml and app config."
+    echo-return
+
+    local prompt; prompt="$(podium_fold_prompt "$project_name" "$ip" "$port")"
+
+    if [[ "$JSON_OUTPUT" == "1" ]]; then
+        bash "$ai_script" "$prompt" > /tmp/podium-fold-$$.log 2>&1 || true
+    else
+        bash "$ai_script" "$prompt" || true
+    fi
+
+    # --- verify -------------------------------------------------------------
+    if [ ! -f "docker-compose.yaml" ] && [ ! -f "docker-compose.yml" ]; then
+        echo-red "Fold produced no docker-compose file."
+        return 1
+    fi
+
+    if ! docker compose config >/dev/null 2>&1; then
+        echo-yellow "docker compose config rejected the generated file — asking the agent to fix it ..."
+        local err; err="$(docker compose config 2>&1 | head -20)"
+        bash "$ai_script" "The docker-compose.yaml you just wrote is invalid. Fix it in place.
+Do not change the networking contract described earlier: external network podium-cli_vpc,
+container_name $project_name, ipv4_address $ip, and no published ports.
+
+docker compose config reported:
+$err" || true
+
+        if ! docker compose config >/dev/null 2>&1; then
+            echo-red "docker-compose.yaml is still invalid after one repair attempt."
+            echo-white "The original is preserved at docker-compose.upstream.yaml."
+            return 1
+        fi
+    fi
+
+    # Guard the two contract items an agent most often drops. These are cheap to
+    # check and expensive to debug later: a project on the wrong network appears
+    # to start and then cannot reach any shared service.
+    if ! grep -q "podium-cli_vpc" docker-compose.yaml 2>/dev/null; then
+        echo-yellow "Warning: generated compose does not reference podium-cli_vpc — shared services will be unreachable."
+    fi
+    if ! grep -q "$ip" docker-compose.yaml 2>/dev/null; then
+        echo-yellow "Warning: generated compose does not pin $ip — http://$project_name/ may not resolve to this project."
+    fi
+
+    echo-green "Fold complete and compose validates."
+    return 0
+}
+
+# Report which `podium <tool>` passthroughs will actually work against this
+# project's container. Run AFTER the container is up.
+#
+# Every passthrough is `docker exec --user developer`, so a project on a
+# non-Podium image loses all of them at once — and the failure surfaces later as
+# a confusing "unable to find user: developer" rather than at setup time. Saying
+# it plainly here is the difference between a known limitation and a bug report.
+#   $1 project name
+podium_report_container_capabilities() {
+    local project_name="$1"
+
+    docker container inspect "$project_name" >/dev/null 2>&1 || return 0
+
+    if ! docker container exec "$project_name" id developer >/dev/null 2>&1; then
+        echo-return
+        echo-yellow "Heads up: this project runs on a non-Podium image (no 'developer' user)."
+        echo-yellow "These will NOT work for it:"
+        echo-white  "  podium php / python / npm / node / composer / art / shell / exec"
+        echo-white  "Use 'docker exec -it $project_name <cmd>' instead, or re-run with"
+        echo-white  "  podium clone ... --image canebaycomputers/cbc:nginx-php8"
+        echo-white  "to force a Podium base image."
+        return 0
+    fi
+
+    local available="" missing=""
+    local tool
+    for tool in php python3 node npm composer; do
+        if docker container exec "$project_name" sh -c "command -v $tool >/dev/null 2>&1"; then
+            available="$available $tool"
+        else
+            missing="$missing $tool"
+        fi
+    done
+    [ -n "$available" ] && echo-green "Container toolchain:$available"
+    [ -n "$missing" ]   && echo-cyan  "Not in this image:$missing (expected — images are language-specific)"
+    return 0
+}
+
+# Pre-flight compatibility check, run on a freshly cloned repo BEFORE the fold.
+#
+# Podium serves every project from one of three base images (PHP 8.3, Python 3,
+# Node 22). That is not a soft preference — the passthrough commands exec as the
+# 'developer' user and nginx serves on port 80, neither of which survives a
+# foreign image. So "is this repo PHP, Python or Node?" is the whole
+# compatibility question, and it is answerable from the file tree.
+#
+# Catching it here is worth real money: without this, an incompatible repo burns
+# a full AI fold and leaves a registered project that can never start.
+#
+# Echoes findings. Returns 0 compatible, 1 incompatible.
+podium_preflight_check() {
+    local hard="" soft="" lang=""
+
+    # --- is there anything here at all? -------------------------------------
+    if [ -z "$(ls -A . 2>/dev/null | grep -v '^\.git$')" ]; then
+        echo-red "Repository is empty."
+        return 1
+    fi
+
+    # --- primary runtime ----------------------------------------------------
+    # Order matters: a Rails app ships a package.json for assets, so the
+    # disqualifying markers are checked before the supported ones.
+    if   [ -f "go.mod" ];                                    then hard="Go (go.mod)"
+    elif [ -f "Cargo.toml" ];                                then hard="Rust (Cargo.toml)"
+    elif [ -f "pom.xml" ] || ls build.gradle* >/dev/null 2>&1; then hard="Java/Kotlin (Maven/Gradle)"
+    elif ls ./*.csproj ./*.sln >/dev/null 2>&1;              then hard=".NET"
+    elif [ -f "mix.exs" ];                                   then hard="Elixir (mix.exs)"
+    elif [ -f "Gemfile" ] || [ -f "config.ru" ];             then hard="Ruby (Gemfile) — Podium has no Ruby image"
+    elif [ -f "pubspec.yaml" ];                              then hard="Dart/Flutter"
+    elif [ -d "android" ] && [ -d "ios" ];                   then hard="a mobile app, not a web app"
+    fi
+
+    if [ -z "$hard" ]; then
+        if   [ -f "composer.json" ] || [ -f "artisan" ] || [ -f "index.php" ] || [ -f "wp-config.php" ]; then
+            lang="PHP"
+        elif [ -f "manage.py" ] || [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "Pipfile" ]; then
+            lang="Python"
+        elif [ -f "package.json" ]; then
+            lang="Node"
+        elif ls ./*.php >/dev/null 2>&1;                     then lang="PHP"
+        elif ls ./*.py  >/dev/null 2>&1;                     then lang="Python"
+        else
+            hard="no recognisable PHP, Python or Node application"
+        fi
+    fi
+
+    if [ -n "$hard" ]; then
+        echo-return
+        echo-red   "Incompatible with Podium: this repo is $hard."
+        echo-white "Podium serves projects from PHP 8.3, Python 3 or Node 22 base images. Its"
+        echo-white "tooling (podium php/python/npm/composer/shell) execs as the 'developer' user"
+        echo-white "inside those images, and nginx serves the app on port 80 — neither works on a"
+        echo-white "foreign runtime."
+        echo-white ""
+        echo-white "Clone it outside Podium and run it with its own docker-compose, or re-run with"
+        echo-white "  --no-preflight   to attempt it anyway (expect the passthrough commands to fail)"
+        return 1
+    fi
+
+    # --- soft warnings: proceed, but say what will need attention ------------
+    local compose=""
+    [ -f "docker-compose.yaml" ] && compose="docker-compose.yaml"
+    [ -f "docker-compose.yml" ]  && compose="docker-compose.yml"
+
+    if [ -n "$compose" ]; then
+        local unsupported
+        unsupported=$(grep -ioE 'image:[[:space:]]*[a-z0-9./_-]*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul)' "$compose" 2>/dev/null \
+                      | sed -E 's/.*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul).*/\1/I' | sort -u | tr '\n' ' ')
+        [ -n "$unsupported" ] && soft="$soft\n  • Needs services Podium does not provide:$unsupported\n    These stay as project-local containers; they will not be shared."
+
+        if grep -qE '(minio|s3)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" minio "* ]]; then
+            soft="$soft\n  • Wants object storage. Enable it first:  podium enable-service minio"
+        fi
+        if grep -qiE '(meilisearch|typesense)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" meilisearch "* ]]; then
+            soft="$soft\n  • Wants a search engine. Enable it first:  podium enable-service meilisearch"
+        fi
+        if grep -qE 'capabilities:.*gpu|runtime:[[:space:]]*nvidia' "$compose" 2>/dev/null; then
+            soft="$soft\n  • Requests GPU access. Podium projects run CPU-only."
+        fi
+        grep -q 'laravel/sail' "$compose" 2>/dev/null && \
+            soft="$soft\n  • Laravel Sail compose — it will be discarded for a Podium image (Sail cannot build before composer install)."
+    fi
+
+    [ -f ".gitmodules" ] && soft="$soft\n  • Has git submodules — run 'git submodule update --init' if the app needs them."
+    if [ -f "package.json" ] && grep -qE '"(workspaces|nx|turbo)"' package.json 2>/dev/null; then
+        soft="$soft\n  • Looks like a monorepo — the app to serve may be ambiguous; check the result."
+    fi
+
+    echo-green "Pre-flight OK — detected a $lang application."
+    if [ -n "$soft" ]; then
+        echo-yellow "Worth knowing before it is set up:"
+        printf "%b\n" "$soft" | sed '/^$/d'
+    fi
+    return 0
+}
+
+# =============================================================================
+# Agent autonomy consent
+# =============================================================================
+# Podium runs agents non-interactively: `podium create` and `podium clone --fold`
+# hand a prompt to the agent and expect it to edit files and finish without a
+# human at the keyboard. That requires the agent to skip its own per-action
+# approval prompts.
+#
+# Podium used to force this by passing --dangerously-skip-permissions and
+# --dangerously-bypass-approvals-and-sandbox on every invocation. That is a
+# reasonable personal default and an unreasonable thing to impose on someone
+# else's machine without asking — a tool that silently disables another tool's
+# safety prompts is a fair thing to be angry about.
+#
+# So the flags are gone from the invocation. Instead we ASK ONCE, at install
+# time, and record the answer in the agent's OWN config file, where the user can
+# see it, audit it and revoke it with the agent's own documentation.
+#
+#   $1 agent name
+podium_offer_agent_autonomy() {
+    local agent="$1"
+    local cfg desc
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json"; desc='"permissions": {"defaultMode": "bypassPermissions"}' ;;
+        codex)  cfg="$HOME/.codex/config.toml";    desc='approval_policy = "never", sandbox_mode = "danger-full-access"' ;;
+        gemini) cfg="$HOME/.gemini/settings.json"; desc='"autoAccept": true' ;;
+        qwen)   cfg="$HOME/.qwen/settings.json";   desc='"autoAccept": true' ;;
+        aider)  cfg="$HOME/.aider.conf.yml";       desc='yes-always: true' ;;
+        *) return 0 ;;
+    esac
+
+    # Caller already stated intent (--allow-unattended / --no-allow-unattended),
+    # so asking again would be noise.
+    [ "${PODIUM_UNATTENDED_EXPLICIT:-0}" = "1" ] && return 0
+
+    # Never prompt in automation — silence there means "no", which is the safe
+    # default for a permissions question.
+    if [[ "$JSON_OUTPUT" == "1" ]] || [ ! -t 0 ]; then
+        echo-cyan "Note: $agent may prompt for approval on each action, which stalls non-interactive"
+        echo-cyan "runs like 'podium create'. Run 'podium ai-set --agent $agent' from a terminal to set this up."
+        return 0
+    fi
+
+    echo-return
+    echo-yellow "One question about how $agent should run under Podium."
+    echo-white  ""
+    echo-white  "Podium drives the agent non-interactively — 'podium create' and 'podium clone'"
+    echo-white  "hand it a task and expect it to finish unattended. By default $agent asks for"
+    echo-white  "approval before each file edit or command, which stalls those runs."
+    echo-white  ""
+    echo-white  "Podium can record your preference in $agent's own config:"
+    echo-white  "  $cfg"
+    echo-white  "  $desc"
+    echo-white  ""
+    echo-white  "This lets the agent edit files and run commands in your projects WITHOUT asking."
+    echo-white  "That is what makes Podium's AI features work, and it is a real reduction in"
+    echo-white  "safety — the agent can change anything your user account can. It is written to"
+    echo-white  "$agent's own config, so you can inspect or undo it there at any time."
+    echo-white  ""
+    echo-white  "Say no and Podium still works; the agent will just prompt you, and unattended"
+    echo-white  "commands may stall waiting for input."
+    echo-return
+
+    local answer=""
+    read -r -p "Allow $agent to run unattended? [y/N] " answer
+    case "$answer" in
+        [Yy]*) ;;
+        *) echo-cyan "Left $agent's settings alone. You can change this later in $cfg."
+           return 0 ;;
+    esac
+
+    podium_write_agent_autonomy "$agent" "$cfg"
+}
+
+# Write the autonomy setting into the agent's own config, merging rather than
+# clobbering — these files hold the user's model choice, hooks and auth.
+#   $1 agent   $2 config path
+podium_write_agent_autonomy() {
+    local agent="$1" cfg="$2"
+    mkdir -p "$(dirname "$cfg")"
+
+    case "$agent" in
+        claude|gemini|qwen)
+            local key="permissions" 
+            [ "$agent" = "claude" ] || key="autoAccept"
+            if ! command -v python3 >/dev/null 2>&1; then
+                echo-yellow "python3 not available — set this manually in $cfg."
+                return 1
+            fi
+            python3 - "$cfg" "$agent" << 'PYEOF'
+import json, os, sys
+path, agent = sys.argv[1], sys.argv[2]
+data = {}
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            data = json.load(f) or {}
+    except Exception:
+        # Never destroy a config we cannot parse.
+        print("UNPARSEABLE"); sys.exit(2)
+if agent == "claude":
+    data.setdefault("permissions", {})["defaultMode"] = "bypassPermissions"
+else:
+    data["autoAccept"] = True
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+print("OK")
+PYEOF
+            local rc=$?
+            if [ $rc -eq 2 ]; then
+                echo-yellow "$cfg exists but is not valid JSON — leaving it untouched."
+                echo-white  "Add this yourself once it parses."
+                return 1
+            fi
+            ;;
+        codex)
+            # Replace the key if present, append if not. Append-only looks safer
+            # but silently no-ops when the key already exists with another value
+            # — "allow" would report success and change nothing. Only these two
+            # keys are touched, so other settings and [projects.*] tables survive.
+            touch "$cfg"
+            if grep -qE '^[[:space:]]*approval_policy' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "never"|' "$cfg"
+            else
+                echo 'approval_policy = "never"' >> "$cfg"
+            fi
+            if grep -qE '^[[:space:]]*sandbox_mode' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "danger-full-access"|' "$cfg"
+            else
+                echo 'sandbox_mode = "danger-full-access"' >> "$cfg"
+            fi
+            ;;
+        aider)
+            touch "$cfg"
+            if grep -qE '^[[:space:]]*yes-always' "$cfg" 2>/dev/null; then
+                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: true|' "$cfg"
+            else
+                echo 'yes-always: true' >> "$cfg"
+            fi
+            ;;
+    esac
+
+    echo-green "Recorded in $cfg — $agent will now run unattended under Podium."
+    echo-white  "Undo it by editing that file."
+    return 0
+}
+
+# Read whether an agent is currently configured to run unattended.
+# Echoes: true | false | unknown   (never errors — the GUI renders "unknown"
+# as unchecked-with-a-note, which is more useful than a failed call.)
+#   $1 agent
+podium_read_agent_autonomy() {
+    local agent="$1" cfg
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json" ;;
+        codex)  cfg="$HOME/.codex/config.toml" ;;
+        gemini) cfg="$HOME/.gemini/settings.json" ;;
+        qwen)   cfg="$HOME/.qwen/settings.json" ;;
+        aider)  cfg="$HOME/.aider.conf.yml" ;;
+        *) echo "unknown"; return 0 ;;
+    esac
+
+    [ -f "$cfg" ] || { echo "false"; return 0; }
+
+    case "$agent" in
+        claude|gemini|qwen)
+            command -v python3 >/dev/null 2>&1 || { echo "unknown"; return 0; }
+            python3 - "$cfg" "$agent" << 'PYEOF' 2>/dev/null || echo "unknown"
+import json, sys
+path, agent = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f) or {}
+except Exception:
+    print("unknown"); sys.exit(0)
+if agent == "claude":
+    print("true" if data.get("permissions", {}).get("defaultMode") == "bypassPermissions" else "false")
+else:
+    print("true" if data.get("autoAccept") is True else "false")
+PYEOF
+            ;;
+        codex)
+            if grep -qE '^[[:space:]]*approval_policy[[:space:]]*=[[:space:]]*"never"' "$cfg" 2>/dev/null; then
+                echo "true"
+            else
+                echo "false"
+            fi
+            ;;
+        aider)
+            if grep -qE '^[[:space:]]*yes-always[[:space:]]*:[[:space:]]*true' "$cfg" 2>/dev/null; then
+                echo "true"
+            else
+                echo "false"
+            fi
+            ;;
+    esac
+}
+
+# Turn unattended mode back off.
+#
+# Sets explicit safe values rather than deleting lines. Deleting looks tidier but
+# is dangerous here: a user may have set these keys themselves before Podium ever
+# ran (approval_policy and sandbox_mode commonly are), and removing them would
+# silently destroy their own configuration. Setting a value is honest about what
+# changed, and every change is printed.
+#   $1 agent
+podium_revoke_agent_autonomy() {
+    local agent="$1" cfg
+
+    case "$agent" in
+        claude) cfg="$HOME/.claude/settings.json" ;;
+        codex)  cfg="$HOME/.codex/config.toml" ;;
+        gemini) cfg="$HOME/.gemini/settings.json" ;;
+        qwen)   cfg="$HOME/.qwen/settings.json" ;;
+        aider)  cfg="$HOME/.aider.conf.yml" ;;
+        *) echo-yellow "Unknown agent '$agent'."; return 1 ;;
+    esac
+
+    if [ ! -f "$cfg" ]; then
+        echo-cyan "$cfg does not exist — $agent already prompts for approval."
+        return 0
+    fi
+
+    case "$agent" in
+        claude|gemini|qwen)
+            command -v python3 >/dev/null 2>&1 || { echo-yellow "python3 unavailable — edit $cfg by hand."; return 1; }
+            python3 - "$cfg" "$agent" << 'PYEOF'
+import json, sys
+path, agent = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f) or {}
+except Exception:
+    print("UNPARSEABLE"); sys.exit(2)
+if agent == "claude":
+    if data.get("permissions", {}).get("defaultMode") == "bypassPermissions":
+        data["permissions"]["defaultMode"] = "default"
+else:
+    data["autoAccept"] = False
+with open(path, "w") as f:
+    json.dump(data, f, indent=2); f.write("\n")
+print("OK")
+PYEOF
+            [ $? -eq 2 ] && { echo-yellow "$cfg is not valid JSON — left untouched."; return 1; }
+            ;;
+        codex)
+            if grep -qE '^[[:space:]]*approval_policy' "$cfg"; then
+                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "on-request"|' "$cfg"
+            fi
+            if grep -qE '^[[:space:]]*sandbox_mode' "$cfg"; then
+                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "workspace-write"|' "$cfg"
+                echo-yellow "Note: sandbox_mode was also reset to \"workspace-write\"."
+            fi
+            ;;
+        aider)
+            if grep -qE '^[[:space:]]*yes-always' "$cfg"; then
+                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: false|' "$cfg"
+            fi
+            ;;
+    esac
+
+    echo-green "$agent will prompt for approval again (updated $cfg)."
+    return 0
+}
+
+# Resolve an agent's config path. Single source of truth — the path appears in
+# offer/write/read/revoke and drifts the moment one of them is edited alone.
+podium_agent_config_path() {
+    case "$1" in
+        claude) echo "$HOME/.claude/settings.json" ;;
+        codex)  echo "$HOME/.codex/config.toml" ;;
+        gemini) echo "$HOME/.gemini/settings.json" ;;
+        qwen)   echo "$HOME/.qwen/settings.json" ;;
+        aider)  echo "$HOME/.aider.conf.yml" ;;
+        *) return 1 ;;
+    esac
+}
+
+# Non-interactive "allow" — the counterpart to podium_revoke_agent_autonomy, for
+# --allow-unattended and for the GUI, which collects consent in its own UI.
+podium_allow_agent_autonomy() {
+    local agent="$1" cfg
+    cfg="$(podium_agent_config_path "$agent")" || { echo-yellow "Unknown agent '$agent'."; return 1; }
+    podium_write_agent_autonomy "$agent" "$cfg"
+}
+
+# =============================================================================
+# GitHub API access
+# =============================================================================
+# Unauthenticated GitHub allows 60 requests/hour PER IP — and that is the whole
+# site's WAN address, so every machine behind one router shares a single budget.
+# Authenticating raises it to 5,000/hour.
+#
+# Set by github_api_get when a request fails, so callers can report the real
+# reason instead of whatever garbage the empty result causes downstream.
+GITHUB_API_ERROR=""
+
+# Emit an Authorization header if a token can be found. gh's token is preferred
+# because anyone using Podium's GitHub features is already logged in with it.
+github_auth_header() {
+    local token=""
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        token="$GITHUB_TOKEN"
+    elif command -v gh >/dev/null 2>&1; then
+        token="$(gh auth token 2>/dev/null || true)"
+    fi
+    [ -n "$token" ] && printf 'Authorization: Bearer %s' "$token"
+    return 0
+}
+
+# GET a GitHub API URL. Echoes the body and returns 0 on success; on failure
+# returns 1 and sets GITHUB_API_ERROR to something a user can act on.
+github_api_get() {
+    local url="$1" hdr body status tmp
+    GITHUB_API_ERROR=""
+    hdr="$(github_auth_header)"
+    tmp="$(mktemp)"
+
+    if [ -n "$hdr" ]; then
+        status=$(curl -sS --max-time 15 -o "$tmp" -w '%{http_code}' \
+                 -H "$hdr" -H "Accept: application/vnd.github+json" "$url" 2>/dev/null) || status="000"
+    else
+        status=$(curl -sS --max-time 15 -o "$tmp" -w '%{http_code}' \
+                 -H "Accept: application/vnd.github+json" "$url" 2>/dev/null) || status="000"
+    fi
+
+    body="$(cat "$tmp" 2>/dev/null)"
+    rm -f "$tmp"
+
+    if [ "$status" = "200" ]; then
+        printf '%s' "$body"
+        return 0
+    fi
+
+    if printf '%s' "$body" | grep -qi 'rate limit'; then
+        if [ -n "$hdr" ]; then
+            GITHUB_API_ERROR="GitHub API rate limit exceeded even when authenticated. It resets hourly."
+        else
+            GITHUB_API_ERROR="GitHub API rate limit exceeded. Unauthenticated requests are capped at 60/hour per IP address, which every machine on this network shares. Run 'gh auth login' to raise it to 5,000/hour, or wait for the hourly reset."
+        fi
+    elif [ "$status" = "000" ]; then
+        GITHUB_API_ERROR="Could not reach api.github.com (network error or timeout)."
+    else
+        GITHUB_API_ERROR="GitHub API request failed with HTTP $status."
+    fi
+    return 1
+}
+
+# Prefer SSH for GitHub when the user's key actually works.
+#
+# HTTPS remotes need a credential helper or a token for anything private and for
+# every push; an SSH remote just uses the key the user already has. Shawn's is
+# authorised, so cloning over HTTPS was making him re-authenticate for no reason.
+#
+# The probe costs a network round trip, so the answer is cached for the life of
+# the process — this is called once per clone, but callers should not have to
+# know that.
+PODIUM_GH_SSH_OK=""
+github_ssh_works() {
+    if [ -z "$PODIUM_GH_SSH_OK" ]; then
+        if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+               -o ConnectTimeout=8 git@github.com 2>&1 | grep -q "successfully authenticated"; then
+            PODIUM_GH_SSH_OK=1
+        else
+            PODIUM_GH_SSH_OK=0
+        fi
+    fi
+    [ "$PODIUM_GH_SSH_OK" = "1" ]
+}
+
+# Rewrite a GitHub HTTPS URL (or owner/repo shorthand) to its SSH form.
+# Non-GitHub URLs are returned unchanged — this is not a general rewriter.
+github_url_to_ssh() {
+    local url="$1"
+    case "$url" in
+        git@github.com:*) printf '%s' "$url" ;;
+        https://github.com/*|http://github.com/*)
+            local path="${url#*github.com/}"
+            path="${path%.git}"
+            printf 'git@github.com:%s.git' "$path" ;;
+        *) printf '%s' "$url" ;;
+    esac
+}
+
+# Latest tag of a remote repo WITHOUT touching the REST API.
+#
+# `git ls-remote` speaks the git protocol, so it is not subject to the API's
+# 60-requests-per-hour-per-IP cap at all — this removes the rate-limit dependency
+# rather than merely raising the ceiling, and it is faster (~0.2s) than the API
+# call it replaces. --sort=-v:refname gives a real version sort; without it the
+# ordering is lexical and "v9.5.2" sorts above "v13.8.0".
+#   $1 repo URL   echoes the newest tag with any leading 'v' stripped
+github_latest_tag() {
+    local url="$1" tag
+    tag="$(git ls-remote --tags --refs --sort=-v:refname "$url" 2>/dev/null \
+           | head -1 | sed 's#.*refs/tags/##; s/^v//')"
+    [ -n "$tag" ] || return 1
+    printf '%s' "$tag"
+}
+
+# Convert every GitHub remote in the CURRENT repo to its SSH form.
+#
+# Needed because `gh repo fork --clone` clones using gh's own git_protocol
+# setting, which defaults to https. The fork then carries an HTTPS origin the
+# user has to authenticate against on their first push, even though their SSH key
+# works — and the remote a repo is created with is the one it keeps.
+#
+# Deliberately does NOT change gh's global config: that is the user's setting for
+# all their other work, not ours to rewrite.
+github_remotes_to_ssh() {
+    github_ssh_works || return 0
+    git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 0
+
+    local remote url ssh_url
+    for remote in $(git remote 2>/dev/null); do
+        url="$(git remote get-url "$remote" 2>/dev/null || true)"
+        [ -n "$url" ] || continue
+        ssh_url="$(github_url_to_ssh "$url")"
+        if [ "$ssh_url" != "$url" ]; then
+            git remote set-url "$remote" "$ssh_url" >/dev/null 2>&1 || true
+        fi
+    done
+    return 0
+}
+
+# Refresh /etc/podium-cli/docker-compose.yaml from the repo.
+#
+# That file is a COPY, written once by `podium configure`, and nothing else ever
+# updated it. So a fix to the shared-service definitions in the repo reached
+# nobody who had already installed — including image pins, which is how an
+# unpinned `postgres` survived in installed copies after the repo pinned it.
+#
+# Backs up the previous file rather than overwriting blind: it is under /etc and
+# a user may have hand-edited it.
+sync_installed_compose() {
+    local src="$DEV_DIR/docker-stack/docker-compose.services.yaml"
+    local dst="/etc/podium-cli/docker-compose.yaml"
+
+    [ -f "$src" ] || return 0
+    [ -d "$(dirname "$dst")" ] || return 0
+
+    # Nothing to do when they already match.
+    if [ -f "$dst" ] && cmp -s "$src" "$dst"; then
+        return 0
+    fi
+
+    if [ -f "$dst" ]; then
+        sudo cp -f "$dst" "${dst}.bak" 2>/dev/null || true
+        echo-cyan "Updating shared-service definitions (previous saved as ${dst}.bak) ..."
+    else
+        echo-cyan "Installing shared-service definitions ..."
+    fi
+
+    if sudo cp -f "$src" "$dst" 2>/dev/null; then
+        echo-green "Shared-service definitions updated."
+        return 0
+    fi
+    echo-yellow "Could not update $dst — shared services keep their previous definitions."
+    return 1
+}
+
+# =============================================================================
+# Preserving x-metadata across compose regeneration
+# =============================================================================
+# `podium setup` regenerates docker-compose.yaml from a template — it deletes the
+# existing file outright. The GUI stores each project's emoji, display name and
+# description in an `x-metadata:` block inside that file, so re-running setup
+# silently wiped a user's tile customisation with no way to connect the loss to
+# the command that caused it. Confirmed live: 5 of 17 projects on this machine
+# carried metadata, including display names that differ from the directory name
+# and descriptions that cannot be reconstructed.
+#
+# Text-based on purpose. Round-tripping through a YAML parser would reformat the
+# whole file — requoting, reordering, dropping comments — which is a large and
+# invisible change to make to every project just to keep six lines.
+
+# Echo the x-metadata block (with its own indentation) from a compose file.
+# Empty output means there was none.
+capture_x_metadata() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    python3 - "$file" << 'PYEOF' 2>/dev/null || true
+import re, sys
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except Exception:
+    sys.exit(0)
+out, indent = [], None
+for line in lines:
+    if indent is None:
+        m = re.match(r'^(\s*)x-metadata:\s*$', line)
+        if m:
+            indent = len(m.group(1))
+            out.append(line)
+        continue
+    # The block ends at the first non-blank line indented no further than the key
+    if line.strip() == "":
+        out.append(line)
+        continue
+    if len(line) - len(line.lstrip()) <= indent:
+        break
+    out.append(line)
+while out and out[-1].strip() == "":
+    out.pop()
+print("\n".join(out))
+PYEOF
+}
+
+# Insert a previously captured x-metadata block into a regenerated compose,
+# placing it inside the service whose container_name matches the project.
+#   $1 compose file   $2 project name   $3 block text
+restore_x_metadata() {
+    local file="$1" project="$2" block="$3"
+    [ -n "$block" ] || return 0
+    [ -f "$file" ] || return 0
+
+    BLOCK="$block" PROJECT="$project" python3 - "$file" << 'PYEOF' 2>/dev/null || return 1
+import os, re, sys
+path = sys.argv[1]
+block = os.environ.get("BLOCK", "").rstrip("\n")
+project = os.environ.get("PROJECT", "")
+if not block:
+    sys.exit(0)
+
+lines = open(path).read().splitlines()
+
+# Already present (an adapted compose may have carried it through) — leave the
+# existing one alone rather than creating a duplicate key.
+if any(re.match(r'^\s*x-metadata:\s*$', l) for l in lines):
+    sys.exit(0)
+
+# Anchor on the service that owns this project. Podium sets container_name to the
+# project name, so this finds the web service even in a multi-service compose,
+# where appending at the end of the file would land it in the wrong one.
+anchor = None
+for i, l in enumerate(lines):
+    if re.match(r'^\s*container_name:\s*["\']?' + re.escape(project) + r'["\']?\s*$', l):
+        anchor = i
+        break
+if anchor is None:
+    sys.exit(1)
+
+svc_indent = len(lines[anchor]) - len(lines[anchor].lstrip())
+
+# End of that service = first later non-blank line indented no further than its keys
+end = len(lines)
+for j in range(anchor + 1, len(lines)):
+    if lines[j].strip() == "":
+        continue
+    if len(lines[j]) - len(lines[j].lstrip()) < svc_indent:
+        end = j
+        break
+    if len(lines[j]) - len(lines[j].lstrip()) == svc_indent and lines[j].lstrip().startswith("x-"):
+        continue
+else:
+    end = len(lines)
+
+# Re-indent the captured block to this file's service-key indentation
+blines = block.splitlines()
+old_indent = len(blines[0]) - len(blines[0].lstrip())
+shift = svc_indent - old_indent
+adjusted = []
+for b in blines:
+    if not b.strip():
+        adjusted.append("")
+    elif shift >= 0:
+        adjusted.append(" " * shift + b)
+    else:
+        adjusted.append(b[-shift:] if len(b) + shift > 0 else b.lstrip())
+
+# Trim trailing blanks at the insertion point so the block sits flush
+while end > 0 and lines[end - 1].strip() == "":
+    end -= 1
+
+new = lines[:end] + adjusted + lines[end:]
+open(path, "w").write("\n".join(new) + "\n")
+PYEOF
+}
+
+# Set a single key inside a project's x-metadata block.
+#
+# Text-based like capture/restore, for the same reason: a YAML round trip would
+# requote and reorder the whole compose to change one line, and the GUI parses
+# this block with regexes.
+#
+# Creates the block if absent, anchored on the service whose container_name is
+# the project — appending at the end of the file would land it in the wrong
+# service in a multi-service compose.
+#   $1 compose file   $2 project name   $3 key   $4 value
+set_x_metadata_key() {
+    local file="$1" project="$2" key="$3" value="$4"
+    [ -f "$file" ] || return 1
+    command -v python3 >/dev/null 2>&1 || return 1
+
+    XM_FILE="$file" XM_PROJECT="$project" XM_KEY="$key" XM_VALUE="$value" python3 - << 'PYEOF' 2>/dev/null
+import os, re, sys
+path    = os.environ["XM_FILE"]
+project = os.environ["XM_PROJECT"]
+key     = os.environ["XM_KEY"]
+value   = os.environ["XM_VALUE"]
+
+lines = open(path).read().splitlines()
+
+# Locate an existing x-metadata block.
+mi = next((i for i, l in enumerate(lines) if re.match(r'^\s*x-metadata:\s*$', l)), None)
+
+if mi is not None:
+    indent = len(lines[mi]) - len(lines[mi].lstrip())
+    end = len(lines)
+    for j in range(mi + 1, len(lines)):
+        if lines[j].strip() == "":
+            continue
+        if len(lines[j]) - len(lines[j].lstrip()) <= indent:
+            end = j
+            break
+    key_re = re.compile(r'^\s*' + re.escape(key) + r':\s')
+    for j in range(mi + 1, end):
+        if key_re.match(lines[j]):
+            ki = len(lines[j]) - len(lines[j].lstrip())
+            lines[j] = " " * ki + f'{key}: "{value}"'
+            break
+    else:
+        inner = indent + 2
+        for j in range(mi + 1, end):
+            if lines[j].strip():
+                inner = len(lines[j]) - len(lines[j].lstrip())
+                break
+        while end > mi + 1 and lines[end - 1].strip() == "":
+            end -= 1
+        lines.insert(end, " " * inner + f'{key}: "{value}"')
+else:
+    # No block yet — create one inside the project's own service.
+    anchor = next((i for i, l in enumerate(lines)
+                   if re.match(r'^\s*container_name:\s*["\']?' + re.escape(project) + r'["\']?\s*$', l)), None)
+    if anchor is None:
+        sys.exit(1)
+    si = len(lines[anchor]) - len(lines[anchor].lstrip())
+    end = len(lines)
+    for j in range(anchor + 1, len(lines)):
+        if lines[j].strip() == "":
+            continue
+        if len(lines[j]) - len(lines[j].lstrip()) < si:
+            end = j
+            break
+    while end > 0 and lines[end - 1].strip() == "":
+        end -= 1
+    lines[end:end] = [" " * si + "x-metadata:", " " * (si + 2) + f'{key}: "{value}"']
+
+open(path, "w").write("\n".join(lines) + "\n")
+PYEOF
+}
+
+# Record that a project was up, as ISO-8601 UTC.
+#
+# Written on BOTH start and stop, deliberately: on stop the value becomes the
+# moment it stopped, so it means "last time this was running" rather than "last
+# time somebody started it" — which is what the GUI sorts on. Best-effort; a
+# failure here must never stop a project starting or stopping.
+#   $1 project name
+record_last_on() {
+    local project="$1"
+    [ -n "$project" ] || return 0
+    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
+    local file=""
+    [ -f "$dir/docker-compose.yaml" ] && file="$dir/docker-compose.yaml"
+    [ -z "$file" ] && [ -f "$dir/docker-compose.yml" ] && file="$dir/docker-compose.yml"
+    [ -n "$file" ] || return 0
+
+    set_x_metadata_key "$file" "$project" "last_on" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+    return 0
+}
+
+# =============================================================================
+# Disabled projects
+# =============================================================================
+# A disabled project is one the user has parked: stopped, hidden from `up-all`
+# and from the GUI's default view, and refused by `up` until re-enabled. The
+# state lives in the project's own x-metadata `status` key, so it travels with
+# the project and the GUI reads it the same way it reads emoji and last_on.
+#
+# UNKNOWN OR MISSING MEANS ENABLED. Every project that predates this feature has
+# no status key, and a project must never become unstartable because a metadata
+# read failed or returned something unexpected.
+
+# Echo the value of an x-metadata key, or empty.
+#   $1 compose file   $2 key
+read_x_metadata_key() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || return 0
+    python3 - "$file" "$key" << 'PYEOF' 2>/dev/null
+import re, sys
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except Exception:
+    sys.exit(0)
+key = sys.argv[2]
+mi = next((i for i, l in enumerate(lines) if re.match(r'^\s*x-metadata:\s*$', l)), None)
+if mi is None:
+    sys.exit(0)
+indent = len(lines[mi]) - len(lines[mi].lstrip())
+for l in lines[mi + 1:]:
+    if l.strip() == "":
+        continue
+    if len(l) - len(l.lstrip()) <= indent:
+        break
+    m = re.match(r'^\s*' + re.escape(key) + r':\s*(.*)$', l)
+    if m:
+        print(m.group(1).strip().strip('"\''))
+        break
+PYEOF
+}
+
+# Resolve a project's compose file, or empty if it has none.
+podium_project_compose() {
+    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$1"
+    [ -f "$dir/docker-compose.yaml" ] && { printf '%s' "$dir/docker-compose.yaml"; return 0; }
+    [ -f "$dir/docker-compose.yml" ]  && { printf '%s' "$dir/docker-compose.yml";  return 0; }
+    return 0
+}
+
+# Echo "disabled" or "enabled". Anything unrecognised is enabled, deliberately.
+podium_project_status() {
+    local project="$1" file status
+    file="$(podium_project_compose "$project")"
+    [ -n "$file" ] || { printf 'enabled'; return 0; }
+    status="$(read_x_metadata_key "$file" status)"
+    case "$status" in
+        disabled) printf 'disabled' ;;
+        *)        printf 'enabled'  ;;
+    esac
+}
+
+# Convenience predicate: true when the project is disabled.
+podium_project_is_disabled() {
+    [ "$(podium_project_status "$1")" = "disabled" ]
+}
+
+# =============================================================================
+# On-demand shared services
+# =============================================================================
+# Every shared service is profile-gated, so nothing runs unless something asks
+# for it. A machine that only builds static PHP sites should not be paying for
+# MongoDB — measured on a dev box, the old always-on set was 517MB resident, of
+# which mongo alone was 200MB.
+#
+# The trade is that a project must be able to bring up what it needs without the
+# user knowing which services exist. That is what this does: read the project's
+# OWN compose, see which podium-* hostnames it talks to, and ensure exactly
+# those are enabled and running.
+#
+# Deliberately derived from the compose rather than from a declared list. A
+# framework project, an app installer and an AI-folded clone all end up
+# referencing the hostnames the same way, so one rule covers all three and
+# nothing has to be kept in step by hand.
+#
+# Admin UIs (adminer, mongo-express, redisinsight) are never matched here: no
+# project references them, so they stay pure opt-in.
+
+# Map a podium-* hostname to its compose service name. These differ — the
+# MariaDB service is called `mysql` but its container is `podium-mariadb`.
+_podium_host_to_service() {
+    case "$1" in
+        podium-mariadb)   printf 'mysql' ;;
+        podium-postgres)  printf 'postgres' ;;
+        podium-mongo)     printf 'mongo' ;;
+        podium-redis)     printf 'redis' ;;
+        podium-memcached) printf 'memcached' ;;
+        podium-mailhog)   printf 'mailhog' ;;
+        podium-minio)     printf 'minio' ;;
+        podium-meilisearch) printf 'meilisearch' ;;
+        *) return 1 ;;
+    esac
+}
+
+# Echo the service names referenced anywhere in the given text.
+services_referenced_in() {
+    local text="$1" host svc out=""
+    for host in podium-mariadb podium-postgres podium-mongo podium-redis \
+                podium-memcached podium-mailhog podium-minio podium-meilisearch; do
+        case "$text" in
+            *"$host"*)
+                svc="$(_podium_host_to_service "$host")" && out="$out $svc" ;;
+        esac
+    done
+    printf '%s' "${out# }"
+}
+
+# Ensure the named services are enabled and running. Enabling persists, so the
+# next `podium up` keeps them without re-deriving.
+#   $@ service names
+# Services that carry no compose profile and therefore always run. Listing one
+# in OPTIONAL_SERVICES would be meaningless and the "enabling ..." line would be
+# a lie, so they are filtered out before anything is written or announced.
+PODIUM_ALWAYS_ON_SERVICES="redis memcached mailhog"
+
+ensure_services_running() {
+    local requested="$*" wanted="" svc changed=0 current
+    [ -n "$requested" ] || return 0
+
+    for svc in $requested; do
+        case " $PODIUM_ALWAYS_ON_SERVICES " in
+            *" $svc "*) continue ;;   # always on; nothing to enable
+        esac
+        wanted="${wanted:+$wanted }$svc"
+    done
+    [ -n "$wanted" ] || return 0
+
+    current="${OPTIONAL_SERVICES:-}"
+
+    local newly=""
+    for svc in $wanted; do
+        case " $current " in
+            *" $svc "*) ;;
+            *) current="${current:+$current }$svc"; changed=1
+               newly="${newly:+$newly }$svc"
+               echo-cyan "Enabling shared service '$svc' (a project needs it) ..." ;;
+        esac
+    done
+
+    # Start anything wanted that is not already up. Checked per service so an
+    # already-running stack costs nothing.
+    local need_start=0 cname
+    for svc in $wanted; do
+        cname="podium-$svc"
+        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true || need_start=1
+    done
+
+    if [ "$need_start" = "1" ]; then
+        echo-cyan "Starting required shared services ..."
+        # Run with the PROPOSED list rather than the persisted one, because
+        # nothing is persisted yet — see below.
+        ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
+          OPTIONAL_SERVICES="$current"
+          mapfile -t _p < <(podium_profile_args)
+          docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
+    fi
+
+    # Record only what actually came up. Persisting first meant a service whose
+    # image failed to pull stayed listed as enabled forever with no container
+    # behind it, so `OPTIONAL_SERVICES` stopped being a statement about reality.
+    local confirmed="${OPTIONAL_SERVICES:-}" failed=""
+    for svc in $newly; do
+        cname="podium-$svc"
+        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        if docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true; then
+            confirmed="${confirmed:+$confirmed }$svc"
+            PODIUM_SERVICES_ENABLED_THIS_RUN="$PODIUM_SERVICES_ENABLED_THIS_RUN $svc"
+        else
+            failed="${failed:+$failed }$svc"
+        fi
+    done
+
+    if [ -n "$failed" ]; then
+        echo-red "Could not start:$failed — left disabled." >&2
+        echo-white "  Check: docker compose -f /etc/podium-cli/docker-compose.yaml logs" >&2
+    fi
+
+    if [ "$confirmed" != "${OPTIONAL_SERVICES:-}" ]; then
+        if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
+            sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$confirmed\"" /etc/podium-cli/.env
+        else
+            echo "OPTIONAL_SERVICES=\"$confirmed\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
+        fi
+        export OPTIONAL_SERVICES="$confirmed"
+    fi
+
+    [ -n "$failed" ] && return 1
+    return 0
+}
+
+# Convenience: derive from a project's compose and ensure.
+ensure_services_for_project() {
+    local project="$1" dir file text svcs
+    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
+    file="$(podium_project_compose "$project")"
+
+    # Read BOTH the compose and the .env. Installers name the shared hostnames in
+    # their compose; framework projects name them only in .env — Laravel defaults
+    # its session and cache to Redis, so a Laravel project needs podium-redis and
+    # says so nowhere else. Missing that produced a working database and a 500
+    # from "RedisException: No route to host".
+    text=""
+    [ -n "$file" ] && text="$(cat "$file" 2>/dev/null)"
+    [ -f "$dir/.env" ] && text="$text
+$(cat "$dir/.env" 2>/dev/null)"
+
+    svcs="$(services_referenced_in "$text")"
+    [ -n "$svcs" ] || return 0
+    ensure_services_running $svcs
+}
+
+# Map a database engine to its shared service. Framework projects declare their
+# engine up front (`--database postgres`) and only write it into .env later, so
+# the compose scan cannot see it — this is the authoritative signal for them.
+ensure_services_for_engine() {
+    local engine="$1"
+    case "$engine" in
+        mysql|mariadb)        ensure_services_running mysql ;;
+        postgres|postgresql|pgsql) ensure_services_running postgres ;;
+        mongo|mongodb)        ensure_services_running mongo ;;
+        sqlite|sqlite3|"")    : ;;   # no server needed
+        *)                    : ;;
+    esac
+    return 0
+}
+
+# Services enabled during THIS command, so a front end can tell "postgres was
+# already here" from "we just turned postgres on for you". Accumulated by
+# ensure_services_running; read by setup_project when building its JSON.
+PODIUM_SERVICES_ENABLED_THIS_RUN=""
+
+# Admin UIs that can manage a given database service, excluding any already
+# enabled. Adminer is listed first deliberately — one ~50MB container covers
+# every engine Podium ships, so it is the right default suggestion.
+#   $1 database service name
+podium_admin_uis_for() {
+    local svc="$1" candidates="" ui out=""
+    case "$svc" in
+        mysql)    candidates="adminer phpmyadmin" ;;
+        postgres) candidates="adminer" ;;
+        mongo)    candidates="adminer mongo-express" ;;
+        *)        return 0 ;;
+    esac
+    for ui in $candidates; do
+        case " ${OPTIONAL_SERVICES:-} " in
+            *" $ui "*) continue ;;    # already on; nothing to suggest
+        esac
+        out="${out:+$out }$ui"
+    done
+    printf '%s' "$out"
+}
+
+# JSON fragment describing what was just enabled and what could manage it.
+# Empty when nothing was enabled, so callers can append it unconditionally.
+podium_services_json_fragment() {
+    local enabled="${PODIUM_SERVICES_ENABLED_THIS_RUN# }"
+    [ -n "$enabled" ] || return 0
+
+    local svc ui uis seen="" ui_json="" svc_json=""
+    for svc in $enabled; do
+        svc_json="${svc_json:+$svc_json, }\"$svc\""
+        uis="$(podium_admin_uis_for "$svc")"
+        for ui in $uis; do
+            case " $seen " in *" $ui "*) continue ;; esac
+            seen="$seen $ui"
+            case "$ui" in
+                adminer)       ui_json="${ui_json:+$ui_json, }{\"slug\": \"adminer\", \"display\": \"Adminer\", \"covers\": \"PostgreSQL, MariaDB/MySQL, SQLite, MongoDB\", \"size\": \"~50MB\"}" ;;
+                phpmyadmin)    ui_json="${ui_json:+$ui_json, }{\"slug\": \"phpmyadmin\", \"display\": \"phpMyAdmin\", \"covers\": \"MariaDB/MySQL\", \"size\": \"~70MB\"}" ;;
+                mongo-express) ui_json="${ui_json:+$ui_json, }{\"slug\": \"mongo-express\", \"display\": \"Mongo Express\", \"covers\": \"MongoDB\", \"size\": \"~25MB\"}" ;;
+            esac
+        done
+    done
+    printf ', "services_enabled": [%s], "admin_uis_suggested": [%s]' "$svc_json" "$ui_json"
 }

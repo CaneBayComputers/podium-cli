@@ -75,8 +75,18 @@ claims:
 
 - **`.deb` — installed and launched on a real machine** (Linux Mint): correct
   metadata, desktop entry appears, application starts.
-- **`.rpm`, `.pkg.tar.zst` and both `.dmg` — built and inspected, never installed.**
-  No Fedora, Arch or macOS machine was available. The `.dmg` files in particular
+- **`.rpm` — installed and launched on a real machine** (Fedora 43): installs
+  cleanly, desktop entry registered, launches into a GNOME Wayland session.
+  Worth knowing that the *first* `.rpm` build could not be installed at all — it
+  required the bare capability `docker`, which the `docker-ce` packages our own
+  Fedora installer lays down do not provide, so dnf tried to pull Fedora's
+  conflicting `moby-engine`. Podium's installer produced a machine Podium's own
+  package could not install on. The dependency was dropped (Docker legitimately
+  arrives half a dozen ways, and no package name covers them all) and the
+  release asset was replaced. If you grabbed an `.rpm` before 2026-08-04,
+  re-download it.
+- **`.pkg.tar.zst` and both `.dmg` — built and inspected, never installed.**
+  No Arch or macOS machine has run these yet. The `.dmg` files in particular
   have never been opened on a Mac, so they are the least proven thing here. If
   one fails, [open an issue](https://github.com/CaneBayComputers/podium-gui/issues)
   and it will get fixed quickly.

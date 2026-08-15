@@ -125,9 +125,30 @@ start_project() {
           ;;
   esac
 
+  # Bring up whatever this project actually talks to. Services are profile-gated
+  # and nothing is running by default, so this is what makes a project startable
+  # on a machine that has never needed, say, Postgres before.
+  ensure_services_for_project "$PROJECT_FOLDER_NAME" || true
+
+  # Already up? Then this call has nothing to do. Reported by the GUI session:
+  # `podium resume` on a running project ran a full start, which costs seconds
+  # and can trigger a sudo prompt to change nothing — so "continue my AI
+  # conversation" read as "restarted my project and asked for my password".
+  # Every caller benefits, not just resume.
+  if docker container inspect -f '{{.State.Running}}' "$PROJECT_FOLDER_NAME" 2>/dev/null | grep -q true; then
+      cd ..
+      record_last_on "$PROJECT_FOLDER_NAME" || true
+      echo-green "Project $PROJECT_FOLDER_NAME is already running."; echo-return
+      return 0
+  fi
+
   dockerup
 
   cd ..
+
+  # Stamp when this project was last up, for the GUI's "last running" sort.
+  # Best-effort: never let a metadata write affect whether a project starts.
+  record_last_on "$PROJECT_FOLDER_NAME" || true
 
   echo-green "Project $PROJECT_FOLDER_NAME started successfully!"; echo-return
 }
@@ -146,8 +167,20 @@ if [[ "$DEBUG" == "1" ]]; then
     START_SERVICES_OPTIONS="$START_SERVICES_OPTIONS --debug"
 fi
 
+# If a single named project is already running, its shared services are
+# necessarily up too — starting them again is pure cost. Skipping this is what
+# removes the spurious sudo prompt, not just the compose call below.
+PROJECT_ALREADY_RUNNING=0
+if [[ -n "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
+    if docker container inspect -f '{{.State.Running}}' "$PROJECT_NAME" 2>/dev/null | grep -q true; then
+        PROJECT_ALREADY_RUNNING=1
+    fi
+fi
+
 # Capture JSON output from start_services.sh if in JSON mode
-if [[ "$JSON_OUTPUT" == "1" ]]; then
+if [[ "$PROJECT_ALREADY_RUNNING" == "1" ]]; then
+    debug "Project $PROJECT_NAME already running; skipping shared-service startup"
+elif [[ "$JSON_OUTPUT" == "1" ]]; then
     START_SERVICES_OUTPUT=$(source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS 2>&1)
     START_SERVICES_EXIT_CODE=$?
     if [ $START_SERVICES_EXIT_CODE -ne 0 ]; then
@@ -174,6 +207,19 @@ fi
 # Decide which projects to start.
 # Note: shared services have already been started above regardless of branch.
 if [[ -n "$PROJECT_NAME" ]]; then
+    # Refuse a disabled project rather than starting it. Disabling is an explicit
+    # act, so silently overriding it here would make the state meaningless.
+    if podium_project_is_disabled "$PROJECT_NAME"; then
+        echo-return
+        echo-yellow "Project '$PROJECT_NAME' is disabled and was not started."
+        echo-white  "Re-enable it first:"
+        echo-white  "  podium enable $PROJECT_NAME"
+        echo-return
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            echo "{\"action\": \"startup\", \"status\": \"error\", \"error\": \"project_disabled\", \"project\": \"$PROJECT_NAME\", \"details\": \"Project is disabled. Run 'podium enable $PROJECT_NAME' first.\"}"
+        fi
+        exit 1
+    fi
     debug "Starting specific project: $PROJECT_NAME"
     if start_project "$PROJECT_NAME"; then true; fi
 
@@ -190,6 +236,14 @@ elif [[ "$START_ALL" == "1" ]]; then
         # Skip non-directories and hidden directories
         [[ -d "$PROJECT_FOLDER_NAME" ]] || continue
         [[ "$PROJECT_FOLDER_NAME" == .* ]] && continue
+
+        # A disabled project is parked: up-all must pass over it. Announced
+        # rather than silent, so "why didn't that one start" is answerable
+        # without going and reading the compose file.
+        if podium_project_is_disabled "$PROJECT_FOLDER_NAME"; then
+            echo-yellow "Skipping '$PROJECT_FOLDER_NAME' — disabled."
+            continue
+        fi
 
         debug "Attempting to start project: $PROJECT_FOLDER_NAME"
         start_project "$PROJECT_FOLDER_NAME" || true
@@ -211,8 +265,16 @@ if [[ "$NO_COLOR" == "1" ]]; then
     STATUS_OPTIONS="$STATUS_OPTIONS --no-colors"
 fi
 
-# Allow containers time to finish booting before running status checks
-sleep 12
+# Allow containers time to finish booting before running status checks.
+#
+# Skipped when nothing was started: the GUI session traced 12.00s of a 12.58s
+# no-op `podium up` to exactly this line. The early return above exits the
+# per-project function, but this sits in the main body and ran regardless — so a
+# command that did nothing still waited 12 seconds for containers that had been
+# up for hours.
+if [[ "$PROJECT_ALREADY_RUNNING" != "1" ]]; then
+    sleep 12
+fi
 
 # Containers are recreated from their base image on every `up`, so anything pip
 # installed INTO the container filesystem during setup is gone — only the

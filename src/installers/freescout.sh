@@ -7,6 +7,7 @@ pre_install() {
     # FreeScout requires a dedicated DB user — the tiredofit image rejects root
     docker exec podium-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'freescout'@'%' IDENTIFIED BY 'freescout';
+        ALTER USER 'freescout'@'%' IDENTIFIED BY 'freescout';
         GRANT ALL PRIVILEGES ON freescout.* TO 'freescout'@'%';
         FLUSH PRIVILEGES;
     "

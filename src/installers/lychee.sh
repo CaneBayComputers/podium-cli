@@ -7,6 +7,7 @@ pre_install() {
     docker exec podium-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS lychee;
         CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass';
+        ALTER USER 'lychee'@'%' IDENTIFIED BY 'lycheepass';
         GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%';
         FLUSH PRIVILEGES;
     "

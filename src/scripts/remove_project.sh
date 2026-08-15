@@ -19,10 +19,11 @@ usage() {
     echo-white ""
     echo-white "By default:"
     echo-white "  • Project files are moved to trash (recoverable)"
-    echo-white "  • The database is PRESERVED (pass --force-db-delete to drop it)"
+    echo-white "  • The database and the project's Docker volumes are PRESERVED"
+    echo-white "    (pass --force-db-delete to drop both)"
     echo-white ""
     echo-white "Options:"
-    echo-white "  --force-db-delete        Delete database without confirmation"
+    echo-white "  --force-db-delete        Delete the database AND the project's named volumes"
     echo-white "  --preserve-database      Skip database deletion entirely"
     echo-white "  --json-output            Output results in JSON format"
     echo-white "  --debug                  Enable debug logging"
@@ -176,6 +177,43 @@ if ! "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME"; then
     debug "shutdown.sh returned non-zero for project '$PROJECT_NAME' (likely not running); continuing removal"
     echo-yellow "Project '$PROJECT_NAME' is not running or could not be shut down. Continuing removal."
     echo-white
+fi
+
+# 1b. Remove the project's named volumes when --force-db-delete was passed.
+#
+# Reported by the GUI session and reproduced on two apps: dropping the database
+# while leaving the volumes produces an app that believes it is already installed
+# (moodle's config.php, glpi's data dir) pointed at an empty schema. The next
+# install crash-loops, and reinstalling cannot fix it because the contradiction
+# survives every attempt -- the same trap as the stale DB user, where the obvious
+# remedy cannot touch the cause.
+#
+# --force-db-delete already means "destroy this project's data", so the volumes
+# belong in that promise. Plain `podium remove` still keeps them, matching the
+# fact that it keeps the database.
+#
+# Must run BEFORE the directory is trashed: compose needs its own file to know
+# which volumes are its.
+if [ "$FORCE_DB_DELETE" = true ] && [ -f "$PROJECT_DIR/docker-compose.yaml" ]; then
+    debug "Starting step 1b: removing named volumes (--force-db-delete)"
+    _vols=$( (cd "$PROJECT_DIR" && docker compose config --volumes 2>/dev/null) )
+    if [ -n "$_vols" ]; then
+        echo-cyan "Removing project volumes (--force-db-delete)..."
+        (cd "$PROJECT_DIR" && docker compose down -v --remove-orphans >/dev/null 2>&1) || true
+        # compose down -v only removes volumes it still tracks; sweep any that
+        # outlived it under the standard <project>_<volume> naming.
+        for _v in $_vols; do
+            docker volume rm "${PROJECT_NAME}_${_v}" >/dev/null 2>&1 || true
+        done
+        _left=$(docker volume ls -q --filter "name=^${PROJECT_NAME}_" 2>/dev/null | wc -l)
+        if [ "$_left" -eq 0 ]; then
+            echo-green "Project volumes removed."
+        else
+            echo-yellow "$_left project volume(s) could not be removed - remove by hand or the next install may misbehave:"
+            docker volume ls -q --filter "name=^${PROJECT_NAME}_" 2>/dev/null | sed 's/^/    /'
+        fi
+        echo-white
+    fi
 fi
 
 # 2. Move Project Directory to Trash  

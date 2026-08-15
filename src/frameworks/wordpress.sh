@@ -128,5 +128,5 @@ ehthumbs.db
 Thumbs.db
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for WordPress project!"
+    echo-green ".gitignore created for WordPress project!"
 }

@@ -1,7 +1,23 @@
+# Every image is PINNED to a major version. This is not tidiness -- it prevents
+# data loss.
+#
+# `podium update --full` deliberately REMOVES the shared-service images so they
+# re-pull fresh. With unpinned images that re-pull grabs whatever is newest, and
+# a database refuses to start on a data directory written by an older major:
+# PostgreSQL says outright "The data directory was initialized by PostgreSQL
+# version N, which is not compatible with this version". At the time of pinning,
+# postgres:latest had already moved to 18 while installed machines held PG 17
+# data -- so `podium update --full` would have bricked every Postgres project and
+# locked the data behind a server that would not boot.
+#
+# Pins are set to the major ALREADY RUNNING on installed machines, so applying
+# this requires no migration. Raising one later is a deliberate, one-way decision
+# that needs a dump/restore first -- data directories cannot be downgraded.
 services:
   mysql:
-    image: mariadb
+    image: mariadb:12.0
     container_name: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+    profiles: ["mysql"]
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
     volumes:
@@ -14,8 +30,9 @@ services:
         ipv4_address: "${VPC_SUBNET}.2"
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin:5
     container_name: "${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
+    profiles: ["phpmyadmin"]
     restart: always
     environment:
       PMA_HOST: "${VPC_SUBNET}.2"
@@ -26,7 +43,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.3"
 
   redis:
-    image: redis
+    image: redis:8
     container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
     restart: always
     expose:
@@ -38,7 +55,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.5"
 
   memcached:
-    image: memcached
+    image: memcached:1.6
     container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
     restart: always
     expose:
@@ -48,8 +65,9 @@ services:
         ipv4_address: "${VPC_SUBNET}.7"
 
   mongo:
-    image: mongo
+    image: mongo:8.0
     container_name: "${MONGO_CONTAINER_NAME:-podium-mongo}"
+    profiles: ["mongo"]
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
@@ -63,8 +81,9 @@ services:
         ipv4_address: "${VPC_SUBNET}.4"
 
   postgres:
-    image: postgres
+    image: postgres:17
     container_name: "${POSTGRES_CONTAINER_NAME:-podium-postgres}"
+    profiles: ["postgres"]
     restart: always
     environment:
       POSTGRES_USER: root
@@ -79,7 +98,7 @@ services:
         ipv4_address: "${VPC_SUBNET}.6"
 
   mailhog:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.30
     container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
     restart: always
     ports:
@@ -114,7 +133,7 @@ services:
       - minio_data:/data
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.9"
+        ipv4_address: "${VPC_SUBNET}.250"
 
   meilisearch:
     image: getmeili/meilisearch:v1.51.0
@@ -128,10 +147,71 @@ services:
       - meilisearch_data:/meili_data
     networks:
       vpc:
-        ipv4_address: "${VPC_SUBNET}.10"
+        ipv4_address: "${VPC_SUBNET}.251"
+
+
+  # ---------------------------------------------------------------------------
+  # Database admin UIs — opt-in only
+  # ---------------------------------------------------------------------------
+  # Never auto-provisioned: no project references them, so nothing can ask for
+  # them on your behalf. Turn one on when you want to poke at a database.
+  #
+  # Each is PRE-WIRED to the shared servers. That is the whole point — an admin
+  # UI you have to hand-configure a connection for has given back most of the
+  # convenience it exists to provide.
+  adminer:
+    image: adminer:5.5.1
+    container_name: "${ADMINER_CONTAINER_NAME:-podium-adminer}"
+    profiles: ["adminer"]
+    restart: unless-stopped
+    environment:
+      # Covers MariaDB/MySQL, PostgreSQL, SQLite and (basically) MongoDB from one
+      # ~50MB container. Default server is prefilled; switch engine at the login
+      # screen. Leave the username as root; passwords are in AGENTS.md.
+      ADMINER_DEFAULT_SERVER: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+      ADMINER_DESIGN: dracula
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.252"
+
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: "${MONGOEXPRESS_CONTAINER_NAME:-podium-mongo-express}"
+    profiles: ["mongo-express"]
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_URL: "mongodb://root:password@${MONGO_CONTAINER_NAME:-podium-mongo}:27017/"
+      ME_CONFIG_BASICAUTH: "false"
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.253"
+
+  redisinsight:
+    image: redis/redisinsight:3.8.0
+    container_name: "${REDISINSIGHT_CONTAINER_NAME:-podium-redisinsight}"
+    profiles: ["redisinsight"]
+    restart: unless-stopped
+    environment:
+      RI_APP_HOST: "0.0.0.0"
+      # Pre-register the shared Redis so nobody has to type a hostname they
+      # cannot guess. RedisInsight scans for any env named RI_REDIS_HOST* and
+      # adds one connection per match; a bare suffix is connection "0".
+      #
+      # It will NOT appear until the first-run EULA screen is accepted --
+      # discovery is gated on that agreement and runs silently before it. An
+      # empty database list on first launch is expected, not a fault.
+      RI_REDIS_HOST: "${REDIS_CONTAINER_NAME:-podium-redis}"
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: "Podium Redis"
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      vpc:
+        ipv4_address: "${VPC_SUBNET}.254"
 
 
 volumes:
+  redisinsight_data:
   redis_data:
   mysql_data:
   mongo_data:
@@ -146,7 +226,7 @@ networks:
       config:
         - subnet: "${VPC_SUBNET}.0/24"
           # Dynamic IPs come from .32-.63 only. Static IPs assigned via
-          # ipv4_address (.2-.8 shared services, .100-.250 project entry-points)
+          # ipv4_address (.2-.8 core, .250-.254 optional services, .100-.239 projects)
           # are still allowed anywhere in the subnet — Docker honors them even
           # when they sit outside ip_range. Helper containers in multi-service
           # projects pick up dynamic addresses; without ip_range they would

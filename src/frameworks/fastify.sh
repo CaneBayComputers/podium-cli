@@ -136,5 +136,5 @@ node_modules/
 dist/
 GITEOF
 
-    [[ "$JSON_OUTPUT" != "1" ]] && echo-green ".gitignore created for Fastify project!"
+    echo-green ".gitignore created for Fastify project!"
 }
