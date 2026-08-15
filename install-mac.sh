@@ -128,6 +128,79 @@ trap 'rc=$?; kill $SUDO_KEEPALIVE_PID 2>/dev/null || true; exit $rc' INT TERM EX
 echo -e "${CYAN}Installing system dependencies...${NC}"
 
 ###############################
+# Xcode Command Line Tools
+###############################
+# Must come before Homebrew. Homebrew cannot install without the CLT, and on a
+# clean Mac /usr/bin/git is only a stub that opens a GUI dialog instead of
+# running git. Homebrew triggers that dialog, does not wait for it, and dies on
+# `git init` -- after having already created a half-built /opt/homebrew. The
+# user is left with someone else's error message, no explanation, and a dirty
+# tree that the next attempt starts from.
+#
+# Checking here means we fail before writing anything, and say why.
+clt_present() {
+    xcode-select -p > /dev/null 2>&1 && /usr/bin/git --version > /dev/null 2>&1
+}
+
+if clt_present; then
+    echo -e "${GREEN}✓ Xcode Command Line Tools already installed${NC}"
+elif [ "$DRY_RUN" = "1" ]; then
+    echo "  [DRY RUN] Would install Xcode Command Line Tools"
+else
+    echo -e "${BLUE}Installing Xcode Command Line Tools...${NC}"
+    echo "This is a large download and can take several minutes."
+
+    # This marker is what makes the CLT appear in `softwareupdate --list`.
+    # Without it the tools can only be installed through the GUI dialog, which
+    # is no use over SSH, in CI, or in any unattended run.
+    CLT_MARKER="/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress"
+    sudo touch "$CLT_MARKER"
+
+    CLT_LABEL="$(softwareupdate --list 2>/dev/null \
+        | grep -E 'Label: Command Line Tools' \
+        | sed 's/^.*Label: //' \
+        | sed 's/[[:space:]]*$//' \
+        | tail -1)"
+
+    if [ -n "$CLT_LABEL" ]; then
+        echo -e "${BLUE}Found: $CLT_LABEL${NC}"
+        sudo softwareupdate --install "$CLT_LABEL" --verbose || true
+    fi
+
+    sudo rm -f "$CLT_MARKER"
+
+    if clt_present; then
+        echo -e "${GREEN}✓ Xcode Command Line Tools installed${NC}"
+    else
+        echo
+        echo -e "${RED}Error: Xcode Command Line Tools could not be installed automatically.${NC}"
+        echo
+        if [ -z "$CLT_LABEL" ]; then
+            # The common cause, and not obvious from anything macOS reports.
+            echo -e "${YELLOW}Apple's update server is not offering the Command Line Tools for this${NC}"
+            echo -e "${YELLOW}version of macOS. That usually means macOS itself is behind: Apple${NC}"
+            echo -e "${YELLOW}publishes the tools only for the current release, so a Mac a few point${NC}"
+            echo -e "${YELLOW}releases back gets an install dialog that can never succeed.${NC}"
+            echo
+            echo -e "You are on macOS $(sw_vers -productVersion)."
+            echo
+        fi
+        echo -e "${CYAN}Fix it either way, then re-run this installer:${NC}"
+        echo
+        echo -e "  ${BLUE}1. Update macOS${NC} (System Settings > General > Software Update),"
+        echo -e "     or from this terminal:"
+        echo -e "       ${BLUE}sudo softwareupdate --install --all --restart${NC}"
+        echo
+        echo -e "  ${BLUE}2. Or install the tools by hand${NC} — no macOS update needed:"
+        echo -e "       ${BLUE}https://developer.apple.com/download/all/${NC}"
+        echo -e "     Sign in, download \"Command Line Tools for Xcode\", open the .dmg."
+        echo
+        echo -e "${CYAN}Nothing has been installed or changed on this Mac.${NC}"
+        exit 1
+    fi
+fi
+
+###############################
 # Install Homebrew if not present
 ###############################
 if ! command -v brew &> /dev/null; then
@@ -173,9 +246,24 @@ if ! command -v docker &> /dev/null; then
         brew install --cask docker
         
         echo -e "${GREEN}✓ Docker Desktop installed${NC}"
-        echo -e "${YELLOW}⚠️  Please start Docker Desktop from Applications before continuing${NC}"
-        echo "Press any key once Docker Desktop is running..."
-        read -n 1 -s
+        echo -e "${YELLOW}⚠️  Docker Desktop must be running before Podium can start anything${NC}"
+
+        # The documented install is `curl ... | bash`, so stdin is the script
+        # itself. An unguarded `read` there does not pause — it consumes the
+        # bytes bash has not parsed yet, eating part of the installer. Read
+        # from the terminal instead, and where there is no terminal (piped,
+        # CI, ssh without -t) print what to do rather than blocking on input
+        # nobody can supply.
+        if [ -e /dev/tty ]; then
+            echo -e "${BLUE}Starting Docker Desktop...${NC}"
+            open -a Docker 2>/dev/null || true
+            echo "Press any key once Docker Desktop has finished starting..."
+            read -n 1 -s < /dev/tty 2>/dev/null || sleep 5
+            echo
+        else
+            echo -e "${YELLOW}   Start it with: open -a Docker${NC}"
+            echo -e "${YELLOW}   Then re-run any podium command once it is up.${NC}"
+        fi
     fi
 else
     echo -e "${GREEN}✓ Docker already installed${NC}"
