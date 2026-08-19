@@ -8,7 +8,16 @@ services:
       - "PROJECT_PORT:80"
     volumes:
       - .:/usr/share/nginx/htmlPUBLIC
-      - /etc/hosts:/etc/hosts:ro
+      # NOTE: /etc/hosts is deliberately NOT mounted here.
+      #
+      # It used to be, to give containers name resolution for the shared
+      # services. Docker's embedded DNS already does that on a user-defined
+      # network — verified with a container carrying no mount at all, which
+      # still resolved podium-mariadb, podium-redis and other projects by name.
+      #
+      # The mount was worse than redundant: it exposed the host's entire hosts
+      # file inside every project container, and made container behaviour depend
+      # on host state.
     networks:
       default:
         ipv4_address: IPV4_ADDRESS

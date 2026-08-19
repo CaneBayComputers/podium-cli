@@ -218,11 +218,27 @@ fi
 # For new projects, there's no need to shut down containers that don't exist yet
 if [ -f "$PROJECT_DIR/docker-compose.yaml" ] || [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
     echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1) || true
-    else
-        source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME || true
-    fi
+        # Run as a subprocess, NOT sourced.
+        #
+        # shutdown.sh sets `set -e` on line 3. Sourcing it therefore re-enables
+        # errexit in THIS shell, which is why both earlier guards failed: the
+        # `|| true` around the source did nothing on bash 3.2, and an explicit
+        # `set +e` around it was simply overwritten by the sourced file's own
+        # `set -e` before the failure happened.
+        #
+        # shutdown returns non-zero when the container is not running — the
+        # normal case when re-running setup on an existing project — so on macOS
+        # `podium setup <existing>` died with nothing but "Setup failed —
+        # cleaning up partial state...". bash 4+ hid it, because there the
+        # `|| true` suspension really did apply.
+        #
+        # A subprocess contains all of it: its set -e, its exits, its traps. The
+        # dispatcher already invokes it exactly this way for `podium down`.
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            SHUTDOWN_OUTPUT=$("$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME" 2>&1) || true
+        else
+            "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME" || true
+        fi
 else
     echo-green "New project detected. Skipping container shutdown."
 fi
@@ -392,27 +408,17 @@ ORIGINAL_COMPOSE_TMPFILE="/tmp/podium_original_compose_$$.yaml"
 ORIGINAL_COMPOSE_IS_COMPLEX=0
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     cp "$EXISTING_COMPOSE_FILE" "$ORIGINAL_COMPOSE_TMPFILE"
-    ORIGINAL_COMPOSE_IS_COMPLEX=$(python3 - "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null << 'PYEOF'
-import sys, yaml, re
-try:
-    raw = open(sys.argv[1]).read()
-    # Laravel Sail composes require vendor/ to exist before the container can build —
-    # adaptation is impossible. Treat as non-complex so Podium uses its own template.
-    if 'laravel/sail' in raw:
-        print(0); sys.exit(0)
-    doc = yaml.safe_load(raw) or {}
-    services = doc.get('services') or {}
-    if len(services) > 1:
-        print(1); sys.exit(0)
-    for svc in services.values():
-        img = str((svc or {}).get('image', ''))
-        if img and not re.search(r'canebaycomputers/cbc', img, re.I):
-            print(1); sys.exit(0)
-    print(0)
-except Exception:
-    print(0)
-PYEOF
-)
+    # `|| true` below: a non-zero exit here must not kill setup. That is exactly
+    # how a missing python module turned into "Setup failed" with no explanation.
+    # Runs from a file rather than an inline heredoc: bash 3.2 (macOS) could not
+    # parse `$( ... << 'PYEOF' ... )` once the python contained a quote-heavy
+    # expression, failing the whole script with "unexpected EOF". bash 5 parsed
+    # it fine, so it passed every check on Linux.
+    #
+    # `|| true` because a non-zero exit here must never end setup — that is
+    # exactly how a missing python module became "Setup failed" with no reason.
+    ORIGINAL_COMPOSE_IS_COMPLEX=$(python3 "$DEV_DIR/scripts/compose_complexity.py" "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null) || true
+    [ -n "$ORIGINAL_COMPOSE_IS_COMPLEX" ] || ORIGINAL_COMPOSE_IS_COMPLEX=1
 fi
 
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then

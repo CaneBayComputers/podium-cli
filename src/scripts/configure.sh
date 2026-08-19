@@ -542,14 +542,20 @@ source "$DEV_DIR/scripts/start_services.sh" $START_SERVICES_OPTIONS
 if [[ "$JSON_OUTPUT" != "1" ]]; then
     echo-return
     echo-return
-    echo-cyan "Configuring AI agent (podium ai-set) ..."; echo-white
+    echo-cyan "Checking AI agent ..."; echo-white
     echo-return
-    # ai_set treats a closed stdin as non-interactive and keeps existing config.
-    if [[ "$NON_INTERACTIVE" == "1" ]]; then
-        "$DEV_DIR/scripts/ai_set.sh" < /dev/null
-    else
-        "$DEV_DIR/scripts/ai_set.sh"
-    fi
+    # Always non-interactive, even from a terminal.
+    #
+    # The picker asked people to choose a CLI agent, then a model, then an API
+    # base and key, in the middle of first-time setup and before they had any
+    # reason to care. It read as a required decision rather than an optional
+    # one, and it is the step people got stuck on.
+    #
+    # The default — claude, no model override — is right for almost everyone,
+    # and `podium ai-set` exists for the rest. A closed stdin makes ai_set keep
+    # whatever is already configured and print it, so this still confirms what
+    # the agent is without demanding an answer.
+    "$DEV_DIR/scripts/ai_set.sh" < /dev/null
 fi
 
 cd "$ORIG_DIR"

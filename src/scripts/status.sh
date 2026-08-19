@@ -358,16 +358,31 @@ get_project_status() {
     if [ "$(docker ps -q -f name=$proj_name)" ]; then
         project_data=$(echo "$project_data" | jq '. + {docker_running: true}')
         
-        if ping_status "$proj_name"; then
-            ping_state="ok"
+        # "not_applicable" rather than "failed" where the host cannot route to
+        # container IPs at all. Reporting failed would be true and useless: a
+        # consumer cannot tell a broken project from a platform that has never
+        # supported this route, and would mark every healthy macOS project down.
+        if podium_host_reaches_containers; then
+            if ping_status "$proj_name"; then
+                ping_state="ok"
+            else
+                ping_state="failed"
+            fi
         else
-            ping_state="failed"
+            ping_state="not_applicable"
         fi
         
         # Port mapping check (only if running)
         if docker port "$proj_name" 80/tcp > /dev/null 2>&1; then
             project_data=$(echo "$project_data" | jq '. + {port_mapped: true}')
-            if curl_status "http://$proj_name"; then
+            # Probe whichever URL actually works on this host — the hostname on
+            # Linux, the published port on macOS.
+            if podium_host_reaches_containers; then
+                _probe_url="http://$proj_name"
+            else
+                _probe_url="http://localhost:$EXT_PORT"
+            fi
+            if curl_status "$_probe_url"; then
                 http_state="ok"
             else
                 http_state="failed"
@@ -384,7 +399,15 @@ get_project_status() {
     
     # URLs
     if [ -n "$HOST_ENTRY" ]; then
-        project_data=$(echo "$project_data" | jq --arg local "http://$proj_name" --arg lan "http://$LAN_IP:$EXT_PORT" '. + {local_url: $local, lan_url: $lan}')
+        # local_url has to be a URL that actually works on this host. On macOS
+        # the hostname resolves to a container IP the host cannot route to, so
+        # the published port is the only honest answer.
+        if podium_host_reaches_containers; then
+            _local_url="http://$proj_name"
+        else
+            _local_url="http://localhost:$EXT_PORT"
+        fi
+        project_data=$(echo "$project_data" | jq --arg local "$_local_url" --arg lan "http://$LAN_IP:$EXT_PORT" '. + {local_url: $local, lan_url: $lan}')
     else
         project_data=$(echo "$project_data" | jq '. + {local_url: null, lan_url: null}')
     fi
@@ -448,22 +471,37 @@ project_status() {
     RESOLVED_IP=$(resolve_host "$PROJ_NAME")
   fi
 
-  echo-white -n "PING: "
-  if ping_status "$PROJ_NAME"; then
-    if [ -n "$RESOLVED_IP" ]; then
-        echo-green "OK ($RESOLVED_IP)"
+  # On a host that cannot route to container IPs (macOS), checking the hostname
+  # is guaranteed to fail and tells the user nothing. Check the published port
+  # instead, which is the only route that exists there.
+  if podium_host_reaches_containers; then
+    echo-white -n "PING: "
+    if ping_status "$PROJ_NAME"; then
+      if [ -n "$RESOLVED_IP" ]; then
+          echo-green "OK ($RESOLVED_IP)"
+      else
+          echo-green "OK"
+      fi
     else
-        echo-green "OK"
+      echo-red "FAILED"
+    fi
+
+    echo-white -n "HTTP: "
+    if curl_status "http://$PROJ_NAME"; then
+      echo-green "OK (http://$PROJ_NAME)"
+    else
+      echo-red "FAILED (http://$PROJ_NAME)"
     fi
   else
-    echo-red "FAILED"
-  fi
+    echo-white -n "PING: "
+    echo-cyan "n/a (Docker Desktop keeps container IPs inside a VM)"
 
-  echo-white -n "HTTP: "
-  if curl_status "http://$PROJ_NAME"; then
-    echo-green "OK (http://$PROJ_NAME)"
-  else
-    echo-red "FAILED (http://$PROJ_NAME)"
+    echo-white -n "HTTP: "
+    if curl_status "http://localhost:$EXT_PORT"; then
+      echo-green "OK (http://localhost:$EXT_PORT)"
+    else
+      echo-red "FAILED (http://localhost:$EXT_PORT)"
+    fi
   fi
 
   # Platform-specific URL display
@@ -472,8 +510,12 @@ project_status() {
     # Windows/WSL: Show IP address
     PROJ_IP=$(echo $HOST_ENTRY | cut -d' ' -f 1)
     echo-yellow " http://$PROJ_IP"
+  elif ! podium_host_reaches_containers; then
+    # macOS: the hostname cannot resolve to a reachable address, so offering it
+    # would be handing the user a dead link.
+    echo-yellow " http://localhost:$EXT_PORT"
   else
-    # Linux/Mac: Show project name
+    # Linux: Show project name
     echo-yellow " http://$PROJ_NAME"
   fi
   echo-white -n LAN ACCESS:; echo-yellow " http://$LAN_IP:$EXT_PORT"
@@ -619,92 +661,109 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
 fi
 
 # Traditional text output
-echo-cyan "SHARED SERVICES CONNECTIVITY:"
-echo-return
+# These probe the shared services by container hostname, which only works on a
+# host that can route to container IPs. On macOS none of them can succeed —
+# Docker Desktop keeps containers in a VM — so running them produces a screen
+# of FAILED for services that are healthy, and reports a running MariaDB as
+# "enabled but NOT RUNNING". Say so once instead.
+if podium_host_reaches_containers; then
+    echo-cyan "SHARED SERVICES CONNECTIVITY:"
+    echo-return
 
-if service_running "$MARIADB_CONTAINER_NAME"; then
-    echo-white -n "PING (MariaDB): "
-    ping_host "$MARIADB_CONTAINER_NAME"
-else
-    echo-yellow "PING (MariaDB): skipped (not running)"
-fi
-
-if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
-    echo-white -n "PING (phpMyAdmin): "
-    ping_host "$PHPMYADMIN_CONTAINER_NAME"
-else
-    echo-yellow "PING (phpMyAdmin): skipped (not running)"
-fi
-
-if service_running "$REDIS_CONTAINER_NAME"; then
-    echo-white -n "PING (Redis): "
-    ping_host "$REDIS_CONTAINER_NAME"
-else
-    echo-yellow "PING (Redis): skipped (not running)"
-fi
-
-if service_running "$MEMCACHED_CONTAINER_NAME"; then
-    echo-white -n "PING (Memcached): "
-    ping_host "$MEMCACHED_CONTAINER_NAME"
-else
-    echo-yellow "PING (Memcached): skipped (not running)"
-fi
-
-if service_running "$POSTGRES_CONTAINER_NAME"; then
-    echo-white -n "PING (PostgreSQL): "
-    ping_host "$POSTGRES_CONTAINER_NAME"
-else
-    echo-yellow "PING (PostgreSQL): skipped (not running)"
-fi
-
-if service_running "$MONGO_CONTAINER_NAME"; then
-    echo-white -n "PING (MongoDB): "
-    ping_host "$MONGO_CONTAINER_NAME"
-else
-    echo-yellow "PING (MongoDB): skipped (not running)"
-fi
-
-if service_running "$MAILHOG_CONTAINER_NAME"; then
-    echo-white -n "PING (MailHog): "
-    ping_host "$MAILHOG_CONTAINER_NAME"
-else
-    echo-yellow "PING (MailHog): skipped (not running)"
-fi
-
-# Optional shared services, only reported when this machine has them enabled —
-# otherwise every install would show two permanently-skipped lines for services
-# it deliberately does not run.
-for _opt in ${OPTIONAL_SERVICES:-}; do
-    case "$_opt" in
-        minio)       _opt_host="${MINIO_CONTAINER_NAME:-podium-minio}"; _opt_label="MinIO" ;;
-        meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}"; _opt_label="Meilisearch" ;;
-        *)           _opt_host="podium-$_opt"; _opt_label="$_opt" ;;
-    esac
-    if service_running "$_opt_host"; then
-        echo-white -n "PING ($_opt_label): "
-        ping_host "$_opt_host"
+    if service_running "$MARIADB_CONTAINER_NAME"; then
+        echo-white -n "PING (MariaDB): "
+        ping_host "$MARIADB_CONTAINER_NAME"
     else
-        echo-yellow "PING ($_opt_label): enabled but NOT RUNNING — try 'podium start-services'"
+        echo-yellow "PING (MariaDB): skipped (not running)"
     fi
-done
 
-echo-return
-divider
-echo-cyan "SHARED SERVICE HTTP CHECKS:"
-echo-return
+    if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
+        echo-white -n "PING (phpMyAdmin): "
+        ping_host "$PHPMYADMIN_CONTAINER_NAME"
+    else
+        echo-yellow "PING (phpMyAdmin): skipped (not running)"
+    fi
 
-if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
-    echo-white -n "HTTP (phpMyAdmin): "
-    curl_check "http://$PHPMYADMIN_CONTAINER_NAME/"
+    if service_running "$REDIS_CONTAINER_NAME"; then
+        echo-white -n "PING (Redis): "
+        ping_host "$REDIS_CONTAINER_NAME"
+    else
+        echo-yellow "PING (Redis): skipped (not running)"
+    fi
+
+    if service_running "$MEMCACHED_CONTAINER_NAME"; then
+        echo-white -n "PING (Memcached): "
+        ping_host "$MEMCACHED_CONTAINER_NAME"
+    else
+        echo-yellow "PING (Memcached): skipped (not running)"
+    fi
+
+    if service_running "$POSTGRES_CONTAINER_NAME"; then
+        echo-white -n "PING (PostgreSQL): "
+        ping_host "$POSTGRES_CONTAINER_NAME"
+    else
+        echo-yellow "PING (PostgreSQL): skipped (not running)"
+    fi
+
+    if service_running "$MONGO_CONTAINER_NAME"; then
+        echo-white -n "PING (MongoDB): "
+        ping_host "$MONGO_CONTAINER_NAME"
+    else
+        echo-yellow "PING (MongoDB): skipped (not running)"
+    fi
+
+    if service_running "$MAILHOG_CONTAINER_NAME"; then
+        echo-white -n "PING (MailHog): "
+        ping_host "$MAILHOG_CONTAINER_NAME"
+    else
+        echo-yellow "PING (MailHog): skipped (not running)"
+    fi
+
+    # Optional shared services, only reported when this machine has them enabled —
+    # otherwise every install would show two permanently-skipped lines for services
+    # it deliberately does not run.
+    for _opt in ${OPTIONAL_SERVICES:-}; do
+        case "$_opt" in
+            minio)       _opt_host="${MINIO_CONTAINER_NAME:-podium-minio}"; _opt_label="MinIO" ;;
+            meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}"; _opt_label="Meilisearch" ;;
+            *)           _opt_host="podium-$_opt"; _opt_label="$_opt" ;;
+        esac
+        if service_running "$_opt_host"; then
+            echo-white -n "PING ($_opt_label): "
+            ping_host "$_opt_host"
+        else
+            echo-yellow "PING ($_opt_label): enabled but NOT RUNNING — try 'podium start-services'"
+        fi
+    done
+
+    echo-return
+    divider
+    echo-cyan "SHARED SERVICE HTTP CHECKS:"
+    echo-return
+
+    if service_running "$PHPMYADMIN_CONTAINER_NAME"; then
+        echo-white -n "HTTP (phpMyAdmin): "
+        curl_check "http://$PHPMYADMIN_CONTAINER_NAME/"
+    else
+        echo-yellow "HTTP (phpMyAdmin): skipped (not running)"
+    fi
+
+    if service_running "$MAILHOG_CONTAINER_NAME"; then
+        echo-white -n "HTTP (MailHog): "
+        curl_check "http://$MAILHOG_CONTAINER_NAME:8025/"
+    else
+        echo-yellow "HTTP (MailHog): skipped (not running)"
+    fi
 else
-    echo-yellow "HTTP (phpMyAdmin): skipped (not running)"
-fi
-
-if service_running "$MAILHOG_CONTAINER_NAME"; then
-    echo-white -n "HTTP (MailHog): "
-    curl_check "http://$MAILHOG_CONTAINER_NAME:8025/"
-else
-    echo-yellow "HTTP (MailHog): skipped (not running)"
+    echo-return
+    divider
+    echo-cyan "SHARED SERVICES CONNECTIVITY:"
+    echo-return
+    echo-white "  Not checked from the host: Docker Desktop keeps container IPs inside a"
+    echo-white "  VM, so they are unreachable from macOS by design. Containers still reach"
+    echo-white "  each other by hostname normally — this affects host-side checks only."
+    echo-return
+    echo-white "  Service state above reflects whether each container is running."
 fi
 
 divider
