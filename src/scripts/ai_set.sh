@@ -192,27 +192,27 @@ select_ai_agent() {
         case "$AI_AGENT_CHOICE" in
             1)
                 AI_AGENT="codex"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
                 break
                 ;;
             2)
                 AI_AGENT="claude"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
                 break
                 ;;
             3)
                 AI_AGENT="gemini"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
                 break
                 ;;
             4)
                 AI_AGENT="aider"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
                 break
                 ;;
             5)
                 AI_AGENT="qwen"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
                 break
                 ;;
             *)
@@ -519,7 +519,7 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
 
     # Persist configuration
     if [[ -n "$AI_AGENT" ]]; then
-        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
     fi
 
     # Model and endpoint are written unconditionally: switching agents clears
@@ -565,7 +565,7 @@ if [[ -n "$AI_AGENT" ]]; then
         select_ai_agent
     else
         # Ensure current agent is persisted immediately as well
-        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
     fi
 else
     select_ai_agent
@@ -600,7 +600,7 @@ esac
 
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
-    sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=$AI_AGENT" /etc/podium-cli/.env
+    sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
 fi
 
 # Written unconditionally so that clearing a value (switching agents, or

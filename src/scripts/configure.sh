@@ -135,7 +135,7 @@ if [[ -n "$FLAG_VPC_SUBNET" ]]; then
 	VPC_SUBNET="$FLAG_VPC_SUBNET"
 fi
 
-sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=\"$VPC_SUBNET\"" /etc/podium-cli/.env
 
 # Check for and set up docker compose yaml (idempotent — never overwrites)
 if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
@@ -399,8 +399,18 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "E
 fi
 
 # Update .env file with projects directory (handles both commented and uncommented lines)
-sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
-sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
+# MUST be quoted. /etc/podium-cli/.env is `source`d by bash, so an unquoted
+# value containing a space becomes two words: a path like
+# /Users/First Last/podium-projects writes
+#     PROJECTS_DIR=/Users/First Last/podium-projects
+# which assigns "/Users/First" and then tries to RUN "Last/podium-projects".
+# Every later podium command then fails with "command not found" — including
+# `podium configure` itself, which sources .env before it can rewrite it, so
+# there is no way back out through the CLI.
+#
+# Same reasoning already applied to OPTIONAL_SERVICES in enable_service.sh.
+sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
+sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
 
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo

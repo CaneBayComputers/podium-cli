@@ -16,7 +16,11 @@ get_projects_dir() {
     
     # First check /etc/podium-cli/.env file (primary config location)
     if [ -f "/etc/podium-cli/.env" ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2)
+        # The value is written quoted (a path may contain a space, and .env is
+        # sourced by bash), so strip the surrounding quotes when reading it back
+        # this way. Quotes only — NOT spaces, which are legitimate in a path.
+        # `-f2-` rather than `-f2` so a value containing '=' survives.
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -25,7 +29,7 @@ get_projects_dir() {
         fi
     # Fallback to old location for backward compatibility
     elif [ -f "$podium_root/docker-stack/.env" ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2)
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -36,7 +40,7 @@ get_projects_dir() {
     
     # Fallback to legacy ~/.podium/config for backward compatibility
     if [ -f ~/.podium/config ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config | cut -d'=' -f2)
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             echo "$PROJECTS_DIR"
             return
