@@ -432,7 +432,11 @@ if [ -f "$COMPOSE_FILE" ]; then
     RENDERED_COMPOSE=$(mktemp)
     # Render with the machine's enabled profiles, or optional services would be
     # absent from the output and never get a /etc/hosts entry.
-    mapfile -t _cfg_profiles < <(podium_profile_args)
+    # mapfile is bash 4+; macOS ships bash 3.2.57 and always will (Apple froze it
+    # in 2007 over GPLv3). Read into the array by hand so these scripts run on the
+    # stock /bin/bash rather than needing a newer one installed first.
+    _cfg_profiles=()
+    while IFS= read -r _cfg_line; do _cfg_profiles+=("$_cfg_line"); done < <(podium_profile_args)
     if docker compose -f "$COMPOSE_FILE" "${_cfg_profiles[@]}" config > "$RENDERED_COMPOSE" 2>/dev/null; then
         SOURCE_FILE="$RENDERED_COMPOSE"
     else

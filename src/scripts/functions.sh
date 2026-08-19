@@ -95,11 +95,16 @@ dockerup() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         # Clear the log file first, then pipe Docker output to temp file for JSON mode
         > /tmp/podium-docker-progress.log
-        mapfile -t _profiles < <(podium_profile_args)
+        # mapfile is bash 4+; macOS ships bash 3.2.57 and always will (Apple froze it
+        # in 2007 over GPLv3). Read into the array by hand so these scripts run on the
+        # stock /bin/bash rather than needing a newer one installed first.
+        _profiles=()
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
         docker compose "${_profiles[@]}" up -d "$@" > /tmp/podium-docker-progress.log 2>&1
     else
         # Interactive mode - show normal progress
-        mapfile -t _profiles < <(podium_profile_args)
+        _profiles=()
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
         docker compose "${_profiles[@]}" up -d "$@"
     fi
 }
@@ -766,7 +771,10 @@ prompt_github_creation() {
             read OWNER_CHOICE
 
             if [ "$OWNER_CHOICE" = "2" ]; then
-                mapfile -t ORGS < <(gh api user/orgs --jq '.[].login' 2>/dev/null | sort -f)
+                # mapfile is bash 4+; macOS ships bash 3.2.
+                ORGS=()
+                while IFS= read -r _org_line; do ORGS+=("$_org_line"); done \
+                    < <(gh api user/orgs --jq '.[].login' 2>/dev/null | sort -f)
 
                 if [ "${#ORGS[@]}" -eq 0 ]; then
                     echo-yellow "No organizations found on your GitHub account. Using personal account."
@@ -2586,7 +2594,9 @@ ensure_services_running() {
         # nothing is persisted yet — see below.
         ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
           OPTIONAL_SERVICES="$current"
-          mapfile -t _p < <(podium_profile_args)
+          # mapfile is bash 4+; macOS ships bash 3.2.
+          _p=()
+          while IFS= read -r _p_line; do _p+=("$_p_line"); done < <(podium_profile_args)
           docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
     fi
 
@@ -2706,4 +2716,60 @@ podium_services_json_fragment() {
         done
     done
     printf ', "services_enabled": [%s], "admin_uis_suggested": [%s]' "$svc_json" "$ui_json"
+}
+
+# The whole x-metadata block as a JSON object, for --json-output consumers.
+#
+# Exists so nothing downstream has to open and parse docker-compose.yaml itself.
+# The GUI was doing exactly that — one filesystem read per project on a poll
+# timer — which is merely wasteful locally and becomes an SFTP round trip per
+# project once it manages remote hosts.
+#
+# One python call per project rather than one per key: the five keys across
+# seventeen projects would otherwise be eighty-five interpreter startups.
+#
+# `name` is emitted as `display_name`. In the compose block it is the human
+# label, but `name` at the top level of the status JSON is the slug, and
+# flattening them would collide. The raw `status` value is passed through
+# untouched — only the exact string "disabled" means disabled, and deciding that
+# is the consumer's business, not ours.
+#
+# Always prints a JSON object; `{}` when there is no block, which is the common
+# case for projects created before x-metadata existed.
+read_x_metadata_json() {
+    local file="$1"
+    if [ -z "$file" ] || [ ! -f "$file" ]; then printf '{}'; return 0; fi
+    python3 - "$file" << 'PYEOF' 2>/dev/null || printf '{}'
+import json, re, sys
+
+try:
+    lines = open(sys.argv[1], errors="replace").read().splitlines()
+except Exception:
+    print("{}")
+    raise SystemExit
+
+mi = next((i for i, l in enumerate(lines) if re.match(r'^\s*x-metadata:\s*$', l)), None)
+if mi is None:
+    print("{}")
+    raise SystemExit
+
+indent = len(lines[mi]) - len(lines[mi].lstrip())
+out = {}
+for line in lines[mi + 1:]:
+    if not line.strip():
+        continue
+    if len(line) - len(line.lstrip()) <= indent:
+        break
+    m = re.match(r'^\s*([A-Za-z0-9_-]+):\s*(.*)$', line)
+    if not m:
+        continue
+    key, val = m.group(1), m.group(2).strip()
+    # Strip one layer of matching quotes; values are written quoted when they
+    # contain spaces or emoji.
+    if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
+        val = val[1:-1]
+    out["display_name" if key == "name" else key] = val
+
+print(json.dumps(out, ensure_ascii=False))
+PYEOF
 }
