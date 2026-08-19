@@ -218,25 +218,27 @@ fi
 # For new projects, there's no need to shut down containers that don't exist yet
 if [ -f "$PROJECT_DIR/docker-compose.yaml" ] || [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
     echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
-    # errexit is toggled explicitly rather than relying on `|| true`.
-    #
-    # On bash 4+ a failure inside a sourced file is ignored when the `source` is
-    # part of an || list. On bash 3.2 — which is what macOS ships and always
-    # will — it is NOT: the failing command aborts the caller regardless of the
-    # guard. shutdown returns non-zero for a project whose container is not
-    # running, which is the normal case when re-running setup, so on macOS
-    # `podium setup` on an existing project died on the spot with only
-    # "Setup failed — cleaning up partial state..." to show for it.
-    #
-    # Verified directly: the same three-line script continues under bash 5 and
-    # aborts under 3.2.57.
-    set +e
-    if [[ "$JSON_OUTPUT" == "1" ]]; then
-        SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1)
-    else
-        source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME
-    fi
-    set -e
+        # Run as a subprocess, NOT sourced.
+        #
+        # shutdown.sh sets `set -e` on line 3. Sourcing it therefore re-enables
+        # errexit in THIS shell, which is why both earlier guards failed: the
+        # `|| true` around the source did nothing on bash 3.2, and an explicit
+        # `set +e` around it was simply overwritten by the sourced file's own
+        # `set -e` before the failure happened.
+        #
+        # shutdown returns non-zero when the container is not running — the
+        # normal case when re-running setup on an existing project — so on macOS
+        # `podium setup <existing>` died with nothing but "Setup failed —
+        # cleaning up partial state...". bash 4+ hid it, because there the
+        # `|| true` suspension really did apply.
+        #
+        # A subprocess contains all of it: its set -e, its exits, its traps. The
+        # dispatcher already invokes it exactly this way for `podium down`.
+        if [[ "$JSON_OUTPUT" == "1" ]]; then
+            SHUTDOWN_OUTPUT=$("$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME" 2>&1) || true
+        else
+            "$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME" || true
+        fi
 else
     echo-green "New project detected. Skipping container shutdown."
 fi
