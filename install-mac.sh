@@ -92,6 +92,36 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
 fi
 
 # Check if running as root
+# Re-exec from a real file when we were piped into bash.
+#
+# The documented install is `curl ... | bash`, which makes STDIN THE SCRIPT
+# ITSELF. Any password prompt or `read` during the run then consumes installer
+# source instead of user input. Observed on a real Mac: Homebrew's cask install
+# ran its own sudo, sudo read the "password" from stdin, ate three lines of this
+# file as three failed attempts, and corrupted everything after it --
+#
+#     sudo ln -sf "$INSTALL_DIR/src/podiusudo: 3 incorrect password attempts
+#
+# -- with Docker Desktop rolled back and nothing installed. The user's password
+# was never wrong.
+#
+# Redirecting stdin in place is not an option: bash is still reading the script
+# from it. So fetch a real copy and re-exec with stdin on the terminal.
+PODIUM_INSTALLER_URL="${PODIUM_INSTALLER_URL:-https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh}"
+if [ ! -t 0 ] && [ -z "${PODIUM_INSTALLER_REEXEC:-}" ] && [ -e /dev/tty ]; then
+    _self="$(mktemp -t podium-install)" || _self=""
+    if [ -n "$_self" ] && curl -fsSL "$PODIUM_INSTALLER_URL" -o "$_self" 2>/dev/null && [ -s "$_self" ]; then
+        export PODIUM_INSTALLER_REEXEC=1
+        exec bash "$_self" "$@" < /dev/tty
+    fi
+    # Could not re-exec (offline, or no terminal). Carry on rather than refuse,
+    # but say what will happen, because the failure is otherwise baffling.
+    echo "Warning: running from a pipe. If anything asks for a password it may fail." >&2
+    echo "         If that happens, download and run instead:" >&2
+    echo "           curl -fsSL $PODIUM_INSTALLER_URL -o /tmp/install-mac.sh" >&2
+    echo "           bash /tmp/install-mac.sh" >&2
+fi
+
 if [[ $EUID -eq 0 ]]; then
    echo -e "${RED}Error: This script should not be run as root${NC}"
    echo "Please run as a regular user. The script will ask for sudo when needed."
