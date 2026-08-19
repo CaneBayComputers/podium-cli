@@ -745,7 +745,7 @@ else
     echo-cyan "SHARED SERVICES CONNECTIVITY:"
     echo-return
     echo-white "  Not checked from the host: Docker Desktop keeps container IPs inside a"
-    echo-white "  VM, so they are unreachable from macOS by design. Containers still reach",
+    echo-white "  VM, so they are unreachable from macOS by design. Containers still reach"
     echo-white "  each other by hostname normally — this affects host-side checks only."
     echo-return
     echo-white "  Service state above reflects whether each container is running."
