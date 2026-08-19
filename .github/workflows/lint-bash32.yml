@@ -1,0 +1,20 @@
+name: bash 3.2 portability
+
+# macOS ships bash 3.2.57 and always will, so a bash 4+ construct anywhere in
+# the CLI is a crash on every Mac. This runs on ubuntu because it is a grep, not
+# an execution test -- the point is to catch the construct before it reaches a
+# machine that cannot run it.
+
+on:
+  push:
+    branches: [master, dev, beta]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject bash 4+ constructs
+        run: ./tests/lint-bash32.sh
