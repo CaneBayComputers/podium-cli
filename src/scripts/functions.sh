@@ -2773,3 +2773,25 @@ for line in lines[mi + 1:]:
 print(json.dumps(out, ensure_ascii=False))
 PYEOF
 }
+
+# Can the HOST reach container IPs directly?
+#
+# Linux: yes. Docker's bridge sits on the host's own network stack, which is
+# exactly what Podium's /etc/hosts entries point at, so http://<project> works.
+#
+# macOS: no, and it never will. Docker Desktop runs containers inside a VM, so a
+# container IP like 10.196.230.122 is unreachable from the host regardless of
+# what /etc/hosts says. Only published ports cross that boundary. Verified on a
+# real Mac: the container answers on http://localhost:<published-port> while its
+# own IP does not respond to ping or curl at all.
+#
+# Without this distinction `podium status` on a Mac reports PING: FAILED and
+# HTTP: FAILED for every project and every shared service, and calls a running
+# MariaDB "enabled but NOT RUNNING" — all true statements that add up to a
+# healthy install looking broken.
+podium_host_reaches_containers() {
+    case "$OSTYPE" in
+        darwin*) return 1 ;;
+        *)       return 0 ;;
+    esac
+}
