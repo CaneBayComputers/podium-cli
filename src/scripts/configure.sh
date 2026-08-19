@@ -211,7 +211,12 @@ echo-return; echo-cyan 'Setting up Git ...'; echo-white
 
 
 
-# Configure Git. An explicit --git-name/--git-email wins in EVERY mode; only
+# Ask for a name and email, NOT "your Git name and email". These are stored as
+# the git identity, but naming the tool in the prompt confused people who did
+# not think of themselves as setting up git -- they are just telling Podium who
+# they are. The --git-name/--git-email flags keep their names for compatibility.
+#
+# An explicit --git-name/--git-email wins in EVERY mode; only
 # fall back to prompting when the flag wasn't given, git doesn't already know
 # the value, and we're interactive. (These flags used to be honored only under
 # --json-output, so they silently did nothing on a normal run.)
@@ -219,11 +224,11 @@ if [[ -n "$GIT_NAME" ]]; then
 
 	git config --global user.name "$GIT_NAME"
 
-	echo-cyan "Git name set to: $GIT_NAME"
+	echo-cyan "Name set to: $GIT_NAME"
 
 elif [[ "$JSON_OUTPUT" != "1" && "$NON_INTERACTIVE" != "1" ]] && ! git config user.name > /dev/null 2>&1; then
 
-	echo-yellow -ne 'Enter your full name for Git commits: '
+	echo-yellow -ne 'Full name: '
 
 	echo-white -ne
 
@@ -243,11 +248,11 @@ if [[ -n "$GIT_EMAIL" ]]; then
 
 	git config --global user.email "$GIT_EMAIL"
 
-	echo-cyan "Git email set to: $GIT_EMAIL"
+	echo-cyan "Email set to: $GIT_EMAIL"
 
 elif [[ "$JSON_OUTPUT" != "1" && "$NON_INTERACTIVE" != "1" ]] && ! git config user.email > /dev/null 2>&1; then
 
-	echo-yellow -ne 'Enter your email address for Git commits: '
+	echo-yellow -ne 'Email address: '
 
 	echo-white -ne
 
