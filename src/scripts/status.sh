@@ -132,7 +132,8 @@ fi
 
 # Docker handles port mapping automatically
 
-HOSTS=$(cat /etc/hosts)
+# /etc/hosts is no longer read or written. Addresses come from each project's
+# own compose file, which is what actually claims them.
 
 RUNNING_CONTAINERS=$(docker ps --format "{{.Names}}")
 
@@ -342,12 +343,12 @@ get_project_status() {
 
     # Host entry check
     local resolved_ip=""
-    if HOST_ENTRY=$(printf "%s\n" "$HOSTS" | grep " $proj_name$"); then
-        EXT_PORT=$(echo $HOST_ENTRY | cut -d'.' -f 4 | cut -d' ' -f 1)
-        resolved_ip=$(echo $HOST_ENTRY | awk '{print $1}')
-        project_data=$(echo "$project_data" | jq --arg port "$EXT_PORT" '. + {host_entry: true, external_port: $port}')
+    EXT_PORT="$(podium_project_port "$proj_name")"
+    resolved_ip="$(podium_project_ip "$proj_name")"
+    if [ -n "$EXT_PORT" ]; then
+        project_data=$(echo "$project_data" | jq --arg port "$EXT_PORT" --arg ip "$resolved_ip" '. + {external_port: $port, project_ip: $ip}')
     else
-        project_data=$(echo "$project_data" | jq '. + {host_entry: false, external_port: null}')
+        project_data=$(echo "$project_data" | jq '. + {external_port: null, project_ip: null}')
     fi
     
     project_data=$(echo "$project_data" | jq --arg ip "$resolved_ip" '. + {resolved_ip: (if ($ip|length>0) then $ip else null end)}')
@@ -378,7 +379,7 @@ get_project_status() {
             # Probe whichever URL actually works on this host — the hostname on
             # Linux, the published port on macOS.
             if podium_host_reaches_containers; then
-                _probe_url="http://$proj_name"
+                _probe_url="http://$resolved_ip"
             else
                 _probe_url="http://localhost:$EXT_PORT"
             fi
@@ -398,12 +399,16 @@ get_project_status() {
     project_data=$(echo "$project_data" | jq --arg ping "$ping_state" --arg http "$http_state" '. + {ping_status: $ping, http_status: $http}')
     
     # URLs
-    if [ -n "$HOST_ENTRY" ]; then
-        # local_url has to be a URL that actually works on this host. On macOS
-        # the hostname resolves to a container IP the host cannot route to, so
-        # the published port is the only honest answer.
-        if podium_host_reaches_containers; then
-            _local_url="http://$proj_name"
+    if [ -n "$EXT_PORT" ]; then
+        # local_url is always an address now, never a hostname — Podium no longer
+        # writes /etc/hosts, so a name would not resolve anywhere.
+        #
+        # Where the host can route to container IPs (Linux, and inside WSL) the
+        # container address is the direct route. Where it cannot (macOS, and
+        # Windows looking into WSL) the published port on localhost is the only
+        # one that exists.
+        if podium_host_reaches_containers && [ -n "$resolved_ip" ]; then
+            _local_url="http://$resolved_ip"
         else
             _local_url="http://localhost:$EXT_PORT"
         fi
@@ -435,8 +440,10 @@ project_status() {
     echo-green " FOUND"
   fi
 
-  echo-white -n HOST ENTRY: 
-  if ! HOST_ENTRY=$(printf "%s\n" "$HOSTS" | grep " $PROJ_NAME$"); then
+  echo-white -n ADDRESS: 
+  EXT_PORT="$(podium_project_port "$PROJ_NAME")"
+  RESOLVED_IP="$(podium_project_ip "$PROJ_NAME")"
+  if [ -z "$EXT_PORT" ]; then
     echo-red " NOT FOUND"
     echo-white -n SUGGESTION:; echo-yellow " cd \$(podium projects-dir)/$PROJ_NAME && podium setup $PROJ_NAME"
     return 1
@@ -454,7 +461,7 @@ project_status() {
   fi
 
   echo-white -n DOCKER PORT MAPPING:
-  EXT_PORT=$(echo $HOST_ENTRY | cut -d'.' -f 4 | cut -d' ' -f 1)
+  # EXT_PORT / RESOLVED_IP already read from the compose file above.
   # Check if Docker container has port mapping
   if ! docker port "$PROJ_NAME" 80/tcp > /dev/null 2>&1; then
     echo-red " NOT MAPPED"
@@ -464,33 +471,26 @@ project_status() {
     echo-green " MAPPED"
   fi
 
-  RESOLVED_IP=""
-  if [ -n "$HOST_ENTRY" ]; then
-    RESOLVED_IP=$(echo $HOST_ENTRY | awk '{print $1}')
-  else
-    RESOLVED_IP=$(resolve_host "$PROJ_NAME")
-  fi
+
 
   # On a host that cannot route to container IPs (macOS), checking the hostname
   # is guaranteed to fail and tells the user nothing. Check the published port
   # instead, which is the only route that exists there.
   if podium_host_reaches_containers; then
+    # Probe the address, not the name. Podium no longer writes /etc/hosts, so
+    # the project name resolves nowhere and testing it would always fail.
     echo-white -n "PING: "
-    if ping_status "$PROJ_NAME"; then
-      if [ -n "$RESOLVED_IP" ]; then
-          echo-green "OK ($RESOLVED_IP)"
-      else
-          echo-green "OK"
-      fi
+    if [ -n "$RESOLVED_IP" ] && ping_status "$RESOLVED_IP"; then
+      echo-green "OK ($RESOLVED_IP)"
     else
       echo-red "FAILED"
     fi
 
     echo-white -n "HTTP: "
-    if curl_status "http://$PROJ_NAME"; then
-      echo-green "OK (http://$PROJ_NAME)"
+    if curl_status "http://$RESOLVED_IP"; then
+      echo-green "OK (http://$RESOLVED_IP)"
     else
-      echo-red "FAILED (http://$PROJ_NAME)"
+      echo-red "FAILED (http://$RESOLVED_IP)"
     fi
   else
     echo-white -n "PING: "
@@ -504,21 +504,22 @@ project_status() {
     fi
   fi
 
-  # Platform-specific URL display
-  echo-white -n LOCAL ACCESS:
-  if [[ -n "$WSL_DISTRO_NAME" ]] || [[ "$OS" == "Windows_NT" ]] || [[ -f /proc/version ]] && grep -qi microsoft /proc/version; then
-    # Windows/WSL: Show IP address
-    PROJ_IP=$(echo $HOST_ENTRY | cut -d' ' -f 1)
-    echo-yellow " http://$PROJ_IP"
-  elif ! podium_host_reaches_containers; then
-    # macOS: the hostname cannot resolve to a reachable address, so offering it
-    # would be handing the user a dead link.
-    echo-yellow " http://localhost:$EXT_PORT"
+  # Two addresses, always shown, never a hostname — Podium no longer writes
+  # /etc/hosts, so a name would resolve nowhere.
+  #
+  # LOCAL is the route from this machine; LAN is the route from another machine
+  # on the network. They differ, and conflating them is how someone ends up
+  # sending a colleague a link only they can open.
+  echo-white -n "LOCAL ACCESS:"
+  if podium_host_reaches_containers && [ -n "$RESOLVED_IP" ]; then
+    # Linux, and inside WSL: the container address is directly routable.
+    echo-yellow " http://$RESOLVED_IP"
   else
-    # Linux: Show project name
-    echo-yellow " http://$PROJ_NAME"
+    # macOS, and Windows looking into WSL: container IPs live inside a VM, so
+    # the published port is the only way in.
+    echo-yellow " http://localhost:$EXT_PORT"
   fi
-  echo-white -n LAN ACCESS:; echo-yellow " http://$LAN_IP:$EXT_PORT"
+  echo-white -n "LAN ACCESS:  "; echo-yellow " http://$LAN_IP:$EXT_PORT"
 }
 
 

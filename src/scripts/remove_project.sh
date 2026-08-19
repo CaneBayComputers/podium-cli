@@ -116,7 +116,7 @@ if [ -z "$PROJECT_NAME" ]; then
 fi
 
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
-HOSTS_FILE="/etc/hosts"
+# No /etc/hosts cleanup: Podium does not write that file any more.
 
 debug "Project directory: $PROJECT_DIR"
 debug "Force trash project: $FORCE_TRASH_PROJECT"
@@ -258,18 +258,12 @@ else
     echo-white
 fi
 
-# 3. Remove Hosts File Entry
-debug "Starting step 3: Removing hosts file entry"
-echo-cyan "Removing hosts file entry for the project..."
-echo-white
-if grep -q " $PROJECT_NAME\$" "$HOSTS_FILE"; then
-    sudo-podium-sed "/ $PROJECT_NAME\$/d" "$HOSTS_FILE"
-    echo-green "Hosts file entry removed."
-    echo-white
-else
-    echo-yellow "Hosts file entry not found. Skipping hosts file update."
-    echo-white
-fi
+# 3. (was: remove the /etc/hosts entry)
+#
+# Nothing to do. Podium no longer writes /etc/hosts, so there is no entry to
+# clean up. Installs that predate this may still have stale entries; they are
+# harmless — the name simply resolves to an address with nothing behind it —
+# and removing them would need the sudo this change exists to avoid.
 
 # 4. Delete Docker Container
 debug "Starting step 4: Deleting Docker container"

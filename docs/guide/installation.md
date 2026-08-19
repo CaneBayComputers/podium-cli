@@ -6,7 +6,21 @@ nav_order: 2
 
 # Installation
 
-Podium runs on Linux and macOS. Windows is not supported — WSL may work but issues there will not be addressed.
+Podium runs on Linux, macOS, and Windows via WSL2.
+
+On Windows, `install-windows.ps1` enables WSL2, installs Ubuntu, and installs
+Podium inside it. It runs in two stages because enabling the WSL Windows
+features needs a reboot; the installer schedules itself to resume automatically
+after you log back in, so you reboot once and it finishes on its own. Run it
+from an elevated PowerShell.
+
+Two things behave differently on Windows:
+
+- **WSL shuts an idle distro down and stops its containers with it.** Keep a
+  terminal open, or run `wsl -d Ubuntu-24.04 -u root -e sleep infinity`.
+- **Browse projects with the LAN ACCESS address `podium status` prints.** It is
+  the WSL VM's address, and it changes when WSL restarts — read it from status
+  rather than bookmarking it.
 
 ---
 
@@ -20,6 +34,7 @@ Pick the line for your platform, then run `podium configure` once.
 | Fedora / RHEL / Rocky / Alma | `curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-fedora.sh \| bash` |
 | Arch / Manjaro / EndeavourOS | `curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh \| bash` |
 | macOS | `curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh \| bash` |
+| Windows (via WSL2) | `irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 \| iex` |
 
 Then, on every platform:
 

@@ -571,11 +571,11 @@ fi
 if [ "$FOLD" = "1" ]; then
     cd "$PROJECTS_DIR_PATH/$PROJECT_NAME"
 
-    # Read the allocation back from /etc/hosts rather than relying on
+    # Read the allocation back from the project's compose rather than relying on
     # setup_project's variables: in JSON mode it runs in a subshell, so its
     # locals never reach this scope.
-    FOLD_IP=$(grep -m1 "[[:space:]]$PROJECT_NAME\$" /etc/hosts 2>/dev/null | awk '{print $1}')
-    FOLD_PORT="${FOLD_IP##*.}"
+    FOLD_IP="$(podium_project_ip "$PROJECT_NAME")"
+    FOLD_PORT="$(podium_project_port "$PROJECT_NAME")"
 
     if [ -z "$FOLD_IP" ]; then
         echo-yellow "Could not determine the allocated IP for $PROJECT_NAME — skipping fold."

@@ -135,7 +135,7 @@ if [[ -n "$FLAG_VPC_SUBNET" ]]; then
 	VPC_SUBNET="$FLAG_VPC_SUBNET"
 fi
 
-sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=$VPC_SUBNET" /etc/podium-cli/.env
+sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=\"$VPC_SUBNET\"" /etc/podium-cli/.env
 
 # Check for and set up docker compose yaml (idempotent — never overwrites)
 if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
@@ -399,8 +399,18 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "E
 fi
 
 # Update .env file with projects directory (handles both commented and uncommented lines)
-sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
-sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=$PROJECTS_DIR" /etc/podium-cli/.env
+# MUST be quoted. /etc/podium-cli/.env is `source`d by bash, so an unquoted
+# value containing a space becomes two words: a path like
+# /Users/First Last/podium-projects writes
+#     PROJECTS_DIR=/Users/First Last/podium-projects
+# which assigns "/Users/First" and then tries to RUN "Last/podium-projects".
+# Every later podium command then fails with "command not found" — including
+# `podium configure` itself, which sources .env before it can rewrite it, so
+# there is no way back out through the CLI.
+#
+# Same reasoning already applied to OPTIONAL_SERVICES in enable_service.sh.
+sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
+sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
 
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo
@@ -418,88 +428,16 @@ echo-white
 
 
 ###############################
-# Hosts
+# Shared services
 ###############################
-echo-cyan 'Verifying shared-service entries in /etc/hosts ...'
-echo-white
-
-# Dynamically get container names + IPs from docker-compose.yaml (rendered with env interp).
-# For each (name, ip) pair, only touch /etc/hosts if it's missing or wrong — so re-running
-# configure stays quiet when nothing has drifted.
-COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
-
-if [ -f "$COMPOSE_FILE" ]; then
-    RENDERED_COMPOSE=$(mktemp)
-    # Render with the machine's enabled profiles, or optional services would be
-    # absent from the output and never get a /etc/hosts entry.
-    # mapfile is bash 4+; macOS ships bash 3.2.57 and always will (Apple froze it
-    # in 2007 over GPLv3). Read into the array by hand so these scripts run on the
-    # stock /bin/bash rather than needing a newer one installed first.
-    _cfg_profiles=()
-    while IFS= read -r _cfg_line; do _cfg_profiles+=("$_cfg_line"); done < <(podium_profile_args)
-    if docker compose -f "$COMPOSE_FILE" "${_cfg_profiles[@]}" config > "$RENDERED_COMPOSE" 2>/dev/null; then
-        SOURCE_FILE="$RENDERED_COMPOSE"
-    else
-        # Fallback to raw compose file if docker compose config fails
-        SOURCE_FILE="$COMPOSE_FILE"
-    fi
-
-    TEMP_MAPPING=$(mktemp)
-
-    awk -v subnet="$VPC_SUBNET" '
-    /container_name:/ {
-        container = $2;
-        gsub(/[[:space:]]/, "", container);
-    }
-    /ipv4_address:/ {
-        ip = $2;
-        gsub(/["[:space:]]/, "", ip);
-        gsub(/\$\{VPC_SUBNET\}/, subnet, ip);
-        if (container != "") {
-            print container ":" ip;
-            container = "";
-        }
-    }' "$SOURCE_FILE" > "$TEMP_MAPPING"
-
-    if [ -s "$TEMP_MAPPING" ]; then
-        CHANGES=0
-        while IFS=':' read -r container_name ip_address; do
-            # Look for an existing entry for this hostname.
-            existing_ip=$(awk -v name="$container_name" '
-                $0 !~ /^[[:space:]]*#/ {
-                    for (i = 2; i <= NF; i++) {
-                        if ($i == name) { print $1; exit }
-                    }
-                }' /etc/hosts 2>/dev/null || true)
-
-            if [[ "$existing_ip" == "$ip_address" ]]; then
-                continue
-            fi
-
-            CHANGES=$((CHANGES + 1))
-            sudo-podium-sed "/[[:space:]]${container_name}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
-            if [[ -z "$existing_ip" ]]; then
-                echo-white "Adding hosts entry: $ip_address $container_name"
-            else
-                echo-white "Updating hosts entry: $container_name $existing_ip -> $ip_address"
-            fi
-            echo "$ip_address        $container_name" | sudo tee -a /etc/hosts > /dev/null
-        done < "$TEMP_MAPPING"
-
-        if [[ "$CHANGES" -eq 0 ]]; then
-            echo-green "Hosts file already has all shared-service entries (no changes)."
-        else
-            echo-green "Hosts file synced ($CHANGES change(s))."
-        fi
-    else
-        echo-yellow "No container names with IP addresses found in docker-compose file"
-    fi
-
-    rm -f "$TEMP_MAPPING"
-    rm -f "$RENDERED_COMPOSE"
-else
-    echo-yellow "Docker compose file not found: $COMPOSE_FILE"
-fi
+# Nothing to sync into /etc/hosts — Podium no longer writes that file at all.
+#
+# Containers reach each other by name through Docker's own DNS on the shared
+# network, which needs no help from the host: verified with a container
+# carrying no hosts mount, which resolved every service anyway. The host
+# reaches them by published port. Those entries only ever served
+# host-to-container name resolution, which never worked on macOS or Windows
+# because Docker keeps container IPs inside a VM there.
 
 echo-return
 

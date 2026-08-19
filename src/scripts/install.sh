@@ -106,7 +106,10 @@ PROJECTS_DIR="$(get_projects_dir)"
 PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
 # Already installed? (only skip if actually running)
-if grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+[[:space:]]+${PROJECT_NAME}$" /etc/hosts 2>/dev/null; then
+# Existence is a directory question, not an /etc/hosts question. Podium no
+# longer writes that file, and a leftover entry used to make a long-deleted
+# project look installed.
+if [ -d "$PROJECTS_DIR_PATH/$PROJECT_NAME" ]; then
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${PROJECT_NAME}$"; then
         echo-yellow "$PROJECT_NAME is already installed and running."
         echo-white "Visit: http://$PROJECT_NAME/"

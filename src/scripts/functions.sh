@@ -16,7 +16,11 @@ get_projects_dir() {
     
     # First check /etc/podium-cli/.env file (primary config location)
     if [ -f "/etc/podium-cli/.env" ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2)
+        # The value is written quoted (a path may contain a space, and .env is
+        # sourced by bash), so strip the surrounding quotes when reading it back
+        # this way. Quotes only — NOT spaces, which are legitimate in a path.
+        # `-f2-` rather than `-f2` so a value containing '=' survives.
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -25,7 +29,7 @@ get_projects_dir() {
         fi
     # Fallback to old location for backward compatibility
     elif [ -f "$podium_root/docker-stack/.env" ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2)
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -36,7 +40,7 @@ get_projects_dir() {
     
     # Fallback to legacy ~/.podium/config for backward compatibility
     if [ -f ~/.podium/config ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config | cut -d'=' -f2)
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             echo "$PROJECTS_DIR"
             return
@@ -2794,4 +2798,96 @@ podium_host_reaches_containers() {
         darwin*) return 1 ;;
         *)       return 0 ;;
     esac
+}
+
+###############################################################################
+# Project address lookups — the compose file is the source of truth.
+#
+# These replace /etc/hosts, which Podium used to write and then read back as a
+# registry. Every fact it held is already in the project's own docker-compose:
+#
+#     /etc/hosts:  10.247.177.168      sign-tools
+#     compose:     ipv4_address: 10.247.177.168   +   ports: - "168:80"
+#
+# Keeping a second copy meant they could disagree, and writing it was the only
+# thing making `podium new` require sudo — which is what let a piped installer
+# have its password prompt eaten, and what forces every remote or automated
+# caller to solve an interactive auth problem it should never have had.
+###############################################################################
+
+# The project's container IP, from its compose file. Empty if unknown.
+podium_project_ip() {
+    local f
+    f="$(podium_project_compose "$1")"
+    [ -n "$f" ] || return 0
+    grep -E '^[[:space:]]*ipv4_address:' "$f" 2>/dev/null \
+        | head -1 | sed 's/.*ipv4_address:[[:space:]]*//' | tr -d '"'"'"' '
+}
+
+# The project's published host port, from its compose file. Empty if unknown.
+#
+# Reads the left-hand side of the first "HOST:CONTAINER" mapping. Podium's own
+# templates publish exactly one, and the port is the same number wherever you
+# ask from — unlike the IP, which is only meaningful on the host itself.
+podium_project_port() {
+    local f
+    f="$(podium_project_compose "$1")"
+    [ -n "$f" ] || return 0
+    grep -E '^[[:space:]]*-[[:space:]]*"?[0-9]+:[0-9]+"?' "$f" 2>/dev/null \
+        | head -1 | sed 's/[^0-9]*\([0-9]*\):.*/\1/'
+}
+
+# Is this IP already claimed by some project?
+#
+# Scans the project compose files rather than /etc/hosts. Slower than one grep,
+# but it asks the thing that actually decides, so it cannot go stale — a hosts
+# entry left behind by a half-removed project used to make an address
+# permanently unusable.
+podium_ip_in_use() {
+    local ip="$1" dir p f
+    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}"
+    [ -n "$ip" ] || return 1
+    for p in "$dir"/*; do
+        [ -d "$p" ] || continue
+        for f in "$p/docker-compose.yaml" "$p/docker-compose.yml"; do
+            [ -f "$f" ] || continue
+            if grep -qE "ipv4_address:[[:space:]]*\"?${ip//./\\.}\"?[[:space:]]*$" "$f" 2>/dev/null; then
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+# Is this port already claimed by some project?
+podium_port_in_use() {
+    local port="$1" dir p f
+    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}"
+    [ -n "$port" ] || return 1
+    for p in "$dir"/*; do
+        [ -d "$p" ] || continue
+        for f in "$p/docker-compose.yaml" "$p/docker-compose.yml"; do
+            [ -f "$f" ] || continue
+            if grep -qE "^[[:space:]]*-[[:space:]]*\"?${port}:[0-9]+\"?" "$f" 2>/dev/null; then
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+# The URL that actually works for this project from THIS machine.
+#
+# Linux and inside WSL: the container address, directly routable.
+# macOS and Windows: the published port on localhost, because container IPs
+# live inside a VM there. Never a hostname — Podium does not write /etc/hosts.
+podium_project_url() {
+    local ip port
+    ip="$(podium_project_ip "$1")"
+    port="$(podium_project_port "$1")"
+    if podium_host_reaches_containers && [ -n "$ip" ]; then
+        printf 'http://%s' "$ip"
+    elif [ -n "$port" ]; then
+        printf 'http://localhost:%s' "$port"
+    fi
 }
