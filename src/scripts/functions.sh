@@ -95,11 +95,16 @@ dockerup() {
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         # Clear the log file first, then pipe Docker output to temp file for JSON mode
         > /tmp/podium-docker-progress.log
-        mapfile -t _profiles < <(podium_profile_args)
+        # mapfile is bash 4+; macOS ships bash 3.2.57 and always will (Apple froze it
+        # in 2007 over GPLv3). Read into the array by hand so these scripts run on the
+        # stock /bin/bash rather than needing a newer one installed first.
+        _profiles=()
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
         docker compose "${_profiles[@]}" up -d "$@" > /tmp/podium-docker-progress.log 2>&1
     else
         # Interactive mode - show normal progress
-        mapfile -t _profiles < <(podium_profile_args)
+        _profiles=()
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
         docker compose "${_profiles[@]}" up -d "$@"
     fi
 }
@@ -766,7 +771,10 @@ prompt_github_creation() {
             read OWNER_CHOICE
 
             if [ "$OWNER_CHOICE" = "2" ]; then
-                mapfile -t ORGS < <(gh api user/orgs --jq '.[].login' 2>/dev/null | sort -f)
+                # mapfile is bash 4+; macOS ships bash 3.2.
+                ORGS=()
+                while IFS= read -r _org_line; do ORGS+=("$_org_line"); done \
+                    < <(gh api user/orgs --jq '.[].login' 2>/dev/null | sort -f)
 
                 if [ "${#ORGS[@]}" -eq 0 ]; then
                     echo-yellow "No organizations found on your GitHub account. Using personal account."
@@ -2586,7 +2594,9 @@ ensure_services_running() {
         # nothing is persisted yet — see below.
         ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
           OPTIONAL_SERVICES="$current"
-          mapfile -t _p < <(podium_profile_args)
+          # mapfile is bash 4+; macOS ships bash 3.2.
+          _p=()
+          while IFS= read -r _p_line; do _p+=("$_p_line"); done < <(podium_profile_args)
           docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
     fi
 
