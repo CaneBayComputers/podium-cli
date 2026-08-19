@@ -386,6 +386,37 @@ for project in $(podium status --all --json-output | jq -r '.projects[].name'); 
 done
 ```
 
+#### Reading the address fields
+
+Each project in `podium status --json-output` carries several address fields.
+They mean different things, and one of them is easy to misuse:
+
+| Field | Meaning |
+|---|---|
+| `external_port` | The published port. **The only portable field** — a port is the same number no matter where you ask from. |
+| `local_url` | `http://<project>` — works on the machine running Podium, via its `/etc/hosts` entry. |
+| `lan_url` | The host's own view of itself: its LAN address and the published port. |
+| `metadata` | Display metadata from the project's `x-metadata` block; `{}` when it has none. |
+
+{: .warning }
+> **`lan_url` is only meaningful from the host's own network.** It is composed
+> from the address the host sees for itself, so on a cloud VM it is the private
+> address — `http://172.30.2.182:226` on an EC2 box — which is unroutable from
+> anywhere else. It is not a mistake in the value; the field simply cannot know
+> who is asking.
+>
+> If you are reaching a project from another machine, **build the URL from the
+> address you used to connect to that host, plus `external_port`.** Do not
+> render `lan_url` to a remote user.
+
+{: .note }
+> A listening port is not the same as a reachable one. Podium reports what the
+> host can see about itself; whether your packets arrive is a property of the
+> network between you and it — security groups, NAT, VPNs, or simply whether a
+> laptop is awake. That question can only be answered from the machine doing the
+> asking, so probe from there rather than inferring reachability from status
+> output.
+
 ### Service Management
 
 ```bash
