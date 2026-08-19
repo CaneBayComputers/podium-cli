@@ -326,6 +326,20 @@ get_project_status() {
         project_data=$(echo "$project_data" | jq --arg name "$proj_name" '. + {name: $name, folder_exists: false}')
     fi
     
+    # Display metadata straight from the project's x-metadata block, so nothing
+    # downstream has to open docker-compose.yaml to render a project. Nested
+    # under `metadata` rather than flattened because two keys collide: the
+    # block's `name` is the human label while `name` here is the slug, and its
+    # `status` is enabled/disabled while `status` elsewhere means running/stopped.
+    #
+    # `{}` for projects with no block, which is most of the ones created before
+    # x-metadata existed.
+    local _meta_file _meta_json
+    _meta_file="$(podium_project_compose "$proj_name" 2>/dev/null)"
+    _meta_json="$(read_x_metadata_json "$_meta_file")"
+    [ -n "$_meta_json" ] || _meta_json="{}"
+    project_data=$(echo "$project_data" | jq --argjson meta "$_meta_json" '. + {metadata: $meta}')
+
     # Host entry check
     local resolved_ip=""
     if HOST_ENTRY=$(printf "%s\n" "$HOSTS" | grep " $proj_name$"); then
