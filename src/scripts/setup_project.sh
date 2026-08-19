@@ -408,27 +408,65 @@ ORIGINAL_COMPOSE_TMPFILE="/tmp/podium_original_compose_$$.yaml"
 ORIGINAL_COMPOSE_IS_COMPLEX=0
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     cp "$EXISTING_COMPOSE_FILE" "$ORIGINAL_COMPOSE_TMPFILE"
+    # `|| true` below: a non-zero exit here must not kill setup. That is exactly
+    # how a missing python module turned into "Setup failed" with no explanation.
     ORIGINAL_COMPOSE_IS_COMPLEX=$(python3 - "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null << 'PYEOF'
-import sys, yaml, re
+import sys, re
+
+# Deliberately no PyYAML. macOS ships python3 without it, and the import sat
+# OUTSIDE the try below, so on a Mac this whole block exited non-zero and took
+# `podium setup` down with it under set -e.
+#
+# Worse than the crash: the except branch prints 0, meaning "not complex", which
+# tells setup to REPLACE the project's compose file with Podium's template. A
+# missing module would have silently overwritten a cloned project's compose on
+# every Mac.
+#
+# The check only needs the service names and their images, so it is parsed by
+# hand. Any parse trouble reports complex (1), which makes setup preserve the
+# file — the safe direction to be wrong in.
 try:
-    raw = open(sys.argv[1]).read()
-    # Laravel Sail composes require vendor/ to exist before the container can build —
-    # adaptation is impossible. Treat as non-complex so Podium uses its own template.
+    raw = open(sys.argv[1], errors='replace').read()
+
+    # Laravel Sail composes need vendor/ to exist before the container can
+    # build, so adaptation is impossible. Non-complex, so Podium uses its own.
     if 'laravel/sail' in raw:
         print(0); sys.exit(0)
-    doc = yaml.safe_load(raw) or {}
-    services = doc.get('services') or {}
-    if len(services) > 1:
+
+    lines = raw.split('\n')
+    si = next((i for i, l in enumerate(lines)
+               if re.match(r'^services:\s*$', l)), None)
+    if si is None:
+        print(0); sys.exit(0)
+
+    # Service keys are the entries one indent level inside `services:`.
+    names, images, indent = [], [], None
+    for line in lines[si + 1:]:
+        if not line.strip() or line.lstrip().startswith('#'):
+            continue
+        width = len(line) - len(line.lstrip())
+        if width == 0:
+            break                      # back to a top-level key
+        if indent is None:
+            indent = width
+        if width == indent:
+            m = re.match(r'^\s*([A-Za-z0-9._-]+):\s*$', line)
+            if m:
+                names.append(m.group(1))
+        m = re.match(r'^\s*image:\s*(.+?)\s*$', line)
+        if m:
+            images.append(m.group(1).strip('\'"'))
+
+    if len(names) > 1:
         print(1); sys.exit(0)
-    for svc in services.values():
-        img = str((svc or {}).get('image', ''))
+    for img in images:
         if img and not re.search(r'canebaycomputers/cbc', img, re.I):
             print(1); sys.exit(0)
     print(0)
 except Exception:
-    print(0)
+    print(1)
 PYEOF
-)
+) || true
 fi
 
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
