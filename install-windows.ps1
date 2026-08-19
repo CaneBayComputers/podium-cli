@@ -48,15 +48,35 @@ function Assert-Elevated {
 }
 
 function Assert-Virtualization {
-    # HypervisorPresent is False until a hypervisor is actually running, which it
-    # is not before the features are enabled — so it says nothing about whether
-    # the CPU is capable. Ask the CPU instead.
+    # These flags inverting is not a hardware change, it is the OS losing sight
+    # of the hardware. Measured on one machine, before and after enabling WSL:
+    #
+    #                                    before    after
+    #     HypervisorPresent               False    True
+    #     SecondLevelAddressTranslation   True     False
+    #     VMMonitorModeExtensions         True     False
+    #
+    # Once a hypervisor is running Windows is itself virtualized and can no
+    # longer see those CPU extensions, so they read False on a machine where
+    # WSL2 demonstrably works. An earlier version of this function hard-failed
+    # on SLAT and refused to run on exactly the machine it had already set up,
+    # telling the user their CPU was inadequate.
+    #
+    # So: a running hypervisor IS the capability check. Only interrogate the CPU
+    # when there is no hypervisor yet, which is the genuine first-run case.
+    if ((Get-CimInstance Win32_ComputerSystem).HypervisorPresent) {
+        Ok "Virtualization active (a hypervisor is already running)"
+        return
+    }
+
     $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
     if (-not $cpu.VirtualizationFirmwareEnabled) {
         Die "Virtualization is disabled in firmware. Enable it in BIOS/UEFI (Intel VT-x / AMD-V) and re-run."
     }
     if (-not $cpu.SecondLevelAddressTranslationExtensions) {
-        Die "This CPU lacks SLAT, which WSL2 requires."
+        # A warning, not a refusal. This flag is unreliable enough that refusing
+        # on it risks blocking a machine that would work fine.
+        Warn "SLAT not reported by this CPU. WSL2 requires it; if the install fails, that is the likely cause."
     }
     Ok "Virtualization available ($($cpu.Name.Trim()))"
 }
