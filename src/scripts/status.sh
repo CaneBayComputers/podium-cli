@@ -358,16 +358,31 @@ get_project_status() {
     if [ "$(docker ps -q -f name=$proj_name)" ]; then
         project_data=$(echo "$project_data" | jq '. + {docker_running: true}')
         
-        if ping_status "$proj_name"; then
-            ping_state="ok"
+        # "not_applicable" rather than "failed" where the host cannot route to
+        # container IPs at all. Reporting failed would be true and useless: a
+        # consumer cannot tell a broken project from a platform that has never
+        # supported this route, and would mark every healthy macOS project down.
+        if podium_host_reaches_containers; then
+            if ping_status "$proj_name"; then
+                ping_state="ok"
+            else
+                ping_state="failed"
+            fi
         else
-            ping_state="failed"
+            ping_state="not_applicable"
         fi
         
         # Port mapping check (only if running)
         if docker port "$proj_name" 80/tcp > /dev/null 2>&1; then
             project_data=$(echo "$project_data" | jq '. + {port_mapped: true}')
-            if curl_status "http://$proj_name"; then
+            # Probe whichever URL actually works on this host — the hostname on
+            # Linux, the published port on macOS.
+            if podium_host_reaches_containers; then
+                _probe_url="http://$proj_name"
+            else
+                _probe_url="http://localhost:$EXT_PORT"
+            fi
+            if curl_status "$_probe_url"; then
                 http_state="ok"
             else
                 http_state="failed"
