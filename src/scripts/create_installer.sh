@@ -70,7 +70,19 @@ else
     REMOTES_LINE="No remote test machines are reachable from this host right now. Verify on the local machine only."
 fi
 
-PROMPT=$(cat <<EOF
+# `read -r -d ''` rather than `PROMPT=$(cat <<EOF ... EOF)`.
+#
+# bash 3.2 — what macOS ships — cannot parse a command substitution wrapping
+# a heredoc when the heredoc contains backticks and parentheses: its parser
+# scans for the closing paren and gets lost inside the text, failing the
+# whole file with "syntax error near unexpected token `)'". bash 5 parses it
+# fine, so `bash -n` on Linux reported nothing and this command was simply
+# dead on every Mac.
+#
+# `read` takes the heredoc directly, with no substitution to parse. The
+# `|| true` is required: read returns non-zero when it hits EOF without the
+# delimiter, which is always here, and set -e would abort on it.
+read -r -d '' PROMPT <<EOF || true
 You are working on the podium-cli repository at $INSTALL_DIR.
 
 # Goal
@@ -145,7 +157,6 @@ You will need to (1) figure out exactly which OSS project this refers to, (2) wr
 
 Begin by stating your interpretation of "$DESCRIPTION" (which project, why, what slug you'll use), then proceed.
 EOF
-)
 
 if [[ "$PRINT_ONLY" == "1" ]]; then
     printf "%s\n" "$PROMPT"
