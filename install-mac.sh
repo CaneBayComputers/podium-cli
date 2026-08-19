@@ -139,7 +139,17 @@ echo -e "${CYAN}Installing system dependencies...${NC}"
 #
 # Checking here means we fail before writing anything, and say why.
 clt_present() {
-    xcode-select -p > /dev/null 2>&1 && /usr/bin/git --version > /dev/null 2>&1
+    # Must NOT run /usr/bin/git to test this. Without the tools installed that
+    # path is a stub whose only behaviour is to open the "install developer
+    # tools" dialog -- so probing for the tools with it POPS THE DIALOG WE ARE
+    # trying to avoid, on exactly the machines where the check matters.
+    #
+    # `xcode-select -p` is safe: it prints the path or fails, and never
+    # triggers the installer. Checking for the real binary underneath it
+    # confirms usability without executing anything.
+    local dir
+    dir="$(xcode-select -p 2>/dev/null)" || return 1
+    [ -n "$dir" ] && [ -x "$dir/usr/bin/git" ]
 }
 
 if clt_present; then
