@@ -45,6 +45,12 @@ check "|& pipe"                  '\|&'
 check "&>> append redirect"      '&>>'
 check "globstar"                 'shopt[[:space:]]+-s[[:space:]]+globstar'
 
+# Not a bash 4 construct, but a bash 4 *semantic*: `source X || true` suspends
+# errexit for the sourced file on bash 4+, and does NOT on 3.2 — the failing
+# command aborts the caller anyway. It cost a silent "Setup failed" on macOS
+# that reproduced nowhere on Linux. Toggle `set +e` / `set -e` explicitly.
+check "source guarded by || true" '^[[:space:]]*(source|\.)[[:space:]]+[^|]*\|\|[[:space:]]*true'
+
 if [ "$fail" = "0" ]; then
     echo "OK: no bash 4+ constructs found ($(echo "$FILES" | wc -w | tr -d ' ') files checked)"
 fi

@@ -218,11 +218,25 @@ fi
 # For new projects, there's no need to shut down containers that don't exist yet
 if [ -f "$PROJECT_DIR/docker-compose.yaml" ] || [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
     echo-yellow "Existing project detected. Shutting down containers before reconfiguration..."
+    # errexit is toggled explicitly rather than relying on `|| true`.
+    #
+    # On bash 4+ a failure inside a sourced file is ignored when the `source` is
+    # part of an || list. On bash 3.2 — which is what macOS ships and always
+    # will — it is NOT: the failing command aborts the caller regardless of the
+    # guard. shutdown returns non-zero for a project whose container is not
+    # running, which is the normal case when re-running setup, so on macOS
+    # `podium setup` on an existing project died on the spot with only
+    # "Setup failed — cleaning up partial state..." to show for it.
+    #
+    # Verified directly: the same three-line script continues under bash 5 and
+    # aborts under 3.2.57.
+    set +e
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1) || true
+        SHUTDOWN_OUTPUT=$(source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME 2>&1)
     else
-        source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME || true
+        source "$DEV_DIR/scripts/shutdown.sh" $PROJECT_NAME
     fi
+    set -e
 else
     echo-green "New project detected. Skipping container shutdown."
 fi
