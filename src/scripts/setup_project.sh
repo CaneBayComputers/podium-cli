@@ -174,7 +174,7 @@ _setup_cleanup() {
         (cd "$PROJECTS_DIR_PATH" && docker compose -f "$PROJECT_DIR/docker-compose.yaml" down --remove-orphans 2>/dev/null) || true
     fi
     if [ "$_hosts_entry_added" = "1" ]; then
-        sudo-podium-sed "/ $PROJECT_NAME$/d" /etc/hosts 2>/dev/null || true
+        : # nothing to unwind — no /etc/hosts entry is written any more
     fi
     if [ "$_compose_file_created" = "1" ]; then
         rm -f "$PROJECT_DIR/docker-compose.yaml"
@@ -347,43 +347,26 @@ while true; do
 
     IP_ADDRESS="$VPC_SUBNET.$D_CLASS"
 
-    # -q matters: an unquiet grep prints the colliding /etc/hosts line to
-    # stdout, and in --json-output mode that lands in the middle of the JSON
-    # document. It only happened when the random pick actually collided, so it
-    # was an intermittent "invalid JSON" the caller could not reproduce.
-    #
-    # Anchored and escaped so .19 does not match .195 and mark a free address
-    # as taken.
-    _ip_re="^$(printf '%s' "$IP_ADDRESS" | sed 's/\./\\./g')[[:space:]]"
-    if ! grep -qE "$_ip_re" /etc/hosts; then break; fi
+    # Collision is checked against the project compose files, which are what
+    # actually claim an address. /etc/hosts used to be consulted here, and a
+    # stale entry left by a half-removed project made an address permanently
+    # unusable while nothing was using it.
+    if ! podium_ip_in_use "$IP_ADDRESS"; then break; fi
 
 done
 
-# Write the new project host and Docker IP address
-while true; do
-
-    HOST_LINE=$(grep -n -m 1 " $PROJECT_NAME$" /etc/hosts | cut -d : -f 1)
-
-    if ! [[ -z $HOST_LINE ]]; then
-
-        sudo-podium-sed "${HOST_LINE}d" /etc/hosts
-
-    else
-
-        break
-
-    fi
-
-done
-
-
-# Enter new Docker IP address
-if [[ "$JSON_OUTPUT" == "1" ]]; then
-        echo "$IP_ADDRESS      $PROJECT_NAME" | sudo tee -a /etc/hosts > /dev/null
-    else
-        echo "$IP_ADDRESS      $PROJECT_NAME" | sudo tee -a /etc/hosts
-    fi
-_hosts_entry_added=1
+# No /etc/hosts write. The address is recorded in the project's own compose
+# file, written below, which is the only thing that needs to know it.
+#
+# Writing it here was the sole reason creating a project required sudo, and
+# that requirement cost far more than the feature returned: a piped installer
+# had its password prompt eaten by the script on stdin, macOS tty_tickets made
+# unattended runs impossible, and every remote caller had to solve an
+# interactive auth problem just to create a project.
+#
+# The named host it bought never worked on macOS or Windows anyway — Docker
+# keeps container IPs inside a VM on both — so it was a Linux-only convenience
+# billed to every platform.
 
 echo-return
 

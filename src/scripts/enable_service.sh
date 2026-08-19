@@ -186,12 +186,11 @@ if [[ "$MODE" == "enable" ]]; then
     # opened in a browser, and `podium status` pings by hostname. Compose
     # profiles hide these services from `docker compose config`, so the entry
     # cannot come from configure.sh's usual sweep until it is re-run.
+    # No /etc/hosts entry. Podium does not write that file, so enabling a
+    # service needs no sudo at all. Projects reach it by name through Docker's
+    # DNS; from the host, use its published port where it has one.
     _ip=$(docker inspect "$CONTAINER" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
-    if [[ -n "$_ip" ]]; then
-        sudo-podium-sed "/[[:space:]]${CONTAINER}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
-        echo "$_ip        $CONTAINER" | sudo tee -a /etc/hosts > /dev/null
-        echo-white "  Added /etc/hosts entry: $_ip $CONTAINER"
-    fi
+    [[ -n "$_ip" ]] && echo-white "  Address: $_ip (reachable from project containers by the name $CONTAINER)"
 
     echo-green "$SERVICE enabled."
     case "$SERVICE" in
@@ -230,7 +229,6 @@ else
     echo-cyan "Stopping $SERVICE ..."
     ( cd /etc/podium-cli && docker compose --profile "$SERVICE" stop "$SERVICE" >/dev/null 2>&1 ) || true
     ( cd /etc/podium-cli && docker compose --profile "$SERVICE" rm -f "$SERVICE" >/dev/null 2>&1 ) || true
-    sudo-podium-sed "/[[:space:]]${CONTAINER}[[:space:]]*$/d" /etc/hosts 2>/dev/null || true
     echo-green "$SERVICE disabled. Its data volume is kept — re-enable to get it back."
 fi
 
