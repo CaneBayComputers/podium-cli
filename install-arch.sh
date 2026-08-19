@@ -92,6 +92,30 @@ if ! command -v pacman >/dev/null 2>&1; then
 fi
 
 # Check if running as root
+# Re-exec from a real file when we were piped into bash.
+#
+# The documented install is `curl ... | bash`, which makes STDIN THE SCRIPT
+# ITSELF. Any password prompt or `read` during the run then consumes installer
+# source rather than user input. Seen for real on macOS: a mid-run sudo read
+# three lines of the installer as three failed password attempts and corrupted
+# everything after it. The same shape applies here -- there are dozens of sudo
+# calls below, and any one of them can prompt if the timestamp lapses.
+#
+# Redirecting stdin in place will not work: bash is still reading the script
+# from it. So fetch a real copy and re-exec with stdin on the terminal.
+PODIUM_INSTALLER_URL="${PODIUM_INSTALLER_URL:-https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh}"
+if [ ! -t 0 ] && [ -z "${PODIUM_INSTALLER_REEXEC:-}" ] && [ -e /dev/tty ]; then
+    _self="$(mktemp -t podium-install.XXXXXX)" || _self=""
+    if [ -n "$_self" ] && curl -fsSL "$PODIUM_INSTALLER_URL" -o "$_self" 2>/dev/null && [ -s "$_self" ]; then
+        export PODIUM_INSTALLER_REEXEC=1
+        exec bash "$_self" "$@" < /dev/tty
+    fi
+    echo "Warning: running from a pipe. If anything asks for a password it may fail." >&2
+    echo "         If that happens, download and run instead:" >&2
+    echo "           curl -fsSL $PODIUM_INSTALLER_URL -o /tmp/install.sh" >&2
+    echo "           bash /tmp/install.sh" >&2
+fi
+
 if [[ $EUID -eq 0 ]]; then
    echo -e "${RED}Error: This script should not be run as root.${NC}"
    echo "Please run as a regular user. The script will ask for sudo when needed."
