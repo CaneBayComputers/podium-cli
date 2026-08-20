@@ -14,6 +14,12 @@ features needs a reboot; the installer schedules itself to resume automatically
 after you log back in, so you reboot once and it finishes on its own. Run it
 from an elevated PowerShell.
 
+WSL2 needs hardware virtualization: VT-x/AMD-V turned on in BIOS/UEFI, plus
+SLAT. If the hypervisor cannot start, the Ubuntu download succeeds and then
+registering it fails with `HCS_E_HYPERV_NOT_INSTALLED`. Note that this also
+rules out running Podium inside a VirtualBox VM — VirtualBox does not pass
+SLAT through to a guest, so WSL2 cannot start there at all.
+
 Two things behave differently on Windows:
 
 - **WSL shuts an idle distro down and stops its containers with it.** Keep a
