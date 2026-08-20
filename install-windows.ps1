@@ -2,7 +2,7 @@
 #
 # Podium is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
 # kernel rather than an emulation layer, so everything behaves as it does on a
-# Linux host — including container IPs being directly routable, which is NOT
+# Linux host -- including container IPs being directly routable, which is NOT
 # true on macOS.
 #
 # TWO STAGES, because enabling the WSL Windows features requires a reboot.
@@ -22,6 +22,12 @@
 # NOT YET TESTED END TO END. Every step was performed by hand on a Windows 10
 # Home box and works; this script is that sequence automated, and the automation
 # itself has not been run yet.
+
+# ASCII ONLY IN THIS FILE. Windows PowerShell 5.1 reads a file with no BOM as
+# ANSI, so a UTF-8 character arrives mangled. An em-dash in particular becomes
+# mojibake CONTAINING a double quote, which terminates the enclosing string and
+# makes the parser silently swallow the rest of the block. The installer then
+# ran, printed one line, returned cleanly, and did nothing, with no error.
 
 [CmdletBinding()]
 param(
@@ -82,7 +88,7 @@ function Assert-Virtualization {
 }
 
 ###############################################################################
-# Stage 1 — enable the Windows features, schedule the resume, reboot
+# Stage 1 -- enable the Windows features, schedule the resume, reboot
 ###############################################################################
 function Invoke-Stage1 {
     Assert-Elevated
@@ -92,7 +98,7 @@ function Invoke-Stage1 {
     $vmp = (Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform).State
 
     if ($wsl -eq "Enabled" -and $vmp -eq "Enabled") {
-        Ok "WSL features already enabled — skipping the reboot"
+        Ok "WSL features already enabled -- skipping the reboot"
         Invoke-Stage2
         return
     }
@@ -131,11 +137,11 @@ function Invoke-Stage1 {
     Write-Host ""
     $answer = Read-Host "Reboot now? (y/N)"
     if ($answer -match '^[Yy]') { Restart-Computer -Force }
-    else { Write-Host "Reboot when ready — installation resumes automatically." }
+    else { Write-Host "Reboot when ready -- installation resumes automatically." }
 }
 
 ###############################################################################
-# Stage 2 — WSL runtime, distro, Podium
+# Stage 2 -- WSL runtime, distro, Podium
 ###############################################################################
 function Invoke-Stage2 {
     Assert-Elevated
@@ -147,7 +153,7 @@ function Invoke-Stage2 {
         if ($st.linuxUser) { $LinuxUser = $st.linuxUser }
     }
 
-    # The WSL shipped as a Windows component is old — it has no `--version` and
+    # The WSL shipped as a Windows component is old -- it has no `--version` and
     # a weaker localhost relay. `--update` pulls the current one. Without this
     # the install appears to work and then behaves subtly differently.
     Say "Updating the WSL runtime (this can take a few minutes)..."
