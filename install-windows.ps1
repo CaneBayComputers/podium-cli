@@ -68,8 +68,18 @@ function Assert-Virtualization {
     # on SLAT and refused to run on exactly the machine it had already set up,
     # telling the user their CPU was inadequate.
     #
-    # So: a running hypervisor IS the capability check. Only interrogate the CPU
-    # when there is no hypervisor yet, which is the genuine first-run case.
+    # So: a running hypervisor is taken as the capability check. Only interrogate
+    # the CPU when there is no hypervisor yet, which is the genuine first-run
+    # case.
+    #
+    # Caveat, measured on the Windows 11 test VM: inside a virtual machine
+    # HypervisorPresent reads True because the GUEST is running under the host's
+    # hypervisor -- it read True there with WSL and VirtualMachinePlatform both
+    # Disabled and no distro installed. So this can pass on a VM that lacks
+    # nested virtualization, where WSL2 will not actually work. That is the
+    # better trade: the failure then surfaces from `wsl --install` with a real
+    # message, rather than refusing to run on a physical machine that already
+    # works.
     if ((Get-CimInstance Win32_ComputerSystem).HypervisorPresent) {
         Ok "Virtualization active (a hypervisor is already running)"
         return
