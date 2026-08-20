@@ -2,7 +2,7 @@
 #
 # Podium is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
 # kernel rather than an emulation layer, so everything behaves as it does on a
-# Linux host — including container IPs being directly routable, which is NOT
+# Linux host -- including container IPs being directly routable, which is NOT
 # true on macOS.
 #
 # TWO STAGES, because enabling the WSL Windows features requires a reboot.
@@ -19,9 +19,18 @@
 # Must be run from an ELEVATED PowerShell: enabling Windows optional features
 # and writing the machine RunOnce key both require it.
 #
-# NOT YET TESTED END TO END. Every step was performed by hand on a Windows 10
-# Home box and works; this script is that sequence automated, and the automation
-# itself has not been run yet.
+# TESTING STATUS. Stage 1, the RunOnce reboot-resume, and the elevation it needs
+# are verified on a Windows 11 VM: the reboot fires stage 2 automatically in an
+# elevated window with no user action. The WSL half of stage 2 is NOT verified
+# there and cannot be -- Hyper-V will not launch inside VirtualBox for want of
+# SLAT, so the distro downloads and then fails to register. Everything past
+# `wsl --install` has only been done by hand, on a Windows 10 Home box.
+
+# ASCII ONLY IN THIS FILE. Windows PowerShell 5.1 reads a file with no BOM as
+# ANSI, so a UTF-8 character arrives mangled. An em-dash in particular becomes
+# mojibake CONTAINING a double quote, which terminates the enclosing string and
+# makes the parser silently swallow the rest of the block. The installer then
+# ran, printed one line, returned cleanly, and did nothing, with no error.
 
 [CmdletBinding()]
 param(
@@ -33,11 +42,37 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptPath = $MyInvocation.MyCommand.Path
 $StateFile  = "$env:ProgramData\podium-install-state.json"
+$LogFile    = "$env:ProgramData\podium-install\install.log"
 
 function Say  ($m) { Write-Host $m -ForegroundColor Cyan }
 function Ok   ($m) { Write-Host "OK  $m" -ForegroundColor Green }
 function Warn ($m) { Write-Host "!!  $m" -ForegroundColor Yellow }
-function Die  ($m) { Write-Host "ERR $m" -ForegroundColor Red; exit 1 }
+function Die  ($m) {
+    Write-Host "ERR $m" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "  Full log: $LogFile"
+    try { Stop-Transcript | Out-Null } catch { }
+    # Stage 2 runs from RunOnce in a window of its own. Without this pause that
+    # window closes the instant the script exits, so the user sees it flash and
+    # vanish with no error and no idea the install failed.
+    if ($Stage -eq 2) { Read-Host "  Press Enter to close" | Out-Null }
+    exit 1
+}
+
+# wsl.exe writes UTF-16LE. PowerShell 5.1 captures it through the pipeline using
+# the console's ANSI encoding, so every real character arrives followed by a NUL:
+# 171 characters of WSL text become a 350-character string. It PRINTS correctly,
+# because NULs are invisible, but no -match against it can ever succeed. That
+# silently disabled the error diagnostics below -- they looked right, printed the
+# right text, and never once fired. Strip the NULs before touching the string.
+function Get-WslOutput ($lines) { ($lines | Out-String) -replace "`0", "" }
+
+# Transcript everything. Stage 2 is unattended and its window disappears on
+# exit, so without a log on disk a failed install leaves nothing to read.
+function Start-Log {
+    New-Item -ItemType Directory -Force -Path (Split-Path $LogFile) | Out-Null
+    try { Start-Transcript -Path $LogFile -Append -ErrorAction Stop | Out-Null } catch { }
+}
 
 function Assert-Elevated {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -62,8 +97,18 @@ function Assert-Virtualization {
     # on SLAT and refused to run on exactly the machine it had already set up,
     # telling the user their CPU was inadequate.
     #
-    # So: a running hypervisor IS the capability check. Only interrogate the CPU
-    # when there is no hypervisor yet, which is the genuine first-run case.
+    # So: a running hypervisor is taken as the capability check. Only interrogate
+    # the CPU when there is no hypervisor yet, which is the genuine first-run
+    # case.
+    #
+    # Caveat, measured on the Windows 11 test VM: inside a virtual machine
+    # HypervisorPresent reads True because the GUEST is running under the host's
+    # hypervisor -- it read True there with WSL and VirtualMachinePlatform both
+    # Disabled and no distro installed. So this can pass on a VM that lacks
+    # nested virtualization, where WSL2 will not actually work. That is the
+    # better trade: the failure then surfaces from `wsl --install` with a real
+    # message, rather than refusing to run on a physical machine that already
+    # works.
     if ((Get-CimInstance Win32_ComputerSystem).HypervisorPresent) {
         Ok "Virtualization active (a hypervisor is already running)"
         return
@@ -82,17 +127,18 @@ function Assert-Virtualization {
 }
 
 ###############################################################################
-# Stage 1 — enable the Windows features, schedule the resume, reboot
+# Stage 1 -- enable the Windows features, schedule the resume, reboot
 ###############################################################################
 function Invoke-Stage1 {
     Assert-Elevated
+    Start-Log
     Assert-Virtualization
 
     $wsl = (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State
     $vmp = (Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform).State
 
     if ($wsl -eq "Enabled" -and $vmp -eq "Enabled") {
-        Ok "WSL features already enabled — skipping the reboot"
+        Ok "WSL features already enabled -- skipping the reboot"
         Invoke-Stage2
         return
     }
@@ -131,14 +177,15 @@ function Invoke-Stage1 {
     Write-Host ""
     $answer = Read-Host "Reboot now? (y/N)"
     if ($answer -match '^[Yy]') { Restart-Computer -Force }
-    else { Write-Host "Reboot when ready — installation resumes automatically." }
+    else { Write-Host "Reboot when ready -- installation resumes automatically." }
 }
 
 ###############################################################################
-# Stage 2 — WSL runtime, distro, Podium
+# Stage 2 -- WSL runtime, distro, Podium
 ###############################################################################
 function Invoke-Stage2 {
     Assert-Elevated
+    Start-Log
     Say "Stage 2: installing WSL runtime, $Distro, and Podium"
 
     if (Test-Path $StateFile) {
@@ -147,22 +194,48 @@ function Invoke-Stage2 {
         if ($st.linuxUser) { $LinuxUser = $st.linuxUser }
     }
 
-    # The WSL shipped as a Windows component is old — it has no `--version` and
+    # The WSL shipped as a Windows component is old -- it has no `--version` and
     # a weaker localhost relay. `--update` pulls the current one. Without this
     # the install appears to work and then behaves subtly differently.
     Say "Updating the WSL runtime (this can take a few minutes)..."
-    wsl --update 2>&1 | Out-String | Write-Verbose
+    $out = Get-WslOutput (wsl --update 2>&1)
+    if ($LASTEXITCODE -ne 0) { Write-Host $out; Die "wsl --update failed (exit $LASTEXITCODE)." }
     wsl --set-default-version 2 2>&1 | Out-String | Write-Verbose
     Ok "WSL runtime current"
 
-    $installed = (wsl -l -q 2>$null) -join " "
+    $installed = (Get-WslOutput (wsl -l -q 2>$null)) -replace "\s+", " "
     if ($installed -match [regex]::Escape($Distro)) {
         Ok "$Distro already installed"
     } else {
         Say "Installing $Distro (large download)..."
         # --no-launch avoids the interactive first-run user prompt, which would
         # block an unattended install waiting for input nobody is giving it.
-        wsl --install -d $Distro --no-launch 2>&1 | Out-String | Write-Verbose
+        $out = Get-WslOutput (wsl --install -d $Distro --no-launch 2>&1)
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host $out
+            # Measured on the VirtualBox test VM: the distro downloads fine and
+            # then fails to REGISTER, because Hyper-V will not launch without
+            # SLAT. Worth naming explicitly -- the raw WSL error blames firmware
+            # virtualization, which sends the user into their BIOS for nothing.
+            if ($out -match "HCS_E_HYPERV_NOT_INSTALLED" -or
+                $out -match "Second Level Address Translation" -or
+                $out -match "virtualization is not enabled") {
+                Die @"
+WSL2 could not start its virtual machine, so $Distro downloaded but could not
+be registered. Windows reports that the hypervisor failed to launch.
+
+Usually one of:
+  - Virtualization is off in BIOS/UEFI (Intel VT-x / AMD-V). Turn it on.
+  - This machine is itself a VM. WSL2 needs nested virtualization WITH SLAT
+    passed through to the guest. VirtualBox does not do that, so WSL2 cannot
+    run inside a VirtualBox VM at all.
+  - Another hypervisor already owns the CPU.
+
+The exact reason is in the System event log under Hyper-V-Hypervisor.
+"@
+            }
+            Die "wsl --install -d $Distro failed (exit $LASTEXITCODE). WSL's own output is above."
+        }
         Ok "$Distro installed"
     }
 
@@ -204,6 +277,7 @@ bash /tmp/install-ubuntu.sh
     Invoke-InDistro -Script "podium configure --projects-dir /home/$LinuxUser/podium-projects" -User $LinuxUser
 
     Remove-Item $StateFile -ErrorAction SilentlyContinue
+    try { Stop-Transcript | Out-Null } catch { }
     Write-Host ""
     Ok "Installation complete."
     Write-Host ""
