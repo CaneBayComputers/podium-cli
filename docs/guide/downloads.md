@@ -50,23 +50,30 @@ Then run `podium configure` once. Full details in **[Installation](../installati
 
 ## Podium GUI
 
-Build from source. On Linux and macOS this installs the CLI first if `podium` is
-missing, so it is the only thing you need to clone:
+Installed the same way as the CLI — one command, which clones the repo for you.
+On Linux and macOS it installs the CLI first if `podium` is missing, so this is
+the only thing you need to run:
 
 **Linux**
 
 ```bash
-git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui
-./install-ubuntu.sh          # or install-fedora.sh / install-arch.sh
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash
 ```
+
+Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
 
 **macOS**
 
 ```bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-mac.sh | bash
+```
+
+To install a checkout you already have rather than a fresh clone, run the script
+from inside it — it detects the local repository and builds that instead:
+
+```bash
 git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui
-./install-mac.sh
+cd podium-gui && ./install-ubuntu.sh
 ```
 
 **Windows**
