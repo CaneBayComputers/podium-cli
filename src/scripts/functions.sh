@@ -38,7 +38,17 @@ get_projects_dir() {
         fi
     fi
     
-    # Fallback to legacy ~/.zeltro/config for backward compatibility
+    # Fallback to a legacy per-user config. ~/.podium/config is the pre-rebrand
+    # name and must stay spelled that way -- a machine that predates the rename
+    # still has it, and rewriting it to ~/.zeltro/config would have turned the
+    # backward-compatibility path into a file that has never existed anywhere.
+    if [ -f ~/.podium/config ]; then
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+        if [ -n "$PROJECTS_DIR" ]; then
+            echo "$PROJECTS_DIR"
+            return 0
+        fi
+    fi
     if [ -f ~/.zeltro/config ]; then
         PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.zeltro/config | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
