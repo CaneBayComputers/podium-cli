@@ -7,58 +7,77 @@ nav_order: 3
 # Downloads
 
 Podium is two pieces. The **CLI** does the work; the **GUI** is an optional
-desktop front end for it. The GUI cannot run without the CLI, and installs it
-for you if it is missing.
+desktop front end for it. Neither ships as a package — both install from source
+with one command, so the checkout you install from is the one that runs, and
+updating is a `git pull`.
 
 ---
 
 ## Podium CLI
 
-The CLI is shell scripts — nothing to compile, no dependencies to resolve — so it
-installs with one command rather than a package:
+**Linux**
 
 ```bash
-# Debian / Ubuntu / Mint / Pop
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
-Swap the script for your platform: `install-fedora.sh`, `install-arch.sh`, or
-`install-mac.sh`. Then run `podium configure` once.
+Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
 
-Full details in **[Installation](../installation/)**.
+**macOS**
 
-**Why no `.deb` for the CLI?** There is nothing for a package to do here. The
-installer places shell scripts and `podium update` keeps them current with a git
-pull — a package manager would fight that rather than help it. The GUI is a
-compiled Electron application, which is a genuinely different problem, so it
-ships as packages.
+```bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
+```
+
+Installs the Xcode command line tools, Homebrew and Docker Desktop if any are
+missing.
+
+**Windows**
+
+Podium is a Linux tool; on Windows it runs inside WSL2. From an **elevated**
+PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex
+```
+
+Requires Windows 10 version 2004 (build 19041) or newer — the installer checks
+the build before it changes anything, rather than failing after the reboot.
+
+Then run `podium configure` once. Full details in **[Installation](../installation/)**.
 
 ---
 
-## Podium GUI — v1.0.0-beta.1
+## Podium GUI
 
-{: .warning }
-> **Beta.** Linux x86_64 and macOS. Read the macOS note and the testing status below before installing.
+Build from source. On Linux and macOS this installs the CLI first if `podium` is
+missing, so it is the only thing you need to clone:
 
-| Platform | Download | Size |
-|---|---|---|
-| Debian / Ubuntu / Mint / Zorin / Pop!_OS | [`.deb`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb) | 71 MB |
-| Fedora / RHEL / Rocky / openSUSE | [`.rpm`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1.x86_64.rpm) | 71 MB |
-| Arch / Manjaro / EndeavourOS | [`.pkg.tar.zst`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst) | 77 MB |
-| macOS — Apple Silicon | [`arm64.dmg`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1-arm64.dmg) | 92 MB |
-| macOS — Intel | [`.dmg`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1.dmg) | 97 MB |
-| Checksums | [`SHA256SUMS.txt`](https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/SHA256SUMS.txt) | |
-
-[All release assets →](https://github.com/CaneBayComputers/podium-gui/releases/tag/v1.0.0-beta.1)
-
-Verify before installing:
+**Linux**
 
 ```bash
-sha256sum -c SHA256SUMS.txt --ignore-missing
+git clone https://github.com/CaneBayComputers/podium-gui.git
+cd podium-gui
+./install-ubuntu.sh          # or install-fedora.sh / install-arch.sh
 ```
 
-Installing the GUI also installs the CLI if `podium` is not already on your
-machine, so you do not need both downloads.
+**macOS**
+
+```bash
+git clone https://github.com/CaneBayComputers/podium-gui.git
+cd podium-gui
+./install-mac.sh
+```
+
+**Windows**
+
+```powershell
+irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex
+```
+
+The installer pulls the npm dependencies, compiles the TypeScript, rebuilds the
+native terminal module against Electron, and drops a launcher and a desktop
+entry. It takes a few minutes, mostly `npm install`. Re-running it is safe.
 
 ### What's in it
 
@@ -68,47 +87,36 @@ with AI agent configuration and a theme picker. Five themes ship — Retro (the
 default), Dark, Light, Matrix and Podium — each with its own 16-colour terminal
 palette so output stays readable, including on Light.
 
-### What is actually tested
+### Windows works differently
 
-Being straight about this, because "it built" and "it works" are different
-claims:
+On Linux and macOS the GUI drives a Podium on the same machine. On Windows there
+is no local Podium and the installer does not try to add one — the GUI drives
+Podium on *other* machines over SSH: a Linux box, a Mac, a Raspberry Pi, an EC2
+instance. Add them under **Settings → SSH Hosts**; each needs Podium already
+installed and configured. Projects, containers and files live on the host that
+runs them.
 
-- **`.deb` — installed and launched on a real machine** (Linux Mint): correct
-  metadata, desktop entry appears, application starts.
-- **`.rpm` — installed and launched on a real machine** (Fedora 43): installs
-  cleanly, desktop entry registered, launches into a GNOME Wayland session.
-  Worth knowing that the *first* `.rpm` build could not be installed at all — it
-  required the bare capability `docker`, which the `docker-ce` packages our own
-  Fedora installer lays down do not provide, so dnf tried to pull Fedora's
-  conflicting `moby-engine`. Podium's installer produced a machine Podium's own
-  package could not install on. The dependency was dropped (Docker legitimately
-  arrives half a dozen ways, and no package name covers them all) and the
-  release asset was replaced. If you grabbed an `.rpm` before 2026-08-04,
-  re-download it.
-- **`.pkg.tar.zst` and both `.dmg` — built and inspected, never installed.**
-  No Arch or macOS machine has run these yet. The `.dmg` files in particular
-  have never been opened on a Mac, so they are the least proven thing here. If
-  one fails, [open an issue](https://github.com/CaneBayComputers/podium-gui/issues)
-  and it will get fixed quickly.
+Remote hosts work from Linux and macOS too. Windows simply has no local option
+to fall back on.
 
-### macOS: the app is unsigned
+---
 
-There is no Apple Developer ID behind these builds, so **Gatekeeper will refuse
-to open the app on first launch** with an "unidentified developer" message. That
-is a property of unsigned software, not a broken download. Two ways past it:
+## Why no packages?
 
-- Right-click the app in Applications → **Open** → **Open**, or
-- ```bash
-  xattr -dr com.apple.quarantine /Applications/Podium.app
-  ```
+There used to be `.deb`, `.rpm`, `.pkg.tar.zst` and `.dmg` builds of the GUI.
+They are gone, and the download links that pointed at them are gone with them.
 
-Signing and notarizing requires a paid Apple Developer account, which this
-project does not currently have.
+Packaging an Electron app per distro meant maintaining five build paths and a
+release cycle for a project whose install is otherwise a `git pull`, and it made
+the CLI and GUI behave differently for no benefit to anyone using them. Building
+from source removes the whole category — no signing, no per-distro dependency
+declarations, no stale release assets, and no version skew between what you
+downloaded and what is in the repository.
 
-### Not available yet
-
-- **Linux arm64.** The Linux packages are x86_64 only, so no Raspberry Pi build.
-  Apple Silicon *is* covered by the arm64 `.dmg` above.
+It also removes the macOS Gatekeeper problem. The `.dmg` builds were unsigned,
+so first launch was blocked with an "unidentified developer" warning that took a
+`xattr -dr com.apple.quarantine` to clear. A source build does not carry the
+quarantine attribute, so there is nothing to work around.
 
 ---
 

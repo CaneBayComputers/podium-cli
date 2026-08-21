@@ -31,12 +31,37 @@
 
 ## Install
 
+**Linux**
+
 ```bash
-# Debian / Ubuntu / Mint
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
 ```
 
-Swap the script for your platform: `install-fedora.sh`, `install-arch.sh`, or `install-mac.sh`.
+Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
+
+**macOS**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
+```
+
+Installs the Xcode command line tools, Homebrew and Docker Desktop if they are
+missing. Note that Docker Desktop keeps containers inside a VM, so on macOS you
+reach a project by the port `podium status` prints rather than by container IP.
+
+**Windows**
+
+Podium is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
+kernel — so container IPs are directly routable, exactly as on a Linux host.
+From an **elevated** PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex
+```
+
+It enables the WSL features, asks for one reboot, then resumes and finishes on
+its own. Requires Windows 10 version 2004 (build 19041) or newer; older builds
+are refused up front with an explanation.
 
 Then, once:
 
@@ -86,4 +111,30 @@ Everything else — frameworks, the 200+ app library, the full command reference
 
 ---
 
-Runs on Linux and macOS. Open source. Stop configuring, start building.
+## Prefer not to use a terminal?
+
+[**Podium GUI**](https://github.com/CaneBayComputers/podium-gui) is an optional
+desktop front end — same projects, same shared services, same URLs, just visible
+and clickable. It builds from source, so the checkout you install from is the one
+that runs:
+
+```bash
+git clone https://github.com/CaneBayComputers/podium-gui.git
+cd podium-gui
+./install-ubuntu.sh          # or install-fedora.sh / install-arch.sh / install-mac.sh
+```
+
+On Linux and macOS it installs this CLI first if `podium` is missing, so it is
+the only thing you need to clone.
+
+On **Windows** the GUI runs natively, but there is no local Podium for it to
+drive — it connects over SSH to machines that do have one (a Linux box, a Mac, a
+Pi, an EC2 instance), added under **Settings → SSH Hosts**:
+
+```powershell
+irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex
+```
+
+---
+
+Runs on Linux, macOS, and Windows via WSL2. Open source. Stop configuring, start building.
