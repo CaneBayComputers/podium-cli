@@ -178,13 +178,12 @@
 
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">AI-FRIENDLY LOCAL DEV PLATFORM</p>
-          <h1 id="hero-title">Stop configuring.<br><span class="grad">Start building.</span></h1>
+          <p class="eyebrow">NO SETUP REQUIRED</p>
+          <h1 id="hero-title">Describe it.<br><span class="grad">Then open it in your browser.</span></h1>
           <p class="lead">
-            Podium is a Docker-based local development environment manager for
-            <strong>PHP, Python, and Node</strong> projects &mdash; built for
-            developers running multiple projects on one machine and for
-            <strong>AI agents</strong> that need a stable platform to operate inside.
+            Say what you want &mdash; a timeclock, a booking form, a tracker for your
+            guitar pedals. Podium gets everything ready behind the scenes, your AI
+            builds it, and minutes later it&rsquo;s running on your own computer.
           </p>
           <div class="cta">
             <a class="btn primary" href="#download">Download</a>
@@ -453,7 +452,7 @@
                 <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-fedora.sh | bash" data-note="Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.">Fedora / RHEL</button>
                 <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash" data-note="Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.">Arch / Manjaro</button>
                 <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash" data-note="Pulls in the Xcode command line tools, Homebrew and Docker Desktop if any are missing.">macOS</button>
-                <button type="button" class="fw-chip distro-chip" data-cmd="irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex" data-note="Run this from an <strong>elevated</strong> PowerShell. Podium runs inside WSL2; the installer enables it, asks for one reboot, then resumes and finishes on its own. Needs Windows 10 build 19041 or newer.">Windows</button>
+                <button type="button" class="fw-chip distro-chip" data-cmd="irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex" data-note="Right-click PowerShell and choose <strong>Run as administrator</strong>, then run this. Podium runs inside WSL2; the installer enables it, asks for one reboot, then resumes and finishes on its own. Needs Windows 10 build 19041 or newer.">Windows</button>
               </p>
               <pre class="install-cmd"><code id="cliCmd">curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
               <p class="step-sub" style="margin-top:10px" id="cliCmdNote">Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.</p>
@@ -546,7 +545,7 @@
                   <p class="step-sub">One command, the same shape as the CLI above &mdash; it clones the repo for you and builds from source. On Linux and macOS it installs the CLI first if <code>podium</code> is missing.</p>
                   <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash</code></pre>
                   <p class="step-sub">Swap for <code>install-fedora.sh</code>, <code>install-arch.sh</code> or <code>install-mac.sh</code>. It pulls the npm dependencies, compiles the TypeScript and rebuilds the native terminal module against Electron &mdash; a few minutes, mostly <code>npm install</code>. Re-running it is safe, and running it from inside an existing checkout installs that checkout instead of cloning.</p>
-                  <p class="step-sub"><strong>Windows works differently.</strong> The GUI runs natively, but there is no local Podium for it to drive &mdash; it connects over SSH to machines that have one, added under <strong>Settings &rarr; SSH Hosts</strong>. From an elevated PowerShell: <code>irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex</code> &nbsp;<a href="/guide/downloads/">Full details &rarr;</a></p>
+                  <p class="step-sub"><strong>Windows works differently.</strong> The GUI runs natively, but there is no local Podium for it to drive &mdash; it connects over SSH to machines that have one, added under <strong>Settings &rarr; SSH Hosts</strong>. Right-click PowerShell, choose <strong>Run as administrator</strong>, then: <code>irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex</code> &nbsp;<a href="/guide/downloads/">Full details &rarr;</a></p>
             </div>
           </li>
         </ol>
