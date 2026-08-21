@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Create the admin account on first visit"
 INSTALL_NOTES="Outgoing mail goes to MailHog; sign-in links appear there rather than in a real inbox."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE fider;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE fider;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,10 +17,10 @@ services:
     restart: unless-stopped
     environment:
       BASE_URL: http://fider
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/fider?sslmode=disable
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/fider?sslmode=disable
       JWT_SECRET: "$jwt_secret"
       EMAIL_NOREPLY: noreply@fider.local
-      EMAIL_SMTP_HOST: podium-mailhog
+      EMAIL_SMTP_HOST: zeltro-mailhog
       EMAIL_SMTP_PORT: 1025
       EMAIL_SMTP_USERNAME: ""
       EMAIL_SMTP_PASSWORD: ""

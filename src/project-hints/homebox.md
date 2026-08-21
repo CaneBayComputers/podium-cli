@@ -14,4 +14,4 @@ Home and small-office inventory manager — track items, locations, labels, warr
 - Tag variants: plain, `-rootless` (needs `chown 65532:65532` on the data dir) and `-hardened` (distroless, no shell, no MQTT client). The plain tag is the right default.
 - `/data` holds both the SQLite database and uploaded attachments — persist it or you lose everything.
 - Postgres is supported via `HBOX_DATABASE_DRIVER=postgres`, but `HBOX_DATABASE_SSL_MODE` defaults to `require` and must be set to `disable` for a local instance. SQLite is simpler and is what this installer uses.
-- The installer exists: run `podium install homebox`.
+- The installer exists: run `zeltro install homebox`.

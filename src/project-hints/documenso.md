@@ -4,7 +4,7 @@ Open-source DocuSign alternative — upload a PDF, place fields, collect digital
 
 **Image**: `ghcr.io/documenso/documenso:v2.16.0`
 **Port**: 3000 (via nginx proxy)
-**Database**: PostgreSQL `documenso` on podium-postgres
+**Database**: PostgreSQL `documenso` on zeltro-postgres
 **Credentials**: Register on first visit
 
 ## Key Notes
@@ -13,4 +13,4 @@ Open-source DocuSign alternative — upload a PDF, place fields, collect digital
 - Several environment variables are hard-required — the container exits immediately if any of `NEXTAUTH_SECRET`, `NEXT_PRIVATE_ENCRYPTION_KEY`, `NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY`, `NEXT_PUBLIC_WEBAPP_URL`, `NEXT_PRIVATE_DATABASE_URL`, `NEXT_PRIVATE_SMTP_TRANSPORT`, `NEXT_PRIVATE_SMTP_FROM_NAME` or `NEXT_PRIVATE_SMTP_FROM_ADDRESS` is missing.
 - Uploads use `NEXT_PUBLIC_UPLOAD_TRANSPORT=database`, so no S3 bucket is needed.
 - First boot runs Prisma migrations and is slow; `INSTALL_READY_RETRIES=60` covers it.
-- The installer exists: run `podium install documenso`.
+- The installer exists: run `zeltro install documenso`.

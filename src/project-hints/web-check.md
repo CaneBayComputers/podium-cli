@@ -14,4 +14,4 @@ All-in-one OSINT / website analysis dashboard — headers, DNS, TLS, cookies, te
 - Give the proxy a long `proxy_read_timeout`: some checks (traceroute, screenshot, DNS server scan) take tens of seconds.
 - It makes outbound requests to whatever host you scan, so it needs internet access to be useful.
 - No volumes — nothing is persisted between restarts.
-- The installer exists: run `podium install web-check`.
+- The installer exists: run `zeltro install web-check`.

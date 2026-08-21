@@ -9,13 +9,13 @@ services:
     image: odoo:19.0
     restart: unless-stopped
     environment:
-      HOST: podium-postgres
+      HOST: zeltro-postgres
       PORT: 5432
       USER: root
       PASSWORD: password
     command: >
       odoo
-      --db_host=podium-postgres
+      --db_host=zeltro-postgres
       --db_port=5432
       --db_user=root
       --db_password=password

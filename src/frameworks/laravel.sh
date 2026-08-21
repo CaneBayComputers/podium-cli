@@ -79,68 +79,68 @@ framework_setup_env() {
     cp -f .env.example .env
 
     APP_KEY="base64:$(head -c 32 /dev/urandom | base64)"
-    podium-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
-    podium-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
-    podium-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
-    podium-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
-    podium-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
+    zeltro-sed-change "/^#*\s*APP_NAME=/" "APP_NAME=$PROJECT_NAME" .env
+    zeltro-sed-change "/^#*\s*APP_KEY=/" "APP_KEY=$APP_KEY" .env
+    zeltro-sed-change "/^#*\s*APP_ENV=/" "APP_ENV=local" .env
+    zeltro-sed-change "/^#*\s*APP_DEBUG=/" "APP_DEBUG=true" .env
+    zeltro-sed-change "/^#*\s*APP_URL=/" "APP_URL=http://$PROJECT_NAME" .env
 
     case $DATABASE_ENGINE in
         "sqlite"|"sqlite3")
             # Laravel wants an absolute path (or it resolves database/database.sqlite).
             # The file MUST live in the project directory — that is the only path
             # bind-mounted into the container, so a database anywhere else is
-            # destroyed when the container is recreated on `podium up`.
+            # destroyed when the container is recreated on `zeltro up`.
             # Laravel errors out if the file does not exist, so ensure_database
             # creates it before migrations run.
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=sqlite" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database/database.sqlite}" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
+            zeltro-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=sqlite" .env
+            zeltro-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=" .env
+            zeltro-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=" .env
+            zeltro-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database/database.sqlite}" .env
+            zeltro-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=" .env
+            zeltro-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
             ;;
         "postgres"|"postgresql"|"pgsql")
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
+            zeltro-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=pgsql" .env
+            zeltro-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$POSTGRES_CONTAINER_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=5432" .env
+            zeltro-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            zeltro-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
             ;;
         "mongodb")
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
+            zeltro-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mongodb" .env
+            zeltro-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MONGO_CONTAINER_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=27017" .env
+            zeltro-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            zeltro-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=password" .env
             ;;
         *)
-            podium-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
-            podium-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
-            podium-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
-            podium-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
-            podium-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
-            podium-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
+            zeltro-sed-change "/^#*\s*DB_CONNECTION=/" "DB_CONNECTION=mysql" .env
+            zeltro-sed-change "/^#*\s*DB_HOST=/" "DB_HOST=$MARIADB_CONTAINER_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_PORT=/" "DB_PORT=3306" .env
+            zeltro-sed-change "/^#*\s*DB_DATABASE=/" "DB_DATABASE=$DB_NAME" .env
+            zeltro-sed-change "/^#*\s*DB_USERNAME=/" "DB_USERNAME=root" .env
+            zeltro-sed-change "/^#*\s*DB_PASSWORD=/" "DB_PASSWORD=" .env
             ;;
     esac
 
-    podium-sed-change "/^#*\s*CACHE_DRIVER=/" "CACHE_DRIVER=redis" .env
-    podium-sed-change "/^#*\s*SESSION_DRIVER=/" "SESSION_DRIVER=redis" .env
-    podium-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
-    podium-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
-    podium-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
-    podium-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=$MEMCACHED_CONTAINER_NAME" .env
-    podium-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
-    podium-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
-    podium-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
-    podium-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
-    podium-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
-    podium-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
-    podium-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
-    podium-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
-    podium-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
+    zeltro-sed-change "/^#*\s*CACHE_DRIVER=/" "CACHE_DRIVER=redis" .env
+    zeltro-sed-change "/^#*\s*SESSION_DRIVER=/" "SESSION_DRIVER=redis" .env
+    zeltro-sed-change "/^#*\s*QUEUE_CONNECTION=/" "QUEUE_CONNECTION=redis" .env
+    zeltro-sed-change "/^#*\s*CACHE_STORE=/" "CACHE_STORE=redis" .env
+    zeltro-sed-change "/^#*\s*CACHE_PREFIX=/" "CACHE_PREFIX=$PROJECT_NAME" .env
+    zeltro-sed-change "/^#*\s*MEMCACHED_HOST=/" "MEMCACHED_HOST=$MEMCACHED_CONTAINER_NAME" .env
+    zeltro-sed-change "/^#*\s*REDIS_HOST=/" "REDIS_HOST=$REDIS_CONTAINER_NAME" .env
+    zeltro-sed-change "/^#*\s*MAIL_MAILER=/" "MAIL_MAILER=smtp" .env
+    zeltro-sed-change "/^#*\s*MAIL_HOST=/" "MAIL_HOST=$MAILHOG_CONTAINER_NAME" .env
+    zeltro-sed-change "/^#*\s*MAIL_PORT=/" "MAIL_PORT=1025" .env
+    zeltro-sed-change "/^#*\s*MAIL_USERNAME=/" "MAIL_USERNAME=null" .env
+    zeltro-sed-change "/^#*\s*MAIL_PASSWORD=/" "MAIL_PASSWORD=null" .env
+    zeltro-sed-change "/^#*\s*MAIL_ENCRYPTION=/" "MAIL_ENCRYPTION=null" .env
+    zeltro-sed-change "/^#*\s*MAIL_FROM_ADDRESS=/" "MAIL_FROM_ADDRESS=\"hello@$PROJECT_NAME.local\"" .env
+    zeltro-sed-change "/^#*\s*MAIL_FROM_NAME=/" "MAIL_FROM_NAME=\"$PROJECT_NAME\"" .env
 
     # Propagate AWS credentials if available
     local aws_key="" aws_secret="" aws_region=""
@@ -156,9 +156,9 @@ framework_setup_env() {
     if [[ -z "$aws_region" ]] && [[ -f "$HOME/.aws/config" ]]; then
         aws_region=$(awk '/^\[default\]/{f=1;next}/^\[/{f=0}f && /region/{print $3}' "$HOME/.aws/config" 2>/dev/null | head -1 || true)
     fi
-    [[ -n "$aws_key" ]]    && podium-sed-change "/^#*\s*AWS_ACCESS_KEY_ID=/" "AWS_ACCESS_KEY_ID=$aws_key" .env
-    [[ -n "$aws_secret" ]] && podium-sed-change "/^#*\s*AWS_SECRET_ACCESS_KEY=/" "AWS_SECRET_ACCESS_KEY=$aws_secret" .env
-    [[ -n "$aws_region" ]] && podium-sed-change "/^#*\s*AWS_DEFAULT_REGION=/" "AWS_DEFAULT_REGION=$aws_region" .env
+    [[ -n "$aws_key" ]]    && zeltro-sed-change "/^#*\s*AWS_ACCESS_KEY_ID=/" "AWS_ACCESS_KEY_ID=$aws_key" .env
+    [[ -n "$aws_secret" ]] && zeltro-sed-change "/^#*\s*AWS_SECRET_ACCESS_KEY=/" "AWS_SECRET_ACCESS_KEY=$aws_secret" .env
+    [[ -n "$aws_region" ]] && zeltro-sed-change "/^#*\s*AWS_DEFAULT_REGION=/" "AWS_DEFAULT_REGION=$aws_region" .env
     echo "" >> .env
     echo "XDG_CONFIG_HOME=/usr/share/nginx/html/storage/app" >> .env
 

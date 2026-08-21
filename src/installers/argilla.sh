@@ -7,7 +7,7 @@ INSTALL_NOTES="Bundles Elasticsearch and a background worker — budget ~3 GB RA
 INSTALL_READY_RETRIES=48
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE argilla;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE argilla;" 2>/dev/null || true
 }
 
 write_files() {
@@ -48,8 +48,8 @@ services:
     environment:
       ARGILLA_HOME_PATH: /var/lib/argilla
       ARGILLA_ELASTICSEARCH: http://argilla-elasticsearch:9200
-      ARGILLA_DATABASE_URL: postgresql+asyncpg://root:password@podium-postgres:5432/argilla
-      ARGILLA_REDIS_URL: redis://podium-redis:6379/12
+      ARGILLA_DATABASE_URL: postgresql+asyncpg://root:password@zeltro-postgres:5432/argilla
+      ARGILLA_REDIS_URL: redis://zeltro-redis:6379/12
       ARGILLA_AUTH_SECRET_KEY: "$auth_secret"
       USERNAME: argilla
       PASSWORD: argilla12345
@@ -67,8 +67,8 @@ services:
     environment:
       ARGILLA_HOME_PATH: /var/lib/argilla
       ARGILLA_ELASTICSEARCH: http://argilla-elasticsearch:9200
-      ARGILLA_DATABASE_URL: postgresql+asyncpg://root:password@podium-postgres:5432/argilla
-      ARGILLA_REDIS_URL: redis://podium-redis:6379/12
+      ARGILLA_DATABASE_URL: postgresql+asyncpg://root:password@zeltro-postgres:5432/argilla
+      ARGILLA_REDIS_URL: redis://zeltro-redis:6379/12
       ARGILLA_AUTH_SECRET_KEY: "$auth_secret"
       BACKGROUND_NUM_WORKERS: "2"
     command: sh -c 'python -m argilla_server worker --num-workers \$\${BACKGROUND_NUM_WORKERS}'

@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="register on first visit — the first account becomes the i
 INSTALL_NOTES="The container runs its database migrations on boot; the UI 502s for a few seconds until they finish."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"infisical\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"infisical\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,10 +20,10 @@ services:
       NODE_ENV: production
       ENCRYPTION_KEY: "$encryption_key"
       AUTH_SECRET: "$auth_secret"
-      DB_CONNECTION_URI: "postgres://root:password@podium-postgres:5432/infisical"
-      REDIS_URL: "redis://podium-redis:6379/3"
+      DB_CONNECTION_URI: "postgres://root:password@zeltro-postgres:5432/infisical"
+      REDIS_URL: "redis://zeltro-redis:6379/3"
       SITE_URL: "http://infisical"
-      SMTP_HOST: podium-mailhog
+      SMTP_HOST: zeltro-mailhog
       SMTP_PORT: 1025
       SMTP_FROM_ADDRESS: infisical@example.com
       SMTP_FROM_NAME: Infisical

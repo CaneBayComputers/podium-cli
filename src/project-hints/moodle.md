@@ -2,7 +2,7 @@
 
 **Image**: `erseco/alpine-moodle:v5.2.1`
 **Port**: 8080 (behind the `nginx` reverse proxy; nginx + PHP-FPM run non-root inside)
-**Database**: MariaDB (`podium-mariadb`), dedicated user `moodle` / `moodle`
+**Database**: MariaDB (`zeltro-mariadb`), dedicated user `moodle` / `moodle`
 **Credentials**: admin / Admin123!
 
 ## Key Notes
@@ -12,4 +12,4 @@
 - The database must already exist — Moodle's CLI installer does not create it.
 - First boot runs the full CLI install; expect several minutes of 502s. The long proxy timeouts are there for that and for course backup/restore.
 - `SITE_URL` must match the browser URL or Moodle rejects requests with a wwwroot mismatch.
-- The installer exists: run `podium install moodle`.
+- The installer exists: run `zeltro install moodle`.

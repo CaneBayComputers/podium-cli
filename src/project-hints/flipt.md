@@ -12,4 +12,4 @@
 - No license key is required — startup logs a `no license key provided` warning and the UI serves normally. Only Pro integrations need one.
 - `FLIPT_META_TELEMETRY_ENABLED=false` and `FLIPT_META_CHECK_FOR_UPDATES=false` keep it from phoning home and from writing to a `$HOME` that does not exist in the image.
 - The upstream repo's root `docker-compose.yml` is a dev file that builds from source — do not copy it.
-- The installer exists: run `podium install flipt`.
+- The installer exists: run `zeltro install flipt`.

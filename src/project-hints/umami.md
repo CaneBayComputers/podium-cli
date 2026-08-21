@@ -2,22 +2,22 @@
 
 Umami is a privacy-focused analytics platform. Use image `ghcr.io/umami-software/umami:postgresql-latest`. It listens on port **3000**. Use an nginx reverse proxy to expose it at port 80.
 
-**Critical**: Umami supports **PostgreSQL only** — use the `postgresql-latest` tag. Use the shared `podium-postgres` service (host `podium-postgres`, port `5432`, user `root`, password `password`).
+**Critical**: Umami supports **PostgreSQL only** — use the `postgresql-latest` tag. Use the shared `zeltro-postgres` service (host `zeltro-postgres`, port `5432`, user `root`, password `password`).
 
 Create the database first:
 ```bash
-docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE umami;"
+docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE umami;"
 ```
 
 `APP_SECRET` must be set to any random string (at least 32 characters).
 
 ## Setup workflow
 
-1. Create DB: `docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE umami;"`
-2. `mkdir -p ~/podium-projects/umami`
+1. Create DB: `docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE umami;"`
+2. `mkdir -p ~/zeltro-projects/umami`
 3. Write `docker-compose.yaml` and `nginx.conf` (see below).
-4. `cd ~/podium-projects/umami && podium setup umami --no-startup`
-5. `podium up umami`
+4. `cd ~/zeltro-projects/umami && zeltro setup umami --no-startup`
+5. `zeltro up umami`
 6. Verify: `curl -sI http://umami/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -28,7 +28,7 @@ services:
     image: ghcr.io/umami-software/umami:postgresql-latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/umami
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/umami
       APP_SECRET: "random-secret-string-at-least-32-chars-long"
     networks:
       default:
@@ -48,7 +48,7 @@ services:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

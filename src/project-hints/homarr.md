@@ -9,7 +9,7 @@ Modern, drag-and-drop dashboard with integrations for the usual self-hosted stac
 
 ## Key Notes
 - `SECRET_ENCRYPTION_KEY` (32 random bytes, hex) is mandatory — the container refuses to start without it, and rotating it makes every saved integration credential undecryptable.
-- Homarr v1 runs its own Redis **inside** the container (`REDIS_IS_EXTERNAL=false` in the image defaults), so `podium-redis` is not used and must not be wired in.
+- Homarr v1 runs its own Redis **inside** the container (`REDIS_IS_EXTERNAL=false` in the image defaults), so `zeltro-redis` is not used and must not be wired in.
 - Docker-socket integration is not mounted here; add `/var/run/docker.sock:/var/run/docker.sock` yourself if you want the Docker widget.
 - WebSockets are used for live widget updates — the `Upgrade`/`Connection` headers in the proxy are required.
-- The installer exists: run `podium install homarr`.
+- The installer exists: run `zeltro install homarr`.

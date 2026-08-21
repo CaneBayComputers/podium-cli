@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit — register admin@example.com to g
 INSTALL_NOTES="The backend bootstraps its own schema and a limited app DB role on first boot; give it a minute before the UI works."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE sparkyfitness;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE sparkyfitness;" 2>/dev/null || true
 }
 
 write_files() {
@@ -21,7 +21,7 @@ services:
       SPARKY_FITNESS_LOG_LEVEL: ERROR
       NODE_ENV: production
       TZ: Etc/UTC
-      SPARKY_FITNESS_DB_HOST: podium-postgres
+      SPARKY_FITNESS_DB_HOST: zeltro-postgres
       SPARKY_FITNESS_DB_PORT: "5432"
       SPARKY_FITNESS_DB_NAME: sparkyfitness
       SPARKY_FITNESS_DB_USER: root

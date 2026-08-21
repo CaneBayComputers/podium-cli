@@ -31,10 +31,10 @@ framework_setup_env() {
     should_write_env "config.inc.php" || return 0
     if [ -f "config.example.inc.php" ]; then
         cp -f config.example.inc.php config.inc.php
-        podium-sed "s/DB_HOSTNAME/$MARIADB_CONTAINER_NAME/" config.inc.php
-        podium-sed "s/DB_USERNAME/root/" config.inc.php
-        podium-sed "s/DB_PASSWORD//" config.inc.php
-        podium-sed "s/DB_NAME/$DB_NAME/" config.inc.php
+        zeltro-sed "s/DB_HOSTNAME/$MARIADB_CONTAINER_NAME/" config.inc.php
+        zeltro-sed "s/DB_USERNAME/root/" config.inc.php
+        zeltro-sed "s/DB_PASSWORD//" config.inc.php
+        zeltro-sed "s/DB_NAME/$DB_NAME/" config.inc.php
     fi
     # Plain PHP projects don't need a .env by default
 }

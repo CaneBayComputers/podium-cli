@@ -28,7 +28,7 @@ NEW_DESC="";  SET_DESC=0
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 
 usage() {
-    echo-white "Usage: podium set-metadata <project> [options]"
+    echo-white "Usage: zeltro set-metadata <project> [options]"
     echo-white ""
     echo-white "Set the display metadata shown for a project."
     echo-white ""
@@ -40,7 +40,7 @@ usage() {
     echo-white "  --help                 Show this message"
     echo-white ""
     echo-white "last_on and status are not settable: they are written by"
-    echo-white "start/stop and by 'podium disable'/'podium enable'."
+    echo-white "start/stop and by 'zeltro disable'/'zeltro enable'."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -74,10 +74,10 @@ if [ ! -d "$PROJECT_DIR" ]; then
     error "Project '$PROJECT_NAME' not found in $PROJECTS_DIR_PATH."
 fi
 
-COMPOSE_FILE="$(podium_project_compose "$PROJECT_NAME")"
+COMPOSE_FILE="$(zeltro_project_compose "$PROJECT_NAME")"
 if [ -z "$COMPOSE_FILE" ]; then
     [[ "$JSON_OUTPUT" == "1" ]] && json_error "project '$PROJECT_NAME' has no docker-compose file"
-    error "Project '$PROJECT_NAME' has no docker-compose file. Run: podium setup $PROJECT_NAME"
+    error "Project '$PROJECT_NAME' has no docker-compose file. Run: zeltro setup $PROJECT_NAME"
 fi
 
 _fail() {

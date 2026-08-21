@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Linkwarden"
 INSTALL_NOTES="Register your account on first visit."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE linkwarden;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE linkwarden;" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     image: ghcr.io/linkwarden/linkwarden:latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/linkwarden
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/linkwarden
       NEXTAUTH_SECRET: "$nextauth_secret"
       NEXTAUTH_URL: http://linkwarden/api/v1/auth
       NEXT_PUBLIC_DISABLE_REGISTRATION: "false"

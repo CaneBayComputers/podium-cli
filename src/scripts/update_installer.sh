@@ -9,12 +9,12 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-# Run standard pre-checks (loads /etc/podium-cli/.env, validates projects dir, etc.)
+# Run standard pre-checks (loads /etc/zeltro-cli/.env, validates projects dir, etc.)
 source scripts/pre_check.sh
 
 usage() {
-    echo-white "Usage: podium update-installer <app>"
-    echo-white "       podium update-installer --all"
+    echo-white "Usage: zeltro update-installer <app>"
+    echo-white "       zeltro update-installer --all"
     echo-white ""
     echo-white "Launches the configured AI agent with a pre-built prompt that instructs"
     echo-white "it to read AGENTS.md, diff the named installer against the upstream"
@@ -61,7 +61,7 @@ fi
 if [[ "$ALL" == "0" ]]; then
     if [[ ! -f "$DEV_DIR/installers/$APP.sh" ]]; then
         echo-red "No installer found for: $APP"
-        echo-white "Run 'podium install --list' to see available apps."
+        echo-white "Run 'zeltro install --list' to see available apps."
         exit 1
     fi
 fi
@@ -75,7 +75,7 @@ for host in cami cassie; do
     fi
 done
 
-INSTALL_DIR="/usr/local/share/podium-cli"
+INSTALL_DIR="/usr/local/share/zeltro-cli"
 
 if [[ "$ALL" == "1" ]]; then
     TARGET_LINE="Update **every** installer in $INSTALL_DIR/src/installers/. Iterate one app at a time, finishing each before moving on (commit per app)."
@@ -86,7 +86,7 @@ else
 fi
 
 if [[ -n "$REMOTES" ]]; then
-    REMOTES_LINE="Remote test machines reachable via SSH: $REMOTES. Connect as \`ssh <name>@<name>\`. Their podium-cli checkouts live at /usr/local/share/podium-cli (pull with \`sudo git -C /usr/local/share/podium-cli pull\`). You may use these to verify on a second machine, or to parallelize work across machines for --all runs."
+    REMOTES_LINE="Remote test machines reachable via SSH: $REMOTES. Connect as \`ssh <name>@<name>\`. Their zeltro-cli checkouts live at /usr/local/share/zeltro-cli (pull with \`sudo git -C /usr/local/share/zeltro-cli pull\`). You may use these to verify on a second machine, or to parallelize work across machines for --all runs."
 else
     REMOTES_LINE="No remote test machines are reachable from this host right now. Verify on the local machine only."
 fi
@@ -104,7 +104,7 @@ fi
 # `|| true` is required: read returns non-zero when it hits EOF without the
 # delimiter, which is always here, and set -e would abort on it.
 read -r -d '' PROMPT <<EOF || true
-You are working on the podium-cli repository at $INSTALL_DIR.
+You are working on the zeltro-cli repository at $INSTALL_DIR.
 
 # Goal
 $TARGET_LINE
@@ -115,7 +115,7 @@ $TARGET_LINE
    - "Project Hints Library" (rules for what belongs in hint files)
    - "Complex Compose Adaptation" + "Upstream compose preservation"
    - "VPC Networking & IP Allocation" (so any compose you write fits the .2-.8 / .32-.63 / .100-.250 partitioning)
-   - "Design Context: What Podium Optimizes For"
+   - "Design Context: What Zeltro Optimizes For"
 2. The existing installer file ($SCOPE_LINE) and any matching hint file in $INSTALL_DIR/src/project-hints/.
 
 # Process per app
@@ -124,18 +124,18 @@ $TARGET_LINE
 3. Diff: identify added/removed/renamed env vars, new required services, image schema migrations, integration changes (e.g. new sidecar required, new mount path, new init step).
 4. Regenerate the installer to match upstream:
    - Pin image tags to a specific recent version (e.g. \`zulip/docker-zulip:8.0\`, not \`:latest\`). Bumps must be intentional.
-   - Preserve Podium conventions: shared service hostnames (podium-postgres, podium-mariadb, podium-redis, podium-mongo, podium-memcached) instead of bundled DBs; entry-point service named in a way that setup_project.sh's web-service detection picks up (\`nginx\`, \`web\`, \`app\`, \`api\`, \`server\`, \`frontend\`, \`backend\`, \`http\`); helper services on the default network without static IPs.
+   - Preserve Zeltro conventions: shared service hostnames (zeltro-postgres, zeltro-mariadb, zeltro-redis, zeltro-mongo, zeltro-memcached) instead of bundled DBs; entry-point service named in a way that setup_project.sh's web-service detection picks up (\`nginx\`, \`web\`, \`app\`, \`api\`, \`server\`, \`frontend\`, \`backend\`, \`http\`); helper services on the default network without static IPs.
    - Keep the format: INSTALL_DISPLAY, INSTALL_CREDENTIALS, INSTALL_NOTES, optional pre_install(), required write_files(). Generate any required secrets via \`openssl rand -hex\`.
 5. Update the hint file (or create one) only with non-obvious gotchas — things an agent would reliably get wrong without guidance. Do not duplicate upstream README content.
 
 # Verification (do this for every app you touch — no exceptions)
-1. Run \`podium install $APP\` (or the iterated app name) on this machine. The install must succeed.
-2. \`podium status <app>\` must show RUNNING. \`curl -sI http://<app>/\` (or the documented entry path) must return a sane status code (200/301/302/401/403 are all acceptable; 502/000 are failures).
+1. Run \`zeltro install $APP\` (or the iterated app name) on this machine. The install must succeed.
+2. \`zeltro status <app>\` must show RUNNING. \`curl -sI http://<app>/\` (or the documented entry path) must return a sane status code (200/301/302/401/403 are all acceptable; 502/000 are failures).
 3. $REMOTES_LINE
-4. After verifying, run \`podium remove <app> --force-db-delete\` to leave a clean slate before moving on. Do this on every machine you tested on.
+4. After verifying, run \`zeltro remove <app> --force-db-delete\` to leave a clean slate before moving on. Do this on every machine you tested on.
 
 # Constraints
-- If an upstream project has materially shifted (deprecated, restructured beyond a tractable rewrite, or now requires features Podium doesn't support), document the situation in the commit message and skip rather than committing a broken installer.
+- If an upstream project has materially shifted (deprecated, restructured beyond a tractable rewrite, or now requires features Zeltro doesn't support), document the situation in the commit message and skip rather than committing a broken installer.
 - Never commit \`:latest\` tags — pin every image.
 - Never commit an installer that hasn't completed end-to-end verification.
 - Commit each app as its own commit with a clear message naming the app and what changed (e.g. \`zulip: bump to 8.0, rename SECRETS_* envs\`). Push to origin/master when finished.
@@ -152,12 +152,12 @@ fi
 # Verify AI agent is configured (same pattern as ai.sh).
 AI_AGENT_CLI_NAME="$AI_AGENT"
 if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
-    echo-cyan "AI agent is not configured. Run 'podium ai-set' to choose an agent and model."
+    echo-cyan "AI agent is not configured. Run 'zeltro ai-set' to choose an agent and model."
     exit 1
 fi
 if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
     echo-red "Configured AI agent CLI '$AI_AGENT_CLI_NAME' is not on PATH."
-    echo-white "Run 'podium ai-set' to choose a different agent, or ensure $AI_AGENT_CLI_NAME is installed."
+    echo-white "Run 'zeltro ai-set' to choose a different agent, or ensure $AI_AGENT_CLI_NAME is installed."
     exit 1
 fi
 

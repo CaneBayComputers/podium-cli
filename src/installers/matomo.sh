@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Set credentials during setup wizard"
 INSTALL_NOTES="First visit shows the installation wizard. Complete it to set your admin account."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS matomo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS matomo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -13,7 +13,7 @@ services:
     image: matomo:apache
     restart: unless-stopped
     environment:
-      MATOMO_DATABASE_HOST: podium-mariadb
+      MATOMO_DATABASE_HOST: zeltro-mariadb
       MATOMO_DATABASE_ADAPTER: mysql
       MATOMO_DATABASE_USERNAME: root
       MATOMO_DATABASE_PASSWORD: ""

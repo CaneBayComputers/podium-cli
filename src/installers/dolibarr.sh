@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot runs the auto-installer and takes ~60 seconds before the login page appears."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS dolibarr CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'dolibarr'@'%' IDENTIFIED BY 'dolibarr';
         ALTER USER 'dolibarr'@'%' IDENTIFIED BY 'dolibarr';
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       DOLI_DB_TYPE: mysqli
-      DOLI_DB_HOST: podium-mariadb
+      DOLI_DB_HOST: zeltro-mariadb
       DOLI_DB_HOST_PORT: 3306
       DOLI_DB_NAME: dolibarr
       DOLI_DB_USER: dolibarr

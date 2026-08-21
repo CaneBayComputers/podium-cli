@@ -6,10 +6,10 @@ No external database is needed — Grocy uses SQLite. Persist `/config` with a n
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/grocy`
+1. `mkdir -p ~/zeltro-projects/grocy`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/grocy && podium setup grocy --no-startup`
-4. `podium up grocy`
+3. `cd ~/zeltro-projects/grocy && zeltro setup grocy --no-startup`
+4. `zeltro up grocy`
 5. Verify: `curl -sI http://grocy/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -36,7 +36,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## Admin

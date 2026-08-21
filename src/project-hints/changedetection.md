@@ -6,10 +6,10 @@ No external database is needed — data is stored in a datastore volume at `/dat
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/changedetection`
+1. `mkdir -p ~/zeltro-projects/changedetection`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/changedetection && podium setup changedetection --no-startup`
-4. `podium up changedetection`
+3. `cd ~/zeltro-projects/changedetection && zeltro setup changedetection --no-startup`
+4. `zeltro up changedetection`
 5. Verify: `curl -sI http://changedetection/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -44,7 +44,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

@@ -20,11 +20,11 @@ services:
     image: lowcoderorg/lowcoder-ce:2.7.6
     restart: unless-stopped
     environment:
-      # Use the shared Podium services instead of the bundled mongo/redis
+      # Use the shared Zeltro services instead of the bundled mongo/redis
       LOWCODER_MONGODB_ENABLED: "false"
       LOWCODER_REDIS_ENABLED: "false"
-      LOWCODER_MONGODB_URL: "mongodb://root:password@podium-mongo:27017/lowcoder?authSource=admin"
-      LOWCODER_REDIS_URL: "redis://podium-redis:6379"
+      LOWCODER_MONGODB_URL: "mongodb://root:password@zeltro-mongo:27017/lowcoder?authSource=admin"
+      LOWCODER_REDIS_URL: "redis://zeltro-redis:6379"
       LOWCODER_API_SERVICE_ENABLED: "true"
       LOWCODER_NODE_SERVICE_ENABLED: "true"
       LOWCODER_FRONTEND_ENABLED: "true"

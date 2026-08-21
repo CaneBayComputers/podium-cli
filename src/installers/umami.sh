@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Umami"
 INSTALL_CREDENTIALS="admin / umami"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE umami;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE umami;" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     image: ghcr.io/umami-software/umami:postgresql-latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/umami
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/umami
       APP_SECRET: "$app_secret"
 
   nginx:

@@ -9,7 +9,7 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-# Run standard pre-checks (loads /etc/podium-cli/.env, validates projects dir, etc.)
+# Run standard pre-checks (loads /etc/zeltro-cli/.env, validates projects dir, etc.)
 source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
@@ -18,7 +18,7 @@ SCRIPT_DIR="$DEV_DIR/scripts"
 cd "$CALLER_DIR"
 
 usage() {
-    echo-white "Usage: podium ai [--interactive] \"<prompt>\""
+    echo-white "Usage: zeltro ai [--interactive] \"<prompt>\""
     echo-white ""
     echo-white "Send a one-off prompt to your configured AI agent and exit."
     echo-white "Durable project context lives in the project's AGENTS.md, so each"
@@ -29,17 +29,17 @@ usage() {
     echo-white "  --interactive, -i  Open a persistent interactive session instead"
     echo-white "  --one-off          Accepted for compatibility (now the default)"
     echo-white ""
-    echo-white "Must be run from a Podium project directory."
+    echo-white "Must be run from a Zeltro project directory."
 }
 
 # One-off is the DEFAULT. --interactive opts back into a persistent session;
 # --one-off is still accepted so existing scripts and callers keep working.
 ONE_OFF=1
 PROMPT_ARGS=()
-# `--` ends Podium's option parsing. Note it does not make a dash-leading
+# `--` ends Zeltro's option parsing. Note it does not make a dash-leading
 # prompt work end to end: the prompt is passed to the agent CLI as an
 # argument, and that CLI parses the leading dash as its own flag. The latch
-# is here so Podium does not reject such a prompt itself.
+# is here so Zeltro does not reject such a prompt itself.
 END_OF_OPTS=0
 for arg in "$@"; do
     if [[ "$END_OF_OPTS" == "0" ]]; then
@@ -65,7 +65,7 @@ for arg in "$@"; do
                 # silently changed what the agent was asked, and a newer flag on
                 # an older CLI became part of the request instead of an error.
                 echo-red "Unknown option: $arg"
-                echo-white "Use '$PODIUM_CMD --help' for the option list."
+                echo-white "Use '$ZELTRO_CMD --help' for the option list."
                 exit 1
                 ;;
         esac
@@ -78,7 +78,7 @@ INIT_PROMPT="${PROMPT_ARGS[*]}"
 # An initial prompt is required — no interactive prompt.
 if [[ -z "$INIT_PROMPT" ]]; then
     echo-red "No initial prompt provided."
-    echo-white "Usage: podium ai [--interactive] \"<prompt>\""
+    echo-white "Usage: zeltro ai [--interactive] \"<prompt>\""
     cd "$CALLER_DIR"
     exit 1
 fi
@@ -86,28 +86,28 @@ fi
 AI_AGENT_CLI_NAME="$AI_AGENT"
 
 if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
-    echo-cyan "AI agent is not configured. Run 'podium ai-set' to choose an agent and model."
+    echo-cyan "AI agent is not configured. Run 'zeltro ai-set' to choose an agent and model."
     cd "$CALLER_DIR"
     exit 1
 fi
 
 if ! command -v "$AI_AGENT_CLI_NAME" >/dev/null 2>&1; then
     echo-red "Configured AI agent CLI '$AI_AGENT_CLI_NAME' is not on PATH."
-    echo-white "Run 'podium ai-set' to choose a different agent, or ensure $AI_AGENT_CLI_NAME is installed."
+    echo-white "Run 'zeltro ai-set' to choose a different agent, or ensure $AI_AGENT_CLI_NAME is installed."
     cd "$CALLER_DIR"
     exit 1
 fi
 
-# Podium no longer forces each agent's approval prompts off. Disabling another
+# Zeltro no longer forces each agent's approval prompts off. Disabling another
 # tool's safety mechanism on someone's machine is a decision for the user, not
 # for us, so it is asked once at install time and recorded in the agent's own
-# config file (see podium_offer_agent_autonomy). The user can inspect and revoke
+# config file (see zeltro_offer_agent_autonomy). The user can inspect and revoke
 # it there using the agent's own documentation.
 #
-# PODIUM_AI_AUTO_APPROVE=1 re-adds the flags per invocation. It exists for
+# ZELTRO_AI_AUTO_APPROVE=1 re-adds the flags per invocation. It exists for
 # throwaway containers and CI, where writing to a home-directory config is
 # pointless, and so anyone depending on the old behaviour has a way back.
-AUTO_APPROVE="${PODIUM_AI_AUTO_APPROVE:-0}"
+AUTO_APPROVE="${ZELTRO_AI_AUTO_APPROVE:-0}"
 
 case "$AI_AGENT_CLI_NAME" in
     codex)
@@ -148,7 +148,7 @@ case "$AI_AGENT_CLI_NAME" in
         # --auth-type is required: without it qwen refuses non-interactive runs
         # with "No auth type is selected", even when the key and endpoint are set.
         # The yolo warning is printed on every headless run and would land in the
-        # middle of `podium create`'s JSON reply, so it is suppressed rather than
+        # middle of `zeltro create`'s JSON reply, so it is suppressed rather than
         # left to corrupt the classifier.
         export QWEN_CODE_SUPPRESS_YOLO_WARNING=1
         # --auth-type is required for headless runs and is not a safety setting,
@@ -198,7 +198,7 @@ case "$AI_AGENT_CLI_NAME" in
     *)
         echo-red "Unsupported AI agent: '$AI_AGENT_CLI_NAME'."
         echo-white "Supported agents: codex, claude, gemini, aider"
-        echo-white "Run 'podium ai-set' to choose a supported agent."
+        echo-white "Run 'zeltro ai-set' to choose a supported agent."
         exit 1
         ;;
 esac

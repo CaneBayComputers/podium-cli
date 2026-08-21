@@ -12,7 +12,7 @@ services:
     image: ghcr.io/bluewave-labs/checkmate:3.10.0
     restart: unless-stopped
     environment:
-      DB_CONNECTION_STRING: "mongodb://root:password@podium-mongo:27017/checkmate?authSource=admin"
+      DB_CONNECTION_STRING: "mongodb://root:password@zeltro-mongo:27017/checkmate?authSource=admin"
       CLIENT_HOST: http://checkmate
       JWT_SECRET: "$jwt_secret"
       LOG_LEVEL: warn

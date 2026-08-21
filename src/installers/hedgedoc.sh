@@ -2,7 +2,7 @@ INSTALL_DISPLAY="HedgeDoc"
 INSTALL_NOTES="Register an account on first visit. Anonymous access is enabled by default."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE hedgedoc;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE hedgedoc;" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     image: quay.io/hedgedoc/hedgedoc:latest
     restart: unless-stopped
     environment:
-      CMD_DB_URL: postgres://root:password@podium-postgres:5432/hedgedoc
+      CMD_DB_URL: postgres://root:password@zeltro-postgres:5432/hedgedoc
       CMD_DOMAIN: hedgedoc
       CMD_URL_ADDPORT: "false"
       CMD_PROTOCOL_USESSL: "false"

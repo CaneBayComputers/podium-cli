@@ -23,7 +23,7 @@ ACTION="set"
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} ai-unattended [AGENT] [--revoke] [--status] [--json-output]"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} ai-unattended [AGENT] [--revoke] [--status] [--json-output]"
     echo-white ""
     echo-white "Control whether an AI agent runs without asking approval for each action."
     echo-white ""
@@ -37,7 +37,7 @@ usage() {
     echo-white "  --json-output    Machine-readable output."
     echo-white "  --help           Show this message."
     echo-white ""
-    echo-white "The setting is stored in the agent's OWN config file, not in Podium's, so"
+    echo-white "The setting is stored in the agent's OWN config file, not in Zeltro's, so"
     echo-white "it can be inspected and undone with that agent's documentation:"
     echo-white "  claude → ~/.claude/settings.json      codex → ~/.codex/config.toml"
     echo-white "  gemini → ~/.gemini/settings.json      qwen  → ~/.qwen/settings.json"
@@ -58,16 +58,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Default to whatever agent Podium is configured to use.
+# Default to whatever agent Zeltro is configured to use.
 if [ -z "$AGENT" ]; then
     AGENT="${AI_AGENT:-}"
 fi
 
 if [ -z "$AGENT" ]; then
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        json_error "No agent specified and none configured. Run 'podium ai-set' first."
+        json_error "No agent specified and none configured. Run 'zeltro ai-set' first."
     fi
-    error "No agent specified and none is configured. Run 'podium ai-set' first."
+    error "No agent specified and none is configured. Run 'zeltro ai-set' first."
 fi
 
 case "$AGENT" in
@@ -79,11 +79,11 @@ case "$AGENT" in
         error "Unknown agent '$AGENT'. Expected claude, codex, gemini, qwen or aider." ;;
 esac
 
-CFG="$(podium_agent_config_path "$AGENT")"
+CFG="$(zeltro_agent_config_path "$AGENT")"
 
 case "$ACTION" in
     status)
-        STATE=$(podium_read_agent_autonomy "$AGENT")
+        STATE=$(zeltro_read_agent_autonomy "$AGENT")
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             echo "{\"action\": \"ai_unattended\", \"status\": \"success\", \"agent\": \"$AGENT\", \"unattended\": \"$STATE\", \"config_file\": \"$CFG\"}"
         else
@@ -100,16 +100,16 @@ case "$ACTION" in
         # Deliberately no confirmation prompt here. Running this command IS the
         # explicit request; the interactive consent flow lives in ai-set, where
         # the user has not necessarily asked for it yet.
-        podium_allow_agent_autonomy "$AGENT"
-        STATE=$(podium_read_agent_autonomy "$AGENT")
+        zeltro_allow_agent_autonomy "$AGENT"
+        STATE=$(zeltro_read_agent_autonomy "$AGENT")
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             echo "{\"action\": \"ai_unattended\", \"status\": \"success\", \"agent\": \"$AGENT\", \"unattended\": \"$STATE\", \"config_file\": \"$CFG\"}"
         fi
         ;;
 
     revoke)
-        podium_revoke_agent_autonomy "$AGENT"
-        STATE=$(podium_read_agent_autonomy "$AGENT")
+        zeltro_revoke_agent_autonomy "$AGENT"
+        STATE=$(zeltro_read_agent_autonomy "$AGENT")
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             echo "{\"action\": \"ai_unattended\", \"status\": \"success\", \"agent\": \"$AGENT\", \"unattended\": \"$STATE\", \"config_file\": \"$CFG\"}"
         fi

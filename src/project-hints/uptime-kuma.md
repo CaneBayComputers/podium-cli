@@ -4,7 +4,7 @@ Uptime Kuma is distributed as the prebuilt Docker image `louislam/uptime-kuma:1`
 The source repo at `louislam/uptime-kuma` does **not** ship a root-level
 `docker-compose.yaml`, and building from source is heavy (Vue 3 frontend +
 Node backend, full `npm install` + `npm run build`). Do **not** clone the source
-or run `podium new`. Use the official image directly.
+or run `zeltro new`. Use the official image directly.
 
 Uptime Kuma listens on port **3001**, not port 80. To make it reachable at
 `http://uptime-kuma/`, add an nginx reverse proxy on port 80 that proxies
@@ -13,18 +13,18 @@ headers — Uptime Kuma uses Socket.IO for live status updates and breaks
 without them.
 
 Uptime Kuma uses SQLite by default and stores all data under `/app/data`.
-No external database is needed; ignore Podium's shared MariaDB/Postgres for
+No external database is needed; ignore Zeltro's shared MariaDB/Postgres for
 this project. Persist `/app/data` via a named Docker volume.
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/uptime-kuma`
+1. `mkdir -p ~/zeltro-projects/uptime-kuma`
 2. Write `docker-compose.yaml` (see below) and `nginx.conf` (see below) into
    that directory.
-3. `cd ~/podium-projects/uptime-kuma && podium setup uptime-kuma --no-startup`
-   — Podium detects the multi-service compose, identifies the nginx service
+3. `cd ~/zeltro-projects/uptime-kuma && zeltro setup uptime-kuma --no-startup`
+   — Zeltro detects the multi-service compose, identifies the nginx service
    as web-facing (port 80), and assigns it a static VPC IP automatically.
-4. `podium up uptime-kuma`
+4. `zeltro up uptime-kuma`
 5. Verify with `curl -sI http://uptime-kuma/` — expect a 302 redirect to
    `/dashboard`.
 
@@ -58,7 +58,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 The nginx service holds the `container_name: uptime-kuma` and the static

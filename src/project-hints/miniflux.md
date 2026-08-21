@@ -2,18 +2,18 @@
 
 Miniflux is distributed as `miniflux/miniflux:latest`. It is a minimalist RSS reader that listens on port **8080**. Use an nginx reverse proxy to expose it at port 80.
 
-**Critical**: Miniflux supports **PostgreSQL only** — it does NOT support MySQL/MariaDB. Use the shared `podium-postgres` service (host `podium-postgres`, port `5432`, user `root`, password `password`). Create the database first:
+**Critical**: Miniflux supports **PostgreSQL only** — it does NOT support MySQL/MariaDB. Use the shared `zeltro-postgres` service (host `zeltro-postgres`, port `5432`, user `root`, password `password`). Create the database first:
 ```bash
-docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;"
+docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;"
 ```
 
 ## Setup workflow
 
-1. Create the database: `docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;"`
-2. `mkdir -p ~/podium-projects/miniflux`
+1. Create the database: `docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;"`
+2. `mkdir -p ~/zeltro-projects/miniflux`
 3. Write `docker-compose.yaml` and `nginx.conf` (see below).
-4. `cd ~/podium-projects/miniflux && podium setup miniflux --no-startup`
-5. `podium up miniflux`
+4. `cd ~/zeltro-projects/miniflux && zeltro setup miniflux --no-startup`
+5. `zeltro up miniflux`
 6. Verify: `curl -sI http://miniflux/` — expect HTTP 200 or 302.
 
 ## docker-compose.yaml
@@ -24,7 +24,7 @@ services:
     image: miniflux/miniflux:latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/miniflux?sslmode=disable
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/miniflux?sslmode=disable
       RUN_MIGRATIONS: "1"
       CREATE_ADMIN: "1"
       ADMIN_USERNAME: admin
@@ -48,7 +48,7 @@ services:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

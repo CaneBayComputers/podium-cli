@@ -1,10 +1,10 @@
 INSTALL_DISPLAY="Docmost"
 INSTALL_CREDENTIALS="Create the workspace owner on first visit"
-INSTALL_NOTES="Uses the shared podium-postgres and podium-redis; no bundled services."
+INSTALL_NOTES="Uses the shared zeltro-postgres and zeltro-redis; no bundled services."
 INSTALL_READY_RETRIES=40
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE docmost;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE docmost;" 2>/dev/null || true
 }
 
 write_files() {
@@ -19,10 +19,10 @@ services:
     environment:
       APP_URL: http://docmost
       APP_SECRET: "$app_secret"
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/docmost
-      REDIS_URL: redis://podium-redis:6379
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/docmost
+      REDIS_URL: redis://zeltro-redis:6379
       MAIL_DRIVER: smtp
-      SMTP_HOST: podium-mailhog
+      SMTP_HOST: zeltro-mailhog
       SMTP_PORT: 1025
       SMTP_SECURE: "false"
       MAIL_FROM_ADDRESS: docmost@example.com

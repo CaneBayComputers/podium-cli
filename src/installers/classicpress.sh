@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="set your admin account in the five-minute install on first 
 INSTALL_NOTES="Config env vars use the CLASSICPRESS_ prefix, not WORDPRESS_, and the default table prefix is cp_."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS classicpress CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS classicpress CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -23,7 +23,7 @@ services:
     image: classicpress/classicpress:php8.4-apache
     restart: unless-stopped
     environment:
-      CLASSICPRESS_DB_HOST: podium-mariadb:3306
+      CLASSICPRESS_DB_HOST: zeltro-mariadb:3306
       CLASSICPRESS_DB_NAME: classicpress
       CLASSICPRESS_DB_USER: root
       CLASSICPRESS_DB_PASSWORD: ""

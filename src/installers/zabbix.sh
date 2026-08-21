@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Admin / zabbix"
 INSTALL_NOTES="Enterprise monitoring platform. First startup takes ~60 seconds for database initialization."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE zabbix;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE zabbix;" 2>/dev/null || true
 }
 
 write_files() {
@@ -13,7 +13,7 @@ services:
     image: zabbix/zabbix-server-pgsql:alpine-latest
     restart: unless-stopped
     environment:
-      DB_SERVER_HOST: podium-postgres
+      DB_SERVER_HOST: zeltro-postgres
       DB_SERVER_PORT: "5432"
       POSTGRES_DB: zabbix
       POSTGRES_USER: root
@@ -26,7 +26,7 @@ services:
     depends_on:
       - zabbix-server
     environment:
-      DB_SERVER_HOST: podium-postgres
+      DB_SERVER_HOST: zeltro-postgres
       DB_SERVER_PORT: "5432"
       POSTGRES_DB: zabbix
       POSTGRES_USER: root

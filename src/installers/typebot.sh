@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Typebot"
 INSTALL_NOTES="Conversational form builder. Log in with admin@typebot.local. Viewer is at http://$PROJECT_NAME/viewer/."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE typebot;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE typebot;" 2>/dev/null || true
 }
 
 write_files() {
@@ -11,7 +11,7 @@ write_files() {
     enc_secret=$(openssl rand -hex 16)
 
     cat > .env << EOF
-DATABASE_URL=postgresql://root:password@podium-postgres:5432/typebot
+DATABASE_URL=postgresql://root:password@zeltro-postgres:5432/typebot
 ENCRYPTION_SECRET=$enc_secret
 NEXTAUTH_SECRET=$nextauth_secret
 NEXTAUTH_URL=http://typebot

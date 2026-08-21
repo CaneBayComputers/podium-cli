@@ -7,7 +7,7 @@
 #
 # This is a grep and not a `bash -n` run ON PURPOSE. `bash -n` parses a script
 # containing `mapfile` without complaint and fails only at runtime, which is
-# exactly how `podium configure` shipped broken to macOS: every syntax check
+# exactly how `zeltro configure` shipped broken to macOS: every syntax check
 # passed, and it died on a real Mac with "mapfile: command not found".
 #
 #   ./tests/lint-bash32.sh
@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.." || exit 1
 # Comments are stripped before matching: the fixes for these very constructs
 # name them in explanatory comments, and a lint that trips over its own
 # rationale would just get disabled.
-FILES=$(find src -name '*.sh' -type f; ls src/podium install-*.sh 2>/dev/null)
+FILES=$(find src -name '*.sh' -type f; ls src/zeltro install-*.sh 2>/dev/null)
 
 fail=0
 check() {

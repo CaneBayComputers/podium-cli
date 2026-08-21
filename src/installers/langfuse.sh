@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin@example.com / admin123"
 INSTALL_NOTES="Heavy stack: web + worker + ClickHouse + MinIO. First boot runs ClickHouse migrations and can take 2-3 minutes."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE langfuse;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE langfuse;" 2>/dev/null || true
 }
 
 write_files() {
@@ -14,7 +14,7 @@ write_files() {
     nextauth_secret=$(openssl rand -hex 32)
 
     cat > .env << EOF
-DATABASE_URL=postgresql://root:password@podium-postgres:5432/langfuse
+DATABASE_URL=postgresql://root:password@zeltro-postgres:5432/langfuse
 SALT=$salt
 ENCRYPTION_KEY=$encryption_key
 TELEMETRY_ENABLED=false
@@ -26,7 +26,7 @@ CLICKHOUSE_USER=clickhouse
 CLICKHOUSE_PASSWORD=clickhouse
 CLICKHOUSE_CLUSTER_ENABLED=false
 
-REDIS_CONNECTION_STRING=redis://podium-redis:6379/6
+REDIS_CONNECTION_STRING=redis://zeltro-redis:6379/6
 LANGFUSE_BULLMQ_SKIP_REDIS_VERSION_CHECK=true
 
 LANGFUSE_S3_EVENT_UPLOAD_BUCKET=langfuse
@@ -48,9 +48,9 @@ LANGFUSE_S3_MEDIA_UPLOAD_PREFIX=media/
 NEXTAUTH_URL=http://langfuse
 NEXTAUTH_SECRET=$nextauth_secret
 
-LANGFUSE_INIT_ORG_ID=podium
-LANGFUSE_INIT_ORG_NAME=Podium
-LANGFUSE_INIT_PROJECT_ID=podium-project
+LANGFUSE_INIT_ORG_ID=zeltro
+LANGFUSE_INIT_ORG_NAME=Zeltro
+LANGFUSE_INIT_PROJECT_ID=zeltro-project
 LANGFUSE_INIT_PROJECT_NAME=Default
 LANGFUSE_INIT_USER_EMAIL=admin@example.com
 LANGFUSE_INIT_USER_NAME=Admin

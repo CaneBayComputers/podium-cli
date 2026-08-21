@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot builds the database and takes ~60 seconds. The daemon sidecar runs scheduled jobs, workflows and email fetching."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS espocrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'espocrm'@'%' IDENTIFIED BY 'espocrm';
         ALTER USER 'espocrm'@'%' IDENTIFIED BY 'espocrm';
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       ESPOCRM_DATABASE_PLATFORM: Mysql
-      ESPOCRM_DATABASE_HOST: podium-mariadb
+      ESPOCRM_DATABASE_HOST: zeltro-mariadb
       ESPOCRM_DATABASE_PORT: 3306
       ESPOCRM_DATABASE_NAME: espocrm
       ESPOCRM_DATABASE_USER: espocrm
@@ -39,7 +39,7 @@ services:
     entrypoint: docker-daemon.sh
     environment:
       ESPOCRM_DATABASE_PLATFORM: Mysql
-      ESPOCRM_DATABASE_HOST: podium-mariadb
+      ESPOCRM_DATABASE_HOST: zeltro-mariadb
       ESPOCRM_DATABASE_PORT: 3306
       ESPOCRM_DATABASE_NAME: espocrm
       ESPOCRM_DATABASE_USER: espocrm

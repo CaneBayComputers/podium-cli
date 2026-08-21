@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit (first user becomes admin)"
 INSTALL_NOTES="Roll Your Own Tracker — media, fitness and reading tracker. Metadata providers (TMDB, IGDB, etc.) need internet access."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE ryot;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE ryot;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     environment:
       TZ: Etc/UTC
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/ryot
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/ryot
       FRONTEND_URL: http://ryot
       SERVER_ADMIN_ACCESS_TOKEN: "$admin_token"
 

@@ -3,8 +3,8 @@ INSTALL_CREDENTIALS="Set admin password on first visit (uses INIT_PASSWORD=DifyA
 INSTALL_NOTES="AI workflow builder. First startup takes ~60 seconds for DB migrations. Visit http://$PROJECT_NAME/ to initialize."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE dify;" 2>/dev/null || true
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE dify_plugin;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE dify;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE dify_plugin;" 2>/dev/null || true
 }
 
 write_files() {
@@ -19,15 +19,15 @@ DEPLOY_ENV=PRODUCTION
 DB_TYPE=postgresql
 DB_USERNAME=root
 DB_PASSWORD=password
-DB_HOST=podium-postgres
+DB_HOST=zeltro-postgres
 DB_PORT=5432
 DB_DATABASE=dify
 
-REDIS_HOST=podium-redis
+REDIS_HOST=zeltro-redis
 REDIS_PORT=6379
 REDIS_DB=0
 REDIS_PASSWORD=
-CELERY_BROKER_URL=redis://podium-redis:6379/1
+CELERY_BROKER_URL=redis://zeltro-redis:6379/1
 
 STORAGE_TYPE=local
 OPENDAL_SCHEME=fs

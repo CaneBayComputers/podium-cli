@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot runs occ maintenance:install — allow a minute or two before the login page appears."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"owncloud\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"owncloud\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -16,7 +16,7 @@ services:
       OWNCLOUD_DOMAIN: owncloud
       OWNCLOUD_TRUSTED_DOMAINS: owncloud
       OWNCLOUD_DB_TYPE: pgsql
-      OWNCLOUD_DB_HOST: podium-postgres
+      OWNCLOUD_DB_HOST: zeltro-postgres
       OWNCLOUD_DB_NAME: owncloud
       OWNCLOUD_DB_USERNAME: root
       OWNCLOUD_DB_PASSWORD: password

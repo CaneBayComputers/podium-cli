@@ -11,4 +11,4 @@
 - WebSocket handshakes are rejected when `Origin` doesn't match the upstream `Host`, so nginx must send `Host $host` (the installer also sets `ESPHOME_TRUSTED_DOMAINS: esphome` as a belt-and-braces fallback) plus the usual upgrade headers and a long `proxy_read_timeout` — compile logs stream for minutes.
 - Mount `/cache` as well as `/config`: PlatformIO/ESP-IDF toolchains are multiple GB and get re-downloaded on every restart otherwise.
 - `/dev/ttyUSB*` and `privileged` are only needed for physical serial flashing, which this installer does not set up — use OTA.
-- The installer exists: run `podium install esphome`.
+- The installer exists: run `zeltro install esphome`.

@@ -1,9 +1,9 @@
 INSTALL_DISPLAY="OrangeHRM"
 INSTALL_CREDENTIALS="Set during the web install wizard"
-INSTALL_NOTES="Web installer only. When it asks for the database use host podium-mariadb, port 3306, database orangehrm, user orangehrm, password orangehrm."
+INSTALL_NOTES="Web installer only. When it asks for the database use host zeltro-mariadb, port 3306, database orangehrm, user orangehrm, password orangehrm."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS orangehrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'orangehrm'@'%' IDENTIFIED BY 'orangehrm';
         ALTER USER 'orangehrm'@'%' IDENTIFIED BY 'orangehrm';

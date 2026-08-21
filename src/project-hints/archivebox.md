@@ -11,4 +11,4 @@
 - `MEDIA_MAX_SIZE: 750m` controls maximum download size per URL.
 - nginx `client_max_body_size 750M` and long `proxy_read_timeout`/`proxy_send_timeout` (300s) are recommended for archiving large pages.
 - Persist `archivebox-data` volume at `/data`.
-- The installer exists: run `podium install archivebox`.
+- The installer exists: run `zeltro install archivebox`.

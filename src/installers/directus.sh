@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Directus"
 INSTALL_CREDENTIALS="admin@example.com / admin123"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE directus;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE directus;" 2>/dev/null || true
 }
 
 write_files() {
@@ -21,14 +21,14 @@ services:
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: admin123
       DB_CLIENT: pg
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: 5432
       DB_DATABASE: directus
       DB_USER: root
       DB_PASSWORD: password
       CACHE_ENABLED: "true"
       CACHE_STORE: redis
-      REDIS: redis://podium-redis:6379
+      REDIS: redis://zeltro-redis:6379
       WEBSOCKETS_ENABLED: "true"
       PUBLIC_URL: http://directus
     volumes:

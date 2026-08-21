@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Healthchecks"
 INSTALL_CREDENTIALS="admin@example.com / admin123"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE healthchecks;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE healthchecks;" 2>/dev/null || true
 }
 
 write_files() {
@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
     environment:
       DB: postgres
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: 5432
       DB_NAME: healthchecks
       DB_USER: root
@@ -29,7 +29,7 @@ services:
       SUPERUSER_EMAIL: admin@example.com
       SUPERUSER_PASSWORD: admin123
       DEFAULT_FROM_EMAIL: healthchecks@example.com
-      EMAIL_HOST: podium-mailhog
+      EMAIL_HOST: zeltro-mailhog
       EMAIL_PORT: 1025
       EMAIL_USE_TLS: "False"
       REGISTRATION_OPEN: "False"

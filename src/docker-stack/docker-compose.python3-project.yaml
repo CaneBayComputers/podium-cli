@@ -13,7 +13,7 @@ services:
       # It used to be, to give containers name resolution for the shared
       # services. Docker's embedded DNS already does that on a user-defined
       # network — verified with a container carrying no mount at all, which
-      # still resolved podium-mariadb, podium-redis and other projects by name.
+      # still resolved zeltro-mariadb, zeltro-redis and other projects by name.
       #
       # The mount was worse than redundant: it exposed the host's entire hosts
       # file inside every project container, and made container behaviour depend
@@ -25,4 +25,4 @@ services:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc

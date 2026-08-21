@@ -8,4 +8,4 @@
 ## Key Notes
 - Ollama integration disabled by default (`ENABLE_OLLAMA_API=false`). Enable and set `OLLAMA_BASE_URL` to connect to an Ollama instance.
 - First startup takes ~15 seconds for initialization before the proxy returns 200.
-- The installer exists: run `podium install open-webui`.
+- The installer exists: run `zeltro install open-webui`.

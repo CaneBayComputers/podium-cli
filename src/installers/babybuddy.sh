@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Baby Buddy"
 INSTALL_CREDENTIALS="admin / admin"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE babybuddy;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE babybuddy;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,14 +20,14 @@ services:
       TZ: UTC
       SECRET_KEY: $secret_key
       DB_ENGINE: django.db.backends.postgresql
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: 5432
       DB_NAME: babybuddy
       DB_USER: root
       DB_PASSWORD: password
       CSRF_TRUSTED_ORIGINS: http://babybuddy
       ALLOWED_HOSTS: babybuddy,localhost,127.0.0.1
-      EMAIL_HOST: podium-mailhog
+      EMAIL_HOST: zeltro-mailhog
       EMAIL_PORT: 1025
     volumes:
       - babybuddy-config:/config

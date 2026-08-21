@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit (first user becomes the superuser)"
 INSTALL_NOTES="Sentry-compatible error tracking. Point your SDK DSN at http://glitchtip/<project-id>."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE glitchtip;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE glitchtip;" 2>/dev/null || true
 }
 
 write_files() {
@@ -11,13 +11,13 @@ write_files() {
     secret_key=$(openssl rand -hex 32)
 
     cat > .env << EOF
-DATABASE_URL=postgres://root:password@podium-postgres:5432/glitchtip
-REDIS_URL=redis://podium-redis:6379/0
+DATABASE_URL=postgres://root:password@zeltro-postgres:5432/glitchtip
+REDIS_URL=redis://zeltro-redis:6379/0
 SECRET_KEY=$secret_key
 PORT=8000
 GLITCHTIP_DOMAIN=http://glitchtip
 DEFAULT_FROM_EMAIL=glitchtip@example.com
-EMAIL_URL=smtp://podium-mailhog:1025
+EMAIL_URL=smtp://zeltro-mailhog:1025
 ENABLE_OPEN_USER_REGISTRATION=True
 CELERY_WORKER_AUTOSCALE=1,3
 CELERY_WORKER_MAX_TASKS_PER_CHILD=10000

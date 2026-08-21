@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Podium CLI Mac Installer Script
-# Complete installation of Podium CLI with all dependencies for macOS
+# Zeltro CLI Mac Installer Script
+# Complete installation of Zeltro CLI with all dependencies for macOS
 
 set -e
 
@@ -9,7 +9,7 @@ set -e
 clear 2>/dev/null || true
 
 # Immediate feedback to user (prevents showing script content)
-echo "🚀 Starting Podium CLI installation..."
+echo "🚀 Starting Zeltro CLI installation..."
 
 # Ensure we're in a valid directory (fix for "Unable to read current working directory" error)
 if ! pwd &>/dev/null; then
@@ -17,9 +17,9 @@ if ! pwd &>/dev/null; then
     cd "$HOME" || cd /tmp
 fi
 
-# Detect a local Podium CLI checkout (for development installs)
+# Detect a local Zeltro CLI checkout (for development installs)
 # Prefer the directory this script lives in, so running it by path from
-# somewhere else (./podium-cli/install-ubuntu.sh) still finds the checkout
+# somewhere else (./zeltro-cli/install-ubuntu.sh) still finds the checkout
 # instead of silently re-cloning master over the top of it. Falls back to the
 # working directory. Piped through `curl | bash` there is no script file on
 # disk, so neither candidate matches and the clone path below runs — which is
@@ -34,7 +34,7 @@ LOCAL_REPO_DIR=""
 for _candidate in "$SELF_DIR" "$CURRENT_DIR"; do
     if [[ -n "$_candidate" \
         && -f "$_candidate/README.md" \
-        && -f "$_candidate/src/podium" \
+        && -f "$_candidate/src/zeltro" \
         && -f "$_candidate/src/scripts/functions.sh" ]]; then
         LOCAL_REPO_DIR="$_candidate"
         break
@@ -60,10 +60,10 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="/usr/local/share/podium-cli"
-CONFIG_DIR="/etc/podium-cli"
+INSTALL_DIR="/usr/local/share/zeltro-cli"
+CONFIG_DIR="/etc/zeltro-cli"
 BIN_DIR="/usr/local/bin"
-REPO_URL="https://github.com/CaneBayComputers/podium-cli.git"
+REPO_URL="https://github.com/CaneBayComputers/zeltro-cli.git"
 NVM_FALLBACK_VERSION="v0.40.1"
 
 get_latest_nvm_version() {
@@ -80,14 +80,14 @@ get_latest_nvm_version() {
     return 1
 }
 
-echo -e "${BLUE}Podium CLI Mac Installer${NC}"
+echo -e "${BLUE}Zeltro CLI Mac Installer${NC}"
 echo "========================"
 echo
 
 # Check if running on macOS
 if [[ "$OSTYPE" != "darwin"* ]]; then
     echo -e "${RED}Error: This installer is for macOS only${NC}"
-    echo "For Linux, use: curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install.sh | bash"
+    echo "For Linux, use: curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install.sh | bash"
     exit 1
 fi
 
@@ -107,18 +107,18 @@ fi
 #
 # Redirecting stdin in place is not an option: bash is still reading the script
 # from it. So fetch a real copy and re-exec with stdin on the terminal.
-PODIUM_INSTALLER_URL="${PODIUM_INSTALLER_URL:-https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh}"
-if [ ! -t 0 ] && [ -z "${PODIUM_INSTALLER_REEXEC:-}" ] && [ -e /dev/tty ]; then
-    _self="$(mktemp -t podium-install)" || _self=""
-    if [ -n "$_self" ] && curl -fsSL "$PODIUM_INSTALLER_URL" -o "$_self" 2>/dev/null && [ -s "$_self" ]; then
-        export PODIUM_INSTALLER_REEXEC=1
+ZELTRO_INSTALLER_URL="${ZELTRO_INSTALLER_URL:-https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-mac.sh}"
+if [ ! -t 0 ] && [ -z "${ZELTRO_INSTALLER_REEXEC:-}" ] && [ -e /dev/tty ]; then
+    _self="$(mktemp -t zeltro-install)" || _self=""
+    if [ -n "$_self" ] && curl -fsSL "$ZELTRO_INSTALLER_URL" -o "$_self" 2>/dev/null && [ -s "$_self" ]; then
+        export ZELTRO_INSTALLER_REEXEC=1
         exec bash "$_self" "$@" < /dev/tty
     fi
     # Could not re-exec (offline, or no terminal). Carry on rather than refuse,
     # but say what will happen, because the failure is otherwise baffling.
     echo "Warning: running from a pipe. If anything asks for a password it may fail." >&2
     echo "         If that happens, download and run instead:" >&2
-    echo "           curl -fsSL $PODIUM_INSTALLER_URL -o /tmp/install-mac.sh" >&2
+    echo "           curl -fsSL $ZELTRO_INSTALLER_URL -o /tmp/install-mac.sh" >&2
     echo "           bash /tmp/install-mac.sh" >&2
 fi
 
@@ -137,7 +137,7 @@ if sudo -n true 2>/dev/null; then
     echo -e "${GREEN}✓ Passwordless sudo available${NC}"
 else
     echo
-    echo -e "${YELLOW}Podium needs sudo to install system packages and configure Docker.${NC}"
+    echo -e "${YELLOW}Zeltro needs sudo to install system packages and configure Docker.${NC}"
     echo -e "${YELLOW}You'll be asked for your password once — it won't be asked again during the install.${NC}"
     echo
     if ! sudo -v; then
@@ -286,7 +286,7 @@ if ! command -v docker &> /dev/null; then
         brew install --cask docker
         
         echo -e "${GREEN}✓ Docker Desktop installed${NC}"
-        echo -e "${YELLOW}⚠️  Docker Desktop must be running before Podium can start anything${NC}"
+        echo -e "${YELLOW}⚠️  Docker Desktop must be running before Zeltro can start anything${NC}"
 
         # The documented install is `curl ... | bash`, so stdin is the script
         # itself. An unguarded `read` there does not pause — it consumes the
@@ -302,7 +302,7 @@ if ! command -v docker &> /dev/null; then
             echo
         else
             echo -e "${YELLOW}   Start it with: open -a Docker${NC}"
-            echo -e "${YELLOW}   Then re-run any podium command once it is up.${NC}"
+            echo -e "${YELLOW}   Then re-run any zeltro command once it is up.${NC}"
         fi
     fi
 else
@@ -373,12 +373,12 @@ fi
 
 
 ###############################
-# Install / Update Podium CLI
+# Install / Update Zeltro CLI
 ###############################
-echo -e "${CYAN}Installing Podium CLI...${NC}"
+echo -e "${CYAN}Installing Zeltro CLI...${NC}"
 
 if [[ -n "$LOCAL_REPO_DIR" ]]; then
-    echo -e "${GREEN}✓ Detected existing Podium CLI checkout${NC}"
+    echo -e "${GREEN}✓ Detected existing Zeltro CLI checkout${NC}"
     echo -e "${CYAN}Using local directory:${NC} $LOCAL_REPO_DIR"
 
     desired_target="$(cd "$LOCAL_REPO_DIR" 2>/dev/null && pwd -P)"
@@ -386,7 +386,7 @@ if [[ -n "$LOCAL_REPO_DIR" ]]; then
 
     if [[ -e "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
         if [[ -n "$current_target" && "$current_target" != "$desired_target" ]]; then
-            echo -e "${YELLOW}Podium CLI is already installed at:${NC} $INSTALL_DIR -> $current_target"
+            echo -e "${YELLOW}Zeltro CLI is already installed at:${NC} $INSTALL_DIR -> $current_target"
 
             if [ -t 0 ]; then
                 read -p "Do you want to repoint it to this local checkout? (y/N): " -n 1 -r
@@ -426,14 +426,14 @@ if [[ -n "$LOCAL_REPO_DIR" ]]; then
 
     echo -e "${BLUE}Creating command symlink...${NC}"
     if [ "$DRY_RUN" = "1" ]; then
-        echo "  [DRY RUN] Would symlink $BIN_DIR/podium -> $INSTALL_DIR/src/podium"
+        echo "  [DRY RUN] Would symlink $BIN_DIR/zeltro -> $INSTALL_DIR/src/zeltro"
     else
-        sudo chmod +x "$INSTALL_DIR/src/podium" 2>/dev/null || true
-        sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+        sudo chmod +x "$INSTALL_DIR/src/zeltro" 2>/dev/null || true
+        sudo ln -sf "$INSTALL_DIR/src/zeltro" "$BIN_DIR/zeltro"
     fi
 else
     if [[ -d "$INSTALL_DIR" || -L "$INSTALL_DIR" ]]; then
-        echo -e "${YELLOW}Podium CLI is already installed.${NC}"
+        echo -e "${YELLOW}Zeltro CLI is already installed.${NC}"
 
         # Check if we're running in a pipe (curl | bash) or interactive terminal
         if [ -t 0 ]; then
@@ -452,7 +452,7 @@ else
 
         echo -e "${YELLOW}Updating existing installation...${NC}"
 
-        # Configuration is now stored in /etc/podium-cli/ and will persist across reinstalls
+        # Configuration is now stored in /etc/zeltro-cli/ and will persist across reinstalls
         if [ "$DRY_RUN" = "1" ]; then
             echo "  [DRY RUN] Would remove existing install at $INSTALL_DIR"
         else
@@ -469,7 +469,7 @@ else
     fi
 
     # Clone repository
-    echo -e "${BLUE}Downloading Podium CLI...${NC}"
+    echo -e "${BLUE}Downloading Zeltro CLI...${NC}"
     if [ "$DRY_RUN" = "1" ]; then
         echo "  [DRY RUN] Would clone $REPO_URL to $INSTALL_DIR"
     else
@@ -482,20 +482,20 @@ else
         echo "  [DRY RUN] Would chmod/chown installed files"
     else
         # Keep most files accessible to users, only set execute permissions for scripts
-        sudo chmod +x "$INSTALL_DIR/src/podium"
+        sudo chmod +x "$INSTALL_DIR/src/zeltro"
         sudo chmod +x "$INSTALL_DIR/src/scripts"/*.sh
         # Make sure current user can read/write config files
         sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
         # Only the main binary needs special permissions
-        sudo chown root:wheel "$INSTALL_DIR/src/podium"
+        sudo chown root:wheel "$INSTALL_DIR/src/zeltro"
     fi
 
     # Create symlink
     echo -e "${BLUE}Creating command symlink...${NC}"
     if [ "$DRY_RUN" = "1" ]; then
-        echo "  [DRY RUN] Would symlink $BIN_DIR/podium -> $INSTALL_DIR/src/podium"
+        echo "  [DRY RUN] Would symlink $BIN_DIR/zeltro -> $INSTALL_DIR/src/zeltro"
     else
-        sudo ln -sf "$INSTALL_DIR/src/podium" "$BIN_DIR/podium"
+        sudo ln -sf "$INSTALL_DIR/src/zeltro" "$BIN_DIR/zeltro"
     fi
 fi
 
@@ -507,10 +507,10 @@ echo -e "${GREEN}🎉 Installation Complete!${NC}"
 echo "=========================="
 
 # Verify installation
-if command -v podium &> /dev/null; then
-    echo -e "${GREEN}✓ Podium CLI installed successfully${NC}"
+if command -v zeltro &> /dev/null; then
+    echo -e "${GREEN}✓ Zeltro CLI installed successfully${NC}"
     
-    # Configuration is now permanently stored in /etc/podium-cli/ - no restoration needed
+    # Configuration is now permanently stored in /etc/zeltro-cli/ - no restoration needed
     
     # Check Docker status
     if ! docker info &>/dev/null; then
@@ -524,20 +524,20 @@ if command -v podium &> /dev/null; then
     echo
     echo -e "${CYAN}🚀 Next Steps:${NC}"
     echo -e "  1. ${YELLOW}Make sure Docker Desktop is running${NC}"
-    echo -e "  2. Run ${BLUE}podium configure${NC} to set up your development environment"
+    echo -e "  2. Run ${BLUE}zeltro configure${NC} to set up your development environment"
     echo -e "  3. Create your first project:"
-    echo -e "       ${BLUE}podium create${NC} \"A task tracker with user login\""
+    echo -e "       ${BLUE}zeltro create${NC} \"A task tracker with user login\""
     echo -e "     or use a specific framework:"
-    echo -e "       ${BLUE}podium new laravel my-project${NC}"
+    echo -e "       ${BLUE}zeltro new laravel my-project${NC}"
     echo
     echo -e "${CYAN}📖 Documentation:${NC}"
-    echo "   https://github.com/CaneBayComputers/podium-cli"
+    echo "   https://github.com/CaneBayComputers/zeltro-cli"
     echo
     echo -e "${CYAN}🗑️  To Uninstall:${NC}"
-    echo -e "  ${BLUE}podium uninstall${NC}"
+    echo -e "  ${BLUE}zeltro uninstall${NC}"
     echo
 else
     echo -e "${RED}✗ Installation failed${NC}"
-    echo "The podium command is not available in PATH."
+    echo "The zeltro command is not available in PATH."
     exit 1
 fi

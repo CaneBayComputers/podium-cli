@@ -93,7 +93,7 @@ framework_setup_env() {
         "sqlite"|"sqlite3")
             # Must live in the project directory: that is the only path
             # bind-mounted into the container, so a database anywhere else is
-            # destroyed when the container is recreated on `podium up`.
+            # destroyed when the container is recreated on `zeltro up`.
             db_connection="sqlite"; db_host=""; db_port=""
             db_username=""; db_password=""
             db_database="/usr/share/nginx/html/${FRAMEWORK_SQLITE_PATH:-database.sqlite}"

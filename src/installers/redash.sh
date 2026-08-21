@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Redash"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch. First startup runs DB migrations — allow ~30 seconds."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE redash;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE redash;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,12 +17,12 @@ services:
     command: server
     restart: unless-stopped
     environment:
-      REDASH_DATABASE_URL: postgresql://root:password@podium-postgres:5432/redash
-      REDASH_REDIS_URL: redis://podium-redis:6379/3
+      REDASH_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/redash
+      REDASH_REDIS_URL: redis://zeltro-redis:6379/3
       REDASH_SECRET_KEY: $secret_key
       REDASH_COOKIE_SECRET: $cookie_secret
       REDASH_WEB_WORKERS: 4
-      REDASH_MAIL_SERVER: podium-mailhog
+      REDASH_MAIL_SERVER: zeltro-mailhog
       REDASH_MAIL_PORT: 1025
       REDASH_MAIL_USE_TLS: "false"
       REDASH_MAIL_USE_SSL: "false"
@@ -36,8 +36,8 @@ services:
     command: worker
     restart: unless-stopped
     environment:
-      REDASH_DATABASE_URL: postgresql://root:password@podium-postgres:5432/redash
-      REDASH_REDIS_URL: redis://podium-redis:6379/3
+      REDASH_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/redash
+      REDASH_REDIS_URL: redis://zeltro-redis:6379/3
       REDASH_SECRET_KEY: $secret_key
       WORKERS_COUNT: 2
       QUEUES: queries,scheduled_queries,celery
@@ -47,8 +47,8 @@ services:
     command: scheduler
     restart: unless-stopped
     environment:
-      REDASH_DATABASE_URL: postgresql://root:password@podium-postgres:5432/redash
-      REDASH_REDIS_URL: redis://podium-redis:6379/3
+      REDASH_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/redash
+      REDASH_REDIS_URL: redis://zeltro-redis:6379/3
       REDASH_SECRET_KEY: $secret_key
 
   nginx:

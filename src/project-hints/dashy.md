@@ -6,10 +6,10 @@ No external database is needed — configuration is stored in a YAML file. Persi
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/dashy`
+1. `mkdir -p ~/zeltro-projects/dashy`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/dashy && podium setup dashy --no-startup`
-4. `podium up dashy`
+3. `cd ~/zeltro-projects/dashy && zeltro setup dashy --no-startup`
+4. `zeltro up dashy`
 5. Verify: `curl -sI http://dashy/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -44,7 +44,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

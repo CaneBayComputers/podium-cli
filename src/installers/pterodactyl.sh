@@ -6,7 +6,7 @@ INSTALL_NOTES="Panel only — game servers additionally need a Wings daemon, whi
 INSTALL_READY_RETRIES=36
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS pterodactyl CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS pterodactyl CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -23,7 +23,7 @@ services:
       APP_TIMEZONE: UTC
       APP_SERVICE_AUTHOR: noreply@example.com
       TRUSTED_PROXIES: "*"
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: "3306"
       DB_DATABASE: pterodactyl
       DB_USERNAME: root
@@ -31,10 +31,10 @@ services:
       CACHE_DRIVER: redis
       SESSION_DRIVER: redis
       QUEUE_DRIVER: redis
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       MAIL_DRIVER: smtp
-      MAIL_HOST: podium-mailhog
+      MAIL_HOST: zeltro-mailhog
       MAIL_PORT: "1025"
       MAIL_ENCRYPTION: "false"
       MAIL_FROM: noreply@example.com

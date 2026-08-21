@@ -2,7 +2,7 @@
 
 **Image**: `makeplane/plane-proxy:stable` (nginx gateway) + `makeplane/plane-frontend:stable` + `makeplane/plane-backend:stable` + `makeplane/plane-space:stable` + `makeplane/plane-admin:stable` + `makeplane/plane-live:stable`
 **Port**: 80 (plane-proxy nginx gateway, assign VPC IP)
-**Database**: PostgreSQL (`podium-postgres`) + MinIO sidecar (`plane-minio`) + RabbitMQ sidecar (`plane-mq`)
+**Database**: PostgreSQL (`zeltro-postgres`) + MinIO sidecar (`plane-minio`) + RabbitMQ sidecar (`plane-mq`)
 **Credentials**: Register on first visit
 
 ## Key Notes
@@ -13,4 +13,4 @@
 - MinIO stores file uploads; bucket `uploads` is created automatically.
 - `SECRET_KEY` and `LIVE_SERVER_SECRET_KEY` must be long random hex strings.
 - `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are credentials for the internal MinIO.
-- The installer exists: run `podium install plane`.
+- The installer exists: run `zeltro install plane`.

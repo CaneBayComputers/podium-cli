@@ -6,7 +6,7 @@ INSTALL_NOTES="No admin account is created automatically — run the artisan com
 INSTALL_READY_RETRIES=36
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS paymenter CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS paymenter CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -21,7 +21,7 @@ services:
       APP_URL: http://paymenter
       APP_TIMEZONE: UTC
       DB_CONNECTION: mariadb
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: "3306"
       DB_DATABASE: paymenter
       DB_USERNAME: root
@@ -30,10 +30,10 @@ services:
       QUEUE_CONNECTION: redis
       SESSION_DRIVER: file
       REDIS_CLIENT: phpredis
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       MAIL_MAILER: smtp
-      MAIL_HOST: podium-mailhog
+      MAIL_HOST: zeltro-mailhog
       MAIL_PORT: "1025"
       MAIL_FROM_ADDRESS: paymenter@localhost
       MAIL_FROM_NAME: Paymenter

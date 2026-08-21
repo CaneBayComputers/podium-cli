@@ -25,7 +25,7 @@ cd "$PROJECTS_DIR"
 echo-return; echo-return
 
 
-# Initialize variables. STOP_ALL is set to 1 by the 'podium down-all' dispatch
+# Initialize variables. STOP_ALL is set to 1 by the 'zeltro down-all' dispatch
 # (via the environment), not by a user-facing flag.
 PROJECT_NAME=""
 STOP_ALL="${STOP_ALL:-0}"
@@ -51,19 +51,19 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS] <project_name>"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} [OPTIONS] <project_name>"
             echo-white "Shut down a project container. Shared services keep running."
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Project to stop (required; use 'podium down-all' for every project)"
+            echo-white "  project_name      Project to stop (required; use 'zeltro down-all' for every project)"
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
-            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
+            echo-white "  --debug           Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
             echo-white ""
-            echo-white "Use 'podium stop-services' separately to stop the shared services."
+            echo-white "Use 'zeltro stop-services' separately to stop the shared services."
             exit 0
             ;;
         -*)
@@ -81,14 +81,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "$STOP_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
-    error "Cannot combine 'podium down-all' with a project name."
+    error "Cannot combine 'zeltro down-all' with a project name."
 fi
 
-# A project name is required (or 'podium down-all', which sets STOP_ALL).
+# A project name is required (or 'zeltro down-all', which sets STOP_ALL).
 if [[ -z "$PROJECT_NAME" && "$STOP_ALL" == "0" ]]; then
     echo-red "No project specified."
-    echo-white "Usage: podium down <project>   # stop one project"
-    echo-white "       podium down-all         # stop every project"
+    echo-white "Usage: zeltro down <project>   # stop one project"
+    echo-white "       zeltro down-all         # stop every project"
     exit 1
 fi
 
@@ -116,11 +116,11 @@ shutdown_project() {
         return 1
     fi
     
-    # Check if it's a Podium project
+    # Check if it's a Zeltro project
     COMPOSE_TYPE=$(check_docker_compose_type "$COMPOSE_FILE")
     
-    if [ "$COMPOSE_TYPE" != "podium-project" ]; then
-        echo-return; echo-yellow "Project $PROJECT_NAME is not a Podium project"
+    if [ "$COMPOSE_TYPE" != "zeltro-project" ]; then
+        echo-return; echo-yellow "Project $PROJECT_NAME is not a Zeltro project"
         return 1
     fi
     
@@ -172,7 +172,7 @@ if [ -z "$PROJECT_NAME" ]; then
         shutdown_project "$PROJECT_FOLDER_NAME" "$PROJECT_FOLDER" || true
     done
 
-    # Note: shared services are intentionally left running. Use 'podium stop-services'
+    # Note: shared services are intentionally left running. Use 'zeltro stop-services'
     # explicitly when you want to stop them.
 
 else
@@ -194,6 +194,6 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     fi
 
 else
-    echo-return; echo-green "Project containers shut down. (Shared services are still running — use 'podium stop-services' to stop them.)"; echo-white; echo-return
+    echo-return; echo-green "Project containers shut down. (Shared services are still running — use 'zeltro stop-services' to stop them.)"; echo-white; echo-return
 fi
 

@@ -24,7 +24,7 @@ source "$DEV_DIR/scripts/pre_check.sh"
 
 # Function to display usage
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [database_engine] [options]"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} [project_name] [database_engine] [options]"
     echo-white "Sets up a project in the projects directory"
     echo-white ""
     echo-white "With no project name, shows an interactive picker (skipped in --json-output mode)."
@@ -36,7 +36,7 @@ usage() {
     echo-white "Options:"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
-    echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
+    echo-white "  --debug                 Enable debug logging to /tmp/zeltro-cli-debug.log"
     echo-white "  --overwrite-docker-compose  Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --framework FRAMEWORK   Force specific framework (laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue)"
     echo-white "  --db-name NAME          Database name (default: project name with dashes as underscores)"
@@ -46,8 +46,8 @@ usage() {
     echo-white "  --no-storage-symlink    Skip creating public/storage symlink (Laravel only)"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-$0} my-project mysql"
-    echo-white "  ${PODIUM_CMD:-$0} my-project postgres --json-output"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project mysql"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project postgres --json-output"
 }
 
 
@@ -145,7 +145,7 @@ done
 
 # A project name is required — no interactive picker.
 if [ ${#POSITIONAL_ARGS[@]} -lt 1 ]; then
-    error "Error: project name is required. Usage: podium setup <project> [database_engine] [options]"
+    error "Error: project name is required. Usage: zeltro setup <project> [database_engine] [options]"
 fi
 PROJECT_NAME="${POSITIONAL_ARGS[0]}"
 
@@ -179,10 +179,10 @@ _setup_cleanup() {
     if [ "$_compose_file_created" = "1" ]; then
         rm -f "$PROJECT_DIR/docker-compose.yaml"
     fi
-    # `podium new` sources this script, so our `trap ... ERR` above replaced its
+    # `zeltro new` sources this script, so our `trap ... ERR` above replaced its
     # handler. Call its cleanup explicitly or a failed setup leaves the
     # half-built directory it created behind. Not defined for a plain
-    # `podium setup`, where the directory is the user's and must not be touched.
+    # `zeltro setup`, where the directory is the user's and must not be touched.
     if declare -F _remove_incomplete_project >/dev/null 2>&1; then
         _remove_incomplete_project
     fi
@@ -228,12 +228,12 @@ if [ -f "$PROJECT_DIR/docker-compose.yaml" ] || [ -f "$PROJECT_DIR/docker-compos
         #
         # shutdown returns non-zero when the container is not running — the
         # normal case when re-running setup on an existing project — so on macOS
-        # `podium setup <existing>` died with nothing but "Setup failed —
+        # `zeltro setup <existing>` died with nothing but "Setup failed —
         # cleaning up partial state...". bash 4+ hid it, because there the
         # `|| true` suspension really did apply.
         #
         # A subprocess contains all of it: its set -e, its exits, its traps. The
-        # dispatcher already invokes it exactly this way for `podium down`.
+        # dispatcher already invokes it exactly this way for `zeltro down`.
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             SHUTDOWN_OUTPUT=$("$DEV_DIR/scripts/shutdown.sh" "$PROJECT_NAME" 2>&1) || true
         else
@@ -265,7 +265,7 @@ if [ -z "$FRAMEWORK" ]; then
         FRAMEWORK="wordpress"
     elif [ -f "composer.json" ] && grep -q '"drupal/core' composer.json 2>/dev/null; then
         # Matches drupal/core-recommended and drupal/core-composer-scaffold, so it
-        # catches both Podium-scaffolded projects and cloned ones using the stock
+        # catches both Zeltro-scaffolded projects and cloned ones using the stock
         # web/ docroot. Checked before artisan because Drupal has no artisan and
         # would otherwise fall through to the plain-PHP default.
         FRAMEWORK="drupal"
@@ -351,7 +351,7 @@ while true; do
     # actually claim an address. /etc/hosts used to be consulted here, and a
     # stale entry left by a half-removed project made an address permanently
     # unusable while nothing was using it.
-    if ! podium_ip_in_use "$IP_ADDRESS"; then break; fi
+    if ! zeltro_ip_in_use "$IP_ADDRESS"; then break; fi
 
 done
 
@@ -387,7 +387,7 @@ fi
 export MIGRATE_SAFE
 
 # Capture original compose and detect complexity before conflict handling deletes it
-ORIGINAL_COMPOSE_TMPFILE="/tmp/podium_original_compose_$$.yaml"
+ORIGINAL_COMPOSE_TMPFILE="/tmp/zeltro_original_compose_$$.yaml"
 ORIGINAL_COMPOSE_IS_COMPLEX=0
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     cp "$EXISTING_COMPOSE_FILE" "$ORIGINAL_COMPOSE_TMPFILE"
@@ -406,7 +406,7 @@ fi
 
 if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     # Complex projects are always adapted automatically — no confirmation needed.
-    # For simple non-Podium composes, handle_docker_compose_conflict prompts the user
+    # For simple non-Zeltro composes, handle_docker_compose_conflict prompts the user
     # or can be bypassed with --overwrite-docker-compose.
     if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ]; then
         OVERWRITE_DOCKER_COMPOSE=1
@@ -414,7 +414,7 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     handle_docker_compose_conflict "$EXISTING_COMPOSE_FILE" "setup"
     # At this point, either the operation was cancelled (error/exit)
     # or overwrite has been confirmed/forced. Preserve the upstream compose
-    # as a sidecar reference so devs can recover the original after Podium
+    # as a sidecar reference so devs can recover the original after Zeltro
     # rewrites docker-compose.yaml. Only created on the first run — never
     # overwrite an existing upstream backup.
     if [ ! -f "docker-compose.upstream.yaml" ]; then
@@ -428,17 +428,17 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
         echo-cyan "Preserving project metadata (emoji, name, description) ..."
     fi
 
-    # Remove any existing docker-compose files so the Podium-managed one is the only source.
+    # Remove any existing docker-compose files so the Zeltro-managed one is the only source.
     rm -f docker-compose.yml docker-compose.yaml
 fi
 
 
 # Use absolute path to docker-stack directory
-PODIUM_DIR="$DEV_DIR"
+ZELTRO_DIR="$DEV_DIR"
 if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ] && [ -f "$ORIGINAL_COMPOSE_TMPFILE" ]; then
-    # Complex project: adapt the original docker-compose for Podium instead of using a cbc template.
-    # Removes bundled DB/cache services, wires remaining services to podium-cli_vpc, assigns static IP.
-    echo-cyan "Complex docker-compose detected — adapting for Podium environment..."
+    # Complex project: adapt the original docker-compose for Zeltro instead of using a cbc template.
+    # Removes bundled DB/cache services, wires remaining services to zeltro-cli_vpc, assigns static IP.
+    echo-cyan "Complex docker-compose detected — adapting for Zeltro environment..."
     ADAPT_SUMMARY=$(python3 - "$IP_ADDRESS" "$PROJECT_NAME" "$D_CLASS" "$ORIGINAL_COMPOSE_TMPFILE" docker-compose.yaml "$CUSTOM_IMAGE" 2>/dev/null << 'PYEOF'
 import sys, yaml, re, json
 
@@ -446,19 +446,19 @@ ip, project, d_class, src, dst = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv
 custom_image = sys.argv[6] if len(sys.argv) > 6 else ''
 
 SHARED_BY_NAME = [
-    (re.compile(r'^(postgres|postgresql|db|database|pg)$', re.I), 'podium-postgres'),
-    (re.compile(r'^(mysql|mariadb)$', re.I),                      'podium-mariadb'),
-    (re.compile(r'^(redis|cache|redis[-_]cache|valkey)$', re.I), 'podium-redis'),
-    (re.compile(r'^(mongo|mongodb)$', re.I),                      'podium-mongo'),
-    (re.compile(r'^(memcached|memcache)$', re.I),                 'podium-memcached'),
+    (re.compile(r'^(postgres|postgresql|db|database|pg)$', re.I), 'zeltro-postgres'),
+    (re.compile(r'^(mysql|mariadb)$', re.I),                      'zeltro-mariadb'),
+    (re.compile(r'^(redis|cache|redis[-_]cache|valkey)$', re.I), 'zeltro-redis'),
+    (re.compile(r'^(mongo|mongodb)$', re.I),                      'zeltro-mongo'),
+    (re.compile(r'^(memcached|memcache)$', re.I),                 'zeltro-memcached'),
 ]
 SHARED_BY_IMAGE = [
-    (re.compile(r'^postgres(ql)?[:/]', re.I), 'podium-postgres'),
-    (re.compile(r'^mysql[:/]', re.I),          'podium-mariadb'),
-    (re.compile(r'^mariadb[:/]', re.I),        'podium-mariadb'),
-    (re.compile(r'^redis[:/]', re.I),          'podium-redis'),
-    (re.compile(r'^valkey[:/]', re.I),         'podium-redis'),
-    (re.compile(r'^mongo(db)?[:/]', re.I),     'podium-mongo'),
+    (re.compile(r'^postgres(ql)?[:/]', re.I), 'zeltro-postgres'),
+    (re.compile(r'^mysql[:/]', re.I),          'zeltro-mariadb'),
+    (re.compile(r'^mariadb[:/]', re.I),        'zeltro-mariadb'),
+    (re.compile(r'^redis[:/]', re.I),          'zeltro-redis'),
+    (re.compile(r'^valkey[:/]', re.I),         'zeltro-redis'),
+    (re.compile(r'^mongo(db)?[:/]', re.I),     'zeltro-mongo'),
 ]
 
 doc = yaml.safe_load(open(src).read()) or {}
@@ -548,11 +548,11 @@ if top_vols:
     else:
         doc.pop('volumes', None)
 
-doc['networks'] = {'default': {'external': True, 'name': 'podium-cli_vpc'}}
+doc['networks'] = {'default': {'external': True, 'name': 'zeltro-cli_vpc'}}
 
 with open(dst, 'w') as f:
     yaml.dump(doc, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-print(json.dumps({'web_service': web_name, 'removed': list(replaced.keys()), 'podium_hosts': replaced}))
+print(json.dumps({'web_service': web_name, 'removed': list(replaced.keys()), 'zeltro_hosts': replaced}))
 PYEOF
 )
     if [ -f "docker-compose.yaml" ]; then
@@ -561,7 +561,7 @@ PYEOF
             WEB_SVC=$(echo "$ADAPT_SUMMARY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('web_service','unknown'))" 2>/dev/null || echo "unknown")
             REMOVED=$(echo "$ADAPT_SUMMARY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(', '.join(d.get('removed',[])))" 2>/dev/null || echo "")
             echo-green "  Web-facing service: $WEB_SVC (IP: $IP_ADDRESS)"
-            [ -n "$REMOVED" ] && echo-cyan "  Replaced with Podium shared services: $REMOVED"
+            [ -n "$REMOVED" ] && echo-cyan "  Replaced with Zeltro shared services: $REMOVED"
             [ -n "$CUSTOM_IMAGE" ] && echo-cyan "  Using custom image: $CUSTOM_IMAGE"
         fi
         rm -f "$ORIGINAL_COMPOSE_TMPFILE"
@@ -570,7 +570,7 @@ PYEOF
         # by framework DETECTION in the startup branch below and run for adapted
         # projects too. Use --no-startup to defer and review the compose first.
     else
-        echo-yellow "Warning: docker-compose adaptation failed — falling back to Podium template"
+        echo-yellow "Warning: docker-compose adaptation failed — falling back to Zeltro template"
         rm -f "$ORIGINAL_COMPOSE_TMPFILE"
         ORIGINAL_COMPOSE_IS_COMPLEX=0
     fi
@@ -579,34 +579,34 @@ fi
 if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" != "1" ]; then
     rm -f "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null || true
     if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
-        cp -f "$PODIUM_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
+        cp -f "$ZELTRO_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
     elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
-        cp -f "$PODIUM_DIR/docker-stack/docker-compose.node-project.yaml" docker-compose.yaml
+        cp -f "$ZELTRO_DIR/docker-stack/docker-compose.node-project.yaml" docker-compose.yaml
     else
-        cp -f "$PODIUM_DIR/docker-stack/docker-compose.php8.yaml" docker-compose.yaml
+        cp -f "$ZELTRO_DIR/docker-stack/docker-compose.php8.yaml" docker-compose.yaml
     fi
     _compose_file_created=1
 
-    podium-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
-    podium-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
-    podium-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
+    zeltro-sed "s/IPV4_ADDRESS/$IP_ADDRESS/g" docker-compose.yaml
+    zeltro-sed "s/CONTAINER_NAME/$PROJECT_NAME/g" docker-compose.yaml
+    zeltro-sed "s/PROJECT_PORT/$D_CLASS/g" docker-compose.yaml
 
     if [ -d "public" ] || [ "$FRAMEWORK_IS_PYTHON" = "1" ] || [ "$FRAMEWORK_IS_NODE" = "1" ]; then
-        podium-sed "s/PUBLIC//g" docker-compose.yaml
+        zeltro-sed "s/PUBLIC//g" docker-compose.yaml
     else
-        podium-sed "s/PUBLIC/\/public/g" docker-compose.yaml
+        zeltro-sed "s/PUBLIC/\/public/g" docker-compose.yaml
     fi
 
     if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
-        podium-sed "s|PYTHON_START_COMMAND|$(framework_python_start_command)|g" docker-compose.yaml
+        zeltro-sed "s|PYTHON_START_COMMAND|$(framework_python_start_command)|g" docker-compose.yaml
     elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
-        podium-sed "s|NODE_START_COMMAND|$(framework_node_start_command)|g" docker-compose.yaml
+        zeltro-sed "s|NODE_START_COMMAND|$(framework_node_start_command)|g" docker-compose.yaml
     fi
 
     # Override the framework's default cbc base image when the user supplied --image.
     # The template has a single server-service image line; replace it in place.
     if [ -n "$CUSTOM_IMAGE" ]; then
-        podium-sed "s|^\([[:space:]]*image:\)[[:space:]].*|\1 $CUSTOM_IMAGE|" docker-compose.yaml
+        zeltro-sed "s|^\([[:space:]]*image:\)[[:space:]].*|\1 $CUSTOM_IMAGE|" docker-compose.yaml
         echo-cyan "Using custom image: $CUSTOM_IMAGE"
     fi
 fi
@@ -625,8 +625,8 @@ if [ -n "${PRESERVED_X_METADATA:-}" ] && [ -f "docker-compose.yaml" ]; then
 fi
 
 # When we replaced an upstream compose, the new docker-compose.yaml is
-# Podium-managed and shouldn't be committed back to the project's repo —
-# it would break non-Podium teammates. Add it to .gitignore (idempotent).
+# Zeltro-managed and shouldn't be committed back to the project's repo —
+# it would break non-Zeltro teammates. Add it to .gitignore (idempotent).
 # Note: if the file was already git-tracked upstream, the user will still
 # see modifications in `git status` and needs `git rm --cached` to fully
 # untrack it; we intentionally don't run that automatically.
@@ -634,7 +634,7 @@ if [ -n "$EXISTING_COMPOSE_FILE" ]; then
     if ! grep -qxF "docker-compose.yaml" .gitignore 2>/dev/null; then
         {
             [ -f .gitignore ] && echo ""
-            echo "# Generated by Podium — see docker-compose.upstream.yaml for the original"
+            echo "# Generated by Zeltro — see docker-compose.upstream.yaml for the original"
             echo "docker-compose.yaml"
         } >> .gitignore
     fi
@@ -646,7 +646,7 @@ cd "$PROJECT_DIR"
 echo-cyan "Current directory: $(pwd)"
 
 if [ "$NO_STARTUP" = "1" ]; then
-    echo-yellow "Container startup deferred — run 'podium up $PROJECT_NAME' after verifying docker-compose.yaml"
+    echo-yellow "Container startup deferred — run 'zeltro up $PROJECT_NAME' after verifying docker-compose.yaml"
 else
     echo-cyan "Starting project container for composer installation..."
 
@@ -688,9 +688,9 @@ if [ "$NO_STARTUP" != "1" ]; then
     if [ -f "manage.py" ] && [ -f "$SETTINGS_FILE" ] && ! grep -q "load_dotenv" "$SETTINGS_FILE"; then
         echo-cyan "Patching Django settings.py ..."; echo-white
 
-        printf 'from dotenv import load_dotenv\nfrom pathlib import Path\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv(Path(__file__).resolve().parent.parent / ".env")\n\n' | cat - "$SETTINGS_FILE" > /tmp/podium_settings_tmp.py && mv /tmp/podium_settings_tmp.py "$SETTINGS_FILE"
+        printf 'from dotenv import load_dotenv\nfrom pathlib import Path\nimport os\nimport pymysql\npymysql.install_as_MySQLdb()\nload_dotenv(Path(__file__).resolve().parent.parent / ".env")\n\n' | cat - "$SETTINGS_FILE" > /tmp/zeltro_settings_tmp.py && mv /tmp/zeltro_settings_tmp.py "$SETTINGS_FILE"
 
-        podium-sed "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
+        zeltro-sed "s|^ALLOWED_HOSTS = \[.*\]|ALLOWED_HOSTS = [os.getenv('APP_URL', '').replace('http://', '').replace('https://', ''), '']|" "$SETTINGS_FILE"
 
         python3 - "$SETTINGS_FILE" << 'PYEOF'
 import re, sys
@@ -738,7 +738,7 @@ PYEOF
         # the same way, so the retry clears node_modules first.
         #
         # --no-audit/--no-fund cut network round-trips, and --no-progress keeps npm
-        # from rendering a progress bar into a pipe -- this reproduces when podium
+        # from rendering a progress bar into a pipe -- this reproduces when zeltro
         # is spawned with piped stdio (a GUI) but not from a terminal.
         _npm_install_in_container() {
             local quiet="$1"
@@ -757,7 +757,7 @@ PYEOF
             _npm_install_in_container "$_npm_quiet"
         fi
         echo-green "Node dependencies installed!"; echo-white
-        # Fix ownership so the host user can run podium npm install afterwards without EACCES
+        # Fix ownership so the host user can run zeltro npm install afterwards without EACCES
         docker exec "$PROJECT_NAME" bash -c "chown -R $(id -u):$(id -g) /usr/share/nginx/html/node_modules /usr/share/nginx/html/package-lock.json 2>/dev/null || true"
         # Discard dev-server build caches before restarting.
         #
@@ -786,7 +786,7 @@ PYEOF
         # Hono never showed this, which is why it stayed hidden.
         #
         # Restarting the container kills the whole PID namespace's strays and is
-        # what `podium up` does later anyway, so it is the state we want to land
+        # what `zeltro up` does later anyway, so it is the state we want to land
         # in regardless.
         docker restart "$PROJECT_NAME" > /dev/null 2>&1 || true
         # Wait for the container to accept exec again before anything downstream
@@ -857,7 +857,7 @@ PYEOF
         if [ "$OVERWRITE_ENV" = "1" ]; then
             rewrite_env_for_shared_services "$DB_NAME" "$DATABASE_ENGINE"
         else
-            echo-yellow "Keeping existing .env (pass --overwrite-env to rewrite connection settings for Podium)."
+            echo-yellow "Keeping existing .env (pass --overwrite-env to rewrite connection settings for Zeltro)."
         fi
     else
         # Greenfield / template-based project: generate the framework's .env.
@@ -944,7 +944,7 @@ if [[ "$JSON_OUTPUT" == "1" ]]; then
     # admin UIs could manage them. The GUI uses it to offer "you just got a
     # Postgres — want something to browse it with?" at the one moment the user
     # is thinking about it.
-    JSON_RESPONSE="$JSON_RESPONSE$(podium_services_json_fragment)"
+    JSON_RESPONSE="$JSON_RESPONSE$(zeltro_services_json_fragment)"
 
     JSON_RESPONSE="$JSON_RESPONSE}"
     echo "$JSON_RESPONSE"
@@ -953,7 +953,7 @@ else
     if [ "$NO_STARTUP" = "1" ]; then
         echo-green "Docker-compose adapted for project: $PROJECT_NAME"
         echo-white "IP address: $IP_ADDRESS"
-        echo-yellow "Container not started. Review docker-compose.yaml then run: podium up $PROJECT_NAME"
+        echo-yellow "Container not started. Review docker-compose.yaml then run: zeltro up $PROJECT_NAME"
     else
         echo-green "Setup completed for project: $PROJECT_NAME"
         echo-white "Database: $DATABASE_ENGINE"

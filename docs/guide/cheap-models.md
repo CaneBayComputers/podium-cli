@@ -6,10 +6,10 @@ nav_order: 8
 
 # Cheap and local models
 
-Podium doesn't sell you AI. It runs whichever agent you point it at, against
+Zeltro doesn't sell you AI. It runs whichever agent you point it at, against
 whichever model you want — including free ones running on your own machine.
 
-The default agents bill at frontier-model prices. For a lot of Podium work —
+The default agents bill at frontier-model prices. For a lot of Zeltro work —
 scaffolding, wiring config, routine edits — a much cheaper model is fine, and the
 difference is large:
 
@@ -19,7 +19,7 @@ difference is large:
 | Qwen3 Coder Next (OpenRouter) | **~$0.11 / ~$0.80** |
 | Anything via local Ollama | **free** |
 
-Podium already saves tokens before the model is involved: the environment,
+Zeltro already saves tokens before the model is involved: the environment,
 networking, database and container plumbing are pre-built, so the agent spends
 its context on your app instead of deriving Docker setup. Switching models
 compounds that saving rather than replacing it.
@@ -29,10 +29,10 @@ compounds that saving rather than replacing it.
 ## How it works
 
 ```bash
-podium ai-set --agent <agent> --model <model> --api-base <url> --api-key <key>
+zeltro ai-set --agent <agent> --model <model> --api-base <url> --api-key <key>
 ```
 
-`--api-base` is the important one. Podium hands it to the agent through whichever
+`--api-base` is the important one. Zeltro hands it to the agent through whichever
 environment variable that CLI reads:
 
 | Agent | Variable | Endpoint it expects |
@@ -51,7 +51,7 @@ LM Studio and vLLM — nearly everything.
 ## OpenRouter (cheapest hosted)
 
 ```bash
-podium ai-set --agent qwen \
+zeltro ai-set --agent qwen \
   --model qwen/qwen3-coder-next \
   --api-base https://openrouter.ai/api/v1 \
   --api-key sk-or-v1-...
@@ -62,12 +62,12 @@ prefer Codex's interface — both read the same variable.
 
 ## Ollama (free, local, private)
 
-Install [Ollama](https://ollama.com), pull a coding model, point Podium at it:
+Install [Ollama](https://ollama.com), pull a coding model, point Zeltro at it:
 
 ```bash
 ollama pull qwen2.5-coder:32b
 
-podium ai-set --agent qwen \
+zeltro ai-set --agent qwen \
   --model qwen2.5-coder:32b \
   --api-base http://localhost:11434/v1 \
   --api-key ollama
@@ -78,7 +78,7 @@ The key is a placeholder — Ollama ignores it, but the CLIs expect something.
 Nothing leaves your machine, which matters for client work under NDA.
 
 **Model size matters more than you would like**, and this is measured rather
-than assumed. Tested here against `qwen2.5-coder:1.5b`, `podium create
+than assumed. Tested here against `qwen2.5-coder:1.5b`, `zeltro create
 --classify-only` returned *valid, correctly shaped JSON* — the plumbing is fine —
 but recommended a **budgeting app for a guitar pedal tracker**, with the reason
 "Laravel is great for building budgeting apps". Coherent output, incoherent
@@ -96,7 +96,7 @@ npm warns `EBADENGINE` and it works anyway — but that is unsupported.
 Both expose an OpenAI-compatible server, so the shape is identical:
 
 ```bash
-podium ai-set --agent codex --model <model> \
+zeltro ai-set --agent codex --model <model> \
   --api-base http://localhost:1234/v1 --api-key local
 ```
 
@@ -107,7 +107,7 @@ Ollama directly. Put a translating proxy such as
 [LiteLLM](https://github.com/BerriAI/litellm) in front:
 
 ```bash
-podium ai-set --agent claude --api-base http://localhost:4000
+zeltro ai-set --agent claude --api-base http://localhost:4000
 ```
 
 Worth it only if you specifically want Claude Code's interface over a local
@@ -118,11 +118,11 @@ model. Otherwise `qwen` or `codex` is less machinery.
 ## Going back
 
 ```bash
-podium ai-set --agent claude --api-base none --api-key ""
+zeltro ai-set --agent claude --api-base none --api-key ""
 ```
 
 `none` clears the endpoint; an empty `--api-key` clears a stored key. Check where
-you stand with `podium ai-set --json-output`.
+you stand with `zeltro ai-set --json-output`.
 
 ---
 
@@ -132,8 +132,8 @@ Cheaper models are genuinely worse at long autonomous work. The realistic split:
 
 - **Routine edits, scaffolding, config, boilerplate** — a cheap or local model is
   fine and the savings are real.
-- **`podium create` building a whole app from a sentence, or debugging something
+- **`zeltro create` building a whole app from a sentence, or debugging something
   subtle** — frontier models still earn their price.
 
-Nothing stops you switching per task. `podium ai-set` takes a second and the
+Nothing stops you switching per task. `zeltro ai-set` takes a second and the
 setting is global rather than per-project.

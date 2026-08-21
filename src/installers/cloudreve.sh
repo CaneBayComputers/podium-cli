@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="register on first visit — the first account registered be
 INSTALL_NOTES="No seeded admin and no password in the logs since v4 — sign up first, that account is the admin."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"cloudreve\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"cloudreve\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -14,12 +14,12 @@ services:
     restart: unless-stopped
     environment:
       CR_CONF_Database.Type: postgres
-      CR_CONF_Database.Host: podium-postgres
+      CR_CONF_Database.Host: zeltro-postgres
       CR_CONF_Database.Port: 5432
       CR_CONF_Database.User: root
       CR_CONF_Database.Password: password
       CR_CONF_Database.Name: cloudreve
-      CR_CONF_Redis.Server: podium-redis:6379
+      CR_CONF_Redis.Server: zeltro-redis:6379
       CR_CONF_Redis.DB: 4
       CR_CONF_System.ProxyHeader: X-Forwarded-For
       CR_CONF_OptionOverwrite.siteURL: http://cloudreve

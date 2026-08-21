@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123456"
 INSTALL_NOTES="First boot installs and then exits once — the restart policy brings it back up serving the forum. Give it a couple of minutes."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"nodebb\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"nodebb\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     environment:
       NODEBB_URL: http://nodebb
       NODEBB_DB: postgres
-      NODEBB_DB_HOST: podium-postgres
+      NODEBB_DB_HOST: zeltro-postgres
       NODEBB_DB_PORT: 5432
       NODEBB_DB_NAME: nodebb
       NODEBB_DB_USER: root

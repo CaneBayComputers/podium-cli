@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="administrator / password"
 INSTALL_NOTES="Change the administrator password immediately after the first login."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"zipline\";" 2>/dev/null || true
 }
 
@@ -17,7 +17,7 @@ services:
     image: ghcr.io/diced/zipline:4.6.5
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/zipline
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/zipline
       CORE_SECRET: "$core_secret"
       CORE_HOSTNAME: 0.0.0.0
       CORE_PORT: "3000"

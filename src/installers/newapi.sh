@@ -3,8 +3,8 @@ INSTALL_CREDENTIALS="root / 123456 (change it immediately after first login)"
 INSTALL_NOTES="OpenAI-compatible relay/gateway with token quotas. The default root password is fixed by upstream."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS newapi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS newapi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'newapi'@'%' IDENTIFIED BY 'newapi';
         ALTER USER 'newapi'@'%' IDENTIFIED BY 'newapi';
         GRANT ALL PRIVILEGES ON newapi.* TO 'newapi'@'%';
@@ -22,13 +22,13 @@ services:
     restart: unless-stopped
     command: --log-dir /app/logs
     environment:
-      SQL_DSN: newapi:newapi@tcp(podium-mariadb:3306)/newapi
-      REDIS_CONN_STRING: redis://podium-redis:6379/4
+      SQL_DSN: newapi:newapi@tcp(zeltro-mariadb:3306)/newapi
+      REDIS_CONN_STRING: redis://zeltro-redis:6379/4
       SESSION_SECRET: "$session_secret"
       TZ: UTC
       ERROR_LOG_ENABLED: "true"
       BATCH_UPDATE_ENABLED: "true"
-      NODE_NAME: newapi-podium
+      NODE_NAME: newapi-zeltro
     volumes:
       - newapi-data:/data
       - newapi-logs:/app/logs

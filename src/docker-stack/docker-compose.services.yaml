@@ -1,13 +1,13 @@
 # Every image is PINNED to a major version. This is not tidiness -- it prevents
 # data loss.
 #
-# `podium update --full` deliberately REMOVES the shared-service images so they
+# `zeltro update --full` deliberately REMOVES the shared-service images so they
 # re-pull fresh. With unpinned images that re-pull grabs whatever is newest, and
 # a database refuses to start on a data directory written by an older major:
 # PostgreSQL says outright "The data directory was initialized by PostgreSQL
 # version N, which is not compatible with this version". At the time of pinning,
 # postgres:latest had already moved to 18 while installed machines held PG 17
-# data -- so `podium update --full` would have bricked every Postgres project and
+# data -- so `zeltro update --full` would have bricked every Postgres project and
 # locked the data behind a server that would not boot.
 #
 # Pins are set to the major ALREADY RUNNING on installed machines, so applying
@@ -16,7 +16,7 @@
 services:
   mysql:
     image: mariadb:12.0
-    container_name: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+    container_name: "${MARIADB_CONTAINER_NAME:-zeltro-mariadb}"
     profiles: ["mysql"]
     environment:
       MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
@@ -31,7 +31,7 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:5
-    container_name: "${PHPMYADMIN_CONTAINER_NAME:-podium-phpmyadmin}"
+    container_name: "${PHPMYADMIN_CONTAINER_NAME:-zeltro-phpmyadmin}"
     profiles: ["phpmyadmin"]
     restart: always
     environment:
@@ -44,7 +44,7 @@ services:
 
   redis:
     image: redis:8
-    container_name: "${REDIS_CONTAINER_NAME:-podium-redis}"
+    container_name: "${REDIS_CONTAINER_NAME:-zeltro-redis}"
     restart: always
     expose:
       - "6379"
@@ -56,7 +56,7 @@ services:
 
   memcached:
     image: memcached:1.6
-    container_name: "${MEMCACHED_CONTAINER_NAME:-podium-memcached}"
+    container_name: "${MEMCACHED_CONTAINER_NAME:-zeltro-memcached}"
     restart: always
     expose:
       - "11211"
@@ -66,7 +66,7 @@ services:
 
   mongo:
     image: mongo:8.0
-    container_name: "${MONGO_CONTAINER_NAME:-podium-mongo}"
+    container_name: "${MONGO_CONTAINER_NAME:-zeltro-mongo}"
     profiles: ["mongo"]
     restart: always
     environment:
@@ -82,7 +82,7 @@ services:
 
   postgres:
     image: postgres:17
-    container_name: "${POSTGRES_CONTAINER_NAME:-podium-postgres}"
+    container_name: "${POSTGRES_CONTAINER_NAME:-zeltro-postgres}"
     profiles: ["postgres"]
     restart: always
     environment:
@@ -99,7 +99,7 @@ services:
 
   mailhog:
     image: axllent/mailpit:v1.30
-    container_name: "${MAILHOG_CONTAINER_NAME:-podium-mailhog}"
+    container_name: "${MAILHOG_CONTAINER_NAME:-zeltro-mailhog}"
     restart: always
     ports:
       - "8025:8025"
@@ -117,12 +117,12 @@ services:
   # always; most projects need neither object storage nor a search engine, so
   # making every machine pay that RAM to benefit a few is the wrong trade.
   #
-  # Enable per machine with:  podium enable-service minio
-  # Enabled services then start with every `podium up`, on stable hostnames
+  # Enable per machine with:  zeltro enable-service minio
+  # Enabled services then start with every `zeltro up`, on stable hostnames
   # exactly like the core ones.
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    container_name: "${MINIO_CONTAINER_NAME:-podium-minio}"
+    container_name: "${MINIO_CONTAINER_NAME:-zeltro-minio}"
     profiles: ["minio"]
     restart: unless-stopped
     command: server /data --console-address ":9001"
@@ -137,11 +137,11 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.51.0
-    container_name: "${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}"
+    container_name: "${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}"
     profiles: ["meilisearch"]
     restart: unless-stopped
     environment:
-      MEILI_MASTER_KEY: "${MEILI_MASTER_KEY:-podium-dev-master-key}"
+      MEILI_MASTER_KEY: "${MEILI_MASTER_KEY:-zeltro-dev-master-key}"
       MEILI_ENV: development
     volumes:
       - meilisearch_data:/meili_data
@@ -161,14 +161,14 @@ services:
   # convenience it exists to provide.
   adminer:
     image: adminer:5.5.1
-    container_name: "${ADMINER_CONTAINER_NAME:-podium-adminer}"
+    container_name: "${ADMINER_CONTAINER_NAME:-zeltro-adminer}"
     profiles: ["adminer"]
     restart: unless-stopped
     environment:
       # Covers MariaDB/MySQL, PostgreSQL, SQLite and (basically) MongoDB from one
       # ~50MB container. Default server is prefilled; switch engine at the login
       # screen. Leave the username as root; passwords are in AGENTS.md.
-      ADMINER_DEFAULT_SERVER: "${MARIADB_CONTAINER_NAME:-podium-mariadb}"
+      ADMINER_DEFAULT_SERVER: "${MARIADB_CONTAINER_NAME:-zeltro-mariadb}"
       ADMINER_DESIGN: dracula
     networks:
       vpc:
@@ -176,11 +176,11 @@ services:
 
   mongo-express:
     image: mongo-express:1.0.2
-    container_name: "${MONGOEXPRESS_CONTAINER_NAME:-podium-mongo-express}"
+    container_name: "${MONGOEXPRESS_CONTAINER_NAME:-zeltro-mongo-express}"
     profiles: ["mongo-express"]
     restart: unless-stopped
     environment:
-      ME_CONFIG_MONGODB_URL: "mongodb://root:password@${MONGO_CONTAINER_NAME:-podium-mongo}:27017/"
+      ME_CONFIG_MONGODB_URL: "mongodb://root:password@${MONGO_CONTAINER_NAME:-zeltro-mongo}:27017/"
       ME_CONFIG_BASICAUTH: "false"
     networks:
       vpc:
@@ -188,7 +188,7 @@ services:
 
   redisinsight:
     image: redis/redisinsight:3.8.0
-    container_name: "${REDISINSIGHT_CONTAINER_NAME:-podium-redisinsight}"
+    container_name: "${REDISINSIGHT_CONTAINER_NAME:-zeltro-redisinsight}"
     profiles: ["redisinsight"]
     restart: unless-stopped
     environment:
@@ -200,9 +200,9 @@ services:
       # It will NOT appear until the first-run EULA screen is accepted --
       # discovery is gated on that agreement and runs silently before it. An
       # empty database list on first launch is expected, not a fault.
-      RI_REDIS_HOST: "${REDIS_CONTAINER_NAME:-podium-redis}"
+      RI_REDIS_HOST: "${REDIS_CONTAINER_NAME:-zeltro-redis}"
       RI_REDIS_PORT: "6379"
-      RI_REDIS_ALIAS: "Podium Redis"
+      RI_REDIS_ALIAS: "Zeltro Redis"
     volumes:
       - redisinsight_data:/data
     networks:

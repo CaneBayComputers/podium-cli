@@ -1,5 +1,5 @@
 {
-  "_comment": "Hand-maintained. Frameworks offered by `podium new`. 'databases' lists the engines that actually WORK for that framework, not merely the ones Podium will write into .env. Empty/absent means all engines are fine.",
+  "_comment": "Hand-maintained. Frameworks offered by `zeltro new`. 'databases' lists the engines that actually WORK for that framework, not merely the ones Zeltro will write into .env. Empty/absent means all engines are fine.",
   "frameworks": [
     {
       "slug": "laravel",

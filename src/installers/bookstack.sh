@@ -2,7 +2,7 @@ INSTALL_DISPLAY="BookStack"
 INSTALL_CREDENTIALS="admin@admin.com / password"
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS bookstack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS bookstack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     docker volume rm bookstack_bookstack-config 2>/dev/null || true
 }
 
@@ -16,7 +16,7 @@ write_files() {
     cat > bookstack-config/www/.env << ENV
 APP_KEY=$app_key
 APP_URL=http://bookstack
-DB_HOST=podium-mariadb
+DB_HOST=zeltro-mariadb
 DB_PORT=3306
 DB_DATABASE=bookstack
 DB_USERNAME=root

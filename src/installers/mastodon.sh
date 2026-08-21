@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit — first account becomes admin"
 INSTALL_NOTES="Federated social network. Runs migrations on first startup (~60s). Visit http://$PROJECT_NAME/ to create your account."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE mastodon_production;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE mastodon_production;" 2>/dev/null || true
 }
 
 write_files() {
@@ -36,13 +36,13 @@ BIND=0.0.0.0
 PORT=3000
 TRUSTED_PROXY_IP=10.136.0.0/16
 
-DB_HOST=podium-postgres
+DB_HOST=zeltro-postgres
 DB_PORT=5432
 DB_NAME=mastodon_production
 DB_USER=root
 DB_PASS=password
 
-REDIS_HOST=podium-redis
+REDIS_HOST=zeltro-redis
 REDIS_PORT=6379
 
 ES_ENABLED=false

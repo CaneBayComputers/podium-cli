@@ -15,7 +15,7 @@ CUSTOM_IMAGE=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --help|-h)
-            echo-white "Usage: ${PODIUM_CMD:-$0} <app> [name] [options]"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} <app> [name] [options]"
             echo-white "Installs a curated open-source app, fully configured and running"
             echo-white ""
             echo-white "Arguments:"
@@ -31,9 +31,9 @@ while [[ $# -gt 0 ]]; do
             echo-white "  --help, -h      Show this help message"
             echo-white ""
             echo-white "Examples:"
-            echo-white "  ${PODIUM_CMD:-$0} grafana"
-            echo-white "  ${PODIUM_CMD:-$0} livewire sign-tools"
-            echo-white "  ${PODIUM_CMD:-$0} --list"
+            echo-white "  ${ZELTRO_CMD:-$0} grafana"
+            echo-white "  ${ZELTRO_CMD:-$0} livewire sign-tools"
+            echo-white "  ${ZELTRO_CMD:-$0} --list"
             exit 0
             ;;
         --one-off) SKIP_INTERACTIVE=1; shift ;;
@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
             elif [ -z "$PROJECT_NAME" ]; then
                 PROJECT_NAME="$1"
             else
-                error "Too many arguments. Usage: podium install <app> [name] [--image <ref>]"
+                error "Too many arguments. Usage: zeltro install <app> [name] [--image <ref>]"
             fi
             shift
             ;;
@@ -70,7 +70,7 @@ if [ "$APP" = "--list" ] || [ "$APP" = "-l" ]; then
     echo-return
     echo-white "Available installers:"
     for f in "$DEV_DIR/installers/"*.sh; do
-        [ -f "$f" ] && echo-cyan "  podium install $(basename "$f" .sh)"
+        [ -f "$f" ] && echo-cyan "  zeltro install $(basename "$f" .sh)"
     done
     echo-return
     exit 0
@@ -79,26 +79,26 @@ fi
 if [ -z "$APP" ]; then
     # An app name is required — no interactive picker.
     echo-red "No app specified."
-    echo-white "Usage: podium install <app> [name] [--image <ref>]     (run 'podium install --list' to see all)"
+    echo-white "Usage: zeltro install <app> [name] [--image <ref>]     (run 'zeltro install --list' to see all)"
     exit 1
 fi
 
 INSTALLER="$DEV_DIR/installers/$APP.sh"
 if [ ! -f "$INSTALLER" ]; then
     # The mirror of the check in new_project.sh: if this is a framework, the
-    # user wants `podium new` — say so rather than making them go read a list.
+    # user wants `zeltro new` — say so rather than making them go read a list.
     if [ -f "$DEV_DIR/frameworks/$APP.sh" ]; then
         echo-yellow "'$APP' is a framework, not a prebuilt app."
         echo-white "Frameworks are scaffolded into a project you write, rather than installed."
         echo-return
         echo-cyan "Run this instead:"
-        echo-white "  podium new $APP ${PROJECT_NAME:-<project-name>}"
+        echo-white "  zeltro new $APP ${PROJECT_NAME:-<project-name>}"
         echo-return
-        echo-red "Wrong command for '$APP' — use 'podium new'."
+        echo-red "Wrong command for '$APP' — use 'zeltro new'."
         exit 1
     fi
     echo-red "No installer found for: $APP"
-    echo-white "Run 'podium install --list' to see available apps."
+    echo-white "Run 'zeltro install --list' to see available apps."
     exit 1
 fi
 
@@ -106,7 +106,7 @@ PROJECTS_DIR="$(get_projects_dir)"
 PROJECT_DIR="$PROJECTS_DIR/$PROJECT_NAME"
 
 # Already installed? (only skip if actually running)
-# Existence is a directory question, not an /etc/hosts question. Podium no
+# Existence is a directory question, not an /etc/hosts question. Zeltro no
 # longer writes that file, and a leftover entry used to make a long-deleted
 # project look installed.
 if [ -d "$PROJECTS_DIR_PATH/$PROJECT_NAME" ]; then
@@ -146,20 +146,20 @@ write_files
 
 # Setup and start.
 # Prebuilt-image apps (the default) only need their compose adapted, then a start —
-# so setup runs with --no-startup and 'podium up' brings the container online.
+# so setup runs with --no-startup and 'zeltro up' brings the container online.
 # Source-based apps (INSTALL_SETUP_FULL=1, e.g. a Laravel scaffold) need the full
 # setup pipeline — composer install, front-end build, .env wiring, migrations — which
 # only runs when setup is NOT given --no-startup. Setup starts the container itself in
-# that case, so no separate 'podium up' is required.
+# that case, so no separate 'zeltro up' is required.
 # Forward a user-supplied --image override to setup (empty array → no extra args).
 IMAGE_ARGS=()
 [ -n "$CUSTOM_IMAGE" ] && IMAGE_ARGS=(--image "$CUSTOM_IMAGE")
 
 if [ "${INSTALL_SETUP_FULL:-0}" = "1" ]; then
-    podium setup "$PROJECT_NAME" ${INSTALL_SETUP_DB:-} "${IMAGE_ARGS[@]}"
+    zeltro setup "$PROJECT_NAME" ${INSTALL_SETUP_DB:-} "${IMAGE_ARGS[@]}"
 else
-    podium setup "$PROJECT_NAME" --no-startup "${IMAGE_ARGS[@]}"
-    podium up "$PROJECT_NAME"
+    zeltro setup "$PROJECT_NAME" --no-startup "${IMAGE_ARGS[@]}"
+    zeltro up "$PROJECT_NAME"
 fi
 
 # Verify
@@ -198,12 +198,12 @@ if [ "$first_digit" = "2" ] || [ "$first_digit" = "3" ]; then
 else
     echo-yellow "$INSTALL_DISPLAY returned HTTP $HTTP_CODE — it may still be initializing."
     echo-white "  Check: curl -sI http://$PROJECT_NAME/"
-    echo-white "  Logs:  podium logs $PROJECT_NAME"
+    echo-white "  Logs:  zeltro logs $PROJECT_NAME"
 fi
 echo-return
 
 # Drop into an interactive AI session inside the project (skipped when --one-off,
 # JSON mode, non-TTY, or no AI agent configured).
-INSTALL_CMD="podium install $APP"
-[ "$PROJECT_NAME" != "$APP" ] && INSTALL_CMD="podium install $APP $PROJECT_NAME"
-ai_handoff "$PROJECT_NAME" "This project is managed by the Podium CLI — a Docker-based local development environment manager — and was created by running '$INSTALL_CMD'. Before doing anything: (1) read /usr/local/share/podium-cli/AGENTS.md for how Podium works; (2) run 'podium help' for the full command list. $INSTALL_DISPLAY is running at http://$PROJECT_NAME/. You are the developer."
+INSTALL_CMD="zeltro install $APP"
+[ "$PROJECT_NAME" != "$APP" ] && INSTALL_CMD="zeltro install $APP $PROJECT_NAME"
+ai_handoff "$PROJECT_NAME" "This project is managed by the Zeltro CLI — a Docker-based local development environment manager — and was created by running '$INSTALL_CMD'. Before doing anything: (1) read /usr/local/share/zeltro-cli/AGENTS.md for how Zeltro works; (2) run 'zeltro help' for the full command list. $INSTALL_DISPLAY is running at http://$PROJECT_NAME/. You are the developer."

@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Penpot"
 INSTALL_NOTES="Open-source design tool. Register at http://$PROJECT_NAME/ to create your account. Email verification is disabled."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE penpot;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE penpot;" 2>/dev/null || true
 }
 
 write_files() {
@@ -43,10 +43,10 @@ services:
       PENPOT_FLAGS: disable-email-verification enable-registration enable-login disable-secure-session-cookies
       PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY}
       PENPOT_PUBLIC_URI: ${PENPOT_PUBLIC_URI:-http://penpot}
-      PENPOT_DATABASE_URI: postgresql://podium-postgres/penpot
+      PENPOT_DATABASE_URI: postgresql://zeltro-postgres/penpot
       PENPOT_DATABASE_USERNAME: root
       PENPOT_DATABASE_PASSWORD: password
-      PENPOT_REDIS_URI: redis://podium-redis/0
+      PENPOT_REDIS_URI: redis://zeltro-redis/0
       PENPOT_OBJECTS_STORAGE_BACKEND: fs
       PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
       PENPOT_TELEMETRY_ENABLED: "false"
@@ -59,7 +59,7 @@ services:
     restart: unless-stopped
     environment:
       PENPOT_PUBLIC_URI: http://penpot-frontend
-      PENPOT_REDIS_URI: redis://podium-redis/0
+      PENPOT_REDIS_URI: redis://zeltro-redis/0
 
 volumes:
   penpot-assets:

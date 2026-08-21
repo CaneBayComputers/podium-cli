@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Podium Uninstall Script
-# Selectively removes Podium-related Docker resources
+# Zeltro Uninstall Script
+# Selectively removes Zeltro-related Docker resources
 
 # Source functions for colored output
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -29,12 +29,12 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: ${PODIUM_CMD:-$0} [options]"
-            echo-white "Selectively removes Podium-related Docker resources"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} [options]"
+            echo-white "Selectively removes Zeltro-related Docker resources"
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output      Output JSON responses (for programmatic use)"
-            echo-white "  --debug            Enable debug logging to /tmp/podium-cli-debug.log"
+            echo-white "  --debug            Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo-white "  --delete-images    Also remove Docker images (default: keep images)"
             echo-white "  --help            Show this help message"
             exit 0
@@ -56,25 +56,25 @@ if ! docker info >/dev/null 2>&1; then
     error "Docker is not running or not accessible. Please start Docker and try again"
 fi
 
-echo-cyan "🧹 Podium Uninstall - Selective Docker Cleanup"
+echo-cyan "🧹 Zeltro Uninstall - Selective Docker Cleanup"
 echo-return
 
 # Load configuration to find compose file
 COMPOSE_FILE=""
-if [ -f "/etc/podium-cli/docker-compose.yaml" ]; then
-    COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
+if [ -f "/etc/zeltro-cli/docker-compose.yaml" ]; then
+    COMPOSE_FILE="/etc/zeltro-cli/docker-compose.yaml"
     echo-white "Using compose file: $COMPOSE_FILE"
 elif [ -f "$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml" ]; then
     COMPOSE_FILE="$SCRIPT_DIR/../docker-stack/docker-compose.services.yaml"
     echo-white "Using compose file: $COMPOSE_FILE"
 else
-    echo-yellow "Warning: No docker-compose.yaml found, will clean up any podium-cli* resources"
+    echo-yellow "Warning: No docker-compose.yaml found, will clean up any zeltro-cli* resources"
 fi
 
 echo-return
 
 # 1. Stop and remove containers first
-echo-white "🛑 Stopping Podium containers..."
+echo-white "🛑 Stopping Zeltro containers..."
 
 # Get container names from docker-compose file
 CONTAINERS=""
@@ -96,10 +96,10 @@ if [ -n "$CONTAINERS" ]; then
     echo-green "✅ Containers processed"
 else
     echo "No containers found in compose file"
-    echo "Searching for Podium containers by name pattern..."
+    echo "Searching for Zeltro containers by name pattern..."
     
-    # Fallback: find containers by common Podium names
-FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(podium-mariadb|podium-redis|mariadb|redis|postgres|mongo|memcached|phpmyadmin|mailhog)" 2>/dev/null || true)
+    # Fallback: find containers by common Zeltro names
+FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(zeltro-mariadb|zeltro-redis|mariadb|redis|postgres|mongo|memcached|phpmyadmin|mailhog)" 2>/dev/null || true)
     
     if [ -n "$FALLBACK_CONTAINERS" ]; then
         echo "Found containers by pattern: $FALLBACK_CONTAINERS"
@@ -110,7 +110,7 @@ FALLBACK_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "(podium-mari
         done
         echo-green "✅ Fallback containers processed"
     else
-        echo "  No Podium containers found"
+        echo "  No Zeltro containers found"
     fi
 fi
 
@@ -126,7 +126,7 @@ PROJECT_CONTAINERS_REMOVED=0
 PROJECTS_DIR=""
 
 # Try to get projects directory
-if [ -f "/etc/podium-cli/.env" ]; then
+if [ -f "/etc/zeltro-cli/.env" ]; then
     PROJECTS_DIR=$(get_projects_dir 2>/dev/null || true)
 fi
 
@@ -160,8 +160,8 @@ SERVICE_CONTAINERS="$MARIADB_CONTAINER_NAME $REDIS_CONTAINER_NAME postgres mongo
             continue
         fi
         
-        # Check if it looks like a Podium project (has podium-project metadata)
-        if docker inspect "$container" --format '{{json .Config.Labels}}' 2>/dev/null | grep -q "podium-project" 2>/dev/null; then
+        # Check if it looks like a Zeltro project (has zeltro-project metadata)
+        if docker inspect "$container" --format '{{json .Config.Labels}}' 2>/dev/null | grep -q "zeltro-project" 2>/dev/null; then
             echo "  Stopping and removing project container: $container"
             docker stop "$container" 2>/dev/null || true
             docker rm "$container" 2>/dev/null || true
@@ -201,7 +201,7 @@ fi
 
 # 2. Remove specific images by name (if requested)
 if [ "$DELETE_IMAGES" = "yes" ]; then
-    echo-white "🗑️ Removing Podium images..."
+    echo-white "🗑️ Removing Zeltro images..."
 
     # Get image names from docker-compose file
     IMAGES=""
@@ -224,7 +224,7 @@ if [ "$DELETE_IMAGES" = "yes" ]; then
     if [ $REMOVED_IMAGES -gt 0 ]; then
         echo-green "✅ Removed $REMOVED_IMAGES images"
     else
-        echo "No Podium images found to remove"
+        echo "No Zeltro images found to remove"
     fi
 else
     echo-white "🗑️ Skipping image removal (keeping Docker images)"
@@ -233,12 +233,12 @@ fi
 
 echo-return
 
-# 3. Remove volumes and networks with podium-cli prefix
-echo-white "📦 Removing Podium volumes..."
+# 3. Remove volumes and networks with zeltro-cli prefix
+echo-white "📦 Removing Zeltro volumes..."
 
-# Always use podium-cli prefix to catch all Podium resources
-VOLUME_PATTERN="podium-cli"
-NETWORK_PATTERN="podium-cli"
+# Always use zeltro-cli prefix to catch all Zeltro resources
+VOLUME_PATTERN="zeltro-cli"
+NETWORK_PATTERN="zeltro-cli"
 
 # Remove volumes
 VOLUMES=$(docker volume ls --filter "name=${VOLUME_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
@@ -255,13 +255,13 @@ if [ -n "$VOLUMES" ]; then
     fi
     echo-green "✅ Volumes removed"
 else
-    echo "No Podium volumes found"
+    echo "No Zeltro volumes found"
 fi
 
 echo-return
 
 # 4. Remove networks
-echo-white "🌐 Removing Podium networks..."
+echo-white "🌐 Removing Zeltro networks..."
 
 NETWORKS=$(docker network ls --filter "name=${NETWORK_PATTERN}" --format "{{.Name}}" 2>/dev/null || true)
 if [ -n "$NETWORKS" ]; then
@@ -291,14 +291,14 @@ if [ -n "$NETWORKS" ]; then
     done
     echo-green "✅ Network removal completed"
 else
-    echo "No Podium networks found"
+    echo "No Zeltro networks found"
 fi
 
 echo-return
 
 # 5. Leave /etc/hosts entries in place
 echo-white "Leaving /etc/hosts entries in place."
-echo-white "  Project URLs will simply stop resolving until Podium is reinstalled."
+echo-white "  Project URLs will simply stop resolving until Zeltro is reinstalled."
 echo-return
 
 # 7. Backup project docker-compose.yaml files
@@ -336,7 +336,7 @@ fi
 if [ $PROJECT_COMPOSE_BACKED_UP -gt 0 ]; then
     echo-green "✅ Backed up $PROJECT_COMPOSE_BACKED_UP project docker-compose.yaml files"
     echo-yellow "⚠️  Project docker-compose.yaml files have been renamed to .backup"
-    echo-yellow "   These files will not work without Podium services running"
+    echo-yellow "   These files will not work without Zeltro services running"
 else
     echo "No project docker-compose.yaml files found"
 fi
@@ -349,36 +349,36 @@ docker system prune -f >/dev/null 2>&1 || true
 echo-green "✅ Orphaned resources cleaned"
 
 echo-return
-echo-green "🎉 Podium Docker resources have been selectively removed!"
+echo-green "🎉 Zeltro Docker resources have been selectively removed!"
 echo-return
 echo-white "What was removed:"
-echo "  • Podium service containers (mariadb, phpmyadmin, redis, etc.)"
+echo "  • Zeltro service containers (mariadb, phpmyadmin, redis, etc.)"
 echo "  • Individual project containers"
 if [ "$DELETE_IMAGES" = "yes" ]; then
-    echo "  • Podium Docker images (mariadb, redis, postgres, etc.)"
+    echo "  • Zeltro Docker images (mariadb, redis, postgres, etc.)"
 fi
-echo "  • Volumes with prefix: podium-cli_*"
-echo "  • Networks with prefix: podium-cli_*"
-echo "  • Podium CLI binary and source files"
+echo "  • Volumes with prefix: zeltro-cli_*"
+echo "  • Networks with prefix: zeltro-cli_*"
+echo "  • Zeltro CLI binary and source files"
 echo-return
 echo-white "What was kept:"
 echo "  • Your projects folder and all project code"
-echo "  • /etc/podium-cli configuration (reinstall will pick it up automatically)"
+echo "  • /etc/zeltro-cli configuration (reinstall will pick it up automatically)"
 echo "  • /etc/hosts entries (project URLs simply won't resolve until reinstalled)"
 if [ "$DELETE_IMAGES" = "no" ]; then
-    echo "  • Podium Docker images (will speed up reinstall)"
+    echo "  • Zeltro Docker images (will speed up reinstall)"
 fi
 echo "  • Docker itself"
 echo-return
-echo-cyan "To reinstall Podium:"
-echo "  https://github.com/CaneBayComputers/podium-cli"
+echo-cyan "To reinstall Zeltro:"
+echo "  https://github.com/CaneBayComputers/zeltro-cli"
 echo-return
 
 # Remove CLI binary and source files last (script is already in memory so this is safe)
-echo-white "🗑️  Removing Podium CLI files..."
-sudo rm -f /usr/local/bin/podium
-sudo rm -rf /usr/local/share/podium-cli
-echo-green "✅ Podium CLI removed"
-echo-white "  Your projects folder and /etc/podium-cli configuration have been kept."
-echo-white "  If you reinstall Podium your projects and settings will still be there."
+echo-white "🗑️  Removing Zeltro CLI files..."
+sudo rm -f /usr/local/bin/zeltro
+sudo rm -rf /usr/local/share/zeltro-cli
+echo-green "✅ Zeltro CLI removed"
+echo-white "  Your projects folder and /etc/zeltro-cli configuration have been kept."
+echo-white "  If you reinstall Zeltro your projects and settings will still be there."
 echo-return

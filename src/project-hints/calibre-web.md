@@ -12,4 +12,4 @@ Web UI for browsing, reading and downloading books from an existing Calibre libr
 - Until a valid `metadata.db` is found the app only serves the setup page — that is expected, not a failure.
 - Ebook conversion and the "send to Kindle" feature need the optional `DOCKER_MODS=linuxserver/mods:universal-calibre` mod; it is not enabled here because it adds ~1 GB to the image.
 - LinuxServer images pin as `<upstream>-ls<build>`; `0.6.26` is the current upstream release.
-- The installer exists: run `podium install calibre-web`.
+- The installer exists: run `zeltro install calibre-web`.

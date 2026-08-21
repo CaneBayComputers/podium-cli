@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="register on first visit (use admin@example.com to claim adm
 INSTALL_NOTES="Sign-in sends a 6-digit code by email — read it in MailHog or with 'docker logs rallly-app'."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE rallly;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE rallly;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,7 +17,7 @@ services:
     image: lukevella/rallly:4.12.1
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/rallly
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/rallly
       SECRET_PASSWORD: "$secret_password"
       NEXT_PUBLIC_BASE_URL: http://rallly
       SUPPORT_EMAIL: admin@example.com
@@ -26,7 +26,7 @@ services:
       INITIAL_ADMIN_EMAIL: admin@example.com
       EMAIL_LOGIN_ENABLED: "true"
       REGISTRATION_ENABLED: "true"
-      SMTP_HOST: podium-mailhog
+      SMTP_HOST: zeltro-mailhog
       SMTP_PORT: "1025"
       SMTP_SECURE: "false"
       SMTP_TLS_ENABLED: "false"

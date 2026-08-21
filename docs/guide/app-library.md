@@ -4,19 +4,19 @@ layout: default
 nav_order: 6
 ---
 
-# App library — `podium install`
+# App library — `zeltro install`
 
-`podium install <app> [name]` deploys a **finished third-party app** — fully configured, running, reachable at `http://<app>/`, usually in under two minutes.
+`zeltro install <app> [name]` deploys a **finished third-party app** — fully configured, running, reachable at `http://<app>/`, usually in under two minutes.
 
 ```bash
-podium install grafana       # monitoring dashboards
-podium install gitea         # self-hosted git
-podium install n8n           # workflow automation
-podium install nextcloud     # file hosting
-podium install --list        # everything available
+zeltro install grafana       # monitoring dashboards
+zeltro install gitea         # self-hosted git
+zeltro install n8n           # workflow automation
+zeltro install nextcloud     # file hosting
+zeltro install --list        # everything available
 ```
 
-For scaffolding a project *you write*, see [Frameworks]({{ site.baseurl }}/guide/frameworks/) instead. Guess wrong and Podium points you at the right command.
+For scaffolding a project *you write*, see [Frameworks]({{ site.baseurl }}/guide/frameworks/) instead. Guess wrong and Zeltro points you at the right command.
 
 ---
 
@@ -26,7 +26,7 @@ Each installer captures one app's quirks once, so you (or your agent) never re-d
 
 - Creates the right databases and users
 - Generates secrets and app keys
-- Writes a compose file wired to Podium's shared services instead of bundled databases
+- Writes a compose file wired to Zeltro's shared services instead of bundled databases
 - Assigns a VPC IP and hostname
 - Starts the container and waits for HTTP 200
 
@@ -42,16 +42,16 @@ Image tags are **pinned to specific versions**, not `:latest`, so an install tha
 | `--list` | List every available app |
 
 ```bash
-podium install livewire sign-tools
-podium install livewire sign-tools --image canebaycomputers/cbc:nginx-php8-vector
+zeltro install livewire sign-tools
+zeltro install livewire sign-tools --image canebaycomputers/cbc:nginx-php8-vector
 ```
 
 ## Keeping installers current
 
 ```bash
-podium update-installer <app>     # refresh one against current upstream, via AI
-podium update-installer --all
-podium create-installer "<idea>"  # write a brand-new installer, via AI
+zeltro update-installer <app>     # refresh one against current upstream, via AI
+zeltro update-installer --all
+zeltro create-installer "<idea>"  # write a brand-new installer, via AI
 ```
 
 Both emit a prepared prompt telling an agent to fetch upstream, diff against the current installer, regenerate, verify end-to-end, and commit.
@@ -65,7 +65,7 @@ Being straight about what has and has not been checked, because "200+ apps" is e
 - **126 have been installed on a real machine**, checked over HTTP, and removed — 115 added in the 2026-08 catalogue expansion, plus 11 older ones spot-checked since. Every one of those pins its images to specific versions.
 - **90 are older entries that predate that process.** They were written and used, but have not been through it, and most still track floating tags like `:latest`. They may well work; nobody has recently proved it.
 
-If an older app misbehaves, [say so](https://github.com/CaneBayComputers/podium-cli/issues) — that is the fastest way for it to get fixed.
+If an older app misbehaves, [say so](https://github.com/CaneBayComputers/zeltro-cli/issues) — that is the fastest way for it to get fixed.
 
 {: .note }
 > A few apps (Karakeep, Open Archiver, Langfuse) bring their own Meilisearch or MinIO container. Those two are *optional* shared services and off by default, so each app ships what it needs rather than assuming you enabled them. If you have enabled the shared one, you will have two — harmless, just not shared.
@@ -76,220 +76,220 @@ If an older app misbehaves, [say so](https://github.com/CaneBayComputers/podium-
 
 | App | One-liner | Category |
 |-----|-----------|----------|
-| Activepieces | `podium install activepieces` | Automation |
-| Actual Budget | `podium install actual-budget` | Finance |
-| AFFiNE | `podium install affine` | Notes |
-| Alexandrie | `podium install alexandrie` | Notes |
-| AnythingLLM | `podium install anythingllm` | AI |
-| Apache Superset | `podium install superset` | Analytics |
-| Apprise API | `podium install apprise-api` | Notifications |
-| Appsmith | `podium install appsmith` | Low-code |
-| Appwrite | `podium install appwrite` | Backend |
-| ArchiveBox | `podium install archivebox` | Archiving |
-| Argilla | `podium install argilla` | AI |
-| Audiobookshelf | `podium install audiobookshelf` | Media |
-| authentik | `podium install authentik` | Auth |
-| Baby Buddy | `podium install babybuddy` | Health |
-| BentoPDF | `podium install bento-pdf` | Utilities |
-| BookLore | `podium install booklore` | Books |
-| BookStack | `podium install bookstack` | Wiki |
-| BudgE | `podium install budge` | Finance |
-| Budibase | `podium install budibase` | Low-code |
-| Bugsink | `podium install bugsink` | Monitoring |
-| Cachet | `podium install cachet` | Status Page |
-| Cal.com | `podium install cal-com` | Scheduling |
-| Calibre-Web | `podium install calibre-web` | Books |
-| Calibre-Web Automated Book Downloader (Shelfmark) | `podium install calibre-web-automated-book-downloader` | Books |
-| Campfire (ONCE) | `podium install once-campfire` | Chat |
-| Cap (CAPTCHA) | `podium install cap-captcha` | Security |
-| Changedetection.io | `podium install changedetection` | Monitoring |
-| Checkmate | `podium install checkmate` | Monitoring |
-| Chibisafe | `podium install chibisafe` | File sharing |
-| ClassicPress | `podium install classicpress` | CMS |
-| Cloudreve | `podium install cloudreve` | Files |
-| Code-Server | `podium install code-server` | Dev Tools |
-| CodiMD | `podium install codimd` | Notes |
-| ConvertX | `podium install convertx` | Utilities |
-| Coolify | `podium install coolify` | DevOps |
-| CyberChef | `podium install cyberchef` | Utilities |
-| Dashy | `podium install dashy` | Dashboard |
-| Dify | `podium install dify` | AI / LLM |
-| Directus | `podium install directus` | CMS |
-| Docmost | `podium install docmost` | Wiki |
-| Documenso | `podium install documenso` | Documents |
-| DocuSeal | `podium install docuseal` | Documents |
-| DokuWiki | `podium install dokuwiki` | Wiki |
-| Dolibarr ERP/CRM | `podium install dolibarr` | ERP |
-| Easy!Appointments | `podium install easyappointments` | Scheduling |
-| ESPHome | `podium install esphome` | IoT |
-| EspoCRM | `podium install espocrm` | CRM |
-| Evolution API | `podium install evolution-api` | Messaging |
-| Excalidraw | `podium install excalidraw` | Diagramming |
-| Fider | `podium install fider` | Feedback |
-| File Browser | `podium install filebrowser` | Files |
-| FileFlows | `podium install fileflows` | Media |
-| Firefly III | `podium install firefly-iii` | Finance |
-| Fizzy | `podium install fizzy` | Utilities |
-| Flame | `podium install flame` | Dashboard |
-| Flarum | `podium install flarum` | Forum |
-| Flipt | `podium install flipt` | Feature flags |
-| Flowise | `podium install flowise` | AI / LLM |
-| Forgejo | `podium install forgejo` | Git |
-| FreeScout | `podium install freescout` | Help Desk |
-| FreshRSS | `podium install freshrss` | RSS |
-| Ghost | `podium install ghost` | Blogging |
-| Gitea | `podium install gitea` | Git Server |
-| Glance | `podium install glance` | Dashboard |
-| Glances | `podium install glances` | Monitoring |
-| GlitchTip | `podium install glitchtip` | Monitoring |
-| GLPI | `podium install glpi` | IT Asset |
-| GoatCounter | `podium install goatcounter` | Analytics |
-| Gotify | `podium install gotify` | Notifications |
-| GOWA (Go WhatsApp Web Multidevice) | `podium install gowa` | Messaging |
-| Grafana | `podium install grafana` | Monitoring |
-| Gramps Web | `podium install gramps-web` | Genealogy |
-| Graylog | `podium install graylog` | Logging |
-| Grist | `podium install grist` | Spreadsheet |
-| Grocy | `podium install grocy` | Home |
-| Healthchecks | `podium install healthchecks` | Monitoring |
-| HedgeDoc | `podium install hedgedoc` | Docs |
-| Heimdall | `podium install heimdall` | Dashboard |
-| HeyForm | `podium install heyform` | Forms |
-| Homarr | `podium install homarr` | Dashboard |
-| Home Assistant | `podium install home-assistant` | Smart Home |
-| Homebox | `podium install homebox` | Inventory |
-| Homepage | `podium install homepage` | Dashboard |
-| Homer | `podium install homer` | Dashboard |
-| Hoppscotch | `podium install hoppscotch` | API |
-| Immich | `podium install immich` | Photos |
-| Infisical | `podium install infisical` | Secrets |
-| Invoice Ninja | `podium install invoice-ninja` | Invoicing |
-| IT Tools | `podium install it-tools` | Utilities |
-| Jellyfin | `podium install jellyfin` | Media |
-| Joplin Server | `podium install joplin` | Notes |
-| Jupyter Notebook (Python) | `podium install jupyter-notebook-python` | Data |
-| Kanboard | `podium install kanboard` | Project Mgmt |
-| Karakeep | `podium install karakeep` | Bookmarks |
-| Kavita | `podium install kavita` | Library |
-| Keycloak | `podium install keycloak` | Auth |
-| Kimai | `podium install kimai` | Time Tracking |
-| Koel | `podium install koel` | Music |
-| Label Studio | `podium install label-studio` | ML / AI |
-| Langflow | `podium install langflow` | AI |
-| Langfuse | `podium install langfuse` | AI |
-| Laravel Livewire | `podium install livewire` | Starter Kit |
-| Leantime | `podium install leantime` | Project Mgmt |
-| Lemmy | `podium install lemmy` | Social |
-| LibreChat | `podium install librechat` | AI |
-| LibreSpeed | `podium install librespeed` | Network |
-| LibreTranslate | `podium install libretranslate` | Localization |
-| LimeSurvey | `podium install limesurvey` | Surveys |
-| linkding | `podium install linkding` | Bookmarks |
-| linkding (plus) | `podium install linkding-plus` | Bookmarks |
-| Linkwarden | `podium install linkwarden` | Bookmarks |
-| Listmonk | `podium install listmonk` | Newsletters |
-| LiteLLM Proxy | `podium install litellm` | AI |
-| LobeChat | `podium install lobe-chat` | AI |
-| LocalStack | `podium install localstack` | Dev Tools |
-| Lowcoder | `podium install lowcoder` | Low-code |
-| Lychee | `podium install lychee` | Photos |
-| Mage AI | `podium install mage-ai` | Data |
-| marimo | `podium install marimo` | Data |
-| Mastodon | `podium install mastodon` | Social |
-| Matomo | `podium install matomo` | Analytics |
-| Mattermost | `podium install mattermost` | Team Chat |
-| Mautic | `podium install mautic` | Marketing |
-| Maybe Finance | `podium install maybe` | Finance |
-| Mealie | `podium install mealie` | Recipes |
-| MediaWiki | `podium install mediawiki` | Wiki |
-| Meilisearch | `podium install meilisearch` | Search |
-| Memos | `podium install memos` | Notes |
-| Metabase | `podium install metabase` | Analytics |
-| MindsDB | `podium install mindsdb` | AI |
-| Miniflux | `podium install miniflux` | RSS |
-| MinIO | `podium install minio` | Storage |
-| Mixpost Lite | `podium install mixpost` | Social |
-| Monica CRM | `podium install monica` | CRM |
-| Moodle | `podium install moodle` | Learning |
-| n8n | `podium install n8n` | Automation |
-| Navidrome | `podium install navidrome` | Media |
-| NetBox | `podium install netbox` | Networking |
-| Netdata | `podium install netdata` | Monitoring |
-| New API | `podium install newapi` | AI |
-| Nextcloud | `podium install nextcloud` | File Hosting |
-| Nginx Proxy Manager | `podium install nginx-proxy-manager` | Networking |
-| NocoBase | `podium install nocobase` | Low-code |
-| NocoDB | `podium install nocodb` | Database |
-| NodeBB | `podium install nodebb` | Forum |
-| ntfy | `podium install ntfy` | Notifications |
-| Odoo | `podium install odoo` | ERP |
-| Ollama + Open WebUI | `podium install ollama-with-open-webui` | AI |
-| OneDev | `podium install onedev` | Git |
-| Onetime Secret | `podium install onetimesecret` | Secrets |
-| Open Archiver | `podium install open-archiver` | Archiving |
-| Open WebUI | `podium install open-webui` | AI / LLM |
-| OpnForm | `podium install opnform` | Forms |
-| OrangeHRM | `podium install orangehrm` | HR |
-| Outline | `podium install outline` | Wiki |
-| ownCloud | `podium install owncloud` | Files |
-| Paperless-ngx | `podium install paperless` | Documents |
-| Paymenter | `podium install paymenter` | Billing |
-| Penpot | `podium install penpot` | Design |
-| PG Back Web | `podium install pgbackweb` | Backup |
-| PhotoPrism | `podium install photoprism` | Photos |
-| Pingvin Share | `podium install pingvinshare` | File sharing |
-| Pixelfed | `podium install pixelfed` | Social |
-| Plane | `podium install plane` | Project Mgmt |
-| Plausible Analytics | `podium install plausible` | Analytics |
-| PocketBase | `podium install pocketbase` | Backend |
-| Portainer CE | `podium install portainer` | Docker UI |
-| Pterodactyl Panel | `podium install pterodactyl` | Game panel |
-| Pydio Cells | `podium install pydio-cells` | Files |
-| Rallly | `podium install rallly` | Scheduling |
-| Reactive Resume | `podium install reactive-resume` | Productivity |
-| Readeck | `podium install readeck` | Bookmarks |
-| Redash | `podium install redash` | Analytics |
-| Redmine | `podium install redmine` | Project Mgmt |
-| Roundcube | `podium install roundcube` | Webmail |
-| Ryot | `podium install ryot` | Tracking |
-| SearXNG | `podium install searxng` | Search |
-| Shlink | `podium install shlink` | URL Shortener |
-| SiYuan | `podium install siyuan` | Notes |
-| Slash | `podium install slash` | Bookmarks |
-| Snappymail | `podium install snappymail` | Webmail |
-| Snipe-IT | `podium install snipe-it` | Asset Mgmt |
-| SparkyFitness | `podium install sparkyfitness` | Health |
-| Standard Notes | `podium install standard-notes` | Notes |
-| Statusnook | `podium install statusnook` | Status |
-| Stirling PDF | `podium install stirling-pdf` | Utilities |
-| SuperTokens Core | `podium install supertokens` | Auth |
-| Sure | `podium install sure` | Finance |
-| Swetrix Analytics | `podium install swetrix` | Analytics |
-| Taiga | `podium install taiga` | Project Mgmt |
-| Tandoor Recipes | `podium install tandoor` | Recipes |
-| Tolgee | `podium install tolgee` | Localization |
-| Tooljet | `podium install tooljet` | Low-code |
-| Traccar | `podium install traccar` | Tracking |
-| TrailBase | `podium install trailbase` | Backend |
-| Trilium Notes | `podium install trilium` | Notes |
-| Trilium Notes (TriliumNext) | `podium install triliumnext` | Notes |
-| Twenty CRM | `podium install twenty` | CRM |
-| Typebot | `podium install typebot` | Forms |
-| Umami | `podium install umami` | Analytics |
-| Unleash | `podium install unleash` | Feature flags |
-| Uptime Kuma | `podium install uptime-kuma` | Monitoring |
-| Vaultwarden | `podium install vaultwarden` | Passwords |
-| VERT | `podium install vert` | Utilities |
-| Vikunja | `podium install vikunja` | Task Mgmt |
-| Wallabag | `podium install wallabag` | Read Later |
-| Web-Check | `podium install web-check` | Utilities |
-| Weblate | `podium install weblate` | Localization |
-| wger | `podium install wger` | Fitness |
-| Whoogle Search | `podium install whoogle` | Search |
-| Wiki.js | `podium install wikijs` | Wiki |
-| Yamtrack | `podium install yamtrack` | Media |
-| YOURLS | `podium install yourls` | URL Shortener |
-| Zabbix | `podium install zabbix` | Monitoring |
-| Zipline | `podium install zipline` | File sharing |
-| Zulip | `podium install zulip` | Team Chat |
+| Activepieces | `zeltro install activepieces` | Automation |
+| Actual Budget | `zeltro install actual-budget` | Finance |
+| AFFiNE | `zeltro install affine` | Notes |
+| Alexandrie | `zeltro install alexandrie` | Notes |
+| AnythingLLM | `zeltro install anythingllm` | AI |
+| Apache Superset | `zeltro install superset` | Analytics |
+| Apprise API | `zeltro install apprise-api` | Notifications |
+| Appsmith | `zeltro install appsmith` | Low-code |
+| Appwrite | `zeltro install appwrite` | Backend |
+| ArchiveBox | `zeltro install archivebox` | Archiving |
+| Argilla | `zeltro install argilla` | AI |
+| Audiobookshelf | `zeltro install audiobookshelf` | Media |
+| authentik | `zeltro install authentik` | Auth |
+| Baby Buddy | `zeltro install babybuddy` | Health |
+| BentoPDF | `zeltro install bento-pdf` | Utilities |
+| BookLore | `zeltro install booklore` | Books |
+| BookStack | `zeltro install bookstack` | Wiki |
+| BudgE | `zeltro install budge` | Finance |
+| Budibase | `zeltro install budibase` | Low-code |
+| Bugsink | `zeltro install bugsink` | Monitoring |
+| Cachet | `zeltro install cachet` | Status Page |
+| Cal.com | `zeltro install cal-com` | Scheduling |
+| Calibre-Web | `zeltro install calibre-web` | Books |
+| Calibre-Web Automated Book Downloader (Shelfmark) | `zeltro install calibre-web-automated-book-downloader` | Books |
+| Campfire (ONCE) | `zeltro install once-campfire` | Chat |
+| Cap (CAPTCHA) | `zeltro install cap-captcha` | Security |
+| Changedetection.io | `zeltro install changedetection` | Monitoring |
+| Checkmate | `zeltro install checkmate` | Monitoring |
+| Chibisafe | `zeltro install chibisafe` | File sharing |
+| ClassicPress | `zeltro install classicpress` | CMS |
+| Cloudreve | `zeltro install cloudreve` | Files |
+| Code-Server | `zeltro install code-server` | Dev Tools |
+| CodiMD | `zeltro install codimd` | Notes |
+| ConvertX | `zeltro install convertx` | Utilities |
+| Coolify | `zeltro install coolify` | DevOps |
+| CyberChef | `zeltro install cyberchef` | Utilities |
+| Dashy | `zeltro install dashy` | Dashboard |
+| Dify | `zeltro install dify` | AI / LLM |
+| Directus | `zeltro install directus` | CMS |
+| Docmost | `zeltro install docmost` | Wiki |
+| Documenso | `zeltro install documenso` | Documents |
+| DocuSeal | `zeltro install docuseal` | Documents |
+| DokuWiki | `zeltro install dokuwiki` | Wiki |
+| Dolibarr ERP/CRM | `zeltro install dolibarr` | ERP |
+| Easy!Appointments | `zeltro install easyappointments` | Scheduling |
+| ESPHome | `zeltro install esphome` | IoT |
+| EspoCRM | `zeltro install espocrm` | CRM |
+| Evolution API | `zeltro install evolution-api` | Messaging |
+| Excalidraw | `zeltro install excalidraw` | Diagramming |
+| Fider | `zeltro install fider` | Feedback |
+| File Browser | `zeltro install filebrowser` | Files |
+| FileFlows | `zeltro install fileflows` | Media |
+| Firefly III | `zeltro install firefly-iii` | Finance |
+| Fizzy | `zeltro install fizzy` | Utilities |
+| Flame | `zeltro install flame` | Dashboard |
+| Flarum | `zeltro install flarum` | Forum |
+| Flipt | `zeltro install flipt` | Feature flags |
+| Flowise | `zeltro install flowise` | AI / LLM |
+| Forgejo | `zeltro install forgejo` | Git |
+| FreeScout | `zeltro install freescout` | Help Desk |
+| FreshRSS | `zeltro install freshrss` | RSS |
+| Ghost | `zeltro install ghost` | Blogging |
+| Gitea | `zeltro install gitea` | Git Server |
+| Glance | `zeltro install glance` | Dashboard |
+| Glances | `zeltro install glances` | Monitoring |
+| GlitchTip | `zeltro install glitchtip` | Monitoring |
+| GLPI | `zeltro install glpi` | IT Asset |
+| GoatCounter | `zeltro install goatcounter` | Analytics |
+| Gotify | `zeltro install gotify` | Notifications |
+| GOWA (Go WhatsApp Web Multidevice) | `zeltro install gowa` | Messaging |
+| Grafana | `zeltro install grafana` | Monitoring |
+| Gramps Web | `zeltro install gramps-web` | Genealogy |
+| Graylog | `zeltro install graylog` | Logging |
+| Grist | `zeltro install grist` | Spreadsheet |
+| Grocy | `zeltro install grocy` | Home |
+| Healthchecks | `zeltro install healthchecks` | Monitoring |
+| HedgeDoc | `zeltro install hedgedoc` | Docs |
+| Heimdall | `zeltro install heimdall` | Dashboard |
+| HeyForm | `zeltro install heyform` | Forms |
+| Homarr | `zeltro install homarr` | Dashboard |
+| Home Assistant | `zeltro install home-assistant` | Smart Home |
+| Homebox | `zeltro install homebox` | Inventory |
+| Homepage | `zeltro install homepage` | Dashboard |
+| Homer | `zeltro install homer` | Dashboard |
+| Hoppscotch | `zeltro install hoppscotch` | API |
+| Immich | `zeltro install immich` | Photos |
+| Infisical | `zeltro install infisical` | Secrets |
+| Invoice Ninja | `zeltro install invoice-ninja` | Invoicing |
+| IT Tools | `zeltro install it-tools` | Utilities |
+| Jellyfin | `zeltro install jellyfin` | Media |
+| Joplin Server | `zeltro install joplin` | Notes |
+| Jupyter Notebook (Python) | `zeltro install jupyter-notebook-python` | Data |
+| Kanboard | `zeltro install kanboard` | Project Mgmt |
+| Karakeep | `zeltro install karakeep` | Bookmarks |
+| Kavita | `zeltro install kavita` | Library |
+| Keycloak | `zeltro install keycloak` | Auth |
+| Kimai | `zeltro install kimai` | Time Tracking |
+| Koel | `zeltro install koel` | Music |
+| Label Studio | `zeltro install label-studio` | ML / AI |
+| Langflow | `zeltro install langflow` | AI |
+| Langfuse | `zeltro install langfuse` | AI |
+| Laravel Livewire | `zeltro install livewire` | Starter Kit |
+| Leantime | `zeltro install leantime` | Project Mgmt |
+| Lemmy | `zeltro install lemmy` | Social |
+| LibreChat | `zeltro install librechat` | AI |
+| LibreSpeed | `zeltro install librespeed` | Network |
+| LibreTranslate | `zeltro install libretranslate` | Localization |
+| LimeSurvey | `zeltro install limesurvey` | Surveys |
+| linkding | `zeltro install linkding` | Bookmarks |
+| linkding (plus) | `zeltro install linkding-plus` | Bookmarks |
+| Linkwarden | `zeltro install linkwarden` | Bookmarks |
+| Listmonk | `zeltro install listmonk` | Newsletters |
+| LiteLLM Proxy | `zeltro install litellm` | AI |
+| LobeChat | `zeltro install lobe-chat` | AI |
+| LocalStack | `zeltro install localstack` | Dev Tools |
+| Lowcoder | `zeltro install lowcoder` | Low-code |
+| Lychee | `zeltro install lychee` | Photos |
+| Mage AI | `zeltro install mage-ai` | Data |
+| marimo | `zeltro install marimo` | Data |
+| Mastodon | `zeltro install mastodon` | Social |
+| Matomo | `zeltro install matomo` | Analytics |
+| Mattermost | `zeltro install mattermost` | Team Chat |
+| Mautic | `zeltro install mautic` | Marketing |
+| Maybe Finance | `zeltro install maybe` | Finance |
+| Mealie | `zeltro install mealie` | Recipes |
+| MediaWiki | `zeltro install mediawiki` | Wiki |
+| Meilisearch | `zeltro install meilisearch` | Search |
+| Memos | `zeltro install memos` | Notes |
+| Metabase | `zeltro install metabase` | Analytics |
+| MindsDB | `zeltro install mindsdb` | AI |
+| Miniflux | `zeltro install miniflux` | RSS |
+| MinIO | `zeltro install minio` | Storage |
+| Mixpost Lite | `zeltro install mixpost` | Social |
+| Monica CRM | `zeltro install monica` | CRM |
+| Moodle | `zeltro install moodle` | Learning |
+| n8n | `zeltro install n8n` | Automation |
+| Navidrome | `zeltro install navidrome` | Media |
+| NetBox | `zeltro install netbox` | Networking |
+| Netdata | `zeltro install netdata` | Monitoring |
+| New API | `zeltro install newapi` | AI |
+| Nextcloud | `zeltro install nextcloud` | File Hosting |
+| Nginx Proxy Manager | `zeltro install nginx-proxy-manager` | Networking |
+| NocoBase | `zeltro install nocobase` | Low-code |
+| NocoDB | `zeltro install nocodb` | Database |
+| NodeBB | `zeltro install nodebb` | Forum |
+| ntfy | `zeltro install ntfy` | Notifications |
+| Odoo | `zeltro install odoo` | ERP |
+| Ollama + Open WebUI | `zeltro install ollama-with-open-webui` | AI |
+| OneDev | `zeltro install onedev` | Git |
+| Onetime Secret | `zeltro install onetimesecret` | Secrets |
+| Open Archiver | `zeltro install open-archiver` | Archiving |
+| Open WebUI | `zeltro install open-webui` | AI / LLM |
+| OpnForm | `zeltro install opnform` | Forms |
+| OrangeHRM | `zeltro install orangehrm` | HR |
+| Outline | `zeltro install outline` | Wiki |
+| ownCloud | `zeltro install owncloud` | Files |
+| Paperless-ngx | `zeltro install paperless` | Documents |
+| Paymenter | `zeltro install paymenter` | Billing |
+| Penpot | `zeltro install penpot` | Design |
+| PG Back Web | `zeltro install pgbackweb` | Backup |
+| PhotoPrism | `zeltro install photoprism` | Photos |
+| Pingvin Share | `zeltro install pingvinshare` | File sharing |
+| Pixelfed | `zeltro install pixelfed` | Social |
+| Plane | `zeltro install plane` | Project Mgmt |
+| Plausible Analytics | `zeltro install plausible` | Analytics |
+| PocketBase | `zeltro install pocketbase` | Backend |
+| Portainer CE | `zeltro install portainer` | Docker UI |
+| Pterodactyl Panel | `zeltro install pterodactyl` | Game panel |
+| Pydio Cells | `zeltro install pydio-cells` | Files |
+| Rallly | `zeltro install rallly` | Scheduling |
+| Reactive Resume | `zeltro install reactive-resume` | Productivity |
+| Readeck | `zeltro install readeck` | Bookmarks |
+| Redash | `zeltro install redash` | Analytics |
+| Redmine | `zeltro install redmine` | Project Mgmt |
+| Roundcube | `zeltro install roundcube` | Webmail |
+| Ryot | `zeltro install ryot` | Tracking |
+| SearXNG | `zeltro install searxng` | Search |
+| Shlink | `zeltro install shlink` | URL Shortener |
+| SiYuan | `zeltro install siyuan` | Notes |
+| Slash | `zeltro install slash` | Bookmarks |
+| Snappymail | `zeltro install snappymail` | Webmail |
+| Snipe-IT | `zeltro install snipe-it` | Asset Mgmt |
+| SparkyFitness | `zeltro install sparkyfitness` | Health |
+| Standard Notes | `zeltro install standard-notes` | Notes |
+| Statusnook | `zeltro install statusnook` | Status |
+| Stirling PDF | `zeltro install stirling-pdf` | Utilities |
+| SuperTokens Core | `zeltro install supertokens` | Auth |
+| Sure | `zeltro install sure` | Finance |
+| Swetrix Analytics | `zeltro install swetrix` | Analytics |
+| Taiga | `zeltro install taiga` | Project Mgmt |
+| Tandoor Recipes | `zeltro install tandoor` | Recipes |
+| Tolgee | `zeltro install tolgee` | Localization |
+| Tooljet | `zeltro install tooljet` | Low-code |
+| Traccar | `zeltro install traccar` | Tracking |
+| TrailBase | `zeltro install trailbase` | Backend |
+| Trilium Notes | `zeltro install trilium` | Notes |
+| Trilium Notes (TriliumNext) | `zeltro install triliumnext` | Notes |
+| Twenty CRM | `zeltro install twenty` | CRM |
+| Typebot | `zeltro install typebot` | Forms |
+| Umami | `zeltro install umami` | Analytics |
+| Unleash | `zeltro install unleash` | Feature flags |
+| Uptime Kuma | `zeltro install uptime-kuma` | Monitoring |
+| Vaultwarden | `zeltro install vaultwarden` | Passwords |
+| VERT | `zeltro install vert` | Utilities |
+| Vikunja | `zeltro install vikunja` | Task Mgmt |
+| Wallabag | `zeltro install wallabag` | Read Later |
+| Web-Check | `zeltro install web-check` | Utilities |
+| Weblate | `zeltro install weblate` | Localization |
+| wger | `zeltro install wger` | Fitness |
+| Whoogle Search | `zeltro install whoogle` | Search |
+| Wiki.js | `zeltro install wikijs` | Wiki |
+| Yamtrack | `zeltro install yamtrack` | Media |
+| YOURLS | `zeltro install yourls` | URL Shortener |
+| Zabbix | `zeltro install zabbix` | Monitoring |
+| Zipline | `zeltro install zipline` | File sharing |
+| Zulip | `zeltro install zulip` | Team Chat |
 

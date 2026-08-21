@@ -2,22 +2,22 @@
 
 Redmine is distributed as `redmine:latest`. It is a project management tool that listens on port **3000**. Use an nginx reverse proxy to expose it at port 80.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB: host `zeltro-mariadb`, port `3306`, user `root`, password `` (empty).
 
 Create the database before starting:
 ```bash
-docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
+docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
 ```
 
 Redmine runs database migrations automatically on first start — wait 30–60 seconds before verifying.
 
 ## Setup workflow
 
-1. Create DB: `docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"`
-2. `mkdir -p ~/podium-projects/redmine`
+1. Create DB: `docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"`
+2. `mkdir -p ~/zeltro-projects/redmine`
 3. Write `docker-compose.yaml` and `nginx.conf` (see below).
-4. `cd ~/podium-projects/redmine && podium setup redmine --no-startup`
-5. `podium up redmine`
+4. `cd ~/zeltro-projects/redmine && zeltro setup redmine --no-startup`
+5. `zeltro up redmine`
 6. Wait 60 seconds for initial setup to complete.
 7. Verify: `curl -sI http://redmine/` — expect HTTP 200.
 
@@ -29,7 +29,7 @@ services:
     image: redmine:latest
     restart: unless-stopped
     environment:
-      REDMINE_DB_MYSQL: podium-mariadb
+      REDMINE_DB_MYSQL: zeltro-mariadb
       REDMINE_DB_PORT: 3306
       REDMINE_DB_USERNAME: root
       REDMINE_DB_PASSWORD: ""
@@ -60,7 +60,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

@@ -2,7 +2,7 @@
 
 Kimai is an open-source time-tracking application. Use image `kimai/kimai2:apache`. The Apache-based image listens on port **8001**. Use an nginx reverse proxy to expose it at port 80.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB: host `zeltro-mariadb`, port `3306`, user `root`, password `` (empty).
 
 `APP_SECRET` must be set to any random string.
 
@@ -13,10 +13,10 @@ docker exec kimai-app console kimai:user:create admin admin@example.com ROLE_SUP
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/kimai`
+1. `mkdir -p ~/zeltro-projects/kimai`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/kimai && podium setup kimai --no-startup`
-4. `podium up kimai`
+3. `cd ~/zeltro-projects/kimai && zeltro setup kimai --no-startup`
+4. `zeltro up kimai`
 5. Create admin user (see above).
 6. Verify: `curl -sI http://kimai/` — expect HTTP 200 or 302.
 
@@ -33,7 +33,7 @@ services:
       TRUSTED_HOSTS: kimai
       ADMINMAIL: admin@example.com
       ADMINPASS: admin123
-      DATABASE_URL: mysql://root:@podium-mariadb:3306/kimai
+      DATABASE_URL: mysql://root:@zeltro-mariadb:3306/kimai
       APP_SECRET: "a-random-secret-string-12345"
     volumes:
       - kimai-data:/opt/kimai/var/data
@@ -60,7 +60,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

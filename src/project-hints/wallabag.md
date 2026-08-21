@@ -2,14 +2,14 @@
 
 Wallabag is a self-hosted read-it-later application distributed as `wallabag/wallabag:latest`. It serves on port **80** — no nginx proxy needed.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB: host `zeltro-mariadb`, port `3306`, user `root`, password `` (empty).
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/wallabag`
+1. `mkdir -p ~/zeltro-projects/wallabag`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/wallabag && podium setup wallabag --no-startup`
-4. `podium up wallabag`
+3. `cd ~/zeltro-projects/wallabag && zeltro setup wallabag --no-startup`
+4. `zeltro up wallabag`
 5. First run installs/migrates — wait ~30 seconds.
 6. Verify: `curl -sI http://wallabag/` — expect HTTP 200 or 302.
 
@@ -24,7 +24,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ""
       SYMFONY__ENV__DATABASE_DRIVER: pdo_mysql
-      SYMFONY__ENV__DATABASE_HOST: podium-mariadb
+      SYMFONY__ENV__DATABASE_HOST: zeltro-mariadb
       SYMFONY__ENV__DATABASE_PORT: 3306
       SYMFONY__ENV__DATABASE_NAME: wallabag
       SYMFONY__ENV__DATABASE_USER: root
@@ -45,7 +45,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## Admin

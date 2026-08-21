@@ -4,7 +4,7 @@ Minimal self-hosted bookmark manager — this is the **plus** build, which adds 
 
 **Image**: `sissbruecker/linkding:1.45.0-plus`
 **Port**: 9090 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, db `linkding_plus`)
+**Database**: PostgreSQL (`zeltro-postgres`, db `linkding_plus`)
 **Credentials**: `admin` / `admin123`
 
 ## Key Notes
@@ -13,4 +13,4 @@ Minimal self-hosted bookmark manager — this is the **plus** build, which adds 
 - Postgres mode needs the whole `LD_DB_*` set. `LD_DB_PASSWORD` has no default and is mandatory for anything other than SQLite.
 - `LD_CSRF_TRUSTED_ORIGINS` must list the URL used in the browser, otherwise Django rejects the login POST with a CSRF failure.
 - Snapshots and (in SQLite mode) the database live in `/etc/linkding/data` — keep that volume even on Postgres.
-- The installer exists: run `podium install linkding-plus`.
+- The installer exists: run `zeltro install linkding-plus`.

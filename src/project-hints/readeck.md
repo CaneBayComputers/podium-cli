@@ -13,4 +13,4 @@ Read-it-later and web archiving — saves the readable content of pages, with hi
 - Do not set `READECK_SERVER_BASE_URL` unless you mean it — once set it becomes the only valid URL for the instance and all reverse-proxy forwarded headers are ignored.
 - `/` returns a 303 to the login/onboarding flow, which is the normal healthy response.
 - The onboarding route only exists while there are zero users; the first account created is the admin.
-- The installer exists: run `podium install readeck`.
+- The installer exists: run `zeltro install readeck`.

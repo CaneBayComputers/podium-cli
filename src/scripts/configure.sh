@@ -17,7 +17,7 @@ source scripts/functions.sh
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 # Parse arguments. Track flag-supplied values separately so we can distinguish
-# "user explicitly passed this" from "value loaded from /etc/podium-cli/.env".
+# "user explicitly passed this" from "value loaded from /etc/zeltro-cli/.env".
 GIT_NAME=""
 GIT_EMAIL=""
 FLAG_PROJECTS_DIR=""
@@ -58,20 +58,20 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "Usage: ${PODIUM_CMD:-$0} [OPTIONS]"
+            echo "Usage: ${ZELTRO_CMD:-$0} [OPTIONS]"
             echo ""
-            echo "Configure Podium development environment. Re-running is safe — values"
-            echo "from /etc/podium-cli/.env are kept as defaults, and prompts let you"
+            echo "Configure Zeltro development environment. Re-running is safe — values"
+            echo "from /etc/zeltro-cli/.env are kept as defaults, and prompts let you"
             echo "change them if you want."
             echo ""
             echo "Pass --non-interactive for a fully unattended run (scripts, CI, agents)."
             echo ""
             echo "Options:"
             echo "  --json-output           Output results in JSON format"
-            echo "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
+            echo "  --debug                 Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo "  --git-name NAME         Git user name"
             echo "  --git-email EMAIL       Git user email"
-            echo "  --projects-dir DIR      Projects directory (default: existing or ~/podium-projects)"
+            echo "  --projects-dir DIR      Projects directory (default: existing or ~/zeltro-projects)"
             echo "  --vpc-subnet A.B.C      Custom Docker VPC subnet (default: existing or random 10.x.x)"
             echo "  --non-interactive, -y   Never prompt; accept defaults for anything not passed as a flag"
             echo "  --help                  Show this help message"
@@ -81,7 +81,7 @@ while [[ $# -gt 0 ]]; do
             # Previously any unrecognised argument was silently shifted away, so
             # a mistyped flag looked like it had been applied when it had not.
             echo-red "Unknown option: $1"
-            echo-white "Use '$PODIUM_CMD --help' for the option list."
+            echo-white "Use '$ZELTRO_CMD --help' for the option list."
             exit 1
             ;;
         *)
@@ -97,24 +97,24 @@ done
 debug "Script started: configure.sh with args: $ORIGINAL_ARGS"
 
 # Check for and set up environment variables
-# Use /etc/podium-cli/ as primary config location
-sudo mkdir -p /etc/podium-cli
+# Use /etc/zeltro-cli/ as primary config location
+sudo mkdir -p /etc/zeltro-cli
 
-if ! [ -f /etc/podium-cli/.env ]; then
+if ! [ -f /etc/zeltro-cli/.env ]; then
 
-	sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/podium-cli/.env
+	sudo cp "$SCRIPT_DIR/../docker-stack/env.example" /etc/zeltro-cli/.env
 
 	# Generate a random subnet for the first run. Subsequent runs default to
 	# whatever's already in .env so re-running configure doesn't reshuffle IPs.
 	B_CLASS=$((RANDOM % 255 + 1))
 	C_CLASS=$((RANDOM % 256))
-	sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=10.$B_CLASS.$C_CLASS" /etc/podium-cli/.env
+	sudo-zeltro-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=10.$B_CLASS.$C_CLASS" /etc/zeltro-cli/.env
 
 fi
 
 # Load existing configuration so we can use current values as defaults below.
 # shellcheck disable=SC1091
-source /etc/podium-cli/.env
+source /etc/zeltro-cli/.env
 
 # Resolve VPC_SUBNET. An explicit --vpc-subnet wins; otherwise keep whatever is
 # already in .env (a random 10.B.C generated on first run). We deliberately do
@@ -126,20 +126,20 @@ if [[ -n "$FLAG_VPC_SUBNET" ]]; then
 	if [[ ! "$FLAG_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 		error "Invalid --vpc-subnet '$FLAG_VPC_SUBNET'. Format must be A.B.C (e.g. 10.247.177)."
 	fi
-	if [[ "$FLAG_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect podium-cli_vpc >/dev/null 2>&1; then
-		echo-yellow "The podium-cli_vpc network already exists at $VPC_SUBNET."
-		echo-white "Changing the subnet requires recreating it: run 'podium uninstall'"
-		echo-white "(preserves projects), then re-run 'podium configure --vpc-subnet $FLAG_VPC_SUBNET'."
+	if [[ "$FLAG_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect zeltro-cli_vpc >/dev/null 2>&1; then
+		echo-yellow "The zeltro-cli_vpc network already exists at $VPC_SUBNET."
+		echo-white "Changing the subnet requires recreating it: run 'zeltro uninstall'"
+		echo-white "(preserves projects), then re-run 'zeltro configure --vpc-subnet $FLAG_VPC_SUBNET'."
 		echo-return
 	fi
 	VPC_SUBNET="$FLAG_VPC_SUBNET"
 fi
 
-sudo-podium-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=\"$VPC_SUBNET\"" /etc/podium-cli/.env
+sudo-zeltro-sed-change "/^VPC_SUBNET=/" "VPC_SUBNET=\"$VPC_SUBNET\"" /etc/zeltro-cli/.env
 
 # Check for and set up docker compose yaml (idempotent — never overwrites)
-if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
-	sudo cp docker-stack/docker-compose.services.yaml /etc/podium-cli/docker-compose.yaml
+if ! [ -f /etc/zeltro-cli/docker-compose.yaml ]; then
+	sudo cp docker-stack/docker-compose.services.yaml /etc/zeltro-cli/docker-compose.yaml
 	echo-return
 fi
 
@@ -148,10 +148,10 @@ if [[ "$(whoami)" == "root" ]]; then
 	error "Do NOT run with sudo or as root! Please run as regular user (you may be prompted for sudo password when needed)."
 fi
 
-# Install Podium command globally
+# Install Zeltro command globally
 echo-return
-echo-cyan "Installing Podium command globally..."
-echo-white "Creating 'podium' command accessible from anywhere on your system."
+echo-cyan "Installing Zeltro command globally..."
+echo-white "Creating 'zeltro' command accessible from anywhere on your system."
 echo-return
 
 # Probe for passwordless sudo before prompting. `sudo -v` authenticates against
@@ -167,27 +167,27 @@ if ! sudo -n true 2>/dev/null; then
 fi
 
 # Remove existing symlink if it exists
-sudo rm -f /usr/local/bin/podium 2>/dev/null || true
+sudo rm -f /usr/local/bin/zeltro 2>/dev/null || true
 
-# Create symlink to podium script
-sudo ln -sf "$DEV_DIR/podium" /usr/local/bin/podium
+# Create symlink to zeltro script
+sudo ln -sf "$DEV_DIR/zeltro" /usr/local/bin/zeltro
 
 # Install bash tab-completion (idempotent). bash-completion 2.x prefers the
 # on-demand location /usr/share/bash-completion/completions/<cmd>; the older
 # /etc/bash_completion.d is eager-sourced. Install to whichever dirs exist so
 # completion loads regardless of bash-completion version. Harmless if the
 # package isn't installed.
-if [ -f "$DEV_DIR/completion/podium.bash" ]; then
+if [ -f "$DEV_DIR/completion/zeltro.bash" ]; then
 	_comp_installed=0
 	if [ -d /usr/share/bash-completion/completions ]; then
-		sudo ln -sf "$DEV_DIR/completion/podium.bash" /usr/share/bash-completion/completions/podium 2>/dev/null && _comp_installed=1
+		sudo ln -sf "$DEV_DIR/completion/zeltro.bash" /usr/share/bash-completion/completions/zeltro 2>/dev/null && _comp_installed=1
 	fi
 	sudo mkdir -p /etc/bash_completion.d 2>/dev/null || true
 	if [ -d /etc/bash_completion.d ]; then
-		sudo ln -sf "$DEV_DIR/completion/podium.bash" /etc/bash_completion.d/podium 2>/dev/null && _comp_installed=1
+		sudo ln -sf "$DEV_DIR/completion/zeltro.bash" /etc/bash_completion.d/zeltro 2>/dev/null && _comp_installed=1
 	fi
 	if [ "$_comp_installed" = "1" ]; then
-		echo-cyan "Bash completion installed — open a new terminal (or run 'source $DEV_DIR/completion/podium.bash') to use it."
+		echo-cyan "Bash completion installed — open a new terminal (or run 'source $DEV_DIR/completion/zeltro.bash') to use it."
 	fi
 fi
 
@@ -213,7 +213,7 @@ echo-return; echo-cyan 'Setting up Git ...'; echo-white
 
 # Ask for a name and email, NOT "your Git name and email". These are stored as
 # the git identity, but naming the tool in the prompt confused people who did
-# not think of themselves as setting up git -- they are just telling Podium who
+# not think of themselves as setting up git -- they are just telling Zeltro who
 # they are. The --git-name/--git-email flags keep their names for compatibility.
 #
 # An explicit --git-name/--git-email wins in EVERY mode; only
@@ -340,8 +340,8 @@ detect_closest_aws_region() {
 echo-return; echo-cyan 'Configuring projects directory ...'; echo-white
 
 # Resolve PROJECTS_DIR: explicit flag wins, otherwise prompt with current as default.
-# Current = whatever was sourced from .env, falling back to ~/podium-projects.
-CURRENT_PROJECTS_DIR="${PROJECTS_DIR:-$HOME/podium-projects}"
+# Current = whatever was sourced from .env, falling back to ~/zeltro-projects.
+CURRENT_PROJECTS_DIR="${PROJECTS_DIR:-$HOME/zeltro-projects}"
 # Expand ~ for display + use
 CURRENT_PROJECTS_DIR="${CURRENT_PROJECTS_DIR/#\~/$HOME}"
 
@@ -399,18 +399,18 @@ if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce 2>/dev/null)" == "E
 fi
 
 # Update .env file with projects directory (handles both commented and uncommented lines)
-# MUST be quoted. /etc/podium-cli/.env is `source`d by bash, so an unquoted
+# MUST be quoted. /etc/zeltro-cli/.env is `source`d by bash, so an unquoted
 # value containing a space becomes two words: a path like
-# /Users/First Last/podium-projects writes
-#     PROJECTS_DIR=/Users/First Last/podium-projects
-# which assigns "/Users/First" and then tries to RUN "Last/podium-projects".
-# Every later podium command then fails with "command not found" — including
-# `podium configure` itself, which sources .env before it can rewrite it, so
+# /Users/First Last/zeltro-projects writes
+#     PROJECTS_DIR=/Users/First Last/zeltro-projects
+# which assigns "/Users/First" and then tries to RUN "Last/zeltro-projects".
+# Every later zeltro command then fails with "command not found" — including
+# `zeltro configure` itself, which sources .env before it can rewrite it, so
 # there is no way back out through the CLI.
 #
 # Same reasoning already applied to OPTIONAL_SERVICES in enable_service.sh.
-sudo-podium-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
-sudo-podium-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/podium-cli/.env
+sudo-zeltro-sed-change "/^#PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/zeltro-cli/.env
+sudo-zeltro-sed-change "/^PROJECTS_DIR=/" "PROJECTS_DIR=\"$PROJECTS_DIR\"" /etc/zeltro-cli/.env
 
 echo-green "Projects directory configured: $PROJECTS_DIR"
 echo-white; echo
@@ -430,7 +430,7 @@ echo-white
 ###############################
 # Shared services
 ###############################
-# Nothing to sync into /etc/hosts — Podium no longer writes that file at all.
+# Nothing to sync into /etc/hosts — Zeltro no longer writes that file at all.
 #
 # Containers reach each other by name through Docker's own DNS on the shared
 # network, which needs no help from the host: verified with a container
@@ -490,7 +490,7 @@ if [[ "$JSON_OUTPUT" != "1" ]]; then
     # one, and it is the step people got stuck on.
     #
     # The default — claude, no model override — is right for almost everyone,
-    # and `podium ai-set` exists for the rest. A closed stdin makes ai_set keep
+    # and `zeltro ai-set` exists for the rest. A closed stdin makes ai_set keep
     # whatever is already configured and print it, so this still confirms what
     # the agent is without demanding an answer.
     "$DEV_DIR/scripts/ai_set.sh" < /dev/null

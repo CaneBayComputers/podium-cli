@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot builds the component index and can take 1-2 minutes before the UI answers."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE langflow;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE langflow;" 2>/dev/null || true
 }
 
 write_files() {
@@ -18,7 +18,7 @@ services:
     environment:
       LANGFLOW_HOST: 0.0.0.0
       LANGFLOW_PORT: "7860"
-      LANGFLOW_DATABASE_URL: postgresql://root:password@podium-postgres:5432/langflow
+      LANGFLOW_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/langflow
       LANGFLOW_CONFIG_DIR: /app/langflow
       LANGFLOW_AUTO_LOGIN: "false"
       LANGFLOW_SUPERUSER: admin

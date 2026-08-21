@@ -11,4 +11,4 @@
 - `APP_BASIC_AUTH=user:pass` protects both the UI and the REST API; nginx passes the `Authorization` header through unchanged.
 - Link a phone by scanning the QR at `/app/login`; the WhatsApp session persists in `/app/storages`, so don't delete that volume unless you want to re-pair.
 - WebSocket upgrade headers are required — live QR and message events use a socket.
-- The installer exists: run `podium install gowa`.
+- The installer exists: run `zeltro install gowa`.

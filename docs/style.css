@@ -1,4 +1,4 @@
-/* Podium landing — dark navy / electric cyan, matching the logo */
+/* Zeltro landing — dark navy / electric cyan, matching the logo */
 
 :root {
   --bg-0: #04081d;
@@ -223,8 +223,8 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   border: 1px solid rgba(14, 165, 233, 0.18);
 }
 
-/* Why Podium — compare table */
-.why-podium {
+/* Why Zeltro — compare table */
+.why-zeltro {
   background: linear-gradient(180deg, transparent, rgba(15, 26, 69, 0.4));
 }
 .eyebrow.center { display: block; text-align: center; }
@@ -602,7 +602,7 @@ section { padding: clamp(60px, 8vw, 110px) 0; position: relative; }
   font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-/* Framework chips under podium new — clickable */
+/* Framework chips under zeltro new — clickable */
 .framework-list {
   display: flex;
   flex-wrap: wrap;

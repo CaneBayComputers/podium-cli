@@ -6,10 +6,10 @@ No external database is needed — Memos uses SQLite stored at `/var/opt/memos`.
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/memos`
+1. `mkdir -p ~/zeltro-projects/memos`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/memos && podium setup memos --no-startup`
-4. `podium up memos`
+3. `cd ~/zeltro-projects/memos && zeltro setup memos --no-startup`
+4. `zeltro up memos`
 5. Verify: `curl -sI http://memos/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -42,7 +42,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

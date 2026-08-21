@@ -3,8 +3,8 @@ INSTALL_CREDENTIALS="create the admin account on first visit"
 INSTALL_NOTES="Java/Spring app — first boot runs Flyway migrations and can take ~60 seconds before it answers."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS booklore CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS booklore CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'booklore'@'%' IDENTIFIED BY 'booklore';
         ALTER USER 'booklore'@'%' IDENTIFIED BY 'booklore';
         GRANT ALL PRIVILEGES ON booklore.* TO 'booklore'@'%';
@@ -21,7 +21,7 @@ services:
       USER_ID: "1000"
       GROUP_ID: "1000"
       TZ: Etc/UTC
-      DATABASE_URL: jdbc:mariadb://podium-mariadb:3306/booklore
+      DATABASE_URL: jdbc:mariadb://zeltro-mariadb:3306/booklore
       DATABASE_USERNAME: booklore
       DATABASE_PASSWORD: booklore
       SWAGGER_ENABLED: "false"

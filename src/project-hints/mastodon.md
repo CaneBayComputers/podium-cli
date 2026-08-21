@@ -2,7 +2,7 @@
 
 **Image**: `ghcr.io/mastodon/mastodon:v4.5.9` + `ghcr.io/mastodon/mastodon-streaming:v4.5.9` + `nginx:1.27-alpine`
 **Port**: 80 (nginx reverse proxy)
-**Database**: PostgreSQL (`podium-postgres`) + Redis (`podium-redis`)
+**Database**: PostgreSQL (`zeltro-postgres`) + Redis (`zeltro-redis`)
 **Credentials**: Register on first visit — first account becomes admin
 
 ## Key Notes
@@ -15,4 +15,4 @@
 - VAPID keys for push notifications are generated using `bundle exec rake mastodon:webpush:generate_vapid_key` inside the mastodon image.
 - `X-Forwarded-Proto: http` (not https) in nginx — mastodon uses `FORCE_SSL=false` so no SSL redirect.
 - Media files stored in `mastodon-system` volume, shared by mastodon-web, sidekiq, and nginx.
-- The installer exists: run `podium install mastodon`.
+- The installer exists: run `zeltro install mastodon`.

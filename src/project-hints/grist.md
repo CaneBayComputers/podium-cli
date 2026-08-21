@@ -13,4 +13,4 @@ Spreadsheet with a real database underneath — Python formulas, typed columns, 
 - `APP_HOME_URL` must be the URL you actually browse to; share links and auth callbacks are built from it.
 - Anonymous access is the default posture. Set `GRIST_FORCE_LOGIN=true` to require a login.
 - Everything durable lives in `/persist` — documents, the home DB, and sessions.
-- The installer exists: run `podium install grist`.
+- The installer exists: run `zeltro install grist`.

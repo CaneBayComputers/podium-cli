@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / unleash4all"
 INSTALL_NOTES="Change the default admin password after the first login."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"unleash\";" 2>/dev/null || true
 }
 
@@ -14,7 +14,7 @@ services:
     image: unleashorg/unleash-server:8.1.0
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgres://root:password@podium-postgres:5432/unleash"
+      DATABASE_URL: "postgres://root:password@zeltro-postgres:5432/unleash"
       DATABASE_SSL: "false"
       UNLEASH_URL: http://unleash
       LOG_LEVEL: warn

@@ -1,10 +1,10 @@
 INSTALL_DISPLAY="Pixelfed"
-INSTALL_CREDENTIALS="register at http://$PROJECT_NAME/register (first account, then promote it with: podium exec-root php artisan user:admin <username>)"
-INSTALL_NOTES="Federated image-sharing platform. First boot runs migrations and can take ~2 minutes. Email is wired to MailHog, so activation links land at http://podium-mailhog:8025/."
+INSTALL_CREDENTIALS="register at http://$PROJECT_NAME/register (first account, then promote it with: zeltro exec-root php artisan user:admin <username>)"
+INSTALL_NOTES="Federated image-sharing platform. First boot runs migrations and can take ~2 minutes. Email is wired to MailHog, so activation links land at http://zeltro-mailhog:8025/."
 
 pre_install() {
     # Pixelfed will not migrate into a database that does not exist yet.
-    docker exec podium-mariadb mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS \`pixelfed\`;" 2>/dev/null || true
+    docker exec zeltro-mariadb mariadb -uroot -e "CREATE DATABASE IF NOT EXISTS \`pixelfed\`;" 2>/dev/null || true
 }
 
 # Pixelfed runs several hundred migrations against an empty database on first
@@ -30,18 +30,18 @@ services:
       SESSION_DOMAIN: "$PROJECT_NAME"
       TRUST_PROXIES: "*"
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: "3306"
       DB_DATABASE: pixelfed
       DB_USERNAME: root
       DB_PASSWORD: ""
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       CACHE_DRIVER: redis
       QUEUE_DRIVER: redis
       SESSION_DRIVER: redis
       MAIL_DRIVER: smtp
-      MAIL_HOST: podium-mailhog
+      MAIL_HOST: zeltro-mailhog
       MAIL_PORT: "1025"
       # Needs a TLD or Pixelfed's validator rejects it and the container
       # crash-loops. .test is reserved for exactly this. MailHog catches it anyway.

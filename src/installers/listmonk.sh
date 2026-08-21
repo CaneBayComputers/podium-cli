@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Listmonk"
 INSTALL_CREDENTIALS="admin / admin12345"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE listmonk;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE listmonk;" 2>/dev/null || true
 }
 
 write_files() {
@@ -21,7 +21,7 @@ services:
     environment:
       TZ: UTC
       LISTMONK_app__address: 0.0.0.0:9000
-      LISTMONK_db__host: podium-postgres
+      LISTMONK_db__host: zeltro-postgres
       LISTMONK_db__port: 5432
       LISTMONK_db__user: root
       LISTMONK_db__password: password

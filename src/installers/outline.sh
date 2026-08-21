@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Outline"
 INSTALL_NOTES="Outline requires an auth provider. Configure OIDC or email auth via env vars before first use."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE outline;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE outline;" 2>/dev/null || true
 }
 
 write_files() {
@@ -23,9 +23,9 @@ services:
       FORCE_HTTPS: "false"
       SECRET_KEY: "$secret_key"
       UTILS_SECRET: "$utils_secret"
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/outline
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/outline
       PGSSLMODE: disable
-      REDIS_URL: redis://podium-redis:6379
+      REDIS_URL: redis://zeltro-redis:6379
       FILE_STORAGE: local
       STORAGE_LOCAL_PATH: /var/lib/outline/data
     volumes:

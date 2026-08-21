@@ -41,12 +41,12 @@ pages:
 
           - type: bookmarks
             groups:
-              - title: Podium
+              - title: Zeltro
                 links:
-                  - title: Podium CLI
-                    url: https://podiumcli.com/
-                  - title: Podium on GitHub
-                    url: https://github.com/CaneBayComputers/podium-cli
+                  - title: Zeltro CLI
+                    url: https://zeltro.build/
+                  - title: Zeltro on GitHub
+                    url: https://github.com/CaneBayComputers/zeltro-cli
 
       - size: full
         widgets:

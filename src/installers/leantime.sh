@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin@leantime.io / admin"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/ to complete setup wizard on first launch."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS leantime;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS leantime;"
 }
 
 write_files() {
@@ -13,13 +13,13 @@ services:
     image: leantime/leantime:latest
     restart: unless-stopped
     environment:
-      LEAN_DB_HOST: podium-mariadb
+      LEAN_DB_HOST: zeltro-mariadb
       LEAN_DB_PORT: "3306"
       LEAN_DB_USER: root
       LEAN_DB_PASSWORD: ""
       LEAN_DB_DATABASE: leantime
       LEAN_APP_URL: http://leantime
-      LEAN_SESSION_PASSWORD: podium-leantime-session
+      LEAN_SESSION_PASSWORD: zeltro-leantime-session
       LEAN_DEFAULT_TIMEZONE: UTC
     volumes:
       - leantime-userfiles:/var/www/html/userfiles

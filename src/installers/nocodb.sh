@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Set admin credentials on first visit"
 INSTALL_NOTES="Open-source Airtable alternative. First user to register becomes admin."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE nocodb;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE nocodb;" 2>/dev/null || true
 }
 
 write_files() {
@@ -16,7 +16,7 @@ services:
     image: nocodb/nocodb:latest
     restart: unless-stopped
     environment:
-      NC_DB: "pg://podium-postgres:5432?u=root&p=password&d=nocodb"
+      NC_DB: "pg://zeltro-postgres:5432?u=root&p=password&d=nocodb"
       NC_AUTH_JWT_SECRET: $jwt_secret
       NC_PUBLIC_URL: http://nocodb
     volumes:

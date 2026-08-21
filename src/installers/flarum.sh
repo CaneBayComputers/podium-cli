@@ -3,9 +3,9 @@ INSTALL_CREDENTIALS="admin / AdminPassword123!"
 INSTALL_NOTES="First startup takes a few minutes while Flarum installs. Visit http://$PROJECT_NAME/ once it's ready."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS flarum CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS flarum CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     # Flarum requires its own dedicated user — root login fails with this image
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'flarum'@'%' IDENTIFIED BY 'FlarumDbPassword123!';
         ALTER USER 'flarum'@'%' IDENTIFIED BY 'FlarumDbPassword123!';
         GRANT ALL PRIVILEGES ON flarum.* TO 'flarum'@'%';
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     environment:
       FORUM_URL: http://flarum
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_NAME: flarum
       DB_USER: flarum

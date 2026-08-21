@@ -1,5 +1,5 @@
 #!/bin/bash
-# Podium - Universal PHP Development Environment
+# Zeltro - Universal PHP Development Environment
 # One command to rule them all
 
 set -e
@@ -14,15 +14,15 @@ while [ -L "$SCRIPT_PATH" ]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-# Program name for help text. Scripts print "${PODIUM_CMD:-$0}" so copy-pasted
+# Program name for help text. Scripts print "${ZELTRO_CMD:-$0}" so copy-pasted
 # usage is runnable — bare $0 is the sourced script's absolute path, which is
 # not a command anyone can type.
 #
 # This lived INSIDE the symlink loop above until 2026-08-03, so it was only ever
-# set when podium was invoked through a symlink. A direct invocation left it
+# set when zeltro was invoked through a symlink. A direct invocation left it
 # empty and every usage() silently fell back to $0 -- the very bug the export was
 # added to fix. The `:-$0` fallback is what hid it.
-export PODIUM_CMD="podium${1:+ $1}"
+export ZELTRO_CMD="zeltro${1:+ $1}"
 
 # Source functions
 source "$SCRIPT_DIR/scripts/functions.sh"
@@ -43,112 +43,112 @@ set -- "${new_args[@]}"
 # Update check. Must come after functions.sh is sourced and after JSON_OUTPUT is
 # parsed -- it was briefly placed above both, where the functions did not exist
 # yet and `|| true` turned that into a silent no-op.
-podium_update_refresh_async 2>/dev/null || true
-podium_update_notice 2>/dev/null || true
+zeltro_update_refresh_async 2>/dev/null || true
+zeltro_update_notice 2>/dev/null || true
 
 # Initialize projects directory
 init_projects_dir
 
 # Help text
 show_help() {
-    echo-cyan "Podium - AI-friendly local dev platform for multi-project Docker workflows"
+    echo-cyan "Zeltro - AI-friendly local dev platform for multi-project Docker workflows"
     echo
     echo-white "WHAT IT IS:"
-    echo "  Podium is a Docker-based local development manager for PHP, Python, and Node"
+    echo "  Zeltro is a Docker-based local development manager for PHP, Python, and Node"
     echo "  projects, built for developers running multiple projects and for AI agents that"
     echo "  need a stable platform to operate inside. Every project gets a stable hostname"
     echo "  (http://<project-name>/, reachable from your browser and from inside containers)"
-    echo "  and connects to one set of SHARED services — one podium-postgres, one"
-    echo "  podium-mariadb, one podium-redis, one podium-mongo, one podium-memcached —"
+    echo "  and connects to one set of SHARED services — one zeltro-postgres, one"
+    echo "  zeltro-mariadb, one zeltro-redis, one zeltro-mongo, one zeltro-memcached —"
     echo "  used by all projects on the machine."
     echo
     echo "  Greenfield scaffolding (laravel/kavera/octobercms/drupal/wordpress/php/fastapi/flask/django/python/"
     echo "  express/nestjs/fastify/node), 200+ one-command installers for popular OSS apps, AI-driven"
-    echo "  project creation (podium create), and an interactive AI session in every"
+    echo "  project creation (zeltro create), and an interactive AI session in every"
     echo "  new/cloned/installed project are first-class."
     echo
-    echo "  Project files live under ~/podium-projects/<name>/. Project containers attach to"
-    echo "  the podium-cli_vpc Docker network. Shared service hostnames: podium-postgres,"
-    echo "  podium-mariadb, podium-redis, podium-mongo, podium-memcached, podium-mailhog."
+    echo "  Project files live under ~/zeltro-projects/<name>/. Project containers attach to"
+    echo "  the zeltro-cli_vpc Docker network. Shared service hostnames: zeltro-postgres,"
+    echo "  zeltro-mariadb, zeltro-redis, zeltro-mongo, zeltro-memcached, zeltro-mailhog."
     echo
     echo-white "DOCS FOR AGENTS:"
-    echo "  /usr/local/share/podium-cli/AGENTS.md       — agent-facing reference (read first)"
-    echo "  /usr/local/share/podium-cli/DEVELOPMENT.md  — modifying Podium itself"
+    echo "  /usr/local/share/zeltro-cli/AGENTS.md       — agent-facing reference (read first)"
+    echo "  /usr/local/share/zeltro-cli/DEVELOPMENT.md  — modifying Zeltro itself"
     echo
     echo-white "CONTAINERIZED DEVELOPMENT TOOLS: (Run from project directory)"
-    echo "  podium composer <args>    - Run Composer inside container"
-    echo "  podium art <args>         - Run Laravel Artisan inside container"
-    echo "  podium wp <args>          - Run WP-CLI inside container"
-    echo "  podium drush <args>       - Run Drush (Drupal) inside container"
-    echo "  podium php <args>         - Run PHP inside container"
-    echo "  podium npm <args>         - Run npm inside container"
-    echo "  podium npx <args>         - Run npx inside container"
-    echo "  podium node <args>        - Run Node.js inside container"
-    echo "  podium python <args>      - Run Python inside container"
-    echo "  podium pip <args>         - Run pip inside container"
-    echo "  podium shell              - Open framework-aware interactive shell or REPL"
+    echo "  zeltro composer <args>    - Run Composer inside container"
+    echo "  zeltro art <args>         - Run Laravel Artisan inside container"
+    echo "  zeltro wp <args>          - Run WP-CLI inside container"
+    echo "  zeltro drush <args>       - Run Drush (Drupal) inside container"
+    echo "  zeltro php <args>         - Run PHP inside container"
+    echo "  zeltro npm <args>         - Run npm inside container"
+    echo "  zeltro npx <args>         - Run npx inside container"
+    echo "  zeltro node <args>        - Run Node.js inside container"
+    echo "  zeltro python <args>      - Run Python inside container"
+    echo "  zeltro pip <args>         - Run pip inside container"
+    echo "  zeltro shell              - Open framework-aware interactive shell or REPL"
     echo
     echo-white "STATIC ANALYSIS: (Run from project directory; paths relative to project root)"
-    echo "  podium phpcs <path>       - Run PHPCS with default ruleset"
-    echo "  podium phpcbf <path>      - Run PHPCBF with default ruleset (auto-fix)"
-    echo "  podium phpmd <path>       - Run PHPMD with default rules"
+    echo "  zeltro phpcs <path>       - Run PHPCS with default ruleset"
+    echo "  zeltro phpcbf <path>      - Run PHPCBF with default ruleset (auto-fix)"
+    echo "  zeltro phpmd <path>       - Run PHPMD with default rules"
     echo
     echo-white "CONTAINER EXECUTION: (Run from project directory)"
-    echo "  podium exec <cmd>         - Execute command as developer user (no TTY, great for automation/CI)"
-    echo "  podium exec-root <cmd>    - Execute command as root user (no TTY)"
-    echo "  podium exec-tty <cmd>     - Execute command as developer user with TTY"
-    echo "  podium exec-tty-root <cmd> - Execute command as root user with TTY"
-    echo "  podium bash [args]        - Open bash shell inside container with TTY"
-    echo "  podium tinker [args]      - Open Laravel tinker REPL with TTY"
+    echo "  zeltro exec <cmd>         - Execute command as developer user (no TTY, great for automation/CI)"
+    echo "  zeltro exec-root <cmd>    - Execute command as root user (no TTY)"
+    echo "  zeltro exec-tty <cmd>     - Execute command as developer user with TTY"
+    echo "  zeltro exec-tty-root <cmd> - Execute command as root user with TTY"
+    echo "  zeltro bash [args]        - Open bash shell inside container with TTY"
+    echo "  zeltro tinker [args]      - Open Laravel tinker REPL with TTY"
     echo
     echo-white "ENHANCED LARAVEL COMMANDS: (Run from project directory)"
-    echo "  podium db-refresh         - Fresh migration + seed"
-    echo "  podium cache-refresh      - Clear all Laravel caches"
+    echo "  zeltro db-refresh         - Fresh migration + seed"
+    echo "  zeltro cache-refresh      - Clear all Laravel caches"
     echo
     echo-white "ENHANCED DJANGO COMMANDS: (Run from project directory)"
-    echo "  podium django manage <args> - Run manage.py with arguments"
-    echo "  podium django shell         - Open Django interactive shell"
+    echo "  zeltro django manage <args> - Run manage.py with arguments"
+    echo "  zeltro django shell         - Open Django interactive shell"
     echo
     echo-white "SERVICE MANAGEMENT:"
-    echo "  podium mysql <args>       - Run MySQL client inside mariadb container"
-    echo "  podium redis <cmd>        - Run Redis CLI commands"
-    echo "  podium redis-flush        - Flush all Redis data"
-    echo "  podium memcache <cmd>     - Run Memcached commands via telnet"
-    echo "  podium memcache-flush     - Flush all Memcached data"
-    echo "  podium memcache-stats     - Show Memcached statistics"
-    echo "  podium supervisor <cmd>   - Run supervisorctl commands (Run from project directory)"
-    echo "  podium supervisor-status  - Show all supervised processes (Run from project directory)"
+    echo "  zeltro mysql <args>       - Run MySQL client inside mariadb container"
+    echo "  zeltro redis <cmd>        - Run Redis CLI commands"
+    echo "  zeltro redis-flush        - Flush all Redis data"
+    echo "  zeltro memcache <cmd>     - Run Memcached commands via telnet"
+    echo "  zeltro memcache-flush     - Flush all Memcached data"
+    echo "  zeltro memcache-stats     - Show Memcached statistics"
+    echo "  zeltro supervisor <cmd>   - Run supervisorctl commands (Run from project directory)"
+    echo "  zeltro supervisor-status  - Show all supervised processes (Run from project directory)"
     echo
     echo-white "PROJECT MANAGEMENT:"
-    echo "  podium up <project>       - Start a project (shared services always start too)"
-    echo "  podium up-all             - Start every project"
-    echo "  podium down <project>     - Stop a project (shared services keep running)"
-    echo "  podium down-all           - Stop every project (shared services keep running)"
-    echo "  podium status [project] [--all] - Show status of active projects (--all: include stopped projects)"
-    echo "  podium new <framework> <name> [--database <type>] [--version X] - Create a new project"
-    echo "  podium create \"<idea>\"    - Create a project from a plain English description (AI)"
-    echo "  podium resume <project>   - Resume AI session for a project"
-    echo "  podium install <app> [name] [--image <ref>] - Install a known open-source app (podium install --list)"
-    echo "  podium create-installer \"<idea>\" - Generate a new installer + hint for an OSS app via AI"
-    echo "  podium update-installer <app>|--all - Refresh an installer (or all) against current upstream via AI"
-    echo "  podium clone <work-directly|fork|new-repo> <repo> [name] - Clone an existing repo"
-    echo "  podium setup <project> [options] - Set up an existing project directory"
-    echo "  podium remove <project> [options] - Remove a project (DB preserved unless --force-db-delete)"
-    echo "  podium set-metadata <p>   - Set a project's emoji, display name or description"
-    echo "  podium disable <project>  - Stop and park a project: skipped by up-all, hidden in the GUI"
-    echo "  podium enable <project>   - Re-enable a disabled project"
+    echo "  zeltro up <project>       - Start a project (shared services always start too)"
+    echo "  zeltro up-all             - Start every project"
+    echo "  zeltro down <project>     - Stop a project (shared services keep running)"
+    echo "  zeltro down-all           - Stop every project (shared services keep running)"
+    echo "  zeltro status [project] [--all] - Show status of active projects (--all: include stopped projects)"
+    echo "  zeltro new <framework> <name> [--database <type>] [--version X] - Create a new project"
+    echo "  zeltro create \"<idea>\"    - Create a project from a plain English description (AI)"
+    echo "  zeltro resume <project>   - Resume AI session for a project"
+    echo "  zeltro install <app> [name] [--image <ref>] - Install a known open-source app (zeltro install --list)"
+    echo "  zeltro create-installer \"<idea>\" - Generate a new installer + hint for an OSS app via AI"
+    echo "  zeltro update-installer <app>|--all - Refresh an installer (or all) against current upstream via AI"
+    echo "  zeltro clone <work-directly|fork|new-repo> <repo> [name] - Clone an existing repo"
+    echo "  zeltro setup <project> [options] - Set up an existing project directory"
+    echo "  zeltro remove <project> [options] - Remove a project (DB preserved unless --force-db-delete)"
+    echo "  zeltro set-metadata <p>   - Set a project's emoji, display name or description"
+    echo "  zeltro disable <project>  - Stop and park a project: skipped by up-all, hidden in the GUI"
+    echo "  zeltro enable <project>   - Re-enable a disabled project"
     echo
     echo-white "SYSTEM MANAGEMENT:"
-    echo "  podium configure          - Configure Podium environment"
-    echo "  podium ai \"<prompt>\"      - Send a one-off prompt to the AI agent (--interactive for a session)"
-    echo "  podium ai-set             - Configure AI agent and model"
-    echo "  podium update [--full]    - Update Podium CLI (--full also re-pulls Docker images)"
-    echo "  podium start-services     - Start shared services"
-    echo "  podium enable-service <n> - Enable an optional shared service (minio, meilisearch)"
-    echo "  podium disable-service <n>- Disable an optional shared service"
-    echo "  podium stop-services      - Stop shared services"
-    echo "  podium uninstall          - Remove Podium Docker resources"
-    echo "  podium projects-dir       - Show projects directory path"
+    echo "  zeltro configure          - Configure Zeltro environment"
+    echo "  zeltro ai \"<prompt>\"      - Send a one-off prompt to the AI agent (--interactive for a session)"
+    echo "  zeltro ai-set             - Configure AI agent and model"
+    echo "  zeltro update [--full]    - Update Zeltro CLI (--full also re-pulls Docker images)"
+    echo "  zeltro start-services     - Start shared services"
+    echo "  zeltro enable-service <n> - Enable an optional shared service (minio, meilisearch)"
+    echo "  zeltro disable-service <n>- Disable an optional shared service"
+    echo "  zeltro stop-services      - Stop shared services"
+    echo "  zeltro uninstall          - Remove Zeltro Docker resources"
+    echo "  zeltro projects-dir       - Show projects directory path"
     echo
     echo-white "GLOBAL OPTIONS:"
     echo "  --json-output             - Clean JSON output (suppresses all text/colors)"
@@ -189,35 +189,35 @@ show_help() {
     echo "  --preserve-database       - Keep database (skip deletion)"
     echo
     echo-white "EXAMPLES WITH EXPLANATIONS:"
-    echo "  podium composer install                    # Install PHP dependencies in current project"
-    echo "  podium art migrate --seed                  # Run Laravel migrations with seeders"
-    echo "  podium wp plugin list --status=active     # List active WordPress plugins"
-    echo "  podium up myproject                        # Start containers for specific project"
-    echo "  podium status --json-output                # Get project status as JSON"
-    echo "  podium start-services --json-output        # Start services and get JSON confirmation"
-    echo "  podium clone work-directly https://github.com/user/app   # Clone, keep original as upstream"
-    echo "  podium clone fork https://github.com/user/app             # Fork to your account, work from fork"
-    echo "  podium clone new-repo https://github.com/user/app my-app  # Clone + create a new repo"
-    echo "  podium setup downloaded-project            # Set up manually downloaded project"
-    echo "  podium setup project --overwrite-docker-compose"
+    echo "  zeltro composer install                    # Install PHP dependencies in current project"
+    echo "  zeltro art migrate --seed                  # Run Laravel migrations with seeders"
+    echo "  zeltro wp plugin list --status=active     # List active WordPress plugins"
+    echo "  zeltro up myproject                        # Start containers for specific project"
+    echo "  zeltro status --json-output                # Get project status as JSON"
+    echo "  zeltro start-services --json-output        # Start services and get JSON confirmation"
+    echo "  zeltro clone work-directly https://github.com/user/app   # Clone, keep original as upstream"
+    echo "  zeltro clone fork https://github.com/user/app             # Fork to your account, work from fork"
+    echo "  zeltro clone new-repo https://github.com/user/app my-app  # Clone + create a new repo"
+    echo "  zeltro setup downloaded-project            # Set up manually downloaded project"
+    echo "  zeltro setup project --overwrite-docker-compose"
     echo "                                             # Force setup even with existing Docker config"
-    echo "  podium new laravel my-shop                 # Laravel project (database auto-selected: mysql)"
-    echo "  podium new laravel survey --database postgres --version latest"
+    echo "  zeltro new laravel my-shop                 # Laravel project (database auto-selected: mysql)"
+    echo "  zeltro new laravel survey --database postgres --version latest"
     echo "                                             # Django project with PostgreSQL"
-    echo "  podium new express my-api --json-output    # Express project with clean JSON output"
-    echo "  podium remove myproject --preserve-database"
+    echo "  zeltro new express my-api --json-output    # Express project with clean JSON output"
+    echo "  zeltro remove myproject --preserve-database"
     echo "                                             # Remove project but keep database"
-    echo "  podium ai \"Build a REST API for users\"     # Start AI agent in current project"
-    echo "  podium exec 'ls -la'                       # Execute shell command in project container"
-    echo "  podium exec-tty bash                       # Open interactive bash shell in project container"
-    echo "  podium tinker                              # Open Laravel tinker REPL inside project container"
-    echo "  podium supervisor restart all              # Restart all supervised processes"
+    echo "  zeltro ai \"Build a REST API for users\"     # Start AI agent in current project"
+    echo "  zeltro exec 'ls -la'                       # Execute shell command in project container"
+    echo "  zeltro exec-tty bash                       # Open interactive bash shell in project container"
+    echo "  zeltro tinker                              # Open Laravel tinker REPL inside project container"
+    echo "  zeltro supervisor restart all              # Restart all supervised processes"
     echo
     echo-white "NOTES:"
     echo "  • Commands require explicit arguments (no interactive pickers) so they're safe for AI agents and scripts. 'configure' is the only interactive wizard."
-    echo "  • 'podium up'/'down' need a <project>; use 'podium up-all'/'podium down-all' for every project. 'podium down' leaves shared services up (use 'podium stop-services')."
-    echo "  • 'podium remove' preserves the database by default — pass --force-db-delete to drop it."
-    echo "  • 'podium create', 'podium new', 'podium clone', and 'podium install' all drop into an interactive AI session in the new project on completion. Pass --one-off to skip."
+    echo "  • 'zeltro up'/'down' need a <project>; use 'zeltro up-all'/'zeltro down-all' for every project. 'zeltro down' leaves shared services up (use 'zeltro stop-services')."
+    echo "  • 'zeltro remove' preserves the database by default — pass --force-db-delete to drop it."
+    echo "  • 'zeltro create', 'zeltro new', 'zeltro clone', and 'zeltro install' all drop into an interactive AI session in the new project on completion. Pass --one-off to skip."
     echo "  • Project-specific tools (composer, art, wp, drush, php, npm, npx, node, python, pip, shell, django, exec, db-refresh, cache-refresh, supervisor) require being in project directory"
     echo "  • Service tools (redis, memcache) work from any directory - they connect to shared services"
     echo "  • Use --json-output for programmatic integration (scripts, automation, CI)"
@@ -229,30 +229,30 @@ get_project_name() {
     basename "$(pwd)"
 }
 
-# Validate that we're in a Podium project directory and it's running
+# Validate that we're in a Zeltro project directory and it's running
 validate_project_context() {
     # Check if docker-compose.yaml exists
     if [ ! -f "docker-compose.yaml" ]; then
-        echo-red "❌ Not in a Podium project directory!"
+        echo-red "❌ Not in a Zeltro project directory!"
         echo-white "Current directory: $(pwd)"
         echo-white "Expected: docker-compose.yaml file"
         echo-return
         echo-cyan "💡 Solutions:"
-        echo "  • Navigate to a project directory: cd \$(podium projects-dir)/your-project"
-        echo "  • Create a new project: podium new"
-        echo "  • List existing projects: ls \$(podium projects-dir)"
+        echo "  • Navigate to a project directory: cd \$(zeltro projects-dir)/your-project"
+        echo "  • Create a new project: zeltro new"
+        echo "  • List existing projects: ls \$(zeltro projects-dir)"
         return 1
     fi
     
-    # Check if it's actually a Podium project by looking for the Podium VPC network
-    if ! grep -q "podium-cli_vpc" docker-compose.yaml 2>/dev/null; then
-        echo-red "❌ Not a Podium project!"
-        echo-white "Found docker-compose.yaml but it's not a Podium project."
+    # Check if it's actually a Zeltro project by looking for the Zeltro VPC network
+    if ! grep -q "zeltro-cli_vpc" docker-compose.yaml 2>/dev/null; then
+        echo-red "❌ Not a Zeltro project!"
+        echo-white "Found docker-compose.yaml but it's not a Zeltro project."
         echo-white "Current directory: $(pwd)"
         echo-return
         echo-cyan "💡 Solutions:"
-        echo "  • Navigate to a Podium project directory"
-        echo "  • Convert this to a Podium project: podium setup $(basename \"$(pwd)\")"
+        echo "  • Navigate to a Zeltro project directory"
+        echo "  • Convert this to a Zeltro project: zeltro setup $(basename \"$(pwd)\")"
         return 1
     fi
     
@@ -273,9 +273,9 @@ validate_project_context() {
         echo-white "Status: Stopped"
         echo-return
         echo-cyan "💡 Solutions:"
-        echo "  • Start the project: podium up"
-        echo "  • Check project status: podium status"
-        echo "  • View all projects: podium status"
+        echo "  • Start the project: zeltro up"
+        echo "  • Check project status: zeltro status"
+        echo "  • View all projects: zeltro status"
         return 1
     fi
     
@@ -296,9 +296,9 @@ docker_exec() {
     local tty_flags="-it"
     [ -t 0 ] || tty_flags="-i"
     if [ "$user" = "root" ]; then
-        docker container exec $tty_flags --user root -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
+        docker container exec $tty_flags --user root -w "$(zeltro_container_workdir "$project_name")" "$project_name" "$@"
     else
-        docker container exec $tty_flags --user "$(id -u):$(id -g)" -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
+        docker container exec $tty_flags --user "$(id -u):$(id -g)" -w "$(zeltro_container_workdir "$project_name")" "$project_name" "$@"
     fi
 }
 
@@ -313,9 +313,9 @@ docker_exec_notty() {
         set -- bash -c "$1"
     fi
     if [ "$user" = "root" ]; then
-        docker container exec -i --user root -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
+        docker container exec -i --user root -w "$(zeltro_container_workdir "$project_name")" "$project_name" "$@"
     else
-        docker container exec -i --user "$(id -u):$(id -g)" -w "$(podium_container_workdir "$project_name")" "$project_name" "$@"
+        docker container exec -i --user "$(id -u):$(id -g)" -w "$(zeltro_container_workdir "$project_name")" "$project_name" "$@"
     fi
 }
 
@@ -346,7 +346,7 @@ case "$1" in
     "composer")
         validate_project_context || exit 1
         shift
-        docker_exec developer composer -d "$(podium_container_workdir)" "$@"
+        docker_exec developer composer -d "$(zeltro_container_workdir)" "$@"
         ;;
     "art"|"artisan")
         validate_project_context || exit 1
@@ -452,15 +452,15 @@ case "$1" in
                 docker_exec developer python3 manage.py shell
                 ;;
             "")
-                echo-yellow "Usage: podium django <subcommand>"
-                echo "  podium django manage <args>  - Run manage.py with arguments"
-                echo "  podium django shell          - Open Django interactive shell"
+                echo-yellow "Usage: zeltro django <subcommand>"
+                echo "  zeltro django manage <args>  - Run manage.py with arguments"
+                echo "  zeltro django shell          - Open Django interactive shell"
                 exit 1
                 ;;
             *)
                 echo-red "Unknown django subcommand: $1"
-                echo "  podium django manage <args>  - Run manage.py with arguments"
-                echo "  podium django shell          - Open Django interactive shell"
+                echo "  zeltro django manage <args>  - Run manage.py with arguments"
+                echo "  zeltro django shell          - Open Django interactive shell"
                 exit 1
                 ;;
         esac
@@ -557,7 +557,7 @@ case "$1" in
         docker_exec developer php artisan cache:clear
         docker_exec developer php artisan route:clear
         docker_exec developer php artisan config:clear
-        docker_exec developer composer -d "$(podium_container_workdir)" dump-autoload
+        docker_exec developer composer -d "$(zeltro_container_workdir)" dump-autoload
         echo-green "Caches cleared!"
         ;;
     
@@ -596,14 +596,14 @@ case "$1" in
             echo "  get <key>       - Get value for key"
             echo "  set <key> <val> - Set key to value"
             echo
-            echo-white "Usage: podium memcache <command>"
-            echo-white "Example: podium memcache stats"
+            echo-white "Usage: zeltro memcache <command>"
+            echo-white "Example: zeltro memcache stats"
         elif [ "$1" = "set" ]; then
             # Storage commands are two-line: the header declares the payload
             # length, then the payload follows. The single-line form this help
             # text has always advertised could never have worked.
             if [ $# -lt 3 ]; then
-                echo-red "Usage: $PODIUM_CMD set <key> <value>"
+                echo-red "Usage: $ZELTRO_CMD set <key> <value>"
                 exit 1
             fi
             memcache_key="$2"; shift 2
@@ -633,8 +633,8 @@ case "$1" in
             echo "  reload          - Reload configuration"
             echo "  reread          - Reread configuration files"
             echo
-            echo-white "Usage: podium supervisor <command>"
-            echo-white "Example: podium supervisor status"
+            echo-white "Usage: zeltro supervisor <command>"
+            echo-white "Example: zeltro supervisor status"
         else
             docker container exec -i "$project_name" supervisorctl "$@"
         fi
@@ -725,10 +725,10 @@ case "$1" in
         ;;
 
     "disable")
-        PODIUM_TOGGLE_ACTION=disable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
+        ZELTRO_TOGGLE_ACTION=disable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
         ;;
     "enable")
-        PODIUM_TOGGLE_ACTION=enable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
+        ZELTRO_TOGGLE_ACTION=enable "$SCRIPT_DIR/scripts/disable_project.sh" "${@:2}"
         ;;
     "ai-unattended")
         "$SCRIPT_DIR/scripts/ai_unattended.sh" "${@:2}"
@@ -741,11 +741,11 @@ case "$1" in
         ;;
     "enable-service")
         shift
-        PODIUM_SERVICE_MODE=enable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
+        ZELTRO_SERVICE_MODE=enable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
         ;;
     "disable-service")
         shift
-        PODIUM_SERVICE_MODE=disable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
+        ZELTRO_SERVICE_MODE=disable "$SCRIPT_DIR/scripts/enable_service.sh" "$@"
         ;;
     "stop-services")
         "$SCRIPT_DIR/scripts/stop_services.sh" "${@:2}"
@@ -767,16 +767,16 @@ case "$1" in
     
     # Help and default
     "version"|"--version"|"-v")
-        _v="$(podium_version)"
-        podium_update_refresh_async
+        _v="$(zeltro_version)"
+        zeltro_update_refresh_async
         if [[ "$JSON_OUTPUT" == "1" ]]; then
             echo "{\"action\": \"version\", \"status\": \"success\", \"version\": \"$_v\"}"
         else
-            echo "podium $_v"
+            echo "zeltro $_v"
             # `set -e`: a bare `x=$(...) && echo` chain returns 1 when no update
             # is available and takes the whole script down. Guard with `if`.
-            if _newer="$(podium_update_available)"; then
-                echo-yellow "  update available: $_newer — run 'podium update'"
+            if _newer="$(zeltro_update_available)"; then
+                echo-yellow "  update available: $_newer — run 'zeltro update'"
             fi
         fi
         ;;

@@ -12,4 +12,4 @@ Self-hosted file converter — 1000+ formats via ffmpeg, ImageMagick, LibreOffic
 - `ACCOUNT_REGISTRATION: "false"` still permits the very first account. Flip it to `true` if you want more users later.
 - Conversions run server-side and can take minutes, so the proxy uses 900s timeouts, `client_max_body_size 0` and `proxy_request_buffering off`.
 - Uploads are auto-deleted after 24h (`AUTO_DELETE_EVERY_N_HOURS`); set it to `0` to keep them.
-- The installer exists: run `podium install convertx`.
+- The installer exists: run `zeltro install convertx`.

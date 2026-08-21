@@ -37,7 +37,7 @@ services:
       GRAYLOG_PASSWORD_SECRET: $password_secret
       GRAYLOG_ROOT_PASSWORD_SHA2: $root_password_sha2
       GRAYLOG_HTTP_EXTERNAL_URI: http://graylog/
-      GRAYLOG_MONGODB_URI: mongodb://root:password@podium-mongo:27017/graylog?authSource=admin
+      GRAYLOG_MONGODB_URI: mongodb://root:password@zeltro-mongo:27017/graylog?authSource=admin
       GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
     volumes:
       - graylog-data:/usr/share/graylog/data

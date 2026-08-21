@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Firefly III"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create the admin account on first launch."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS firefly CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS firefly CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -21,7 +21,7 @@ services:
       APP_URL: http://firefly-iii
       TRUSTED_PROXIES: "**"
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: firefly
       DB_USERNAME: root
@@ -30,7 +30,7 @@ services:
       CACHE_DRIVER: file
       SESSION_DRIVER: file
       MAIL_MAILER: log
-      STATIC_CRON_TOKEN: podium-local-firefly
+      STATIC_CRON_TOKEN: zeltro-local-firefly
     volumes:
       - firefly-upload:/var/www/html/storage/upload
 

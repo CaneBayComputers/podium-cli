@@ -6,10 +6,10 @@ No external database is needed — Grafana uses SQLite by default. Persist `/var
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/grafana`
+1. `mkdir -p ~/zeltro-projects/grafana`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/grafana && podium setup grafana --no-startup`
-4. `podium up grafana`
+3. `cd ~/zeltro-projects/grafana && zeltro setup grafana --no-startup`
+4. `zeltro up grafana`
 5. Verify: `curl -sI http://grafana/` — expect HTTP 200 or 302.
 
 ## docker-compose.yaml
@@ -46,7 +46,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

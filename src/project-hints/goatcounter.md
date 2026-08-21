@@ -11,4 +11,4 @@
 - Serving at `http://goatcounter/` works because of GoatCounter's single-site fallback: when the request Host matches no site and exactly one site exists, it serves that site anyway (with a console warning). Adding a second site would break this.
 - The container runs as non-root, so it cannot bind port 80 directly — hence listening on 8080 behind nginx.
 - The dashboard and the `/count` tracking endpoint share the same port; no second origin is needed.
-- The installer exists: run `podium install goatcounter`.
+- The installer exists: run `zeltro install goatcounter`.

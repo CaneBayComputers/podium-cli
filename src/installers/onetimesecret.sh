@@ -14,8 +14,8 @@ services:
     restart: unless-stopped
     environment:
       RACK_ENV: production
-      REDIS_URL: redis://podium-redis:6379/0
-      VALKEY_URL: redis://podium-redis:6379/0
+      REDIS_URL: redis://zeltro-redis:6379/0
+      VALKEY_URL: redis://zeltro-redis:6379/0
       SECRET: "$app_secret"
       HOST: onetimesecret
       SSL: "false"

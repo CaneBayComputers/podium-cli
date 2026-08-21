@@ -12,4 +12,4 @@ Privacy-first, fully client-side PDF toolkit — merge, split, compress, convert
 - The image is a static web server on **port 8080**, not 80, so an `nginx` proxy is required to be the entry point.
 - AGPL-licensed WASM modules (PyMuPDF, Ghostscript, CoherentPDF) are pulled from the jsDelivr CDN at runtime, so a handful of tools need outbound internet. Everything else works offline.
 - No volumes needed — the container is stateless.
-- The installer exists: run `podium install bento-pdf`.
+- The installer exists: run `zeltro install bento-pdf`.

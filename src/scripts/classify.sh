@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Stack classification for `podium create`.
+# Stack classification for `zeltro create`.
 #
 # Phase 1 of create: ask the AI ONLY which stack fits the user's idea, get a
-# small JSON answer back, then let the user confirm with a menu. Podium itself
-# then runs `podium new` / `podium install` — deterministically, with no AI
+# small JSON answer back, then let the user confirm with a menu. Zeltro itself
+# then runs `zeltro new` / `zeltro install` — deterministically, with no AI
 # involved in the actual creation.
 #
 # This exists because the old single-prompt approach made the agent hold the
@@ -22,7 +22,7 @@
 CATALOG_DIR="$DEV_DIR/catalog"
 
 # Compact catalogue text for the prompt. Kept terse — this is paid for on every
-# `podium create`.
+# `zeltro create`.
 _catalog_for_prompt() {
     python3 - "$CATALOG_DIR" << 'PYEOF'
 import json, os, sys
@@ -30,11 +30,11 @@ d = sys.argv[1]
 apps = json.load(open(os.path.join(d, "apps.json")))["apps"]
 fws  = json.load(open(os.path.join(d, "frameworks.json")))["frameworks"]
 print("READY-TO-RUN APPS, IN NO PARTICULAR ORDER OF PREFERENCE")
-print("(installed via `podium install <slug>`; database is fixed by the installer):")
+print("(installed via `zeltro install <slug>`; database is fixed by the installer):")
 print(", ".join(a["slug"] for a in apps))
 print()
 print("FRAMEWORKS, IN NO PARTICULAR ORDER OF PREFERENCE")
-print("(scaffolded via `podium new <slug> <name>`; the user writes the app).")
+print("(scaffolded via `zeltro new <slug> <name>`; the user writes the app).")
 print("List order carries no meaning — judge each on fit alone:")
 for f in fws:
     line = f"  {f['slug']} — {f['display']} ({f['runtime']}); databases: {', '.join(f['databases'])}"
@@ -49,7 +49,7 @@ PYEOF
 _classifier_prompt() {
     local idea="$1"
     cat << PROMPTEOF
-You are helping a user start a new project with Podium. Do NOT create anything.
+You are helping a user start a new project with Zeltro. Do NOT create anything.
 Your only job is to decide which stack fits, and answer with JSON.
 
 $(_catalog_for_prompt)
@@ -117,7 +117,7 @@ PROMPTEOF
 # Pull JSON out of whatever the agent returned and validate every slug against
 # the catalogue. Agents wrap JSON in prose or code fences often enough that
 # naive parsing fails regularly; anything unrecognised is dropped rather than
-# passed downstream where it would become a confusing `podium new` error.
+# passed downstream where it would become a confusing `zeltro new` error.
 # Takes the agent's reply as a FILE PATH, not on stdin: `python3 - <<EOF` reads
 # the script itself from stdin, so a piped payload never reaches sys.stdin.
 _parse_classification() {
@@ -235,7 +235,7 @@ _run_classifier() {
 
 # Numbered, coloured menu. Plain text rather than whiptail/dialog so it works
 # identically on Linux and macOS with no extra dependency, and matches the
-# picker `podium new` already uses.
+# picker `zeltro new` already uses.
 # Args: prompt, default index, then "label|hint" entries.
 _menu_choose() {
     local title="$1" default="$2"; shift 2
@@ -403,7 +403,7 @@ classify_project() {
     fi
 
     # Scripted runs cannot be asked, so fall back to the chosen slug — which is
-    # also what `podium install <app>` would have named it — and say so.
+    # also what `zeltro install <app>` would have named it — and say so.
     if [[ -z "$CHOSEN_NAME" ]]; then
         CHOSEN_NAME="$CHOSEN_SLUG"
         echo-yellow "No project name could be derived from the idea — using '$CHOSEN_NAME'." >&2

@@ -13,4 +13,4 @@ Browser-side file converter — images, audio and documents are converted locall
 - The wasm-caching service worker won't register over plain HTTP (service workers are secure-context-only). It degrades gracefully — the ffmpeg core is just re-downloaded each session.
 - First use fetches wasm cores from `cdn.jsdelivr.net`, so the browser needs internet access even though conversion itself is local.
 - `PUB_HOSTNAME` and friends are **build args**, not runtime env — setting them on the prebuilt image has no effect.
-- The installer exists: run `podium install vert`.
+- The installer exists: run `zeltro install vert`.

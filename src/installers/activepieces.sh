@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit (first user becomes the platform ad
 INSTALL_NOTES="Community edition. Piece metadata is fetched from Activepieces Cloud on first boot, so the flow builder needs internet access."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE activepieces;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE activepieces;" 2>/dev/null || true
 }
 
 write_files() {
@@ -19,13 +19,13 @@ AP_ENCRYPTION_KEY=$encryption_key
 AP_JWT_SECRET=$jwt_secret
 AP_EXECUTION_MODE=UNSANDBOXED
 AP_DB_TYPE=POSTGRES
-AP_POSTGRES_HOST=podium-postgres
+AP_POSTGRES_HOST=zeltro-postgres
 AP_POSTGRES_PORT=5432
 AP_POSTGRES_DATABASE=activepieces
 AP_POSTGRES_USERNAME=root
 AP_POSTGRES_PASSWORD=password
 AP_QUEUE_MODE=REDIS
-AP_REDIS_HOST=podium-redis
+AP_REDIS_HOST=zeltro-redis
 AP_REDIS_PORT=6379
 AP_WEBHOOK_TIMEOUT_SECONDS=30
 AP_TRIGGER_DEFAULT_POLL_INTERVAL=5

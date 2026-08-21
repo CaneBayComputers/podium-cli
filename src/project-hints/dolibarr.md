@@ -2,7 +2,7 @@
 
 **Image**: `dolibarr/dolibarr:23.0.3`
 **Port**: 80 (Apache inside the container — no proxy needed)
-**Database**: MariaDB (`podium-mariadb`), dedicated user `dolibarr` / `dolibarr`
+**Database**: MariaDB (`zeltro-mariadb`), dedicated user `dolibarr` / `dolibarr`
 **Credentials**: admin / admin123
 
 ## Key Notes
@@ -11,4 +11,4 @@
 - `DOLI_URL_ROOT` must match the browser URL (`http://dolibarr`) or generated links and the setup redirect break.
 - `DOLI_PROD=1` hides the install wizard once setup finishes; the `install.lock` lives in the `dolibarr-documents` volume, so deleting that volume re-triggers the wizard.
 - Volumes are `/var/www/documents` (uploads, config, lock) and `/var/www/html/custom` (add-on modules).
-- The installer exists: run `podium install dolibarr`.
+- The installer exists: run `zeltro install dolibarr`.

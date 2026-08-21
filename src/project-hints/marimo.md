@@ -12,5 +12,5 @@ Reactive Python notebook — cells re-run automatically, notebooks are plain `.p
 - The default `CMD` already runs `marimo edit --no-token -p $PORT --host $HOST`; the `PORT`/`HOST` env vars are the supported way to steer it — overriding `command:` is unnecessary and easy to get wrong.
 - The container runs as the non-root user `appuser` with WORKDIR `/app`. Only `/app/data` is on a volume, so notebooks saved elsewhere (e.g. `/app/notebook.py`) vanish on rebuild.
 - The editor is WebSocket-driven — without `Upgrade`/`Connection` headers on nginx the UI loads but cells never execute.
-- `marimo edit` allows arbitrary code execution by design; keep it on the local Podium network only.
-- The installer exists: run `podium install marimo`.
+- `marimo edit` allows arbitrary code execution by design; keep it on the local Zeltro network only.
+- The installer exists: run `zeltro install marimo`.

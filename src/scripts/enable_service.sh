@@ -8,11 +8,11 @@
 # expensive part and the part projects disagree about: a Postgres project should
 # not pay for MariaDB and Mongo it will never open.
 #
-# Enabling happens two ways: automatically, when `podium new` is told which
+# Enabling happens two ways: automatically, when `zeltro new` is told which
 # engine a project uses, and manually through this command.
 #
-# The enabled list lives in OPTIONAL_SERVICES in /etc/podium-cli/.env, so it
-# survives reboots and applies to every subsequent `podium up`.
+# The enabled list lives in OPTIONAL_SERVICES in /etc/zeltro-cli/.env, so it
+# survives reboots and applies to every subsequent `zeltro up`.
 
 set -e
 
@@ -34,22 +34,22 @@ AVAILABLE_OPTIONAL_SERVICES="mysql postgres mongo minio meilisearch phpmyadmin a
 # hand-written usage text did — it advertised two services out of nine, and a
 # consumer reading it would have shipped a menu missing seven.
 OPTIONAL_SERVICE_CATALOG="\
-mysql|database|MariaDB 12, MySQL-compatible|podium-mariadb:3306
-postgres|database|PostgreSQL 17|podium-postgres:5432
-mongo|database|MongoDB 8|podium-mongo:27017
-phpmyadmin|admin-ui|Web admin for MariaDB/MySQL|http://podium-phpmyadmin
-adminer|admin-ui|Web admin for MariaDB/MySQL, PostgreSQL, SQLite and MongoDB|http://podium-adminer:8080
-mongo-express|admin-ui|Web admin for MongoDB|http://podium-mongo-express:8081
-redisinsight|admin-ui|Web admin for Redis|http://podium-redisinsight:5540
-minio|storage-search|S3-compatible object storage|http://podium-minio:9000
-meilisearch|storage-search|Full-text search engine|http://podium-meilisearch:7700"
+mysql|database|MariaDB 12, MySQL-compatible|zeltro-mariadb:3306
+postgres|database|PostgreSQL 17|zeltro-postgres:5432
+mongo|database|MongoDB 8|zeltro-mongo:27017
+phpmyadmin|admin-ui|Web admin for MariaDB/MySQL|http://zeltro-phpmyadmin
+adminer|admin-ui|Web admin for MariaDB/MySQL, PostgreSQL, SQLite and MongoDB|http://zeltro-adminer:8080
+mongo-express|admin-ui|Web admin for MongoDB|http://zeltro-mongo-express:8081
+redisinsight|admin-ui|Web admin for Redis|http://zeltro-redisinsight:5540
+minio|storage-search|S3-compatible object storage|http://zeltro-minio:9000
+meilisearch|storage-search|Full-text search engine|http://zeltro-meilisearch:7700"
 
 # The catalogue and the flat list are two spellings of one fact; disagreement
 # means a service is unreachable or invisible. Cheap to check, so check.
 _catalog_slugs="$(printf '%s\n' "$OPTIONAL_SERVICE_CATALOG" | cut -d'|' -f1 | sort | tr '\n' ' ')"
 _avail_sorted="$(printf '%s\n' $AVAILABLE_OPTIONAL_SERVICES | sort | tr '\n' ' ')"
 if [ "$_catalog_slugs" != "$_avail_sorted" ]; then
-    echo "podium: internal error — optional service catalogue and list disagree" >&2
+    echo "zeltro: internal error — optional service catalogue and list disagree" >&2
     echo "  catalogue: $_catalog_slugs" >&2
     echo "  list     : $_avail_sorted" >&2
     exit 1
@@ -60,8 +60,8 @@ fi
 service_state() {
     local svc="$1" cname
     case "$svc" in
-        mysql) cname="podium-mariadb" ;;
-        *)     cname="podium-$svc" ;;
+        mysql) cname="zeltro-mariadb" ;;
+        *)     cname="zeltro-$svc" ;;
     esac
     case " ${OPTIONAL_SERVICES:-} " in
         *" $svc "*) ;;
@@ -83,10 +83,10 @@ list_services_json() {
     echo "{\"action\": \"list_services\", \"status\": \"success\", \"always_on\": [\"redis\", \"memcached\", \"mailhog\"], \"services\": [$out]}"
 }
 
-MODE="${PODIUM_SERVICE_MODE:-enable}"   # set by the podium dispatcher
+MODE="${ZELTRO_SERVICE_MODE:-enable}"   # set by the zeltro dispatcher
 
 usage() {
-    echo-white "Usage: podium ${MODE}-service <name>"
+    echo-white "Usage: zeltro ${MODE}-service <name>"
     echo-white ""
     echo-white "Optional shared services (off by default):"
     local slug group desc addr last=""
@@ -99,8 +99,8 @@ usage() {
     echo-white ""
     echo-white "Always on, never listed above: redis, memcached, mailhog."
     echo-white ""
-    echo-white "Databases are enabled automatically by 'podium new' when a project"
-    echo-white "asks for them. Enabled services start with every 'podium up' and are"
+    echo-white "Databases are enabled automatically by 'zeltro new' when a project"
+    echo-white "asks for them. Enabled services start with every 'zeltro up' and are"
     echo-white "reachable by hostname from inside any project container."
 }
 
@@ -132,9 +132,9 @@ if ! printf '%s\n' $AVAILABLE_OPTIONAL_SERVICES | grep -qx "$SERVICE"; then
 fi
 
 case "$SERVICE" in
-    minio)       CONTAINER="${MINIO_CONTAINER_NAME:-podium-minio}" ;;
-    meilisearch) CONTAINER="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}" ;;
-    *)           CONTAINER="podium-$SERVICE" ;;
+    minio)       CONTAINER="${MINIO_CONTAINER_NAME:-zeltro-minio}" ;;
+    meilisearch) CONTAINER="${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}" ;;
+    *)           CONTAINER="zeltro-$SERVICE" ;;
 esac
 
 CURRENT="${OPTIONAL_SERVICES:-}"
@@ -153,12 +153,12 @@ fi
 # before optional services existed, so append it rather than assuming a line to
 # rewrite. MUST be quoted: the .env is `source`d by bash, so a bare
 # OPTIONAL_SERVICES=minio meilisearch assigns "minio" and then tries to RUN
-# "meilisearch", breaking every later podium command with "command not found".
+# "meilisearch", breaking every later zeltro command with "command not found".
 persist_optional_services() {
-    if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
-        sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$1\"" /etc/podium-cli/.env
+    if grep -q "^OPTIONAL_SERVICES=" /etc/zeltro-cli/.env 2>/dev/null; then
+        sudo-zeltro-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$1\"" /etc/zeltro-cli/.env
     else
-        echo "OPTIONAL_SERVICES=\"$1\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
+        echo "OPTIONAL_SERVICES=\"$1\"" | sudo tee -a /etc/zeltro-cli/.env > /dev/null
     fi
     export OPTIONAL_SERVICES="$1"
 }
@@ -170,23 +170,23 @@ if [[ "$MODE" == "enable" ]]; then
     # second-guess the config instead of trusting it. The profile is passed on
     # the command line, so nothing here needs the value persisted first.
     echo-cyan "Starting $SERVICE ..."
-    if ! ( cd /etc/podium-cli && docker compose --profile "$SERVICE" up -d "$SERVICE" ); then
+    if ! ( cd /etc/zeltro-cli && docker compose --profile "$SERVICE" up -d "$SERVICE" ); then
         [[ "$JSON_OUTPUT" == "1" ]] && json_error "failed to start $SERVICE; it was NOT enabled"
         error "Failed to start $SERVICE. It has NOT been enabled — nothing was changed."
     fi
     # `up -d` can report success and still leave a container that exited on
     # boot, which looks identical to a healthy enable from the config's side.
     if ! docker container inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q true; then
-        ( cd /etc/podium-cli && docker compose --profile "$SERVICE" rm -sf "$SERVICE" >/dev/null 2>&1 ) || true
+        ( cd /etc/zeltro-cli && docker compose --profile "$SERVICE" rm -sf "$SERVICE" >/dev/null 2>&1 ) || true
         [[ "$JSON_OUTPUT" == "1" ]] && json_error "$SERVICE started but is not running; it was NOT enabled"
         error "$SERVICE did not stay running. It has NOT been enabled. Check: docker logs $CONTAINER"
     fi
     persist_optional_services "$NEW"
     # The host needs to resolve the name too — the MinIO console is meant to be
-    # opened in a browser, and `podium status` pings by hostname. Compose
+    # opened in a browser, and `zeltro status` pings by hostname. Compose
     # profiles hide these services from `docker compose config`, so the entry
     # cannot come from configure.sh's usual sweep until it is re-run.
-    # No /etc/hosts entry. Podium does not write that file, so enabling a
+    # No /etc/hosts entry. Zeltro does not write that file, so enabling a
     # service needs no sudo at all. Projects reach it by name through Docker's
     # DNS; from the host, use its published port where it has one.
     _ip=$(docker inspect "$CONTAINER" --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null || true)
@@ -195,40 +195,40 @@ if [[ "$MODE" == "enable" ]]; then
     echo-green "$SERVICE enabled."
     case "$SERVICE" in
         minio)
-            echo-white "  API:     http://podium-minio:9000  (from inside a container)"
-            echo-white "  Console: http://podium-minio:9001"
+            echo-white "  API:     http://zeltro-minio:9000  (from inside a container)"
+            echo-white "  Console: http://zeltro-minio:9001"
             echo-white "  Keys:    root / password"
             ;;
         meilisearch)
-            echo-white "  API:       http://podium-meilisearch:7700"
-            echo-white "  Master key: podium-dev-master-key"
+            echo-white "  API:       http://zeltro-meilisearch:7700"
+            echo-white "  Master key: zeltro-dev-master-key"
             ;;
         redisinsight)
-            echo-white "  Open: http://podium-redisinsight:5540"
-            echo-white "  The shared Redis is pre-registered as 'Podium Redis'. It stays"
+            echo-white "  Open: http://zeltro-redisinsight:5540"
+            echo-white "  The shared Redis is pre-registered as 'Zeltro Redis'. It stays"
             echo-white "  hidden until you accept the terms on the first-run screen —"
             echo-white "  RedisInsight only runs its discovery after that."
             ;;
         adminer)
-            echo-white "  Open: http://podium-adminer:8080"
-            echo-white "  Server is prefilled with podium-mariadb; change it and pick the"
+            echo-white "  Open: http://zeltro-adminer:8080"
+            echo-white "  Server is prefilled with zeltro-mariadb; change it and pick the"
             echo-white "  engine at the login screen for PostgreSQL or MongoDB."
             echo-white "  User: root"
             ;;
         mongo-express)
-            echo-white "  Open: http://podium-mongo-express:8081"
-            echo-white "  Already connected to podium-mongo; no login needed."
+            echo-white "  Open: http://zeltro-mongo-express:8081"
+            echo-white "  Already connected to zeltro-mongo; no login needed."
             ;;
         phpmyadmin)
-            echo-white "  Open: http://podium-phpmyadmin"
+            echo-white "  Open: http://zeltro-phpmyadmin"
             echo-white "  User: root  (no password)"
             ;;
     esac
 else
     persist_optional_services "$NEW"
     echo-cyan "Stopping $SERVICE ..."
-    ( cd /etc/podium-cli && docker compose --profile "$SERVICE" stop "$SERVICE" >/dev/null 2>&1 ) || true
-    ( cd /etc/podium-cli && docker compose --profile "$SERVICE" rm -f "$SERVICE" >/dev/null 2>&1 ) || true
+    ( cd /etc/zeltro-cli && docker compose --profile "$SERVICE" stop "$SERVICE" >/dev/null 2>&1 ) || true
+    ( cd /etc/zeltro-cli && docker compose --profile "$SERVICE" rm -f "$SERVICE" >/dev/null 2>&1 ) || true
     echo-green "$SERVICE disabled. Its data volume is kept — re-enable to get it back."
 fi
 

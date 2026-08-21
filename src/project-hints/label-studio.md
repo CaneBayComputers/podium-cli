@@ -11,4 +11,4 @@
 - nginx should include WebSocket upgrade headers and a long `proxy_read_timeout` (86400s) for annotation sessions.
 - `client_max_body_size 200M` to allow large media uploads.
 - Persist `label-studio-data` volume at `/label-studio/data`.
-- The installer exists: run `podium install label-studio`.
+- The installer exists: run `zeltro install label-studio`.

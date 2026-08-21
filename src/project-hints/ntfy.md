@@ -12,4 +12,4 @@ Pub/sub notification service — publish with a plain HTTP POST, subscribe from 
 - `NTFY_BASE_URL` must match how you reach it (`http://ntfy`) or attachment links and the web UI's subscribe button point at the wrong host.
 - Everything is world-writable by default. To lock it down set `NTFY_AUTH_DEFAULT_ACCESS: deny-all` and add users with `docker exec ntfy ntfy user add --role=admin <name>`.
 - Publish test: `curl -d "hello" http://ntfy/mytopic`.
-- The installer exists: run `podium install ntfy`.
+- The installer exists: run `zeltro install ntfy`.

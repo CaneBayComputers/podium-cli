@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin"
 INSTALL_NOTES="First startup takes ~60 seconds for database migrations. Visit http://$PROJECT_NAME/ to access."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE netbox;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE netbox;" 2>/dev/null || true
 }
 
 # NetBox runs Django migrations and collectstatic on first boot; measured at
@@ -21,18 +21,18 @@ services:
     image: netboxcommunity/netbox:latest
     restart: unless-stopped
     environment:
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       DB_USER: root
       DB_PASSWORD: password
       DB_NAME: netbox
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
       REDIS_DATABASE: "4"
       REDIS_INSECURE_SKIP_TLS_VERIFY: "false"
       REDIS_SSL: "false"
-      REDIS_CACHE_HOST: podium-redis
+      REDIS_CACHE_HOST: zeltro-redis
       REDIS_CACHE_PORT: "6379"
       REDIS_CACHE_PASSWORD: ""
       REDIS_CACHE_DATABASE: "5"
@@ -61,18 +61,18 @@ services:
     depends_on:
       - netbox-app
     environment:
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       DB_USER: root
       DB_PASSWORD: password
       DB_NAME: netbox
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
       REDIS_DATABASE: "4"
       REDIS_INSECURE_SKIP_TLS_VERIFY: "false"
       REDIS_SSL: "false"
-      REDIS_CACHE_HOST: podium-redis
+      REDIS_CACHE_HOST: zeltro-redis
       REDIS_CACHE_PORT: "6379"
       REDIS_CACHE_PASSWORD: ""
       REDIS_CACHE_DATABASE: "5"

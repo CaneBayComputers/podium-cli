@@ -16,7 +16,7 @@ services:
       TRUSTED_HOSTS: kimai
       ADMINMAIL: admin@example.com
       ADMINPASS: admin123
-      DATABASE_URL: mysql://root:@podium-mariadb:3306/kimai
+      DATABASE_URL: mysql://root:@zeltro-mariadb:3306/kimai
       APP_SECRET: "$app_secret"
     volumes:
       - kimai-data:/opt/kimai/var/data

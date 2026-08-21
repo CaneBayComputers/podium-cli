@@ -1,26 +1,26 @@
 #!/bin/bash
-# Podium - Internal Functions
-# This file provides functions needed by Podium scripts without polluting user's shell
+# Zeltro - Internal Functions
+# This file provides functions needed by Zeltro scripts without polluting user's shell
 
 # Load primary configuration if available (for container names, paths, etc.)
-if [ -f "/etc/podium-cli/.env" ]; then
+if [ -f "/etc/zeltro-cli/.env" ]; then
     # shellcheck disable=SC1091
-    source "/etc/podium-cli/.env"
+    source "/etc/zeltro-cli/.env"
 fi
 
 # Get the projects directory (configurable)
 get_projects_dir() {
     # Get the directory where this script is located
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-    local podium_root="$(dirname "$script_dir" 2>/dev/null)"
+    local zeltro_root="$(dirname "$script_dir" 2>/dev/null)"
     
-    # First check /etc/podium-cli/.env file (primary config location)
-    if [ -f "/etc/podium-cli/.env" ]; then
+    # First check /etc/zeltro-cli/.env file (primary config location)
+    if [ -f "/etc/zeltro-cli/.env" ]; then
         # The value is written quoted (a path may contain a space, and .env is
         # sourced by bash), so strip the surrounding quotes when reading it back
         # this way. Quotes only — NOT spaces, which are legitimate in a path.
         # `-f2-` rather than `-f2` so a value containing '=' survives.
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "/etc/zeltro-cli/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -28,8 +28,8 @@ get_projects_dir() {
             return
         fi
     # Fallback to old location for backward compatibility
-    elif [ -f "$podium_root/docker-stack/.env" ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$podium_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+    elif [ -f "$zeltro_root/docker-stack/.env" ]; then
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" "$zeltro_root/docker-stack/.env" 2>/dev/null | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             # Expand tilde to home directory
             PROJECTS_DIR="${PROJECTS_DIR/#\~/$HOME}"
@@ -38,17 +38,17 @@ get_projects_dir() {
         fi
     fi
     
-    # Fallback to legacy ~/.podium/config for backward compatibility
-    if [ -f ~/.podium/config ]; then
-        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.podium/config | cut -d'=' -f2- | sed 's/^"//; s/"$//')
+    # Fallback to legacy ~/.zeltro/config for backward compatibility
+    if [ -f ~/.zeltro/config ]; then
+        PROJECTS_DIR=$(grep "^PROJECTS_DIR=" ~/.zeltro/config | cut -d'=' -f2- | sed 's/^"//; s/"$//')
         if [ -n "$PROJECTS_DIR" ]; then
             echo "$PROJECTS_DIR"
             return
         fi
     fi
     
-    # Default to ~/podium-projects
-    echo "$HOME/podium-projects"
+    # Default to ~/zeltro-projects
+    echo "$HOME/zeltro-projects"
 }
 
 # Initialize projects directory if it doesn't exist
@@ -86,9 +86,9 @@ echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
 # Docker aliases used by scripts (JSON-aware for clean output)
 # Compose profile flags for whatever optional shared services are enabled on
-# this machine (OPTIONAL_SERVICES in /etc/podium-cli/.env). Empty when none are,
+# this machine (OPTIONAL_SERVICES in /etc/zeltro-cli/.env). Empty when none are,
 # so the default `docker compose up` behaviour is untouched.
-podium_profile_args() {
+zeltro_profile_args() {
     local svc
     for svc in ${OPTIONAL_SERVICES:-}; do
         printf -- '--profile\n%s\n' "$svc"
@@ -98,17 +98,17 @@ podium_profile_args() {
 dockerup() { 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         # Clear the log file first, then pipe Docker output to temp file for JSON mode
-        > /tmp/podium-docker-progress.log
+        > /tmp/zeltro-docker-progress.log
         # mapfile is bash 4+; macOS ships bash 3.2.57 and always will (Apple froze it
         # in 2007 over GPLv3). Read into the array by hand so these scripts run on the
         # stock /bin/bash rather than needing a newer one installed first.
         _profiles=()
-        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
-        docker compose "${_profiles[@]}" up -d "$@" > /tmp/podium-docker-progress.log 2>&1
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(zeltro_profile_args)
+        docker compose "${_profiles[@]}" up -d "$@" > /tmp/zeltro-docker-progress.log 2>&1
     else
         # Interactive mode - show normal progress
         _profiles=()
-        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(podium_profile_args)
+        while IFS= read -r _prof_line; do _profiles+=("$_prof_line"); done < <(zeltro_profile_args)
         docker compose "${_profiles[@]}" up -d "$@"
     fi
 }
@@ -183,50 +183,50 @@ json_error() {
 #
 #   1. NEVER block a command on the network. The refresh runs detached and
 #      writes a cache; every command only ever reads that cache. An offline or
-#      slow-DNS machine costs nothing -- `podium status` is on the GUI's hot
+#      slow-DNS machine costs nothing -- `zeltro status` is on the GUI's hot
 #      path and already had a 60s hang once.
 #   2. Silent on failure. No release yet, no network, rate-limited -- all mean
 #      "say nothing", never a warning on every command.
 #   3. Notify at most once a day. A nag on every invocation trains people to
 #      ignore it.
-PODIUM_UPDATE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/podium/update.json"
-PODIUM_UPDATE_MAX_AGE=86400   # refresh at most daily
-PODIUM_NOTIFY_MAX_AGE=86400   # tell the user at most daily
+ZELTRO_UPDATE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/zeltro/update.json"
+ZELTRO_UPDATE_MAX_AGE=86400   # refresh at most daily
+ZELTRO_NOTIFY_MAX_AGE=86400   # tell the user at most daily
 
-_podium_cache_field() {
-    [ -f "$PODIUM_UPDATE_CACHE" ] || return 1
+_zeltro_cache_field() {
+    [ -f "$ZELTRO_UPDATE_CACHE" ] || return 1
     python3 -c "
 import json,sys
-try: print(json.load(open('$PODIUM_UPDATE_CACHE')).get('$1','') or '')
+try: print(json.load(open('$ZELTRO_UPDATE_CACHE')).get('$1','') or '')
 except Exception: pass
 " 2>/dev/null
 }
 
 # Fire-and-forget refresh. Detached, output discarded, never awaited.
-podium_update_refresh_async() {
+zeltro_update_refresh_async() {
     local now checked
     now=$(date +%s)
     # `|| true` is load-bearing: with no cache file the helper returns 1, and
     # under `set -e` an assignment from a failing command substitution aborts
-    # the whole script. That made `podium --version` exit 1 printing nothing on
+    # the whole script. That made `zeltro --version` exit 1 printing nothing on
     # any machine without a cache -- i.e. every machine, on first run.
-    checked=$(_podium_cache_field checked 2>/dev/null || true)
-    [ -n "$checked" ] && [ $(( now - checked )) -lt $PODIUM_UPDATE_MAX_AGE ] && return 0
-    mkdir -p "$(dirname "$PODIUM_UPDATE_CACHE")" 2>/dev/null || return 0
+    checked=$(_zeltro_cache_field checked 2>/dev/null || true)
+    [ -n "$checked" ] && [ $(( now - checked )) -lt $ZELTRO_UPDATE_MAX_AGE ] && return 0
+    mkdir -p "$(dirname "$ZELTRO_UPDATE_CACHE")" 2>/dev/null || return 0
     (
         # NOT /releases/latest -- that endpoint EXCLUDES pre-releases and 404s
         # when every release is one, which is the case for the whole beta. Using
         # it would have made this check silently do nothing until 1.0 final.
         # The list endpoint is newest-first and includes pre-releases.
         # Authenticated when a token is available. This runs on (cached)
-        # invocations of every podium command, so it draws on the same
+        # invocations of every zeltro command, so it draws on the same
         # 60-requests-per-hour unauthenticated budget as everything else --
         # shared across every machine behind one WAN address. Staying silent on
         # failure is correct for an update check, but it should not be quietly
-        # spending a scarce allowance that `podium new laravel` also needs.
+        # spending a scarce allowance that `zeltro new laravel` also needs.
         _gh_hdr="$(github_auth_header)"
         tag=$(curl -fsS --max-time 8 ${_gh_hdr:+-H "$_gh_hdr"} \
-            "https://api.github.com/repos/CaneBayComputers/podium-cli/releases?per_page=10" 2>/dev/null \
+            "https://api.github.com/repos/CaneBayComputers/zeltro-cli/releases?per_page=10" 2>/dev/null \
             | python3 -c "
 import json,sys
 try:
@@ -236,18 +236,18 @@ except Exception:
     print('')
 " 2>/dev/null) || tag=""
         printf '{"latest": "%s", "checked": %s, "notified": %s}\n' \
-            "$tag" "$(date +%s)" "$(_podium_cache_field notified 2>/dev/null || echo 0)" \
-            > "$PODIUM_UPDATE_CACHE" 2>/dev/null
+            "$tag" "$(date +%s)" "$(_zeltro_cache_field notified 2>/dev/null || echo 0)" \
+            > "$ZELTRO_UPDATE_CACHE" 2>/dev/null
     ) >/dev/null 2>&1 &
     disown 2>/dev/null || true
 }
 
 # Is a newer release available? Cache read only -- no network, no blocking.
-podium_update_available() {
+zeltro_update_available() {
     local latest current
-    latest=$(_podium_cache_field latest 2>/dev/null) || return 1
+    latest=$(_zeltro_cache_field latest 2>/dev/null) || return 1
     [ -n "$latest" ] || return 1
-    current="$(podium_version)"
+    current="$(zeltro_version)"
     [ "$current" = "unknown" ] && return 1
     latest="${latest#v}"; current="${current#v}"
     [ "$latest" = "$current" ] && return 1
@@ -257,46 +257,46 @@ podium_update_available() {
 }
 
 # One line, at most daily, never under --json-output.
-podium_update_notice() {
+zeltro_update_notice() {
     [[ "$JSON_OUTPUT" == "1" ]] && return 0
     local newer now notified
-    newer=$(podium_update_available) || return 0
+    newer=$(zeltro_update_available) || return 0
     now=$(date +%s)
-    notified=$(_podium_cache_field notified 2>/dev/null || echo 0)
-    [ -n "$notified" ] && [ $(( now - notified )) -lt $PODIUM_NOTIFY_MAX_AGE ] && return 0
+    notified=$(_zeltro_cache_field notified 2>/dev/null || echo 0)
+    [ -n "$notified" ] && [ $(( now - notified )) -lt $ZELTRO_NOTIFY_MAX_AGE ] && return 0
     python3 -c "
 import json
-p='$PODIUM_UPDATE_CACHE'
+p='$ZELTRO_UPDATE_CACHE'
 try:
     d=json.load(open(p)); d['notified']=$now; json.dump(d,open(p,'w'))
 except Exception: pass
 " 2>/dev/null
-    echo-yellow "Podium $newer is available (you have $(podium_version)) — run 'podium update'"
+    echo-yellow "Zeltro $newer is available (you have $(zeltro_version)) — run 'zeltro update'"
 }
 
 # Was this CLI installed by a package manager, or from a git checkout?
 #
-# The two update paths are mutually destructive: `podium update` does a git pull,
+# The two update paths are mutually destructive: `zeltro update` does a git pull,
 # while `apt upgrade` replaces the same files from a .deb. Whichever runs last
-# wins and the other's state is silently wrong. So `podium update` has to know
+# wins and the other's state is silently wrong. So `zeltro update` has to know
 # which kind of install it is standing in and defer rather than fight.
 #
 # dpkg is asked directly rather than inferred from the path -- a packaged install
 # and a git checkout can sit at the same location, and only dpkg knows the truth.
-podium_install_is_packaged() {
+zeltro_install_is_packaged() {
     command -v dpkg-query >/dev/null 2>&1 || return 1
-    dpkg-query -W -f='${Status}' podium-cli 2>/dev/null | grep -q "install ok installed" || return 1
+    dpkg-query -W -f='${Status}' zeltro-cli 2>/dev/null | grep -q "install ok installed" || return 1
     # A checkout inside a packaged path is still git-managed; .git decides.
     [ -d "${SCRIPT_DIR%/scripts}/../.git" ] && return 1
     return 0
 }
 
-# Podium's own version, from the VERSION file at the repo root.
+# Zeltro's own version, from the VERSION file at the repo root.
 #
 # SCRIPT_DIR is <repo>/src, so VERSION sits one level up. Falls back to
 # "unknown" rather than failing: a missing VERSION should never break a command,
 # and callers can distinguish it from a real version string.
-podium_version() {
+zeltro_version() {
     local f="${SCRIPT_DIR%/scripts}/../VERSION"
     [ -f "$f" ] || f="$DEV_DIR/../VERSION"
     if [ -f "$f" ]; then
@@ -319,7 +319,7 @@ podium_version() {
 #
 # October CMS is what exposed this: it is Laravel-shaped but ships no public/, so
 # composer and artisan ran one directory above the project and failed.
-podium_container_workdir() {
+zeltro_container_workdir() {
     local project_name="${1:-$(basename "$(pwd)")}"
     local dest
     dest=$(docker container inspect "$project_name" \
@@ -332,10 +332,10 @@ composer-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" composer "$@"
     else
         # Non-interactive mode (no TTY, for scripts)
-        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" composer "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" composer "$@"
     fi
 }
 # Drupal's equivalent of art-docker. drush is a Composer dependency rather than
@@ -349,19 +349,19 @@ composer-docker() {
 drush-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" vendor/bin/drush "$@"
     else
-        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" vendor/bin/drush "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" vendor/bin/drush "$@"
     fi
 }
 art-docker() {
     local project_name="$(basename "$(pwd)")"
     if [ -t 0 ]; then
         # Interactive mode (TTY available)
-        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php artisan "$@"
+        docker container exec -it --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" php artisan "$@"
     else
         # Non-interactive mode (no TTY, for scripts)
-        docker container exec --user "$(id -u):$(id -g)" --workdir "$(podium_container_workdir)" "$project_name" php artisan "$@"
+        docker container exec --user "$(id -u):$(id -g)" --workdir "$(zeltro_container_workdir)" "$project_name" php artisan "$@"
     fi
 }
 
@@ -383,8 +383,8 @@ check-mailhog() { [ "$(docker ps -q -f name="$MAILHOG_CONTAINER_NAME")" ] && ret
 #
 # The prefix guard matters: a key for the wrong provider is worse than no key,
 # because it replaces the CLI's own working sign-in with one that cannot work.
-# Point an agent CLI at a custom endpoint. Podium stores it as AI_API_BASE
-# (`podium ai-set --api-base URL`); each CLI reads it from a different variable.
+# Point an agent CLI at a custom endpoint. Zeltro stores it as AI_API_BASE
+# (`zeltro ai-set --api-base URL`); each CLI reads it from a different variable.
 #
 # This is what makes cheap and local models work: an OpenAI-compatible endpoint
 # covers OpenRouter, DeepInfra, Together, Ollama, LM Studio and vLLM. Claude Code
@@ -421,7 +421,7 @@ memcache-send() {
     local payload="${2-}"
 
     if ! check-memcached; then
-        echo-red "Memcached is not running. Start it with: podium start-services"
+        echo-red "Memcached is not running. Start it with: zeltro start-services"
         return 1
     fi
 
@@ -441,7 +441,7 @@ divider() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo; echo-white '=============
 whatismyip() { dig +short "$WHATISMYIP_DNS_NAME" @"$WHATISMYIP_DNS_SERVER" 2>/dev/null || echo "Unable to get IP"; }
 
 # Cross-platform sed function
-podium-sed() {
+zeltro-sed() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "$@"
     else
@@ -450,7 +450,7 @@ podium-sed() {
 }
 
 # Cross-platform sed change function (handles c\ command differences)
-podium-sed-change() {
+zeltro-sed-change() {
     local pattern="$1"
     local replacement="$2"
     local file="$3"
@@ -466,7 +466,7 @@ podium-sed-change() {
 }
 
 # Cross-platform sudo sed function
-sudo-podium-sed() {
+sudo-zeltro-sed() {
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sudo sed -i '' "$@"
     else
@@ -475,7 +475,7 @@ sudo-podium-sed() {
 }
 
 # Cross-platform sudo sed change function
-sudo-podium-sed-change() {
+sudo-zeltro-sed-change() {
     local pattern="$1"
     local replacement="$2"
     local file="$3"
@@ -492,23 +492,23 @@ sudo-podium-sed-change() {
 
 # Set KEY=VALUE in an env file, adding the line when it isn't there yet.
 #
-# sudo-podium-sed-change silently does nothing when its pattern matches no line,
+# sudo-zeltro-sed-change silently does nothing when its pattern matches no line,
 # so keys introduced after an install was provisioned (e.g. AI_API_BASE) would
-# never persist on an existing /etc/podium-cli/.env. Upsert instead.
-sudo-podium-env-set() {
+# never persist on an existing /etc/zeltro-cli/.env. Upsert instead.
+sudo-zeltro-env-set() {
     local key="$1"
     local value="$2"
     local file="$3"
 
     if grep -q "^$key=" "$file" 2>/dev/null; then
-        sudo-podium-sed-change "/^$key=/" "$key=$value" "$file"
+        sudo-zeltro-sed-change "/^$key=/" "$key=$value" "$file"
     else
         printf '%s=%s\n' "$key" "$value" | sudo tee -a "$file" >/dev/null
     fi
 }
 
 # Safe sudo function (doesn't override user's sudo)
-podium-sudo() {
+zeltro-sudo() {
     if command -v sudo >/dev/null 2>&1; then
         sudo "$@"
     else
@@ -553,14 +553,14 @@ check_docker_compose_type() {
         return 0
     fi
     
-    # Check if this is a Podium project
-    if grep -q "podium-cli_vpc" "$compose_file" 2>/dev/null; then
-        echo "podium-project"
+    # Check if this is a Zeltro project
+    if grep -q "zeltro-cli_vpc" "$compose_file" 2>/dev/null; then
+        echo "zeltro-project"
         return 0
     fi
     
-    # Has docker-compose but not a Podium project
-    echo "non-podium"
+    # Has docker-compose but not a Zeltro project
+    echo "non-zeltro"
     return 0
 }
 
@@ -580,16 +580,16 @@ handle_docker_compose_conflict() {
             echo-white "✅ No existing Docker configuration found - will create new setup"
             return 0
             ;;
-        "podium-project")
-            echo-white "✅ Detected existing Podium project - will be automatically reconfigured"
+        "zeltro-project")
+            echo-white "✅ Detected existing Zeltro project - will be automatically reconfigured"
             OVERWRITE_DOCKER_COMPOSE=1
             return 0
             ;;
-        "non-podium")
+        "non-zeltro")
             # No interactive prompt — require the flag. The original compose is
             # always preserved as docker-compose.upstream.yaml, so overwriting is
             # recoverable, but we still make it an explicit choice.
-            error "A docker-compose file already exists and is not a Podium project. Re-run with --overwrite-docker-compose to replace it (the original is saved as docker-compose.upstream.yaml)."
+            error "A docker-compose file already exists and is not a Zeltro project. Re-run with --overwrite-docker-compose to replace it (the original is saved as docker-compose.upstream.yaml)."
             ;;
     esac
 }
@@ -833,7 +833,7 @@ debug() {
         local line_number="${BASH_LINENO[0]}"
         
         # Use custom debug log path if set, otherwise default to /tmp
-        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
+        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/zeltro-cli-debug.log}"
         
         # Initialize debug log file on first use
         if [[ -z "$DEBUG_STARTED" ]]; then
@@ -841,7 +841,7 @@ debug() {
             local debug_dir=$(dirname "$debug_log_file")
             mkdir -p "$debug_dir" 2>/dev/null || true
             
-            echo "=== PODIUM CLI DEBUG SESSION STARTED ===" > "$debug_log_file"
+            echo "=== ZELTRO CLI DEBUG SESSION STARTED ===" > "$debug_log_file"
             echo "[$timestamp] [debug] Debug log path: $debug_log_file" >> "$debug_log_file"
             export DEBUG_STARTED=1
         fi
@@ -871,16 +871,16 @@ should_write_env() {
 }
 
 # Rewrite a single KEY=VALUE in .env, but only if the key already exists.
-# (podium-sed-change's c\ no-ops when the pattern doesn't match, but we guard
+# (zeltro-sed-change's c\ no-ops when the pattern doesn't match, but we guard
 # explicitly so we never append keys a non-Laravel .env never had.)
 _env_set_if_present() {
     local key="$1" val="$2"
     if grep -qE "^#*[[:space:]]*${key}=" .env 2>/dev/null; then
-        podium-sed-change "/^#*[[:space:]]*${key}=/" "${key}=${val}" .env
+        zeltro-sed-change "/^#*[[:space:]]*${key}=/" "${key}=${val}" .env
     fi
 }
 
-# Rewrite an existing project's .env CONNECTION settings to point at Podium's
+# Rewrite an existing project's .env CONNECTION settings to point at Zeltro's
 # shared services, in place — for adopting an existing app (e.g. a complex/
 # adapted compose) without nuking its real config. Only rewrites keys that
 # already exist; APP_KEY and everything else are preserved. Backs the original
@@ -923,7 +923,7 @@ rewrite_env_for_shared_services() {
             db_host="$MARIADB_CONTAINER_NAME";  db_port="3306";  db_user="root"; db_pass="" ;;
     esac
 
-    echo-cyan "Rewriting .env connection settings for Podium shared services ..."
+    echo-cyan "Rewriting .env connection settings for Zeltro shared services ..."
     _env_set_if_present "DB_HOST"        "$db_host"
     _env_set_if_present "DB_PORT"        "$db_port"
     _env_set_if_present "DB_DATABASE"    "$db_name"
@@ -1000,7 +1000,7 @@ ensure_database() {
             # service. The file has to live inside the project directory: that
             # is the only path bind-mounted into the container, so a database
             # anywhere else is silently destroyed when the container is
-            # recreated on `podium up`, taking the user's data with it.
+            # recreated on `zeltro up`, taking the user's data with it.
             # Runs with the project directory as cwd (setup_project.sh cd's in).
             local sqlite_rel="${FRAMEWORK_SQLITE_PATH:-database.sqlite}"
             echo-cyan "Ensuring SQLite database file '$sqlite_rel' exists ..."; echo-white
@@ -1054,16 +1054,16 @@ build_aider_args() {
     # approval bypasses: consent is asked once at install time and recorded in
     # ~/.aider.conf.yml, not forced here on every run.
     AIDER_ARGS=(--no-check-update)
-    [[ "${PODIUM_AI_AUTO_APPROVE:-0}" == "1" ]] && AIDER_ARGS+=(--yes-always)
+    [[ "${ZELTRO_AI_AUTO_APPROVE:-0}" == "1" ]] && AIDER_ARGS+=(--yes-always)
 
     # Aider renders through a rich console that hard-wraps at the terminal width
     # and pads with trailing spaces. That corrupts any machine-readable reply —
     # a wrap landing inside a JSON string inserts a raw newline, which is
-    # illegal JSON, and it's what broke `podium create`'s classifier.
+    # illegal JSON, and it's what broke `zeltro create`'s classifier.
     AIDER_ARGS+=(--no-pretty)
 
     # The other agents leave their edits in the working tree; aider commits each
-    # change by default. Match the rest of Podium and leave the tree dirty.
+    # change by default. Match the rest of Zeltro and leave the tree dirty.
     #
     # Aider's other git-side default is left alone: on first run in a repo it
     # appends `.aider*` to .gitignore (auto-accepted here because of
@@ -1090,7 +1090,7 @@ build_aider_args() {
     fi
 
     if [[ -n "$AI_API_KEY" ]]; then
-        # Aider wants `provider=key` (it exports PROVIDER_API_KEY). Podium
+        # Aider wants `provider=key` (it exports PROVIDER_API_KEY). Zeltro
         # stores a bare key, so tag it with the provider implied by the model
         # prefix — `openai/gpt-4o` -> openai, `anthropic/...` -> anthropic.
         # An unprefixed model means OpenAI (also the right answer for a custom
@@ -1120,12 +1120,12 @@ build_aider_args() {
 write_aider_seed_file() {
     local prompt="$1"
 
-    AIDER_SEED_FILE=$(mktemp "${TMPDIR:-/tmp}/podium-aider-seed.XXXXXX")
+    AIDER_SEED_FILE=$(mktemp "${TMPDIR:-/tmp}/zeltro-aider-seed.XXXXXX")
     printf '/code %s\n' "$(printf '%s' "$prompt" | tr '\n' ' ')" > "$AIDER_SEED_FILE"
 }
 
 # After a project is created/cloned/installed, hand off to an interactive AI session
-# inside the project directory — same flow that podium create does in phase 2.
+# inside the project directory — same flow that zeltro create does in phase 2.
 #
 # Skipped (silently) when:
 #   - JSON_OUTPUT mode (automation context)
@@ -1137,7 +1137,7 @@ write_aider_seed_file() {
 # ---------------------------------------------------------------------------
 # Project-level AGENTS.md
 # ---------------------------------------------------------------------------
-# Podium hands projects off to an AI CLI as a single one-off prompt rather than
+# Zeltro hands projects off to an AI CLI as a single one-off prompt rather than
 # a long-lived session, so the durable context has to live on disk. This writes
 # an AGENTS.md into the project that any agent can read to pick the project up
 # cold.
@@ -1169,27 +1169,27 @@ write_project_agents_md() {
         [[ -n "$db_host" ]] && db_line="$db_line on host \`$db_host\`"
     fi
 
-    PODIUM_PROJECT_NAME="$project_name" \
-    PODIUM_PROJECT_DIR="$project_dir" \
-    PODIUM_DB_LINE="$db_line" \
+    ZELTRO_PROJECT_NAME="$project_name" \
+    ZELTRO_PROJECT_DIR="$project_dir" \
+    ZELTRO_DB_LINE="$db_line" \
     python3 - "$project_dir/AGENTS.md" << 'PYAGENTS'
 import os, re, sys
 
 path = sys.argv[1]
-name = os.environ["PODIUM_PROJECT_NAME"]
-pdir = os.environ["PODIUM_PROJECT_DIR"]
-dbline = os.environ["PODIUM_DB_LINE"]
+name = os.environ["ZELTRO_PROJECT_NAME"]
+pdir = os.environ["ZELTRO_PROJECT_DIR"]
+dbline = os.environ["ZELTRO_DB_LINE"]
 
-BEGIN = "<!-- BEGIN PODIUM CONTEXT -->"
-END = "<!-- END PODIUM CONTEXT -->"
+BEGIN = "<!-- BEGIN ZELTRO CONTEXT -->"
+END = "<!-- END ZELTRO CONTEXT -->"
 
 block = f"""{BEGIN}
-<!-- Generated by Podium. This block is regenerated automatically —
+<!-- Generated by Zeltro. This block is regenerated automatically —
      put your own notes OUTSIDE it and they will be preserved. -->
 
 # {name}
 
-Managed by **Podium**, a Docker-based local development environment manager.
+Managed by **Zeltro**, a Docker-based local development environment manager.
 You are the developer on this project.
 
 ## At a glance
@@ -1206,36 +1206,36 @@ You are the developer on this project.
 Project tooling runs **inside the container**, never on the host:
 
 ```bash
-podium exec <cmd>              # run a command in the container (no TTY, automation-safe)
-podium shell                   # framework-aware interactive shell / REPL
-podium up {name}
-podium down {name}
-podium status {name}
-podium supervisor restart all  # restart in-container processes
+zeltro exec <cmd>              # run a command in the container (no TTY, automation-safe)
+zeltro shell                   # framework-aware interactive shell / REPL
+zeltro up {name}
+zeltro down {name}
+zeltro status {name}
+zeltro supervisor restart all  # restart in-container processes
 ```
 
 Shared services are already running and resolve by hostname from inside the
-container: `podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`,
-`podium-memcached`, `podium-mailhog`.
+container: `zeltro-postgres`, `zeltro-mariadb`, `zeltro-redis`, `zeltro-mongo`,
+`zeltro-memcached`, `zeltro-mailhog`.
 
 Credentials: postgres `root`/`password`, mariadb `root`/(empty),
 mongo `root`/`password`. Redis and memcached need no auth.
 
 ## Rules
 
-- Never pass `--json-output` to a podium command — it suppresses the
+- Never pass `--json-output` to a zeltro command — it suppresses the
   success/failure distinction so you cannot tell whether it worked.
 - Do not install runtimes or services directly on the host.
 - Python containers provide `python3`, not `python`.
-- Use `podium supervisor restart all`, never `podium exec supervisorctl ...`.
+- Use `zeltro supervisor restart all`, never `zeltro exec supervisorctl ...`.
 - After changing code, restart the app before verifying:
-  `podium supervisor restart all`. A running server keeps serving the code it
+  `zeltro supervisor restart all`. A running server keeps serving the code it
   started with, so a 200 from the old process can hide a broken app.
 - Before reporting done, verify: `curl -sI --max-time 10 http://{name}/`
   must return 2xx or 3xx **after that restart**.
 
-Full Podium reference for agents: `/usr/local/share/podium-cli/AGENTS.md`
-(run `podium --help` for the complete command list).
+Full Zeltro reference for agents: `/usr/local/share/zeltro-cli/AGENTS.md`
+(run `zeltro --help` for the complete command list).
 {END}"""
 
 if os.path.exists(path):
@@ -1278,13 +1278,13 @@ ai_handoff() {
     write_project_agents_md "$project_name" "$project_dir"
 
     if [[ -z "$seed_prompt" ]]; then
-        seed_prompt="Read AGENTS.md in this directory first — it describes this Podium-managed project, its local URL, its database, and the commands to use. Then read README.md if present. The project is running at http://$project_name/. You are the developer on it."
+        seed_prompt="Read AGENTS.md in this directory first — it describes this Zeltro-managed project, its local URL, its database, and the commands to use. Then read README.md if present. The project is running at http://$project_name/. You are the developer on it."
     fi
 
     echo-return
     echo-cyan "Wrote AGENTS.md handoff context to $project_name."
     echo-cyan "Starting AI session in $project_name..."
-    echo-white "(skip with --one-off; configure agent with 'podium ai-set')"
+    echo-white "(skip with --one-off; configure agent with 'zeltro ai-set')"
     echo-return
 
     cd "$project_dir"
@@ -1294,7 +1294,7 @@ ai_handoff() {
 # Helper function to append JSON results to debug log
 debug_append_json() {
     if [[ "$DEBUG" == "1" && -n "$1" ]]; then
-        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/podium-cli-debug.log}"
+        local debug_log_file="${DEBUG_LOG_PATH:-/tmp/zeltro-cli-debug.log}"
         local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         
         echo "" >> "$debug_log_file"
@@ -1305,10 +1305,10 @@ debug_append_json() {
 }
 
 # =============================================================================
-# Folding an arbitrary repository into Podium
+# Folding an arbitrary repository into Zeltro
 # =============================================================================
-# `podium clone` used to force every repo through framework classification and a
-# regex-based compose adapter. That works for repos shaped like Podium's own
+# `zeltro clone` used to force every repo through framework classification and a
+# regex-based compose adapter. That works for repos shaped like Zeltro's own
 # templates and fails for everything else: service names that don't match the
 # patterns survive as bundled databases, connection strings inside DSNs are never
 # rewritten, and credentials are never reconciled against the shared services.
@@ -1316,7 +1316,7 @@ debug_append_json() {
 # The fold replaces the guessing with a one-off AI pass that reads the actual
 # repo. The deterministic parts — IP allocation, /etc/hosts, registration — stay
 # in bash, because they are shared state across projects rather than judgment
-# calls. See podium_fold_project below.
+# calls. See zeltro_fold_project below.
 
 # Emit the live shared-service inventory as prompt-ready text: hostname, port and
 # the real credentials, so the agent rewrites config to something that actually
@@ -1325,24 +1325,24 @@ debug_append_json() {
 # Credentials mirror docker-stack/docker-compose.services.yaml. If that file
 # changes, change this too — a wrong password here produces a project that looks
 # adapted and cannot connect.
-podium_shared_service_facts() {
+zeltro_shared_service_facts() {
     local optional="${OPTIONAL_SERVICES:-}"
 
     cat << EOF
 ALWAYS RUNNING (use these — do not bundle your own):
-  MariaDB/MySQL   host: ${MARIADB_CONTAINER_NAME:-podium-mariadb}      port: 3306   user: root   password: (empty)
-  PostgreSQL      host: ${POSTGRES_CONTAINER_NAME:-podium-postgres}    port: 5432   user: root   password: password   default db: postgres
-  MongoDB         host: ${MONGO_CONTAINER_NAME:-podium-mongo}          port: 27017  user: root   password: password
-  Redis           host: ${REDIS_CONTAINER_NAME:-podium-redis}          port: 6379   no auth
-  Memcached       host: ${MEMCACHED_CONTAINER_NAME:-podium-memcached}  port: 11211  no auth
-  SMTP (Mailpit)  host: ${MAILHOG_CONTAINER_NAME:-podium-mailhog}      port: 1025   no auth   web UI on host port 8025
+  MariaDB/MySQL   host: ${MARIADB_CONTAINER_NAME:-zeltro-mariadb}      port: 3306   user: root   password: (empty)
+  PostgreSQL      host: ${POSTGRES_CONTAINER_NAME:-zeltro-postgres}    port: 5432   user: root   password: password   default db: postgres
+  MongoDB         host: ${MONGO_CONTAINER_NAME:-zeltro-mongo}          port: 27017  user: root   password: password
+  Redis           host: ${REDIS_CONTAINER_NAME:-zeltro-redis}          port: 6379   no auth
+  Memcached       host: ${MEMCACHED_CONTAINER_NAME:-zeltro-memcached}  port: 11211  no auth
+  SMTP (Mailpit)  host: ${MAILHOG_CONTAINER_NAME:-zeltro-mailhog}      port: 1025   no auth   web UI on host port 8025
 EOF
 
     if [[ " $optional " == *" minio "* ]]; then
-        echo "  MinIO (S3)      host: ${MINIO_CONTAINER_NAME:-podium-minio}          port: 9000   user: ${MINIO_ROOT_USER:-root}   password: ${MINIO_ROOT_PASSWORD:-password}"
+        echo "  MinIO (S3)      host: ${MINIO_CONTAINER_NAME:-zeltro-minio}          port: 9000   user: ${MINIO_ROOT_USER:-root}   password: ${MINIO_ROOT_PASSWORD:-password}"
     fi
     if [[ " $optional " == *" meilisearch "* ]]; then
-        echo "  Meilisearch     host: ${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}  port: 7700   master key: ${MEILI_MASTER_KEY:-podium-dev-master-key}"
+        echo "  Meilisearch     host: ${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}  port: 7700   master key: ${MEILI_MASTER_KEY:-zeltro-dev-master-key}"
     fi
 
     local disabled=""
@@ -1352,12 +1352,12 @@ EOF
         echo ""
         echo "NOT ENABLED on this machine:$disabled"
         echo "  Do not point the app at these. If the app genuinely needs one, say so in your"
-        echo "  summary and tell the user to run: podium enable-service <name>"
+        echo "  summary and tell the user to run: zeltro enable-service <name>"
     fi
 }
 
 # Install project dependencies based on FILES PRESENT, not on framework
-# classification. This is the fix for "doesn't fit the Podium mold": the old
+# classification. This is the fix for "doesn't fit the Zeltro mold": the old
 # gating ran npm only when FRAMEWORK_IS_NODE was set and pip only when
 # FRAMEWORK_IS_PYTHON was set, so a cloned repo that classified as something else
 # — or as nothing — silently got no dependencies installed.
@@ -1368,7 +1368,7 @@ EOF
 #   $1 project name
 install_project_dependencies() {
     local project_name="$1"
-    local workdir; workdir="$(podium_container_workdir)"
+    local workdir; workdir="$(zeltro_container_workdir)"
     local ran=0
 
     _in_container() { docker container exec --user "$(id -u):$(id -g)" --workdir "$workdir" "$project_name" "$@"; }
@@ -1421,7 +1421,7 @@ install_project_dependencies() {
         ran=1
     fi
     if [ -f "Pipfile" ] && [ ! -f "requirements.txt" ]; then
-        echo-yellow "Pipfile found but pipenv is not managed by Podium — install manually if needed."
+        echo-yellow "Pipfile found but pipenv is not managed by Zeltro — install manually if needed."
     fi
 
     unset -f _in_container _has_in_container
@@ -1429,31 +1429,31 @@ install_project_dependencies() {
     return 0
 }
 
-# Build the pre-prompt that folds a freshly cloned repo into Podium.
+# Build the pre-prompt that folds a freshly cloned repo into Zeltro.
 #   $1 project name   $2 static IP   $3 host port
-podium_fold_prompt() {
+zeltro_fold_prompt() {
     local project_name="$1" ip="$2" port="$3"
     local upstream_note=""
 
     if [ -f "docker-compose.upstream.yaml" ]; then
         upstream_note="This repo SHIPPED ITS OWN COMPOSE. The original is preserved at
 docker-compose.upstream.yaml — read it first; it is the authoritative description of what
-services this app expects. docker-compose.yaml is Podium's automated first attempt at
+services this app expects. docker-compose.yaml is Zeltro's automated first attempt at
 adapting it and may well be wrong. Treat the upstream file as the source of truth and
 rewrite docker-compose.yaml from it."
     else
         upstream_note="This repo shipped NO compose file. docker-compose.yaml was generated by
-Podium from a framework template. Verify it actually matches how this app runs — check for a
+Zeltro from a framework template. Verify it actually matches how this app runs — check for a
 Procfile, Dockerfile, Makefile, CI config or README run instructions before trusting it."
     fi
 
     cat << EOF
-You are folding a freshly cloned repository into Podium. Work only in this directory.
+You are folding a freshly cloned repository into Zeltro. Work only in this directory.
 
-## What Podium is
+## What Zeltro is
 
-Podium runs many projects side by side on one machine against a set of SHARED backing
-services. Every project is a container on the external Docker network 'podium-cli_vpc',
+Zeltro runs many projects side by side on one machine against a set of SHARED backing
+services. Every project is a container on the external Docker network 'zeltro-cli_vpc',
 reachable by hostname. Projects do NOT run their own database, cache or mail container —
 they connect to the shared ones, which are already running.
 
@@ -1466,13 +1466,13 @@ they connect to the shared ones, which are already running.
 
 ## Shared services available
 
-$(podium_shared_service_facts)
+$(zeltro_shared_service_facts)
 
 ## Your job
 
 $upstream_note
 
-## The web service MUST use a Podium base image (this is the important one)
+## The web service MUST use a Zeltro base image (this is the important one)
 
 Use one of these for the main application service:
 
@@ -1481,8 +1481,8 @@ Use one of these for the main application service:
   canebaycomputers/cbc:nginx-node      Node 22 + nginx + supervisor
 
 Pick the one matching the app's language and DISCARD the upstream image or Dockerfile for
-that service. This is not cosmetic. Podium's tooling — 'podium php', 'podium python',
-'podium npm', 'podium composer', 'podium shell' — runs
+that service. This is not cosmetic. Zeltro's tooling — 'zeltro php', 'zeltro python',
+'zeltro npm', 'zeltro composer', 'zeltro shell' — runs
 'docker exec --user developer' against this container. An arbitrary upstream image has no
 'developer' user, so every one of those commands fails outright. These images also serve the
 app through nginx on port 80, which is what makes http://$project_name/ resolve at all; an
@@ -1497,13 +1497,13 @@ already compiled in — and they cover essentially any PHP, Python or Node web a
 
 A pinned version is NOT a reason to escape. A repo asking for Node 18, Python 3.9 or PHP 8.1
 still runs on these images in all but pathological cases. Try it and let it fail before
-concluding otherwise — an unnecessary escape silently costs the user every 'podium' command
+concluding otherwise — an unnecessary escape silently costs the user every 'zeltro' command
 for the life of the project.
 
 ESCAPE HATCH — reserved for a genuinely different runtime that these images cannot execute at
 all: a compiled binary (Go, Rust), or a JVM/.NET application. Nothing else qualifies. If you
 take it, keep the upstream image, make it listen on port 80, and state prominently in your
-summary that 'podium php/python/npm/composer/shell' will NOT work for this project and why.
+summary that 'zeltro php/python/npm/composer/shell' will NOT work for this project and why.
 
 Helper services (workers, schedulers) may keep their own images — the passthrough commands
 only target the main container.
@@ -1512,13 +1512,13 @@ Produce a working docker-compose.yaml and matching app configuration:
 
 1. **Delete bundled backing services.** Any database, cache, queue broker, search or mail
    container defined in the compose must go, replaced by the shared equivalents above.
-   mysql AND mariadb both map to ${MARIADB_CONTAINER_NAME:-podium-mariadb}. Keep application
+   mysql AND mariadb both map to ${MARIADB_CONTAINER_NAME:-zeltro-mariadb}. Keep application
    services (web, worker, scheduler, websocket) — those are the app itself.
 
 2. **Rewrite every reference to a deleted service.** This is the part that is usually missed:
    look inside connection strings and DSNs, not just plain host variables. A value like
    DATABASE_URL=postgres://app:secret@db:5432/app must become
-   postgres://root:password@${POSTGRES_CONTAINER_NAME:-podium-postgres}:5432/<dbname>.
+   postgres://root:password@${POSTGRES_CONTAINER_NAME:-zeltro-postgres}:5432/<dbname>.
    Search the whole repo — .env, .env.example, config files, settings modules, and any
    defaults compiled into the app.
 
@@ -1536,9 +1536,9 @@ Produce a working docker-compose.yaml and matching app configuration:
        networks:
          default:
            external: true
-           name: podium-cli_vpc
+           name: zeltro-cli_vpc
    - Do NOT publish ports with 'ports:' on any service. Projects are reached by hostname on
-     the shared network; published ports collide with other Podium projects.
+     the shared network; published ports collide with other Zeltro projects.
 
 5. **Create the database if the app needs one.** The shared servers are running but this
    project's database may not exist yet. Use the project name with dashes replaced by
@@ -1546,13 +1546,13 @@ Produce a working docker-compose.yaml and matching app configuration:
 
    You cannot run migrations yourself — the container is not up while you work. Instead, end
    your summary with a MIGRATE: line giving the exact command, e.g.
-     MIGRATE: podium art migrate
-     MIGRATE: podium python manage.py migrate
+     MIGRATE: zeltro art migrate
+     MIGRATE: zeltro python manage.py migrate
    or 'MIGRATE: none' if the app has no migrations. This is the only way the user finds out
    how to finish setup, so do not omit it.
 
-6. **Do not run** podium new, podium clone, podium install, or create another project.
-   Do not start containers yourself — Podium starts them after you finish.
+6. **Do not run** zeltro new, zeltro clone, zeltro install, or create another project.
+   Do not start containers yourself — Zeltro starts them after you finish.
 
 ## When you are done
 
@@ -1566,7 +1566,7 @@ EOF
 # Run the fold, then verify it. Verification matters: without it we would have
 # traded a bad deterministic adaptation for an unverified generated one.
 #   $1 project name   $2 static IP   $3 host port
-podium_fold_project() {
+zeltro_fold_project() {
     local project_name="$1" ip="$2" port="$3"
     local ai_script="$DEV_DIR/scripts/ai.sh"
 
@@ -1576,14 +1576,14 @@ podium_fold_project() {
     fi
 
     echo-return
-    echo-cyan "Folding $project_name into Podium with the AI agent ($AI_AGENT) ..."
+    echo-cyan "Folding $project_name into Zeltro with the AI agent ($AI_AGENT) ..."
     echo-white "This reads the repo and rewrites docker-compose.yaml and app config."
     echo-return
 
-    local prompt; prompt="$(podium_fold_prompt "$project_name" "$ip" "$port")"
+    local prompt; prompt="$(zeltro_fold_prompt "$project_name" "$ip" "$port")"
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
-        bash "$ai_script" "$prompt" > /tmp/podium-fold-$$.log 2>&1 || true
+        bash "$ai_script" "$prompt" > /tmp/zeltro-fold-$$.log 2>&1 || true
     else
         bash "$ai_script" "$prompt" || true
     fi
@@ -1598,7 +1598,7 @@ podium_fold_project() {
         echo-yellow "docker compose config rejected the generated file — asking the agent to fix it ..."
         local err; err="$(docker compose config 2>&1 | head -20)"
         bash "$ai_script" "The docker-compose.yaml you just wrote is invalid. Fix it in place.
-Do not change the networking contract described earlier: external network podium-cli_vpc,
+Do not change the networking contract described earlier: external network zeltro-cli_vpc,
 container_name $project_name, ipv4_address $ip, and no published ports.
 
 docker compose config reported:
@@ -1614,8 +1614,8 @@ $err" || true
     # Guard the two contract items an agent most often drops. These are cheap to
     # check and expensive to debug later: a project on the wrong network appears
     # to start and then cannot reach any shared service.
-    if ! grep -q "podium-cli_vpc" docker-compose.yaml 2>/dev/null; then
-        echo-yellow "Warning: generated compose does not reference podium-cli_vpc — shared services will be unreachable."
+    if ! grep -q "zeltro-cli_vpc" docker-compose.yaml 2>/dev/null; then
+        echo-yellow "Warning: generated compose does not reference zeltro-cli_vpc — shared services will be unreachable."
     fi
     if ! grep -q "$ip" docker-compose.yaml 2>/dev/null; then
         echo-yellow "Warning: generated compose does not pin $ip — http://$project_name/ may not resolve to this project."
@@ -1625,27 +1625,27 @@ $err" || true
     return 0
 }
 
-# Report which `podium <tool>` passthroughs will actually work against this
+# Report which `zeltro <tool>` passthroughs will actually work against this
 # project's container. Run AFTER the container is up.
 #
 # Every passthrough is `docker exec --user developer`, so a project on a
-# non-Podium image loses all of them at once — and the failure surfaces later as
+# non-Zeltro image loses all of them at once — and the failure surfaces later as
 # a confusing "unable to find user: developer" rather than at setup time. Saying
 # it plainly here is the difference between a known limitation and a bug report.
 #   $1 project name
-podium_report_container_capabilities() {
+zeltro_report_container_capabilities() {
     local project_name="$1"
 
     docker container inspect "$project_name" >/dev/null 2>&1 || return 0
 
     if ! docker container exec "$project_name" id developer >/dev/null 2>&1; then
         echo-return
-        echo-yellow "Heads up: this project runs on a non-Podium image (no 'developer' user)."
+        echo-yellow "Heads up: this project runs on a non-Zeltro image (no 'developer' user)."
         echo-yellow "These will NOT work for it:"
-        echo-white  "  podium php / python / npm / node / composer / art / shell / exec"
+        echo-white  "  zeltro php / python / npm / node / composer / art / shell / exec"
         echo-white  "Use 'docker exec -it $project_name <cmd>' instead, or re-run with"
-        echo-white  "  podium clone ... --image canebaycomputers/cbc:nginx-php8"
-        echo-white  "to force a Podium base image."
+        echo-white  "  zeltro clone ... --image canebaycomputers/cbc:nginx-php8"
+        echo-white  "to force a Zeltro base image."
         return 0
     fi
 
@@ -1665,7 +1665,7 @@ podium_report_container_capabilities() {
 
 # Pre-flight compatibility check, run on a freshly cloned repo BEFORE the fold.
 #
-# Podium serves every project from one of three base images (PHP 8.3, Python 3,
+# Zeltro serves every project from one of three base images (PHP 8.3, Python 3,
 # Node 22). That is not a soft preference — the passthrough commands exec as the
 # 'developer' user and nginx serves on port 80, neither of which survives a
 # foreign image. So "is this repo PHP, Python or Node?" is the whole
@@ -1675,7 +1675,7 @@ podium_report_container_capabilities() {
 # a full AI fold and leaves a registered project that can never start.
 #
 # Echoes findings. Returns 0 compatible, 1 incompatible.
-podium_preflight_check() {
+zeltro_preflight_check() {
     local hard="" soft="" lang=""
 
     # --- is there anything here at all? -------------------------------------
@@ -1692,7 +1692,7 @@ podium_preflight_check() {
     elif [ -f "pom.xml" ] || ls build.gradle* >/dev/null 2>&1; then hard="Java/Kotlin (Maven/Gradle)"
     elif ls ./*.csproj ./*.sln >/dev/null 2>&1;              then hard=".NET"
     elif [ -f "mix.exs" ];                                   then hard="Elixir (mix.exs)"
-    elif [ -f "Gemfile" ] || [ -f "config.ru" ];             then hard="Ruby (Gemfile) — Podium has no Ruby image"
+    elif [ -f "Gemfile" ] || [ -f "config.ru" ];             then hard="Ruby (Gemfile) — Zeltro has no Ruby image"
     elif [ -f "pubspec.yaml" ];                              then hard="Dart/Flutter"
     elif [ -d "android" ] && [ -d "ios" ];                   then hard="a mobile app, not a web app"
     fi
@@ -1713,13 +1713,13 @@ podium_preflight_check() {
 
     if [ -n "$hard" ]; then
         echo-return
-        echo-red   "Incompatible with Podium: this repo is $hard."
-        echo-white "Podium serves projects from PHP 8.3, Python 3 or Node 22 base images. Its"
-        echo-white "tooling (podium php/python/npm/composer/shell) execs as the 'developer' user"
+        echo-red   "Incompatible with Zeltro: this repo is $hard."
+        echo-white "Zeltro serves projects from PHP 8.3, Python 3 or Node 22 base images. Its"
+        echo-white "tooling (zeltro php/python/npm/composer/shell) execs as the 'developer' user"
         echo-white "inside those images, and nginx serves the app on port 80 — neither works on a"
         echo-white "foreign runtime."
         echo-white ""
-        echo-white "Clone it outside Podium and run it with its own docker-compose, or re-run with"
+        echo-white "Clone it outside Zeltro and run it with its own docker-compose, or re-run with"
         echo-white "  --no-preflight   to attempt it anyway (expect the passthrough commands to fail)"
         return 1
     fi
@@ -1733,19 +1733,19 @@ podium_preflight_check() {
         local unsupported
         unsupported=$(grep -ioE 'image:[[:space:]]*[a-z0-9./_-]*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul)' "$compose" 2>/dev/null \
                       | sed -E 's/.*(elasticsearch|opensearch|rabbitmq|kafka|clickhouse|cassandra|neo4j|influxdb|nats|vault|consul).*/\1/I' | sort -u | tr '\n' ' ')
-        [ -n "$unsupported" ] && soft="$soft\n  • Needs services Podium does not provide:$unsupported\n    These stay as project-local containers; they will not be shared."
+        [ -n "$unsupported" ] && soft="$soft\n  • Needs services Zeltro does not provide:$unsupported\n    These stay as project-local containers; they will not be shared."
 
         if grep -qE '(minio|s3)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" minio "* ]]; then
-            soft="$soft\n  • Wants object storage. Enable it first:  podium enable-service minio"
+            soft="$soft\n  • Wants object storage. Enable it first:  zeltro enable-service minio"
         fi
         if grep -qiE '(meilisearch|typesense)' "$compose" 2>/dev/null && [[ " ${OPTIONAL_SERVICES:-} " != *" meilisearch "* ]]; then
-            soft="$soft\n  • Wants a search engine. Enable it first:  podium enable-service meilisearch"
+            soft="$soft\n  • Wants a search engine. Enable it first:  zeltro enable-service meilisearch"
         fi
         if grep -qE 'capabilities:.*gpu|runtime:[[:space:]]*nvidia' "$compose" 2>/dev/null; then
-            soft="$soft\n  • Requests GPU access. Podium projects run CPU-only."
+            soft="$soft\n  • Requests GPU access. Zeltro projects run CPU-only."
         fi
         grep -q 'laravel/sail' "$compose" 2>/dev/null && \
-            soft="$soft\n  • Laravel Sail compose — it will be discarded for a Podium image (Sail cannot build before composer install)."
+            soft="$soft\n  • Laravel Sail compose — it will be discarded for a Zeltro image (Sail cannot build before composer install)."
     fi
 
     [ -f ".gitmodules" ] && soft="$soft\n  • Has git submodules — run 'git submodule update --init' if the app needs them."
@@ -1764,12 +1764,12 @@ podium_preflight_check() {
 # =============================================================================
 # Agent autonomy consent
 # =============================================================================
-# Podium runs agents non-interactively: `podium create` and `podium clone --fold`
+# Zeltro runs agents non-interactively: `zeltro create` and `zeltro clone --fold`
 # hand a prompt to the agent and expect it to edit files and finish without a
 # human at the keyboard. That requires the agent to skip its own per-action
 # approval prompts.
 #
-# Podium used to force this by passing --dangerously-skip-permissions and
+# Zeltro used to force this by passing --dangerously-skip-permissions and
 # --dangerously-bypass-approvals-and-sandbox on every invocation. That is a
 # reasonable personal default and an unreasonable thing to impose on someone
 # else's machine without asking — a tool that silently disables another tool's
@@ -1780,7 +1780,7 @@ podium_preflight_check() {
 # see it, audit it and revoke it with the agent's own documentation.
 #
 #   $1 agent name
-podium_offer_agent_autonomy() {
+zeltro_offer_agent_autonomy() {
     local agent="$1"
     local cfg desc
 
@@ -1795,33 +1795,33 @@ podium_offer_agent_autonomy() {
 
     # Caller already stated intent (--allow-unattended / --no-allow-unattended),
     # so asking again would be noise.
-    [ "${PODIUM_UNATTENDED_EXPLICIT:-0}" = "1" ] && return 0
+    [ "${ZELTRO_UNATTENDED_EXPLICIT:-0}" = "1" ] && return 0
 
     # Never prompt in automation — silence there means "no", which is the safe
     # default for a permissions question.
     if [[ "$JSON_OUTPUT" == "1" ]] || [ ! -t 0 ]; then
         echo-cyan "Note: $agent may prompt for approval on each action, which stalls non-interactive"
-        echo-cyan "runs like 'podium create'. Run 'podium ai-set --agent $agent' from a terminal to set this up."
+        echo-cyan "runs like 'zeltro create'. Run 'zeltro ai-set --agent $agent' from a terminal to set this up."
         return 0
     fi
 
     echo-return
-    echo-yellow "One question about how $agent should run under Podium."
+    echo-yellow "One question about how $agent should run under Zeltro."
     echo-white  ""
-    echo-white  "Podium drives the agent non-interactively — 'podium create' and 'podium clone'"
+    echo-white  "Zeltro drives the agent non-interactively — 'zeltro create' and 'zeltro clone'"
     echo-white  "hand it a task and expect it to finish unattended. By default $agent asks for"
     echo-white  "approval before each file edit or command, which stalls those runs."
     echo-white  ""
-    echo-white  "Podium can record your preference in $agent's own config:"
+    echo-white  "Zeltro can record your preference in $agent's own config:"
     echo-white  "  $cfg"
     echo-white  "  $desc"
     echo-white  ""
     echo-white  "This lets the agent edit files and run commands in your projects WITHOUT asking."
-    echo-white  "That is what makes Podium's AI features work, and it is a real reduction in"
+    echo-white  "That is what makes Zeltro's AI features work, and it is a real reduction in"
     echo-white  "safety — the agent can change anything your user account can. It is written to"
     echo-white  "$agent's own config, so you can inspect or undo it there at any time."
     echo-white  ""
-    echo-white  "Say no and Podium still works; the agent will just prompt you, and unattended"
+    echo-white  "Say no and Zeltro still works; the agent will just prompt you, and unattended"
     echo-white  "commands may stall waiting for input."
     echo-return
 
@@ -1833,13 +1833,13 @@ podium_offer_agent_autonomy() {
            return 0 ;;
     esac
 
-    podium_write_agent_autonomy "$agent" "$cfg"
+    zeltro_write_agent_autonomy "$agent" "$cfg"
 }
 
 # Write the autonomy setting into the agent's own config, merging rather than
 # clobbering — these files hold the user's model choice, hooks and auth.
 #   $1 agent   $2 config path
-podium_write_agent_autonomy() {
+zeltro_write_agent_autonomy() {
     local agent="$1" cfg="$2"
     mkdir -p "$(dirname "$cfg")"
 
@@ -1885,12 +1885,12 @@ PYEOF
             # keys are touched, so other settings and [projects.*] tables survive.
             touch "$cfg"
             if grep -qE '^[[:space:]]*approval_policy' "$cfg" 2>/dev/null; then
-                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "never"|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "never"|' "$cfg"
             else
                 echo 'approval_policy = "never"' >> "$cfg"
             fi
             if grep -qE '^[[:space:]]*sandbox_mode' "$cfg" 2>/dev/null; then
-                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "danger-full-access"|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "danger-full-access"|' "$cfg"
             else
                 echo 'sandbox_mode = "danger-full-access"' >> "$cfg"
             fi
@@ -1898,14 +1898,14 @@ PYEOF
         aider)
             touch "$cfg"
             if grep -qE '^[[:space:]]*yes-always' "$cfg" 2>/dev/null; then
-                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: true|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: true|' "$cfg"
             else
                 echo 'yes-always: true' >> "$cfg"
             fi
             ;;
     esac
 
-    echo-green "Recorded in $cfg — $agent will now run unattended under Podium."
+    echo-green "Recorded in $cfg — $agent will now run unattended under Zeltro."
     echo-white  "Undo it by editing that file."
     return 0
 }
@@ -1914,7 +1914,7 @@ PYEOF
 # Echoes: true | false | unknown   (never errors — the GUI renders "unknown"
 # as unchecked-with-a-note, which is more useful than a failed call.)
 #   $1 agent
-podium_read_agent_autonomy() {
+zeltro_read_agent_autonomy() {
     local agent="$1" cfg
 
     case "$agent" in
@@ -1965,12 +1965,12 @@ PYEOF
 # Turn unattended mode back off.
 #
 # Sets explicit safe values rather than deleting lines. Deleting looks tidier but
-# is dangerous here: a user may have set these keys themselves before Podium ever
+# is dangerous here: a user may have set these keys themselves before Zeltro ever
 # ran (approval_policy and sandbox_mode commonly are), and removing them would
 # silently destroy their own configuration. Setting a value is honest about what
 # changed, and every change is printed.
 #   $1 agent
-podium_revoke_agent_autonomy() {
+zeltro_revoke_agent_autonomy() {
     local agent="$1" cfg
 
     case "$agent" in
@@ -2011,16 +2011,16 @@ PYEOF
             ;;
         codex)
             if grep -qE '^[[:space:]]*approval_policy' "$cfg"; then
-                podium-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "on-request"|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*approval_policy[[:space:]]*=.*|approval_policy = "on-request"|' "$cfg"
             fi
             if grep -qE '^[[:space:]]*sandbox_mode' "$cfg"; then
-                podium-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "workspace-write"|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*sandbox_mode[[:space:]]*=.*|sandbox_mode = "workspace-write"|' "$cfg"
                 echo-yellow "Note: sandbox_mode was also reset to \"workspace-write\"."
             fi
             ;;
         aider)
             if grep -qE '^[[:space:]]*yes-always' "$cfg"; then
-                podium-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: false|' "$cfg"
+                zeltro-sed 's|^[[:space:]]*yes-always[[:space:]]*:.*|yes-always: false|' "$cfg"
             fi
             ;;
     esac
@@ -2031,7 +2031,7 @@ PYEOF
 
 # Resolve an agent's config path. Single source of truth — the path appears in
 # offer/write/read/revoke and drifts the moment one of them is edited alone.
-podium_agent_config_path() {
+zeltro_agent_config_path() {
     case "$1" in
         claude) echo "$HOME/.claude/settings.json" ;;
         codex)  echo "$HOME/.codex/config.toml" ;;
@@ -2042,12 +2042,12 @@ podium_agent_config_path() {
     esac
 }
 
-# Non-interactive "allow" — the counterpart to podium_revoke_agent_autonomy, for
+# Non-interactive "allow" — the counterpart to zeltro_revoke_agent_autonomy, for
 # --allow-unattended and for the GUI, which collects consent in its own UI.
-podium_allow_agent_autonomy() {
+zeltro_allow_agent_autonomy() {
     local agent="$1" cfg
-    cfg="$(podium_agent_config_path "$agent")" || { echo-yellow "Unknown agent '$agent'."; return 1; }
-    podium_write_agent_autonomy "$agent" "$cfg"
+    cfg="$(zeltro_agent_config_path "$agent")" || { echo-yellow "Unknown agent '$agent'."; return 1; }
+    zeltro_write_agent_autonomy "$agent" "$cfg"
 }
 
 # =============================================================================
@@ -2062,7 +2062,7 @@ podium_allow_agent_autonomy() {
 GITHUB_API_ERROR=""
 
 # Emit an Authorization header if a token can be found. gh's token is preferred
-# because anyone using Podium's GitHub features is already logged in with it.
+# because anyone using Zeltro's GitHub features is already logged in with it.
 github_auth_header() {
     local token=""
     if [ -n "${GITHUB_TOKEN:-}" ]; then
@@ -2121,17 +2121,17 @@ github_api_get() {
 # The probe costs a network round trip, so the answer is cached for the life of
 # the process — this is called once per clone, but callers should not have to
 # know that.
-PODIUM_GH_SSH_OK=""
+ZELTRO_GH_SSH_OK=""
 github_ssh_works() {
-    if [ -z "$PODIUM_GH_SSH_OK" ]; then
+    if [ -z "$ZELTRO_GH_SSH_OK" ]; then
         if ssh -T -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
                -o ConnectTimeout=8 git@github.com 2>&1 | grep -q "successfully authenticated"; then
-            PODIUM_GH_SSH_OK=1
+            ZELTRO_GH_SSH_OK=1
         else
-            PODIUM_GH_SSH_OK=0
+            ZELTRO_GH_SSH_OK=0
         fi
     fi
-    [ "$PODIUM_GH_SSH_OK" = "1" ]
+    [ "$ZELTRO_GH_SSH_OK" = "1" ]
 }
 
 # Rewrite a GitHub HTTPS URL (or owner/repo shorthand) to its SSH form.
@@ -2189,9 +2189,9 @@ github_remotes_to_ssh() {
     return 0
 }
 
-# Refresh /etc/podium-cli/docker-compose.yaml from the repo.
+# Refresh /etc/zeltro-cli/docker-compose.yaml from the repo.
 #
-# That file is a COPY, written once by `podium configure`, and nothing else ever
+# That file is a COPY, written once by `zeltro configure`, and nothing else ever
 # updated it. So a fix to the shared-service definitions in the repo reached
 # nobody who had already installed — including image pins, which is how an
 # unpinned `postgres` survived in installed copies after the repo pinned it.
@@ -2200,7 +2200,7 @@ github_remotes_to_ssh() {
 # a user may have hand-edited it.
 sync_installed_compose() {
     local src="$DEV_DIR/docker-stack/docker-compose.services.yaml"
-    local dst="/etc/podium-cli/docker-compose.yaml"
+    local dst="/etc/zeltro-cli/docker-compose.yaml"
 
     [ -f "$src" ] || return 0
     [ -d "$(dirname "$dst")" ] || return 0
@@ -2228,7 +2228,7 @@ sync_installed_compose() {
 # =============================================================================
 # Preserving x-metadata across compose regeneration
 # =============================================================================
-# `podium setup` regenerates docker-compose.yaml from a template — it deletes the
+# `zeltro setup` regenerates docker-compose.yaml from a template — it deletes the
 # existing file outright. The GUI stores each project's emoji, display name and
 # description in an `x-metadata:` block inside that file, so re-running setup
 # silently wiped a user's tile customisation with no way to connect the loss to
@@ -2295,7 +2295,7 @@ lines = open(path).read().splitlines()
 if any(re.match(r'^\s*x-metadata:\s*$', l) for l in lines):
     sys.exit(0)
 
-# Anchor on the service that owns this project. Podium sets container_name to the
+# Anchor on the service that owns this project. Zeltro sets container_name to the
 # project name, so this finds the web service even in a multi-service compose,
 # where appending at the end of the file would land it in the wrong one.
 anchor = None
@@ -2426,7 +2426,7 @@ PYEOF
 record_last_on() {
     local project="$1"
     [ -n "$project" ] || return 0
-    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
+    local dir="${PROJECTS_DIR_PATH:-$HOME/zeltro-projects}/$project"
     local file=""
     [ -f "$dir/docker-compose.yaml" ] && file="$dir/docker-compose.yaml"
     [ -z "$file" ] && [ -f "$dir/docker-compose.yml" ] && file="$dir/docker-compose.yml"
@@ -2477,17 +2477,17 @@ PYEOF
 }
 
 # Resolve a project's compose file, or empty if it has none.
-podium_project_compose() {
-    local dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$1"
+zeltro_project_compose() {
+    local dir="${PROJECTS_DIR_PATH:-$HOME/zeltro-projects}/$1"
     [ -f "$dir/docker-compose.yaml" ] && { printf '%s' "$dir/docker-compose.yaml"; return 0; }
     [ -f "$dir/docker-compose.yml" ]  && { printf '%s' "$dir/docker-compose.yml";  return 0; }
     return 0
 }
 
 # Echo "disabled" or "enabled". Anything unrecognised is enabled, deliberately.
-podium_project_status() {
+zeltro_project_status() {
     local project="$1" file status
-    file="$(podium_project_compose "$project")"
+    file="$(zeltro_project_compose "$project")"
     [ -n "$file" ] || { printf 'enabled'; return 0; }
     status="$(read_x_metadata_key "$file" status)"
     case "$status" in
@@ -2497,8 +2497,8 @@ podium_project_status() {
 }
 
 # Convenience predicate: true when the project is disabled.
-podium_project_is_disabled() {
-    [ "$(podium_project_status "$1")" = "disabled" ]
+zeltro_project_is_disabled() {
+    [ "$(zeltro_project_status "$1")" = "disabled" ]
 }
 
 # =============================================================================
@@ -2511,7 +2511,7 @@ podium_project_is_disabled() {
 #
 # The trade is that a project must be able to bring up what it needs without the
 # user knowing which services exist. That is what this does: read the project's
-# OWN compose, see which podium-* hostnames it talks to, and ensure exactly
+# OWN compose, see which zeltro-* hostnames it talks to, and ensure exactly
 # those are enabled and running.
 #
 # Deliberately derived from the compose rather than from a declared list. A
@@ -2522,18 +2522,18 @@ podium_project_is_disabled() {
 # Admin UIs (adminer, mongo-express, redisinsight) are never matched here: no
 # project references them, so they stay pure opt-in.
 
-# Map a podium-* hostname to its compose service name. These differ — the
-# MariaDB service is called `mysql` but its container is `podium-mariadb`.
-_podium_host_to_service() {
+# Map a zeltro-* hostname to its compose service name. These differ — the
+# MariaDB service is called `mysql` but its container is `zeltro-mariadb`.
+_zeltro_host_to_service() {
     case "$1" in
-        podium-mariadb)   printf 'mysql' ;;
-        podium-postgres)  printf 'postgres' ;;
-        podium-mongo)     printf 'mongo' ;;
-        podium-redis)     printf 'redis' ;;
-        podium-memcached) printf 'memcached' ;;
-        podium-mailhog)   printf 'mailhog' ;;
-        podium-minio)     printf 'minio' ;;
-        podium-meilisearch) printf 'meilisearch' ;;
+        zeltro-mariadb)   printf 'mysql' ;;
+        zeltro-postgres)  printf 'postgres' ;;
+        zeltro-mongo)     printf 'mongo' ;;
+        zeltro-redis)     printf 'redis' ;;
+        zeltro-memcached) printf 'memcached' ;;
+        zeltro-mailhog)   printf 'mailhog' ;;
+        zeltro-minio)     printf 'minio' ;;
+        zeltro-meilisearch) printf 'meilisearch' ;;
         *) return 1 ;;
     esac
 }
@@ -2541,30 +2541,30 @@ _podium_host_to_service() {
 # Echo the service names referenced anywhere in the given text.
 services_referenced_in() {
     local text="$1" host svc out=""
-    for host in podium-mariadb podium-postgres podium-mongo podium-redis \
-                podium-memcached podium-mailhog podium-minio podium-meilisearch; do
+    for host in zeltro-mariadb zeltro-postgres zeltro-mongo zeltro-redis \
+                zeltro-memcached zeltro-mailhog zeltro-minio zeltro-meilisearch; do
         case "$text" in
             *"$host"*)
-                svc="$(_podium_host_to_service "$host")" && out="$out $svc" ;;
+                svc="$(_zeltro_host_to_service "$host")" && out="$out $svc" ;;
         esac
     done
     printf '%s' "${out# }"
 }
 
 # Ensure the named services are enabled and running. Enabling persists, so the
-# next `podium up` keeps them without re-deriving.
+# next `zeltro up` keeps them without re-deriving.
 #   $@ service names
 # Services that carry no compose profile and therefore always run. Listing one
 # in OPTIONAL_SERVICES would be meaningless and the "enabling ..." line would be
 # a lie, so they are filtered out before anything is written or announced.
-PODIUM_ALWAYS_ON_SERVICES="redis memcached mailhog"
+ZELTRO_ALWAYS_ON_SERVICES="redis memcached mailhog"
 
 ensure_services_running() {
     local requested="$*" wanted="" svc changed=0 current
     [ -n "$requested" ] || return 0
 
     for svc in $requested; do
-        case " $PODIUM_ALWAYS_ON_SERVICES " in
+        case " $ZELTRO_ALWAYS_ON_SERVICES " in
             *" $svc "*) continue ;;   # always on; nothing to enable
         esac
         wanted="${wanted:+$wanted }$svc"
@@ -2587,8 +2587,8 @@ ensure_services_running() {
     # already-running stack costs nothing.
     local need_start=0 cname
     for svc in $wanted; do
-        cname="podium-$svc"
-        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        cname="zeltro-$svc"
+        [ "$svc" = "mysql" ] && cname="zeltro-mariadb"
         docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true || need_start=1
     done
 
@@ -2596,12 +2596,12 @@ ensure_services_running() {
         echo-cyan "Starting required shared services ..."
         # Run with the PROPOSED list rather than the persisted one, because
         # nothing is persisted yet — see below.
-        ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(podium_services_compose 2>/dev/null)")" 2>/dev/null
+        ( cd "$DEV_DIR/docker-stack" 2>/dev/null || cd "$(dirname "$(zeltro_services_compose 2>/dev/null)")" 2>/dev/null
           OPTIONAL_SERVICES="$current"
           # mapfile is bash 4+; macOS ships bash 3.2.
           _p=()
-          while IFS= read -r _p_line; do _p+=("$_p_line"); done < <(podium_profile_args)
-          docker compose -f /etc/podium-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
+          while IFS= read -r _p_line; do _p+=("$_p_line"); done < <(zeltro_profile_args)
+          docker compose -f /etc/zeltro-cli/docker-compose.yaml "${_p[@]}" up -d >/dev/null 2>&1 ) || true
     fi
 
     # Record only what actually came up. Persisting first meant a service whose
@@ -2609,11 +2609,11 @@ ensure_services_running() {
     # behind it, so `OPTIONAL_SERVICES` stopped being a statement about reality.
     local confirmed="${OPTIONAL_SERVICES:-}" failed=""
     for svc in $newly; do
-        cname="podium-$svc"
-        [ "$svc" = "mysql" ] && cname="podium-mariadb"
+        cname="zeltro-$svc"
+        [ "$svc" = "mysql" ] && cname="zeltro-mariadb"
         if docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true; then
             confirmed="${confirmed:+$confirmed }$svc"
-            PODIUM_SERVICES_ENABLED_THIS_RUN="$PODIUM_SERVICES_ENABLED_THIS_RUN $svc"
+            ZELTRO_SERVICES_ENABLED_THIS_RUN="$ZELTRO_SERVICES_ENABLED_THIS_RUN $svc"
         else
             failed="${failed:+$failed }$svc"
         fi
@@ -2621,14 +2621,14 @@ ensure_services_running() {
 
     if [ -n "$failed" ]; then
         echo-red "Could not start:$failed — left disabled." >&2
-        echo-white "  Check: docker compose -f /etc/podium-cli/docker-compose.yaml logs" >&2
+        echo-white "  Check: docker compose -f /etc/zeltro-cli/docker-compose.yaml logs" >&2
     fi
 
     if [ "$confirmed" != "${OPTIONAL_SERVICES:-}" ]; then
-        if grep -q "^OPTIONAL_SERVICES=" /etc/podium-cli/.env 2>/dev/null; then
-            sudo-podium-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$confirmed\"" /etc/podium-cli/.env
+        if grep -q "^OPTIONAL_SERVICES=" /etc/zeltro-cli/.env 2>/dev/null; then
+            sudo-zeltro-sed-change "/^OPTIONAL_SERVICES=/" "OPTIONAL_SERVICES=\"$confirmed\"" /etc/zeltro-cli/.env
         else
-            echo "OPTIONAL_SERVICES=\"$confirmed\"" | sudo tee -a /etc/podium-cli/.env > /dev/null
+            echo "OPTIONAL_SERVICES=\"$confirmed\"" | sudo tee -a /etc/zeltro-cli/.env > /dev/null
         fi
         export OPTIONAL_SERVICES="$confirmed"
     fi
@@ -2640,12 +2640,12 @@ ensure_services_running() {
 # Convenience: derive from a project's compose and ensure.
 ensure_services_for_project() {
     local project="$1" dir file text svcs
-    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}/$project"
-    file="$(podium_project_compose "$project")"
+    dir="${PROJECTS_DIR_PATH:-$HOME/zeltro-projects}/$project"
+    file="$(zeltro_project_compose "$project")"
 
     # Read BOTH the compose and the .env. Installers name the shared hostnames in
     # their compose; framework projects name them only in .env — Laravel defaults
-    # its session and cache to Redis, so a Laravel project needs podium-redis and
+    # its session and cache to Redis, so a Laravel project needs zeltro-redis and
     # says so nowhere else. Missing that produced a working database and a 500
     # from "RedisException: No route to host".
     text=""
@@ -2676,13 +2676,13 @@ ensure_services_for_engine() {
 # Services enabled during THIS command, so a front end can tell "postgres was
 # already here" from "we just turned postgres on for you". Accumulated by
 # ensure_services_running; read by setup_project when building its JSON.
-PODIUM_SERVICES_ENABLED_THIS_RUN=""
+ZELTRO_SERVICES_ENABLED_THIS_RUN=""
 
 # Admin UIs that can manage a given database service, excluding any already
 # enabled. Adminer is listed first deliberately — one ~50MB container covers
-# every engine Podium ships, so it is the right default suggestion.
+# every engine Zeltro ships, so it is the right default suggestion.
 #   $1 database service name
-podium_admin_uis_for() {
+zeltro_admin_uis_for() {
     local svc="$1" candidates="" ui out=""
     case "$svc" in
         mysql)    candidates="adminer phpmyadmin" ;;
@@ -2701,14 +2701,14 @@ podium_admin_uis_for() {
 
 # JSON fragment describing what was just enabled and what could manage it.
 # Empty when nothing was enabled, so callers can append it unconditionally.
-podium_services_json_fragment() {
-    local enabled="${PODIUM_SERVICES_ENABLED_THIS_RUN# }"
+zeltro_services_json_fragment() {
+    local enabled="${ZELTRO_SERVICES_ENABLED_THIS_RUN# }"
     [ -n "$enabled" ] || return 0
 
     local svc ui uis seen="" ui_json="" svc_json=""
     for svc in $enabled; do
         svc_json="${svc_json:+$svc_json, }\"$svc\""
-        uis="$(podium_admin_uis_for "$svc")"
+        uis="$(zeltro_admin_uis_for "$svc")"
         for ui in $uis; do
             case " $seen " in *" $ui "*) continue ;; esac
             seen="$seen $ui"
@@ -2781,7 +2781,7 @@ PYEOF
 # Can the HOST reach container IPs directly?
 #
 # Linux: yes. Docker's bridge sits on the host's own network stack, which is
-# exactly what Podium's /etc/hosts entries point at, so http://<project> works.
+# exactly what Zeltro's /etc/hosts entries point at, so http://<project> works.
 #
 # macOS: no, and it never will. Docker Desktop runs containers inside a VM, so a
 # container IP like 10.196.230.122 is unreachable from the host regardless of
@@ -2789,11 +2789,11 @@ PYEOF
 # real Mac: the container answers on http://localhost:<published-port> while its
 # own IP does not respond to ping or curl at all.
 #
-# Without this distinction `podium status` on a Mac reports PING: FAILED and
+# Without this distinction `zeltro status` on a Mac reports PING: FAILED and
 # HTTP: FAILED for every project and every shared service, and calls a running
 # MariaDB "enabled but NOT RUNNING" — all true statements that add up to a
 # healthy install looking broken.
-podium_host_reaches_containers() {
+zeltro_host_reaches_containers() {
     case "$OSTYPE" in
         darwin*) return 1 ;;
         *)       return 0 ;;
@@ -2803,22 +2803,22 @@ podium_host_reaches_containers() {
 ###############################################################################
 # Project address lookups — the compose file is the source of truth.
 #
-# These replace /etc/hosts, which Podium used to write and then read back as a
+# These replace /etc/hosts, which Zeltro used to write and then read back as a
 # registry. Every fact it held is already in the project's own docker-compose:
 #
 #     /etc/hosts:  10.247.177.168      sign-tools
 #     compose:     ipv4_address: 10.247.177.168   +   ports: - "168:80"
 #
 # Keeping a second copy meant they could disagree, and writing it was the only
-# thing making `podium new` require sudo — which is what let a piped installer
+# thing making `zeltro new` require sudo — which is what let a piped installer
 # have its password prompt eaten, and what forces every remote or automated
 # caller to solve an interactive auth problem it should never have had.
 ###############################################################################
 
 # The project's container IP, from its compose file. Empty if unknown.
-podium_project_ip() {
+zeltro_project_ip() {
     local f
-    f="$(podium_project_compose "$1")"
+    f="$(zeltro_project_compose "$1")"
     [ -n "$f" ] || return 0
     grep -E '^[[:space:]]*ipv4_address:' "$f" 2>/dev/null \
         | head -1 | sed 's/.*ipv4_address:[[:space:]]*//' | tr -d '"'"'"' '
@@ -2826,12 +2826,12 @@ podium_project_ip() {
 
 # The project's published host port, from its compose file. Empty if unknown.
 #
-# Reads the left-hand side of the first "HOST:CONTAINER" mapping. Podium's own
+# Reads the left-hand side of the first "HOST:CONTAINER" mapping. Zeltro's own
 # templates publish exactly one, and the port is the same number wherever you
 # ask from — unlike the IP, which is only meaningful on the host itself.
-podium_project_port() {
+zeltro_project_port() {
     local f
-    f="$(podium_project_compose "$1")"
+    f="$(zeltro_project_compose "$1")"
     [ -n "$f" ] || return 0
     grep -E '^[[:space:]]*-[[:space:]]*"?[0-9]+:[0-9]+"?' "$f" 2>/dev/null \
         | head -1 | sed 's/[^0-9]*\([0-9]*\):.*/\1/'
@@ -2843,9 +2843,9 @@ podium_project_port() {
 # but it asks the thing that actually decides, so it cannot go stale — a hosts
 # entry left behind by a half-removed project used to make an address
 # permanently unusable.
-podium_ip_in_use() {
+zeltro_ip_in_use() {
     local ip="$1" dir p f
-    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}"
+    dir="${PROJECTS_DIR_PATH:-$HOME/zeltro-projects}"
     [ -n "$ip" ] || return 1
     for p in "$dir"/*; do
         [ -d "$p" ] || continue
@@ -2860,9 +2860,9 @@ podium_ip_in_use() {
 }
 
 # Is this port already claimed by some project?
-podium_port_in_use() {
+zeltro_port_in_use() {
     local port="$1" dir p f
-    dir="${PROJECTS_DIR_PATH:-$HOME/podium-projects}"
+    dir="${PROJECTS_DIR_PATH:-$HOME/zeltro-projects}"
     [ -n "$port" ] || return 1
     for p in "$dir"/*; do
         [ -d "$p" ] || continue
@@ -2880,12 +2880,12 @@ podium_port_in_use() {
 #
 # Linux and inside WSL: the container address, directly routable.
 # macOS and Windows: the published port on localhost, because container IPs
-# live inside a VM there. Never a hostname — Podium does not write /etc/hosts.
-podium_project_url() {
+# live inside a VM there. Never a hostname — Zeltro does not write /etc/hosts.
+zeltro_project_url() {
     local ip port
-    ip="$(podium_project_ip "$1")"
-    port="$(podium_project_port "$1")"
-    if podium_host_reaches_containers && [ -n "$ip" ]; then
+    ip="$(zeltro_project_ip "$1")"
+    port="$(zeltro_project_port "$1")"
+    if zeltro_host_reaches_containers && [ -n "$ip" ]; then
         printf 'http://%s' "$ip"
     elif [ -n "$port" ]; then
         printf 'http://localhost:%s' "$port"

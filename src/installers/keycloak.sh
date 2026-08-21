@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot runs the schema build and migrations — give it a minute before the admin console answers."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"keycloak\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"keycloak\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     command: ["start", "--optimized=false"]
     environment:
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://podium-postgres:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://zeltro-postgres:5432/keycloak
       KC_DB_USERNAME: root
       KC_DB_PASSWORD: password
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

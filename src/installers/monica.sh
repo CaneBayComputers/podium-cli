@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Monica CRM"
 INSTALL_NOTES="Register your account on first visit — no default credentials."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS monica;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS monica;"
 }
 
 write_files() {
@@ -20,7 +20,7 @@ services:
       APP_URL: http://monica
       APP_FORCE_HTTPS: "false"
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: monica
       DB_USERNAME: root
@@ -28,7 +28,7 @@ services:
       CACHE_DRIVER: redis
       SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: 6379
     volumes:
       - monica-data:/var/www/html/storage

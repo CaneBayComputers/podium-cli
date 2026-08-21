@@ -29,7 +29,7 @@ cd "$PROJECTS_DIR"
 debug "Changed to projects directory: $(pwd)"
 
 
-# Initialize variables. START_ALL is set to 1 by the 'podium up-all' dispatch
+# Initialize variables. START_ALL is set to 1 by the 'zeltro up-all' dispatch
 # (via the environment), not by a user-facing flag.
 PROJECT_NAME=""
 START_ALL="${START_ALL:-0}"
@@ -52,16 +52,16 @@ while [[ "$#" -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS] <project_name>"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} [OPTIONS] <project_name>"
             echo-white "Start a project container (and shared services if not running)"
             echo-white ""
             echo-white "Arguments:"
-            echo-white "  project_name      Project to start (required; use 'podium up-all' for every project)"
+            echo-white "  project_name      Project to start (required; use 'zeltro up-all' for every project)"
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
-            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
+            echo-white "  --debug           Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo-white "  --help            Show this help message"
             exit 0
             ;;
@@ -80,7 +80,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [[ "$START_ALL" == "1" && -n "$PROJECT_NAME" ]]; then
-    error "Cannot combine 'podium up-all' with a project name."
+    error "Cannot combine 'zeltro up-all' with a project name."
 fi
 
 
@@ -102,25 +102,25 @@ start_project() {
   cd "$PROJECT_FOLDER_NAME"
   debug "Current directory: $(pwd)"
 
-  # Check for Podium project docker-compose.yaml
+  # Check for Zeltro project docker-compose.yaml
   debug "Checking docker-compose.yaml type"
   local compose_type=$(check_docker_compose_type "docker-compose.yaml")
   debug "Docker compose type: $compose_type"
   
   case "$compose_type" in
       "none")
-          echo-white "Run 'podium setup $PROJECT_FOLDER_NAME' to configure this project for Podium."
-          echo-yellow "$PROJECT_FOLDER_NAME is not configured for Podium. Run: podium setup $PROJECT_FOLDER_NAME"
+          echo-white "Run 'zeltro setup $PROJECT_FOLDER_NAME' to configure this project for Zeltro."
+          echo-yellow "$PROJECT_FOLDER_NAME is not configured for Zeltro. Run: zeltro setup $PROJECT_FOLDER_NAME"
           cd ..
           return 1
           ;;
-      "non-podium")
-          echo-white "Run 'podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Podium."
-          echo-yellow "$PROJECT_FOLDER_NAME has non-Podium docker-compose.yaml. Run: podium setup $PROJECT_FOLDER_NAME --overwrite-docker-compose"
+      "non-zeltro")
+          echo-white "Run 'zeltro setup $PROJECT_FOLDER_NAME --overwrite-docker-compose' to configure for Zeltro."
+          echo-yellow "$PROJECT_FOLDER_NAME has non-Zeltro docker-compose.yaml. Run: zeltro setup $PROJECT_FOLDER_NAME --overwrite-docker-compose"
           cd ..
           return 1
           ;;
-      "podium-project")
+      "zeltro-project")
           # Good to go - continue with startup
           ;;
   esac
@@ -131,7 +131,7 @@ start_project() {
   ensure_services_for_project "$PROJECT_FOLDER_NAME" || true
 
   # Already up? Then this call has nothing to do. Reported by the GUI session:
-  # `podium resume` on a running project ran a full start, which costs seconds
+  # `zeltro resume` on a running project ran a full start, which costs seconds
   # and can trigger a sudo prompt to change nothing — so "continue my AI
   # conversation" read as "restarted my project and asked for my password".
   # Every caller benefits, not just resume.
@@ -194,13 +194,13 @@ fi
 # Ensure we're back in the projects directory after sourcing other scripts
 cd "$PROJECTS_DIR_PATH"
 
-# A project name is required (or 'podium up-all', which sets START_ALL). Shared
+# A project name is required (or 'zeltro up-all', which sets START_ALL). Shared
 # services have already been started above — the useful, non-destructive part.
 if [[ -z "$PROJECT_NAME" && "$START_ALL" == "0" ]]; then
     echo-return
     echo-red "No project specified."
-    echo-white "Usage: podium up <project>     # start one project"
-    echo-white "       podium up-all           # start every project"
+    echo-white "Usage: zeltro up <project>     # start one project"
+    echo-white "       zeltro up-all           # start every project"
     exit 1
 fi
 
@@ -209,14 +209,14 @@ fi
 if [[ -n "$PROJECT_NAME" ]]; then
     # Refuse a disabled project rather than starting it. Disabling is an explicit
     # act, so silently overriding it here would make the state meaningless.
-    if podium_project_is_disabled "$PROJECT_NAME"; then
+    if zeltro_project_is_disabled "$PROJECT_NAME"; then
         echo-return
         echo-yellow "Project '$PROJECT_NAME' is disabled and was not started."
         echo-white  "Re-enable it first:"
-        echo-white  "  podium enable $PROJECT_NAME"
+        echo-white  "  zeltro enable $PROJECT_NAME"
         echo-return
         if [[ "$JSON_OUTPUT" == "1" ]]; then
-            echo "{\"action\": \"startup\", \"status\": \"error\", \"error\": \"project_disabled\", \"project\": \"$PROJECT_NAME\", \"details\": \"Project is disabled. Run 'podium enable $PROJECT_NAME' first.\"}"
+            echo "{\"action\": \"startup\", \"status\": \"error\", \"error\": \"project_disabled\", \"project\": \"$PROJECT_NAME\", \"details\": \"Project is disabled. Run 'zeltro enable $PROJECT_NAME' first.\"}"
         fi
         exit 1
     fi
@@ -240,7 +240,7 @@ elif [[ "$START_ALL" == "1" ]]; then
         # A disabled project is parked: up-all must pass over it. Announced
         # rather than silent, so "why didn't that one start" is answerable
         # without going and reading the compose file.
-        if podium_project_is_disabled "$PROJECT_FOLDER_NAME"; then
+        if zeltro_project_is_disabled "$PROJECT_FOLDER_NAME"; then
             echo-yellow "Skipping '$PROJECT_FOLDER_NAME' — disabled."
             continue
         fi
@@ -268,7 +268,7 @@ fi
 # Allow containers time to finish booting before running status checks.
 #
 # Skipped when nothing was started: the GUI session traced 12.00s of a 12.58s
-# no-op `podium up` to exactly this line. The early return above exits the
+# no-op `zeltro up` to exactly this line. The early return above exits the
 # per-project function, but this sits in the main body and ran regardless — so a
 # command that did nothing still waited 12 seconds for containers that had been
 # up for hours.
@@ -301,7 +301,7 @@ fi
 # The container is up but the app inside may still be binding its port (or
 # finishing a dependency install). Let the HTTP check retry instead of
 # reporting a false FAILED. Only affects freshly-started projects — plain
-# `podium status` keeps its single fast attempt.
+# `zeltro status` keeps its single fast attempt.
 export HTTP_WAIT_SECS="${HTTP_WAIT_SECS:-45}"
 
 # Show status to confirm successful startup

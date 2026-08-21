@@ -4,7 +4,7 @@ Personal finance / net-worth tracker — the community-maintained continuation o
 
 **Image**: `ghcr.io/we-promise/sure:0.7.0-hotfix.2`
 **Port**: 3000 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, db `sure`) + Redis (`podium-redis`, db 1) for Sidekiq
+**Database**: PostgreSQL (`zeltro-postgres`, db `sure`) + Redis (`zeltro-redis`, db 1) for Sidekiq
 **Credentials**: register on first visit — the first account becomes the admin
 
 ## Key Notes
@@ -14,4 +14,4 @@ Personal finance / net-worth tracker — the community-maintained continuation o
 - The entrypoint runs `./bin/rails db:prepare` **only when the command is `./bin/rails server`** — that is why the web service keeps the image's default command and only the worker overrides it with `bundle exec sidekiq`.
 - Both containers share `/rails/storage` (uploads/attachments) and must use the same `SECRET_KEY_BASE`.
 - Optional AI features want `OPENAI_ACCESS_TOKEN`; leaving it unset simply hides them.
-- The installer exists: run `podium install sure`.
+- The installer exists: run `zeltro install sure`.

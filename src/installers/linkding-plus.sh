@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="The 'plus' image bundles Chromium for HTML snapshots — enable archiving per-bookmark or globally in Settings."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"linkding_plus\";" 2>/dev/null || true
 }
 
@@ -17,7 +17,7 @@ services:
       LD_SUPERUSER_NAME: admin
       LD_SUPERUSER_PASSWORD: admin123
       LD_DB_ENGINE: postgres
-      LD_DB_HOST: podium-postgres
+      LD_DB_HOST: zeltro-postgres
       LD_DB_PORT: "5432"
       LD_DB_DATABASE: linkding_plus
       LD_DB_USER: root

@@ -2,7 +2,7 @@
 
 **Image**: `apache/superset:latest` (requires custom Dockerfile to add `psycopg2-binary`)
 **Port**: 8088 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password)
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password)
 **Credentials**: `admin / admin` (created via `superset fab create-admin` in the startup command)
 
 ## Key Notes
@@ -24,9 +24,9 @@
   ```
 - `SUPERSET_CONFIG_PATH` must point to that file.
 - The container command runs `superset db upgrade && superset fab create-admin ... && superset init && gunicorn ...`.
-- `DATABASE_URL` format: `postgresql+psycopg2://root:password@podium-postgres:5432/superset`.
+- `DATABASE_URL` format: `postgresql+psycopg2://root:password@zeltro-postgres:5432/superset`.
 - `SUPERSET_SECRET_KEY` — generate with `openssl rand -hex 32`.
-- Create DB first: `docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE superset;"`
+- Create DB first: `docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE superset;"`
 - nginx must forward `X-Forwarded-Host` and `X-Forwarded-Proto` headers for `ENABLE_PROXY_FIX` to work.
 - First startup takes ~2 minutes for migrations and UI build.
-- The installer exists: run `podium install superset`.
+- The installer exists: run `zeltro install superset`.

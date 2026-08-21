@@ -35,12 +35,12 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS]"
-            echo-white "Stop Podium shared services"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} [OPTIONS]"
+            echo-white "Stop Zeltro shared services"
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
-            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
+            echo-white "  --debug           Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo-white "  --no-colors       Disable colored output"
             echo-white "  --help            Show this help message"
             exit 0
@@ -65,7 +65,7 @@ if check-mariadb; then
 
     echo-cyan "Stopping services ..."; echo-white
 
-    cd /etc/podium-cli
+    cd /etc/zeltro-cli
 
     dockerdown
 

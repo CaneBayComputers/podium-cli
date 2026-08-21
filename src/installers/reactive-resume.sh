@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register an account on first visit"
 INSTALL_NOTES="No SMTP is configured, so email verification / password-reset links are printed to the container log."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"reactive_resume\";" 2>/dev/null || true
 }
 
@@ -22,10 +22,10 @@ services:
       NODE_ENV: production
       PORT: "3000"
       APP_URL: http://reactive-resume
-      DATABASE_URL: "postgresql://root:password@podium-postgres:5432/reactive_resume"
+      DATABASE_URL: "postgresql://root:password@zeltro-postgres:5432/reactive_resume"
       AUTH_SECRET: "$auth_secret"
       ENCRYPTION_SECRET: "$encryption_secret"
-      REDIS_URL: "redis://podium-redis:6379"
+      REDIS_URL: "redis://zeltro-redis:6379"
       LOCAL_STORAGE_PATH: /app/data
       FLAG_DISABLE_SIGNUPS: "false"
       FLAG_DISABLE_EMAIL_AUTH: "false"

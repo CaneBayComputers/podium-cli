@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123 at http://$PROJECT_NAME/ui/"
 INSTALL_NOTES="The master key is written to litellm-master-key.txt in the project directory — clients send it as the OpenAI API key."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE litellm;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE litellm;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,13 +20,13 @@ services:
     image: ghcr.io/berriai/litellm:v1.95.0
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/litellm
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/litellm
       STORE_MODEL_IN_DB: "True"
       LITELLM_MASTER_KEY: "$master_key"
       LITELLM_SALT_KEY: "$salt_key"
       UI_USERNAME: admin
       UI_PASSWORD: admin123
-      REDIS_URL: redis://podium-redis:6379/7
+      REDIS_URL: redis://zeltro-redis:6379/7
       LITELLM_MODE: PRODUCTION
       LITELLM_LOG: INFO
 

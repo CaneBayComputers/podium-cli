@@ -24,23 +24,23 @@ DEV_DIR=$(pwd)
 
 source scripts/pre_check.sh
 
-ACTION="disable"          # set by the dispatcher via $PODIUM_TOGGLE_ACTION
-[ -n "${PODIUM_TOGGLE_ACTION:-}" ] && ACTION="$PODIUM_TOGGLE_ACTION"
+ACTION="disable"          # set by the dispatcher via $ZELTRO_TOGGLE_ACTION
+[ -n "${ZELTRO_TOGGLE_ACTION:-}" ] && ACTION="$ZELTRO_TOGGLE_ACTION"
 
 PROJECT_NAME=""
 JSON_OUTPUT="${JSON_OUTPUT:-}"
 
 usage() {
     if [ "$ACTION" = "enable" ]; then
-        echo-white "Usage: ${PODIUM_CMD:-$0} <project> [--json-output]"
+        echo-white "Usage: ${ZELTRO_CMD:-$0} <project> [--json-output]"
         echo-white "Re-enable a disabled project so it can be started again."
     else
-        echo-white "Usage: ${PODIUM_CMD:-$0} <project> [--json-output]"
-        echo-white "Stop a project and park it: hidden from 'podium up-all' and from the"
-        echo-white "GUI's default view, and refused by 'podium up' until re-enabled."
+        echo-white "Usage: ${ZELTRO_CMD:-$0} <project> [--json-output]"
+        echo-white "Stop a project and park it: hidden from 'zeltro up-all' and from the"
+        echo-white "GUI's default view, and refused by 'zeltro up' until re-enabled."
         echo-white ""
         echo-white "Nothing is deleted — files, database and volumes are left alone."
-        echo-white "Re-enable with: podium enable <project>"
+        echo-white "Re-enable with: zeltro enable <project>"
     fi
     echo-white ""
     echo-white "Options:"
@@ -62,7 +62,7 @@ done
 
 if [ -z "$PROJECT_NAME" ]; then
     [[ "$JSON_OUTPUT" == "1" ]] && json_error "project name is required"
-    error "Error: project name is required. Usage: podium $ACTION <project>"
+    error "Error: project name is required. Usage: zeltro $ACTION <project>"
 fi
 
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
@@ -71,13 +71,13 @@ if [ ! -d "$PROJECT_DIR" ]; then
     error "Project '$PROJECT_NAME' not found in $PROJECTS_DIR_PATH."
 fi
 
-COMPOSE_FILE="$(podium_project_compose "$PROJECT_NAME")"
+COMPOSE_FILE="$(zeltro_project_compose "$PROJECT_NAME")"
 if [ -z "$COMPOSE_FILE" ]; then
-    [[ "$JSON_OUTPUT" == "1" ]] && json_error "project '$PROJECT_NAME' has no docker-compose file; run 'podium setup $PROJECT_NAME' first"
-    error "Project '$PROJECT_NAME' has no docker-compose file. Run: podium setup $PROJECT_NAME"
+    [[ "$JSON_OUTPUT" == "1" ]] && json_error "project '$PROJECT_NAME' has no docker-compose file; run 'zeltro setup $PROJECT_NAME' first"
+    error "Project '$PROJECT_NAME' has no docker-compose file. Run: zeltro setup $PROJECT_NAME"
 fi
 
-CURRENT="$(podium_project_status "$PROJECT_NAME")"
+CURRENT="$(zeltro_project_status "$PROJECT_NAME")"
 
 if [ "$ACTION" = "enable" ]; then
     if [ "$CURRENT" != "disabled" ]; then
@@ -90,7 +90,7 @@ if [ "$ACTION" = "enable" ]; then
         error "Could not update project metadata."
     }
     echo-green "Project '$PROJECT_NAME' enabled."
-    echo-white "Start it with: podium up $PROJECT_NAME"
+    echo-white "Start it with: zeltro up $PROJECT_NAME"
     [[ "$JSON_OUTPUT" == "1" ]] && echo "{\"action\": \"enable\", \"status\": \"success\", \"project\": \"$PROJECT_NAME\", \"project_status\": \"enabled\", \"changed\": true}"
     cd "$ORIG_DIR"; exit 0
 fi
@@ -119,8 +119,8 @@ set_x_metadata_key "$COMPOSE_FILE" "$PROJECT_NAME" "status" "disabled" || {
 }
 
 echo-green "Project '$PROJECT_NAME' disabled."
-echo-white "It is stopped, skipped by 'podium up-all', and hidden in the GUI."
-echo-white "Nothing was deleted. Re-enable with: podium enable $PROJECT_NAME"
+echo-white "It is stopped, skipped by 'zeltro up-all', and hidden in the GUI."
+echo-white "Nothing was deleted. Re-enable with: zeltro enable $PROJECT_NAME"
 [[ "$JSON_OUTPUT" == "1" ]] && echo "{\"action\": \"disable\", \"status\": \"success\", \"project\": \"$PROJECT_NAME\", \"project_status\": \"disabled\", \"changed\": true}"
 
 cd "$ORIG_DIR"

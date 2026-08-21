@@ -12,5 +12,5 @@
 - `TempPathHost` is only needed once you spawn sibling containers over the docker socket; it is not required here.
 - The dashboard uses SignalR over WebSockets for live status, so the proxy needs `proxy_http_version 1.1` plus upgrade headers or the UI hangs on "connecting".
 - Health endpoint is `GET /frasier`. The undocumented `FFPORT` env var changes the internal listen port — leave it unset for 5000.
-- The image is roughly 1 GB compressed; the first `podium install` spends most of its time pulling.
-- The installer exists: run `podium install fileflows`.
+- The image is roughly 1 GB compressed; the first `zeltro install` spends most of its time pulling.
+- The installer exists: run `zeltro install fileflows`.

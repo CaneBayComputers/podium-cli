@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / Admin123!"
 INSTALL_NOTES="First boot runs the Moodle CLI installer and can take 3-5 minutes before the site responds."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS moodle CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
         CREATE USER IF NOT EXISTS 'moodle'@'%' IDENTIFIED BY 'moodle';
         ALTER USER 'moodle'@'%' IDENTIFIED BY 'moodle';
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
     environment:
       DB_TYPE: mariadb
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_NAME: moodle
       DB_USER: moodle
@@ -31,7 +31,7 @@ services:
       MOODLE_PASSWORD: "Admin123!"
       MOODLE_EMAIL: admin@example.com
       MOODLE_SITENAME: Moodle
-      SMTP_HOST: podium-mailhog
+      SMTP_HOST: zeltro-mailhog
       SMTP_PORT: 1025
       SMTP_SECURITY: ""
     volumes:

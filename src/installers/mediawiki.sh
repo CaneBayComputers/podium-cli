@@ -4,7 +4,7 @@ INSTALL_NOTES="The setup wizard is run for you by a one-shot installer service; 
 INSTALL_READY_RETRIES=40
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS mediawiki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS mediawiki CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
 }
 
 write_files() {
@@ -27,7 +27,7 @@ services:
         test -f /conf/LocalSettings.php ||
         php maintenance/run.php install
         --dbtype=mysql
-        --dbserver=podium-mariadb
+        --dbserver=zeltro-mariadb
         --dbname=mediawiki
         --dbuser=root
         --dbpass=""
@@ -36,7 +36,7 @@ services:
         --lang=en
         --pass=mediawiki123
         --confpath=/conf
-        "Podium Wiki" admin
+        "Zeltro Wiki" admin
 
   app:
     image: mediawiki:1.46.0

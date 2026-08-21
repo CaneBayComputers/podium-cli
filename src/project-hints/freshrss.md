@@ -6,10 +6,10 @@ No external database is needed — FreshRSS uses SQLite by default. Persist `/va
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/freshrss`
+1. `mkdir -p ~/zeltro-projects/freshrss`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/freshrss && podium setup freshrss --no-startup`
-4. `podium up freshrss`
+3. `cd ~/zeltro-projects/freshrss && zeltro setup freshrss --no-startup`
+4. `zeltro up freshrss`
 5. Verify: `curl -sI http://freshrss/` — expect HTTP 200 or 302.
 
 ## docker-compose.yaml
@@ -37,7 +37,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## Admin

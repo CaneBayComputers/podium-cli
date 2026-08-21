@@ -8,15 +8,15 @@
 ## Key Notes
 - The mondedie image rejects the root MariaDB user — create a dedicated user first:
   ```
-  docker exec podium-mariadb mariadb -u root -e "
+  docker exec zeltro-mariadb mariadb -u root -e "
     CREATE DATABASE IF NOT EXISTS flarum CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     CREATE USER IF NOT EXISTS 'flarum'@'%' IDENTIFIED BY 'FlarumDbPassword123!';
     GRANT ALL PRIVILEGES ON flarum.* TO 'flarum'@'%';
     FLUSH PRIVILEGES;"
   ```
-- `FORUM_URL: http://flarum` must match the Podium hostname exactly.
+- `FORUM_URL: http://flarum` must match the Zeltro hostname exactly.
 - `FLARUM_PORT: 8888` — nginx proxies to this port.
 - `LOG_TO_STDOUT: "true"` keeps logs visible in docker logs.
 - First startup takes a few minutes while Flarum installs extensions.
 - Persist `flarum-assets`, `flarum-extensions`, `flarum-logs` volumes.
-- The installer exists: run `podium install flarum`.
+- The installer exists: run `zeltro install flarum`.

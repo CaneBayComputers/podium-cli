@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="register on first visit"
 INSTALL_NOTES="Add a TMDB API key under Settings to enable movie/TV metadata lookups."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE yamtrack;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE yamtrack;" 2>/dev/null || true
 }
 
 write_files() {
@@ -18,12 +18,12 @@ services:
     environment:
       SECRET: "$secret"
       URLS: http://yamtrack
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       DB_NAME: yamtrack
       DB_USER: root
       DB_PASSWORD: password
-      REDIS_URL: redis://podium-redis:6379/2
+      REDIS_URL: redis://zeltro-redis:6379/2
       REDIS_PREFIX: yamtrack
       TZ: UTC
 

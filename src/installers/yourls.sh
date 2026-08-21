@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/admin/ to manage your short links."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS yourls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS yourls CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -47,7 +47,7 @@ services:
     image: ghcr.io/yourls/yourls:latest
     restart: unless-stopped
     environment:
-      YOURLS_DB_HOST: podium-mariadb
+      YOURLS_DB_HOST: zeltro-mariadb
       YOURLS_DB_USER: root
       YOURLS_DB_PASS: ""
       YOURLS_DB_NAME: yourls

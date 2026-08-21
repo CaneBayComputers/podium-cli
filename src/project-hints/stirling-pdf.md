@@ -6,10 +6,10 @@ No external database or special configuration is needed.
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/stirling-pdf`
+1. `mkdir -p ~/zeltro-projects/stirling-pdf`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/stirling-pdf && podium setup stirling-pdf --no-startup`
-4. `podium up stirling-pdf`
+3. `cd ~/zeltro-projects/stirling-pdf && zeltro setup stirling-pdf --no-startup`
+4. `zeltro up stirling-pdf`
 5. Verify: `curl -sI http://stirling-pdf/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -45,7 +45,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

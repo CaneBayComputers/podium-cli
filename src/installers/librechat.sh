@@ -18,7 +18,7 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: "3080"
-      MONGO_URI: mongodb://root:password@podium-mongo:27017/librechat?authSource=admin
+      MONGO_URI: mongodb://root:password@zeltro-mongo:27017/librechat?authSource=admin
       DOMAIN_CLIENT: http://librechat
       DOMAIN_SERVER: http://librechat
       NO_INDEX: "true"

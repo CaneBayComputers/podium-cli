@@ -6,7 +6,7 @@ nav_order: 9
 
 # Command reference
 
-Run `podium --help` for the same list in your terminal, or `podium <command> --help` for one command.
+Run `zeltro --help` for the same list in your terminal, or `zeltro <command> --help` for one command.
 
 Commands marked *(project dir)* must be run from inside a project directory.
 
@@ -17,114 +17,114 @@ Commands marked *(project dir)* must be run from inside a project directory.
 
 | Command | Description |
 |---------|-------------|
-| `podium composer <args>` | Run Composer commands inside container |
-| `podium art <args>` | Run Laravel Artisan commands |
-| `podium wp <args>` | Run WordPress CLI commands |
-| `podium php <args>` | Run PHP inside container |
-| `podium npm <args>` | Run npm commands inside container |
-| `podium npx <args>` | Run npx commands inside container |
-| `podium node <args>` | Run Node.js inside container |
-| `podium python <args>` | Run Python inside container |
-| `podium pip <args>` | Run pip inside container |
-| `podium shell` | Open framework-aware interactive shell or REPL |
+| `zeltro composer <args>` | Run Composer commands inside container |
+| `zeltro art <args>` | Run Laravel Artisan commands |
+| `zeltro wp <args>` | Run WordPress CLI commands |
+| `zeltro php <args>` | Run PHP inside container |
+| `zeltro npm <args>` | Run npm commands inside container |
+| `zeltro npx <args>` | Run npx commands inside container |
+| `zeltro node <args>` | Run Node.js inside container |
+| `zeltro python <args>` | Run Python inside container |
+| `zeltro pip <args>` | Run pip inside container |
+| `zeltro shell` | Open framework-aware interactive shell or REPL |
 
 ### ✅ Static Analysis & Linting
 *Run from project directory; paths are relative to the project root (for example `app/Console/Commands/Foo.php`)*
 
 | Command | Description |
 |---------|-------------|
-| `podium phpcs <relative-path>` | Run PHPCS with the default ruleset |
-| `podium phpcbf <relative-path>` | Run PHPCBF with the default ruleset to auto-fix |
-| `podium phpmd <relative-path>` | Run PHPMD against a file using the default rules |
-| `podium php -l <relative-path>` | Run PHP lint against a file |
+| `zeltro phpcs <relative-path>` | Run PHPCS with the default ruleset |
+| `zeltro phpcbf <relative-path>` | Run PHPCBF with the default ruleset to auto-fix |
+| `zeltro phpmd <relative-path>` | Run PHPMD against a file using the default rules |
+| `zeltro php -l <relative-path>` | Run PHP lint against a file |
 
 ### 📦 Container Execution
 *Run from project directory*
 
 | Command | Description |
 |---------|-------------|
-| `podium exec <cmd>` | Execute command as developer user (no TTY, automation‑friendly) |
-| `podium exec-root <cmd>` | Execute command as root user (no TTY) |
-| `podium exec-tty <cmd>` | Execute command as developer user with TTY (interactive) |
-| `podium exec-tty-root <cmd>` | Execute command as root user with TTY (interactive) |
-| `podium bash [args]` | Open bash shell inside container with TTY |
-| `podium tinker [args]` | Open Laravel tinker REPL inside container with TTY |
+| `zeltro exec <cmd>` | Execute command as developer user (no TTY, automation‑friendly) |
+| `zeltro exec-root <cmd>` | Execute command as root user (no TTY) |
+| `zeltro exec-tty <cmd>` | Execute command as developer user with TTY (interactive) |
+| `zeltro exec-tty-root <cmd>` | Execute command as root user with TTY (interactive) |
+| `zeltro bash [args]` | Open bash shell inside container with TTY |
+| `zeltro tinker [args]` | Open Laravel tinker REPL inside container with TTY |
 
 ### ⚡ Enhanced Laravel Commands
 *Run from project directory*
 
 | Command | Description |
 |---------|-------------|
-| `podium db-refresh` | Fresh migration + seed |
-| `podium cache-refresh` | Clear all Laravel caches |
+| `zeltro db-refresh` | Fresh migration + seed |
+| `zeltro cache-refresh` | Clear all Laravel caches |
 
 ### 🐍 Enhanced Django Commands
 *Run from project directory*
 
 | Command | Description |
 |---------|-------------|
-| `podium django manage <args>` | Run `manage.py` with arguments |
-| `podium django shell` | Open Django interactive shell |
+| `zeltro django manage <args>` | Run `manage.py` with arguments |
+| `zeltro django shell` | Open Django interactive shell |
 
 ### 🔧 Service Management
 *Run from anywhere*
 
 | Command | Description |
 |---------|-------------|
-| `podium mysql <args>` | Run MySQL client inside the `mariadb` service container |
-| `podium redis <cmd>` | Run Redis CLI commands |
-| `podium redis-flush` | Flush all Redis data |
-| `podium memcache <cmd>` | Run Memcached commands via telnet |
-| `podium memcache-flush` | Flush all Memcached data |
-| `podium memcache-stats` | Show Memcached statistics |
+| `zeltro mysql <args>` | Run MySQL client inside the `mariadb` service container |
+| `zeltro redis <cmd>` | Run Redis CLI commands |
+| `zeltro redis-flush` | Flush all Redis data |
+| `zeltro memcache <cmd>` | Run Memcached commands via telnet |
+| `zeltro memcache-flush` | Flush all Memcached data |
+| `zeltro memcache-stats` | Show Memcached statistics |
 
 ### 🎛️ Process Management
 *Run from project directory*
 
 | Command | Description |
 |---------|-------------|
-| `podium supervisor <cmd>` | Run supervisorctl commands |
-| `podium supervisor-status` | Show all supervised processes |
+| `zeltro supervisor <cmd>` | Run supervisorctl commands |
+| `zeltro supervisor-status` | Show all supervised processes |
 
 ### 📁 Project Management
 
 | Command | Description |
 |---------|-------------|
-| `podium up <project>` | Start a project (shared services start regardless) |
-| `podium up-all` | Start every project |
-| `podium down <project>` | Stop a project (shared services stay up — use `podium stop-services`) |
-| `podium down-all` | Stop every project (shared services stay up) |
-| `podium status [project] [--all]` | Show status of active (running) projects; `--all` includes stopped projects |
-| `podium new <framework> <name> [options]` | Create a new project (framework + name required; DB auto-selected, override with `--database`) |
-| `podium create "<idea>"` | Create a project from a plain-English idea, then start an interactive AI session in the project dir |
-| `podium resume <project>` | Resume the last AI session for a project |
-| `podium install <app>` | Install a popular OSS app in one command (`--list` to see all) |
-| `podium clone <mode> <repo> [name]` | Clone an existing repo (mode: `work-directly` / `fork` / `new-repo`) |
-| `podium setup <project> [options]` | Set up an existing project directory |
-| `podium remove <project> [options]` | Remove a project (DB preserved unless `--force-db-delete`) |
+| `zeltro up <project>` | Start a project (shared services start regardless) |
+| `zeltro up-all` | Start every project |
+| `zeltro down <project>` | Stop a project (shared services stay up — use `zeltro stop-services`) |
+| `zeltro down-all` | Stop every project (shared services stay up) |
+| `zeltro status [project] [--all]` | Show status of active (running) projects; `--all` includes stopped projects |
+| `zeltro new <framework> <name> [options]` | Create a new project (framework + name required; DB auto-selected, override with `--database`) |
+| `zeltro create "<idea>"` | Create a project from a plain-English idea, then start an interactive AI session in the project dir |
+| `zeltro resume <project>` | Resume the last AI session for a project |
+| `zeltro install <app>` | Install a popular OSS app in one command (`--list` to see all) |
+| `zeltro clone <mode> <repo> [name]` | Clone an existing repo (mode: `work-directly` / `fork` / `new-repo`) |
+| `zeltro setup <project> [options]` | Set up an existing project directory |
+| `zeltro remove <project> [options]` | Remove a project (DB preserved unless `--force-db-delete`) |
 
 ### ⚙️ System Management
 
 | Command | Description |
 |---------|-------------|
-| `podium configure` | Configure Podium environment |
-| `podium ai [--one-off] "<prompt>"` | Start interactive AI agent session (or one-off with `--one-off`) |
-| `podium ai-set [options]` | Configure global AI agent, model, and API key |
-| `podium update` | Update Podium CLI and base Docker images |
-| `podium start-services` | Start shared services |
-| `podium stop-services` | Stop shared services |
-| `podium uninstall` | Remove all Podium Docker resources |
-| `podium projects-dir` | Show projects directory path |
+| `zeltro configure` | Configure Zeltro environment |
+| `zeltro ai [--one-off] "<prompt>"` | Start interactive AI agent session (or one-off with `--one-off`) |
+| `zeltro ai-set [options]` | Configure global AI agent, model, and API key |
+| `zeltro update` | Update Zeltro CLI and base Docker images |
+| `zeltro start-services` | Start shared services |
+| `zeltro stop-services` | Stop shared services |
+| `zeltro uninstall` | Remove all Zeltro Docker resources |
+| `zeltro projects-dir` | Show projects directory path |
 
-#### `podium ai-set` options
+#### `zeltro ai-set` options
 
-`podium ai-set` manages the global AI agent CLI, model, and API key used by Podium.
+`zeltro ai-set` manages the global AI agent CLI, model, and API key used by Zeltro.
 
 ```bash
-podium ai-set --agent claude --model claude-opus-4-7
-podium ai-set --agent codex --model gpt-4.1
-podium ai-set --agent aider --model openai/gpt-4o --api-key sk-...
-podium ai-set --json-output
+zeltro ai-set --agent claude --model claude-opus-4-7
+zeltro ai-set --agent codex --model gpt-4.1
+zeltro ai-set --agent aider --model openai/gpt-4o --api-key sk-...
+zeltro ai-set --json-output
 ```
 
 Supported flags:
@@ -138,15 +138,15 @@ Supported flags:
 Examples:
 
 - Inspect current AI settings:
-  - `podium ai-set --json-output`
+  - `zeltro ai-set --json-output`
 - Configure Codex with a model:
-  - `podium ai-set --agent codex --model gpt-4.1`
+  - `zeltro ai-set --agent codex --model gpt-4.1`
 - Configure Claude with a model:
-  - `podium ai-set --agent claude --model claude-opus-4-7`
+  - `zeltro ai-set --agent claude --model claude-opus-4-7`
 - Configure Aider against OpenAI:
-  - `podium ai-set --agent aider --model openai/gpt-4o --api-key sk-...`
+  - `zeltro ai-set --agent aider --model openai/gpt-4o --api-key sk-...`
 - Configure Aider against a local Ollama server:
-  - `podium ai-set --agent aider --model openai/llama3.1 --api-key ollama --api-base http://localhost:11434/v1`
+  - `zeltro ai-set --agent aider --model openai/llama3.1 --api-key ollama --api-base http://localhost:11434/v1`
 
 #### Aider
 
@@ -156,13 +156,13 @@ directly to a provider's API, so it needs a model **and** a key.
 - The model name selects the provider: `openai/gpt-4o`, `anthropic/claude-sonnet-4-5`,
   `gemini/gemini-2.5-pro`, `deepseek/deepseek-chat`. See
   [aider's model list](https://aider.chat/docs/llms.html).
-- Aider tags keys by provider (`--api-key openai=sk-...`). Podium stores a bare key
+- Aider tags keys by provider (`--api-key openai=sk-...`). Zeltro stores a bare key
   and tags it from the model prefix, so `--api-key sk-...` is all you need. A key
   that already contains `=` is passed through as-is.
 - `--api-base` is only needed for an OpenAI-compatible server — Ollama, LM Studio,
   OpenRouter, vLLM. Prefix the model with `openai/` when you use one. Leave it blank
   for a provider's own hosted API.
-- Podium runs Aider with `--no-auto-commits`, so its edits land in your working tree
+- Zeltro runs Aider with `--no-auto-commits`, so its edits land in your working tree
   like every other agent's instead of being committed for you.
 
 ### 🤖 AI-assisted project creation
@@ -170,8 +170,8 @@ directly to a provider's API, so it needs a model **and** a key.
 ### Classify only (for GUIs and other front ends)
 
 ```bash
-podium create --classify-only "<idea>"                  # human-readable
-podium create --classify-only --json-output "<idea>"    # machine-readable
+zeltro create --classify-only "<idea>"                  # human-readable
+zeltro create --classify-only --json-output "<idea>"    # machine-readable
 ```
 
 Runs only the classify phase: works out the stack, prints the result, exits 0,
@@ -182,7 +182,7 @@ This exists because the normal non-interactive path (`--one-off`,
 `--json-output`) silently takes the top recommendation — fine for automation,
 but it throws away the choice a person would have made at the menu. A front end
 that wants to present those choices natively should classify first, show the
-candidates, then call `podium install <app>` or `podium new <framework> <name>`
+candidates, then call `zeltro install <app>` or `zeltro new <framework> <name>`
 with whatever the user picked.
 
 The JSON carries `project_name` (`null` when the idea implies no real subject,
@@ -193,55 +193,55 @@ last, capped at 5. **Apps carry a single fixed `database`** set by the installer
 database choice for an app. On failure it emits
 `{"action": "classify", "status": "error", "message": "..."}` and exits non-zero.
 
-`podium create` collects your project idea, adds Podium-specific instructions, and hands the combined prompt to your configured AI CLI. Podium sets up the environment. The AI builds the app.
+`zeltro create` collects your project idea, adds Zeltro-specific instructions, and hands the combined prompt to your configured AI CLI. Zeltro sets up the environment. The AI builds the app.
 
 ```bash
 # asks what you want to build (interactive terminals only)
-podium create
+zeltro create
 
 # Pass the idea directly
-podium create "A timeclock for employees in Django"
-podium create "A customer check-in system in Laravel"
-podium create "An inventory tracker in Express"
+zeltro create "A timeclock for employees in Django"
+zeltro create "A customer check-in system in Laravel"
+zeltro create "An inventory tracker in Express"
 
 # Point to an existing GitHub repo to clone and set it up
-podium create "https://github.com/monicahq/monica"
+zeltro create "https://github.com/monicahq/monica"
 ```
 
 What the AI agent does:
 
 1. If the framework or stack is unclear, asks which one to use before continuing.
-2. Runs `podium new` to create the project and start its containers.
+2. Runs `zeltro new` to create the project and start its containers.
 3. Reads the generated `.env` file to understand database, cache, and mail configuration.
 4. Builds the app using framework-native conventions: migrations, models, seeders, routes, controllers, templates.
 5. Updates the project README with the local URL, useful commands, and default credentials if any.
 
-If your idea matches a known app that has a Podium installer (Grafana, Gitea, n8n, Portainer, etc.), the agent runs `podium install <name>` first — getting it live in seconds — then applies any additional customization from your prompt. You never have to write a docker-compose file or know which port the app listens on.
+If your idea matches a known app that has a Zeltro installer (Grafana, Gitea, n8n, Portainer, etc.), the agent runs `zeltro install <name>` first — getting it live in seconds — then applies any additional customization from your prompt. You never have to write a docker-compose file or know which port the app listens on.
 
-The AI CLI can be cloud-based or local depending on your configuration. Use `podium ai-set` to choose which agent is used.
+The AI CLI can be cloud-based or local depending on your configuration. Use `zeltro ai-set` to choose which agent is used.
 
 ### 🤖 AI agent sessions
 
-Once you have set your global AI agent with `podium ai-set`, you can start an interactive AI session seeded with a prompt from any Podium project directory:
+Once you have set your global AI agent with `zeltro ai-set`, you can start an interactive AI session seeded with a prompt from any Zeltro project directory:
 
 ```bash
 cd /path/to/project
-podium ai "Build a unique homepage hero section."
+zeltro ai "Build a unique homepage hero section."
 ```
 
-By default `podium ai` sends a **one-off** prompt — the agent receives it, does the work, and exits. Durable project context lives in the project's `AGENTS.md` (Podium writes it on creation), so each prompt can stand alone. Add `--interactive` if you want a persistent session instead:
+By default `zeltro ai` sends a **one-off** prompt — the agent receives it, does the work, and exits. Durable project context lives in the project's `AGENTS.md` (Zeltro writes it on creation), so each prompt can stand alone. Add `--interactive` if you want a persistent session instead:
 
 ```bash
-podium ai --interactive "Add a health-check endpoint at /ping"
+zeltro ai --interactive "Add a health-check endpoint at /ping"
 ```
 
-`podium ai` / `podium create`:
+`zeltro ai` / `zeltro create`:
 
-- Looks up your configured `AI_AGENT`, `AI_MODEL`, `AI_API_KEY`, and `AI_API_BASE` from `/etc/podium-cli/.env`.
+- Looks up your configured `AI_AGENT`, `AI_MODEL`, `AI_API_KEY`, and `AI_API_BASE` from `/etc/zeltro-cli/.env`.
 - Starts an interactive AI agent session (or non-interactive with `--one-off`) seeded with the prompt using safe, automation-friendly flags:
   - Codex: `OPENAI_API_KEY="$AI_API_KEY" codex [--model "$AI_MODEL"] --dangerously-bypass-approvals-and-sandbox "<prompt>"` (interactive) / `codex exec ...` (one-off)
   - Claude: `ANTHROPIC_API_KEY="$AI_API_KEY" claude --dangerously-skip-permissions [-p] [--model "$AI_MODEL"] "<prompt>"` (`-p` added for `--one-off`)
-  - Codex and Claude both **removed their `--api-key` flags**; the key is passed through the environment instead. Podium checks the key looks like it belongs to that provider (`sk-ant-` for Claude) and, if it does not, ignores it with a warning and lets the CLI use its own sign-in — a key for the wrong provider would otherwise replace working auth with auth that cannot work.
+  - Codex and Claude both **removed their `--api-key` flags**; the key is passed through the environment instead. Zeltro checks the key looks like it belongs to that provider (`sk-ant-` for Claude) and, if it does not, ignores it with a warning and lets the CLI use its own sign-in — a key for the wrong provider would otherwise replace working auth with auth that cannot work.
   - Gemini: `gemini --yolo --skip-trust [--model "$AI_MODEL"] -i "<prompt>"` (interactive) / `... --output-format text --prompt ...` (one-off)
   - Aider: `aider --yes-always --no-auto-commits --no-check-update [--model "$AI_MODEL"] [--api-key <provider>="$AI_API_KEY"] [--openai-api-base "$AI_API_BASE"] --message "<prompt>"` (one-off). Aider's `--message` exits after the reply, so interactive runs seed the session with `--load` instead and hand it back to you. `--no-git` is added when the directory isn't already a git repository, so `--yes-always` can't silently `git init` it.
 
@@ -253,11 +253,11 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--json-output` | Clean JSON output (suppresses all text/colors) |
 | `--no-colors` | Disable colored output |
-| `--debug` | Enable debug logging to `/tmp/podium-cli-debug.log` |
+| `--debug` | Enable debug logging to `/tmp/zeltro-cli-debug.log` |
 
 ### New Project Options
 
-`podium new <framework> <name>` — framework and name are **required positional arguments**. Framework is one of: `laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`, `nextjs`, `nuxt`, `sveltekit`, `astro`, `hono`, `react`, `vue`.
+`zeltro new <framework> <name>` — framework and name are **required positional arguments**. Framework is one of: `laravel`, `wordpress`, `php`, `fastapi`, `flask`, `django`, `python`, `express`, `nestjs`, `fastify`, `node`, `nextjs`, `nuxt`, `sveltekit`, `astro`, `hono`, `react`, `vue`.
 
 | Option | Description | Values |
 |--------|-------------|---------|
@@ -274,7 +274,7 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 
 ### Clone Project Options
 
-`podium clone <mode> <repo> [name]` — **mode** is a required first argument: `work-directly` (clone and keep the original as upstream), `fork` (fork to your GitHub account), or `new-repo` (create a new GitHub repo for it).
+`zeltro clone <mode> <repo> [name]` — **mode** is a required first argument: `work-directly` (clone and keep the original as upstream), `fork` (fork to your GitHub account), or `new-repo` (create a new GitHub repo for it).
 
 | Option | Description |
 |--------|-------------|
@@ -285,13 +285,13 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 | `--no-migration` | Skip database migrations (they run by default — non-destructive `migrate` for adopted apps) |
 | `--framework <name>` | Force framework detection (`laravel`, `kavera`, `wordpress`, `octobercms`, `php`, `django`, `flask`, `fastapi`, `python`, `express`, `nestjs`, `fastify`, `node`, `nextjs`, `nuxt`, `sveltekit`, `astro`, `hono`, `react`, `vue`) |
 | `--image <ref>` | Override the project's Docker image (for an adapted complex compose, overrides the web-facing service's image; default: the framework's cbc base image) |
-| `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `podium up` |
+| `--no-startup` | Register and adapt project without starting the container — use this to inspect the adapted docker-compose before running `zeltro up` |
 | `--github-org <org>` | For `new-repo` mode: create the repository in this organization |
 | `--public` | Make the new GitHub repository public (default: private) |
 | `--private` | Make the new GitHub repository private |
 | `--no-storage-symlink` | Skip creating `public/storage` symlink (Laravel) |
 
-> **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Podium automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Podium's shared containers (`podium-postgres`, `podium-mariadb`, `podium-redis`, `podium-mongo`). The web-facing service gets a static VPC IP. Image type only affects this compose adaptation — framework steps (composer install, `.env` wiring, migrations) are driven by framework detection and run for adapted projects too. Pass `--no-startup` to review the adapted compose before it boots, `--overwrite-env` to repoint an existing app's `.env` connection settings at the shared services (preserving `APP_KEY`), and `--no-migration` to skip migrations.
+> **Complex projects**: When cloning a project that ships its own multi-service docker-compose (bundled database, cache, workers), Zeltro automatically adapts it: bundled DB/cache services are removed and their env vars are repointed to Zeltro's shared containers (`zeltro-postgres`, `zeltro-mariadb`, `zeltro-redis`, `zeltro-mongo`). The web-facing service gets a static VPC IP. Image type only affects this compose adaptation — framework steps (composer install, `.env` wiring, migrations) are driven by framework detection and run for adapted projects too. Pass `--no-startup` to review the adapted compose before it boots, `--overwrite-env` to repoint an existing app's `.env` connection settings at the shared services (preserving `APP_KEY`), and `--no-migration` to skip migrations.
 
 ### Setup Project Options
 
@@ -325,10 +325,10 @@ podium ai --interactive "Add a health-check endpoint at /ping"
 |--------|-------------|
 | `--git-name <name>` | Git user name |
 | `--git-email <email>` | Git user email |
-| `--projects-dir <dir>` | Projects directory (default: existing or `~/podium-projects`) |
+| `--projects-dir <dir>` | Projects directory (default: existing or `~/zeltro-projects`) |
 | `--vpc-subnet <A.B.C>` | Custom Docker VPC subnet (default: existing or random `10.x.x`) |
 
-Re-running `podium configure` is safe — values from `/etc/podium-cli/.env` are kept as defaults, and prompts let you change them. Hosts entries for shared services are verified rather than rebuilt, so unchanged installs stay quiet.
+Re-running `zeltro configure` is safe — values from `/etc/zeltro-cli/.env` are kept as defaults, and prompts let you change them. Hosts entries for shared services are verified rather than rebuilt, so unchanged installs stay quiet.
 
 ## 💡 Usage Examples
 
@@ -336,65 +336,65 @@ Re-running `podium configure` is safe — values from `/etc/podium-cli/.env` are
 
 ```bash
 # Clone a Git repository and set it up automatically
-podium clone https://github.com/user/my-laravel-app
+zeltro clone https://github.com/user/my-laravel-app
 
 # Clone with custom name and options
-podium clone https://github.com/user/company-project my-local-name
+zeltro clone https://github.com/user/company-project my-local-name
 
 # Manual Git clone, then setup
 git clone https://github.com/user/company-project
-podium setup company-project
-podium up company-project
+zeltro setup company-project
+zeltro up company-project
 
-# Downloaded ZIP file - extract to ~/podium-projects/company-project/
-podium setup company-project
-podium up company-project
+# Downloaded ZIP file - extract to ~/zeltro-projects/company-project/
+zeltro setup company-project
+zeltro up company-project
 
 # Copied project folder
-cp -r existing-project ~/podium-projects/new-project
-podium setup new-project --overwrite-docker-compose
+cp -r existing-project ~/zeltro-projects/new-project
+zeltro setup new-project --overwrite-docker-compose
 ```
 
 ### WordPress Development
 
 ```bash
 # Create a WordPress project (MySQL is auto-selected)
-podium new wordpress wp-site --version latest
+zeltro new wordpress wp-site --version latest
 
 # Install and activate plugins
-podium wp plugin install woocommerce --activate
-podium wp plugin list --status=active
+zeltro wp plugin install woocommerce --activate
+zeltro wp plugin list --status=active
 ```
 
 ### JSON Output for Automation
 
 ```bash
 # Get project status as JSON for scripts/GUI
-podium status --json-output
+zeltro status --json-output
 
 # Create project with JSON response
-podium new fastapi my-api --database postgres --json-output
+zeltro new fastapi my-api --database postgres --json-output
 
 # Check if services are running in a script
-if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep -q "RUNNING"; then
+if zeltro status --json-output | jq -r '.shared_services.mariadb.status' | grep -q "RUNNING"; then
     echo "Database is ready"
 fi
 
 # Batch project operations (--all so stopped projects are included)
-for project in $(podium status --all --json-output | jq -r '.projects[].name'); do
-    podium up $project --json-output
+for project in $(zeltro status --all --json-output | jq -r '.projects[].name'); do
+    zeltro up $project --json-output
 done
 ```
 
 #### Reading the address fields
 
-Each project in `podium status --json-output` carries several address fields.
+Each project in `zeltro status --json-output` carries several address fields.
 They mean different things, and one of them is easy to misuse:
 
 | Field | Meaning |
 |---|---|
 | `external_port` | The published port. **The only portable field** — a port is the same number no matter where you ask from. |
-| `local_url` | `http://<project>` — works on the machine running Podium, via its `/etc/hosts` entry. |
+| `local_url` | `http://<project>` — works on the machine running Zeltro, via its `/etc/hosts` entry. |
 | `lan_url` | The host's own view of itself: its LAN address and the published port. |
 | `metadata` | Display metadata from the project's `x-metadata` block; `{}` when it has none. |
 
@@ -410,7 +410,7 @@ They mean different things, and one of them is easy to misuse:
 > render `lan_url` to a remote user.
 
 {: .note }
-> A listening port is not the same as a reachable one. Podium reports what the
+> A listening port is not the same as a reachable one. Zeltro reports what the
 > host can see about itself; whether your packets arrive is a property of the
 > network between you and it — security groups, NAT, VPNs, or simply whether a
 > laptop is awake. That question can only be answered from the machine doing the
@@ -422,88 +422,88 @@ They mean different things, and one of them is easy to misuse:
 ```bash
 
 # Check Redis status and flush cache
-podium redis ping
-podium redis-flush
+zeltro redis ping
+zeltro redis-flush
 
 # Monitor supervised processes
-podium supervisor-status
-podium supervisor restart all
+zeltro supervisor-status
+zeltro supervisor restart all
 ```
 
 ### Advanced Usage
 
 #### Containerized Development Commands
 
-**PHP projects** — `podium composer`, `podium art`, `podium php`, and `podium wp` run inside your project's container with the correct PHP environment:
+**PHP projects** — `zeltro composer`, `zeltro art`, `zeltro php`, and `zeltro wp` run inside your project's container with the correct PHP environment:
 
 ```bash
-cd ~/podium-projects/my-laravel-app
-podium composer install        # Uses container's PHP 8.2
-podium art migrate             # Runs with container's Laravel setup
-podium php script.php          # Executes with project's PHP configuration
+cd ~/zeltro-projects/my-laravel-app
+zeltro composer install        # Uses container's PHP 8.2
+zeltro art migrate             # Runs with container's Laravel setup
+zeltro php script.php          # Executes with project's PHP configuration
 ```
 
-**Node.js projects** — `podium npm`, `podium npx`, and `podium node` run inside your project's container with Node 22:
+**Node.js projects** — `zeltro npm`, `zeltro npx`, and `zeltro node` run inside your project's container with Node 22:
 
 ```bash
-cd ~/podium-projects/my-express-app
-podium npm install             # Installs packages inside container
-podium npx tsc --init         # Run any npx command inside container
-podium node script.js         # Execute a script with project's Node environment
+cd ~/zeltro-projects/my-express-app
+zeltro npm install             # Installs packages inside container
+zeltro npx tsc --init         # Run any npx command inside container
+zeltro node script.js         # Execute a script with project's Node environment
 ```
 
-**Python projects** (FastAPI, Django, plain Python) — `podium python` and `podium pip` run inside your project's container:
+**Python projects** (FastAPI, Django, plain Python) — `zeltro python` and `zeltro pip` run inside your project's container:
 
 ```bash
-cd ~/podium-projects/my-fastapi-app
-podium python -c "import sys; print(sys.version)"
-podium pip install httpx              # Install a package inside the container
-podium pip list                       # Show installed packages
+cd ~/zeltro-projects/my-fastapi-app
+zeltro python -c "import sys; print(sys.version)"
+zeltro pip install httpx              # Install a package inside the container
+zeltro pip list                       # Show installed packages
 ```
 
-**Django projects** — use the `podium django` wrappers for manage.py operations:
+**Django projects** — use the `zeltro django` wrappers for manage.py operations:
 
 ```bash
-cd ~/podium-projects/my-django-app
-podium django manage migrate          # Run migrations
-podium django manage createsuperuser  # Create admin user
-podium django manage collectstatic    # Collect static files
-podium django manage makemigrations myapp
+cd ~/zeltro-projects/my-django-app
+zeltro django manage migrate          # Run migrations
+zeltro django manage createsuperuser  # Create admin user
+zeltro django manage collectstatic    # Collect static files
+zeltro django manage makemigrations myapp
 ```
 
 #### Interactive Shells & REPLs
 
-`podium shell` opens the right interactive environment for the current project automatically:
+`zeltro shell` opens the right interactive environment for the current project automatically:
 
 ```bash
 # Laravel — opens php artisan tinker
-cd ~/podium-projects/my-laravel-app && podium shell
+cd ~/zeltro-projects/my-laravel-app && zeltro shell
 
 # Django — opens python manage.py shell (Django ORM and apps loaded)
-cd ~/podium-projects/my-django-app && podium shell
+cd ~/zeltro-projects/my-django-app && zeltro shell
 
 # FastAPI / plain Python / Python script — opens python3 REPL
-cd ~/podium-projects/my-fastapi-app && podium shell
+cd ~/zeltro-projects/my-fastapi-app && zeltro shell
 
 # Express / Fastify / plain Node.js — opens node REPL
-cd ~/podium-projects/my-express-app && podium shell
+cd ~/zeltro-projects/my-express-app && zeltro shell
 
 # NestJS — opens node REPL; or the NestJS REPL if src/repl.ts exists
-cd ~/podium-projects/my-nest-app && podium shell
+cd ~/zeltro-projects/my-nest-app && zeltro shell
 ```
 
-`podium tinker` remains available as the explicit Laravel-only alias.
+`zeltro tinker` remains available as the explicit Laravel-only alias.
 
-The NestJS REPL (`src/repl.ts`) is not scaffolded by default. Create it per the [NestJS REPL docs](https://docs.nestjs.com/recipes/repl), then `podium shell` will use it automatically.
+The NestJS REPL (`src/repl.ts`) is not scaffolded by default. Create it per the [NestJS REPL docs](https://docs.nestjs.com/recipes/repl), then `zeltro shell` will use it automatically.
 
 
 ## 🔌 JSON API Integration
 
-Podium provides clean JSON output for programmatic integration, perfect for GUI applications and automation scripts:
+Zeltro provides clean JSON output for programmatic integration, perfect for GUI applications and automation scripts:
 
 ```javascript
 // Example: Create project via JSON API
-const result = await exec('podium new laravel myapp --version 11.x --json-output');
+const result = await exec('zeltro new laravel myapp --version 11.x --json-output');
 const data = JSON.parse(result.stdout);
 
 // Result:
@@ -521,35 +521,35 @@ const data = JSON.parse(result.stdout);
 **All commands support `--json-output` except containerized development tools:**
 
 ✅ **JSON Support Available:**
-- `podium status --json-output` - Project and service status
-- `podium new --json-output` - Project creation confirmation
-- `podium clone --json-output` - Project clone confirmation
-- `podium setup --json-output` - Project setup confirmation
-- `podium remove --json-output` - Project removal confirmation
-- `podium up --json-output` - Project startup confirmation
-- `podium down --json-output` - Project shutdown confirmation
-- `podium start-services --json-output` - Service start confirmation
-- `podium stop-services --json-output` - Service stop confirmation
-- `podium configure --json-output` - Configuration confirmation
-- `podium uninstall --json-output` - Uninstall confirmation
+- `zeltro status --json-output` - Project and service status
+- `zeltro new --json-output` - Project creation confirmation
+- `zeltro clone --json-output` - Project clone confirmation
+- `zeltro setup --json-output` - Project setup confirmation
+- `zeltro remove --json-output` - Project removal confirmation
+- `zeltro up --json-output` - Project startup confirmation
+- `zeltro down --json-output` - Project shutdown confirmation
+- `zeltro start-services --json-output` - Service start confirmation
+- `zeltro stop-services --json-output` - Service stop confirmation
+- `zeltro configure --json-output` - Configuration confirmation
+- `zeltro uninstall --json-output` - Uninstall confirmation
 
 ❌ **No JSON Support (Container Commands):**
-- `podium composer` - Runs inside container
-- `podium art` - Runs inside container
-- `podium wp` - Runs inside container
-- `podium php` - Runs inside container
-- `podium npm` - Runs inside container
-- `podium npx` - Runs inside container
-- `podium node` - Runs inside container
-- `podium python` - Runs inside container
-- `podium pip` - Runs inside container
-- `podium shell` - Runs inside container
-- `podium django` - Runs inside container
-- `podium exec` - Runs inside container
-- `podium exec-root` - Runs inside container
-- `podium supervisor` - Runs inside container
-- `podium redis` - Direct service connection
-- `podium memcache` - Direct service connection
+- `zeltro composer` - Runs inside container
+- `zeltro art` - Runs inside container
+- `zeltro wp` - Runs inside container
+- `zeltro php` - Runs inside container
+- `zeltro npm` - Runs inside container
+- `zeltro npx` - Runs inside container
+- `zeltro node` - Runs inside container
+- `zeltro python` - Runs inside container
+- `zeltro pip` - Runs inside container
+- `zeltro shell` - Runs inside container
+- `zeltro django` - Runs inside container
+- `zeltro exec` - Runs inside container
+- `zeltro exec-root` - Runs inside container
+- `zeltro supervisor` - Runs inside container
+- `zeltro redis` - Direct service connection
+- `zeltro memcache` - Direct service connection
 
 ## 🏗️ Architecture
 
@@ -566,7 +566,7 @@ const data = JSON.parse(result.stdout);
 ### Project Structure
 
 ```
-~/podium-projects/
+~/zeltro-projects/
 ├── project1/
 │   ├── docker-compose.yaml
 │   ├── .env
@@ -593,31 +593,31 @@ Each project gets:
 #### 🐧 Linux (Debian / Ubuntu / Ubuntu-based)
 ```bash
 # 1. Clean up Docker resources first
-podium uninstall
+zeltro uninstall
 
 # 2. Remove the CLI files
-sudo rm -f /usr/local/bin/podium
-sudo rm -rf /usr/local/share/podium-cli
+sudo rm -f /usr/local/bin/zeltro
+sudo rm -rf /usr/local/share/zeltro-cli
 
 # 3. Remove configuration directory (optional)
-sudo rm -rf /etc/podium-cli
+sudo rm -rf /etc/zeltro-cli
 ```
 
 #### 🍎 MacOS (Homebrew)
 ```bash
-# Automatic cleanup - runs 'podium uninstall' then removes CLI
-brew uninstall podium-cli
+# Automatic cleanup - runs 'zeltro uninstall' then removes CLI
+brew uninstall zeltro-cli
 
 # Manual method (if needed)
-podium uninstall
-rm -rf /usr/local/bin/podium
-sudo rm -rf /etc/podium-cli
+zeltro uninstall
+rm -rf /usr/local/bin/zeltro
+sudo rm -rf /etc/zeltro-cli
 ```
 
 ### What Gets Removed
 
-**`podium uninstall` removes:**
-- ✅ All Podium service containers (mariadb, redis, postgres, etc.)
+**`zeltro uninstall` removes:**
+- ✅ All Zeltro service containers (mariadb, redis, postgres, etc.)
 - ✅ All individual project containers
 - ✅ Docker images (optional with `--delete-images`)
 - ✅ Docker volumes and networks
@@ -626,7 +626,7 @@ sudo rm -rf /etc/podium-cli
 
 **What's preserved:**
 - ✅ Your project source code and files
-- ✅ Other non-Podium Docker containers and images
+- ✅ Other non-Zeltro Docker containers and images
 - ✅ Docker Desktop/Engine itself
 
 ### Uninstall Options
@@ -643,17 +643,17 @@ sudo rm -rf /etc/podium-cli
 
 ```bash
 # Run the configuration wizard
-podium configure
+zeltro configure
 ```
 
-`podium configure` also installs **bash tab-completion** (to `/etc/bash_completion.d/podium`). Open a new shell and tab through commands, project names, and installer names:
+`zeltro configure` also installs **bash tab-completion** (to `/etc/bash_completion.d/zeltro`). Open a new shell and tab through commands, project names, and installer names:
 
 ```
-podium ins<TAB>            → install
-podium install gr<TAB>     → grafana  graylog  grocy
-podium up <TAB>            → (your project names)
-podium new <TAB>           → laravel  wordpress  fastapi  django  ...
-podium clone <TAB>         → work-directly  fork  new-repo
+zeltro ins<TAB>            → install
+zeltro install gr<TAB>     → grafana  graylog  grocy
+zeltro up <TAB>            → (your project names)
+zeltro new <TAB>           → laravel  wordpress  fastapi  django  ...
+zeltro clone <TAB>         → work-directly  fork  new-repo
 ```
 
 ### Environment Variables
@@ -674,11 +674,11 @@ podium clone <TAB>         → work-directly  fork  new-repo
 
 ```bash
 # Show comprehensive help
-podium help
+zeltro help
 
 # Show command-specific help
-podium new --help
-podium remove --help
+zeltro new --help
+zeltro remove --help
 ```
 
 ## 🔍 Troubleshooting
@@ -687,35 +687,35 @@ podium remove --help
 
 1. **Services not starting**: Check Docker is running and ports are available
 2. **Permission errors**: Ensure user is in `docker` group
-3. **Database connection**: Verify database service is running with `podium status`
+3. **Database connection**: Verify database service is running with `zeltro status`
 4. **Port conflicts**: Each project gets a unique port automatically assigned
 
 ### Debug Commands
 
 ```bash
 # Check service status
-podium status
+zeltro status
 
 # View container logs
 docker logs [container-name]
 
 # Check network connectivity
-podium exec "ping mariadb"
+zeltro exec "ping mariadb"
 
 # Enable debug logging for any command
-podium new my-project --debug
-podium setup my-project --debug
-podium configure --debug
+zeltro new my-project --debug
+zeltro setup my-project --debug
+zeltro configure --debug
 
 # View debug log
-cat /tmp/podium-cli-debug.log
+cat /tmp/zeltro-cli-debug.log
 ```
 
 ### Debug Mode
 
-All Podium commands support a `--debug` flag that creates detailed logs to help troubleshoot issues:
+All Zeltro commands support a `--debug` flag that creates detailed logs to help troubleshoot issues:
 
-- **Log Location**: `/tmp/podium-cli-debug.log`
+- **Log Location**: `/tmp/zeltro-cli-debug.log`
 - **Session Tracking**: Each new command creates a fresh debug session
 - **Detailed Output**: Shows script flow, function calls, and exit codes
 - **Cross-Script Tracking**: Debug flag is passed between scripts automatically
@@ -723,33 +723,33 @@ All Podium commands support a `--debug` flag that creates detailed logs to help 
 **Example:**
 ```bash
 # Debug a project creation issue
-podium new laravel test-project --debug
+zeltro new laravel test-project --debug
 
 # Check what happened
-tail -f /tmp/podium-cli-debug.log
+tail -f /tmp/zeltro-cli-debug.log
 ```
 
 ---
 
-**Podium** - Streamlined web development with Docker 🐳
+**Zeltro** - Streamlined web development with Docker 🐳
 
 ### ⚙️ System Management
 
 | Command | Description |
 |---------|-------------|
-| `podium configure` | Configure the Podium environment |
-| `podium ai [--interactive] "<prompt>"` | Send a prompt to your AI agent (one-off by default) |
-| `podium ai-set [options]` | Configure the AI agent, model and API key |
-| `podium resume <project>` | Resume a project's last AI session |
-| `podium update [--full]` | Update the CLI (`--full` also re-runs the platform installer and re-pulls images) |
-| `podium start-services` | Start the shared services |
-| `podium stop-services` | Stop the shared services |
-| `podium enable-service <name>` | Enable an optional shared service (`minio`, `meilisearch`) |
-| `podium disable-service <name>` | Disable one (its data volume is kept) |
-| `podium uninstall` | Remove Podium's Docker resources |
-| `podium projects-dir` | Print the projects directory path |
-| `podium create-installer "<idea>"` | Generate a new app installer via AI |
-| `podium update-installer <app>\|--all` | Refresh installers against upstream via AI |
+| `zeltro configure` | Configure the Zeltro environment |
+| `zeltro ai [--interactive] "<prompt>"` | Send a prompt to your AI agent (one-off by default) |
+| `zeltro ai-set [options]` | Configure the AI agent, model and API key |
+| `zeltro resume <project>` | Resume a project's last AI session |
+| `zeltro update [--full]` | Update the CLI (`--full` also re-runs the platform installer and re-pulls images) |
+| `zeltro start-services` | Start the shared services |
+| `zeltro stop-services` | Stop the shared services |
+| `zeltro enable-service <name>` | Enable an optional shared service (`minio`, `meilisearch`) |
+| `zeltro disable-service <name>` | Disable one (its data volume is kept) |
+| `zeltro uninstall` | Remove Zeltro's Docker resources |
+| `zeltro projects-dir` | Print the projects directory path |
+| `zeltro create-installer "<idea>"` | Generate a new app installer via AI |
+| `zeltro update-installer <app>\|--all` | Refresh installers against upstream via AI |
 
 ---
 
@@ -759,6 +759,6 @@ tail -f /tmp/podium-cli-debug.log
 |---|---|
 | `--json-output` | Machine-readable JSON; suppresses all text and colour |
 | `--no-colors` | Disable coloured output |
-| `--debug` | Log to `/tmp/podium-cli-debug.log` |
+| `--debug` | Log to `/tmp/zeltro-cli-debug.log` |
 
 See [Automation & JSON]({{ site.baseurl }}/guide/automation/) for which commands support JSON and how to script against them.

@@ -95,7 +95,7 @@ services:
     environment:
       SECRET_KEY_BASE: "$secret_key"
       DISABLE_REGISTRATION: "false"
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: 6379
       CLICKHOUSE_HOST: http://swetrix-clickhouse
       CLICKHOUSE_PORT: 8123

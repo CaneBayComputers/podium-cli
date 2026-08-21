@@ -10,5 +10,5 @@ Hierarchical note-taking with scripting and relations — the maintained success
 ## Key Notes
 - Do not add `user:` to the app service. The entrypoint starts as root, chowns `/home/node/trilium-data`, then drops to the `node` user itself. Pinning `user: "1000:1000"` makes that chown fail with "Operation not permitted" and the container restart-loops.
 - `TRILIUM_DATA_DIR` must match the volume mount point.
-- This is a different project from the older `trilium` installer; the two can coexist as separate Podium projects but do not share a data volume.
-- The installer exists: run `podium install triliumnext`.
+- This is a different project from the older `trilium` installer; the two can coexist as separate Zeltro projects but do not share a data volume.
+- The installer exists: run `zeltro install triliumnext`.

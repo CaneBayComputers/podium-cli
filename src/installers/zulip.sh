@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register at http://$PROJECT_NAME/register/ — first user b
 INSTALL_NOTES="Open-source team chat. First startup takes ~3 minutes for initialization. Visit http://$PROJECT_NAME/ to create your organization."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE zulip;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE zulip;" 2>/dev/null || true
 }
 
 write_files() {
@@ -26,7 +26,7 @@ services:
     image: zulip/docker-zulip:latest
     restart: unless-stopped
     environment:
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_HOST_PORT: "5432"
       DB_USER: root
       DB_NAME: zulip
@@ -39,7 +39,7 @@ services:
       SETTING_EMAIL_USE_TLS: "True"
       SETTING_MEMCACHED_LOCATION: zulip-memcached:11211
       SETTING_RABBITMQ_HOST: zulip-rabbitmq
-      SETTING_REDIS_HOST: podium-redis
+      SETTING_REDIS_HOST: zeltro-redis
       ZULIP_AUTH_BACKENDS: EmailAuthBackend
       SECRETS_postgres_password: password
       SECRETS_secret_key: $secret_key
