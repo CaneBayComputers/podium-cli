@@ -94,6 +94,13 @@ echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR
 # look like the command simply produced nothing.
 echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
+# Optional shared services are addressed as <prefix>-<service>. The always-on
+# services each have their own *_CONTAINER_NAME override, but the optional ones
+# had the prefix hardcoded, so a machine whose containers are named differently
+# reported healthy services as "enabled but NOT RUNNING". SERVICE_PREFIX makes
+# that one knob; it defaults to the product name and only needs setting on an
+# install that predates the rename.
+
 # Docker aliases used by scripts (JSON-aware for clean output)
 # Compose profile flags for whatever optional shared services are enabled on
 # this machine (OPTIONAL_SERVICES in /etc/zeltro-cli/.env). Empty when none are,
@@ -2597,7 +2604,7 @@ ensure_services_running() {
     # already-running stack costs nothing.
     local need_start=0 cname
     for svc in $wanted; do
-        cname="zeltro-$svc"
+        cname="${SERVICE_PREFIX:-zeltro}-$svc"
         [ "$svc" = "mysql" ] && cname="zeltro-mariadb"
         docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true || need_start=1
     done
@@ -2619,7 +2626,7 @@ ensure_services_running() {
     # behind it, so `OPTIONAL_SERVICES` stopped being a statement about reality.
     local confirmed="${OPTIONAL_SERVICES:-}" failed=""
     for svc in $newly; do
-        cname="zeltro-$svc"
+        cname="${SERVICE_PREFIX:-zeltro}-$svc"
         [ "$svc" = "mysql" ] && cname="zeltro-mariadb"
         if docker container inspect -f '{{.State.Running}}' "$cname" 2>/dev/null | grep -q true; then
             confirmed="${confirmed:+$confirmed }$svc"

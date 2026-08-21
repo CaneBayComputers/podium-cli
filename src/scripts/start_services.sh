@@ -81,7 +81,7 @@ source "$DEV_DIR/scripts/pre_check.sh"
 # Postgres-only machine. Check the always-on trio plus whatever is enabled.
 _services_up=1
 for _svc in redis memcached mailhog ${OPTIONAL_SERVICES:-}; do
-    _cname="zeltro-$_svc"
+    _cname="${SERVICE_PREFIX:-zeltro}-$_svc"
     [ "$_svc" = "mysql" ] && _cname="zeltro-mariadb"
     docker container inspect -f '{{.State.Running}}' "$_cname" 2>/dev/null | grep -q true || _services_up=0
 done

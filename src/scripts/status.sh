@@ -727,7 +727,7 @@ if zeltro_host_reaches_containers; then
         case "$_opt" in
             minio)       _opt_host="${MINIO_CONTAINER_NAME:-zeltro-minio}"; _opt_label="MinIO" ;;
             meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}"; _opt_label="Meilisearch" ;;
-            *)           _opt_host="zeltro-$_opt"; _opt_label="$_opt" ;;
+            *)           _opt_host="${SERVICE_PREFIX:-zeltro}-$_opt"; _opt_label="$_opt" ;;
         esac
         if service_running "$_opt_host"; then
             echo-white -n "PING ($_opt_label): "

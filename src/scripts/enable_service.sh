@@ -61,7 +61,7 @@ service_state() {
     local svc="$1" cname
     case "$svc" in
         mysql) cname="zeltro-mariadb" ;;
-        *)     cname="zeltro-$svc" ;;
+        *)     cname="${SERVICE_PREFIX:-zeltro}-$svc" ;;
     esac
     case " ${OPTIONAL_SERVICES:-} " in
         *" $svc "*) ;;
@@ -134,7 +134,7 @@ fi
 case "$SERVICE" in
     minio)       CONTAINER="${MINIO_CONTAINER_NAME:-zeltro-minio}" ;;
     meilisearch) CONTAINER="${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}" ;;
-    *)           CONTAINER="zeltro-$SERVICE" ;;
+    *)           CONTAINER="${SERVICE_PREFIX:-zeltro}-$SERVICE" ;;
 esac
 
 CURRENT="${OPTIONAL_SERVICES:-}"
