@@ -115,17 +115,23 @@ Everything else — frameworks, the 200+ app library, the full command reference
 
 [**Podium GUI**](https://github.com/CaneBayComputers/podium-gui) is an optional
 desktop front end — same projects, same shared services, same URLs, just visible
-and clickable. It builds from source, so the checkout you install from is the one
-that runs:
+and clickable. It installs the same way this does — one command, which clones the repo for you:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash
+```
+
+Swap for `install-fedora.sh`, `install-arch.sh` or `install-mac.sh`. On Linux and
+macOS it installs this CLI first if `podium` is missing, so it is the only thing
+you need to run.
+
+To install a checkout you already have instead of a fresh clone, run the script
+from inside it — it detects the local repository and builds that:
 
 ```bash
 git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui
-./install-ubuntu.sh          # or install-fedora.sh / install-arch.sh / install-mac.sh
+cd podium-gui && ./install-ubuntu.sh
 ```
-
-On Linux and macOS it installs this CLI first if `podium` is missing, so it is
-the only thing you need to clone.
 
 On **Windows** the GUI runs natively, but there is no local Podium for it to
 drive — it connects over SSH to machines that do have one (a Linux box, a Mac, a

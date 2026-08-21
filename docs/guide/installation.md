@@ -132,14 +132,14 @@ podium new <TAB>           → laravel  wordpress  fastapi  flask  django  ...
 ## The desktop app
 
 [Podium GUI](https://github.com/CaneBayComputers/podium-gui) is optional. It
-builds from source and, on Linux and macOS, installs this CLI first if `podium`
-is missing:
+installs with one command, exactly like the CLI, and on Linux and macOS brings
+this CLI with it if `podium` is missing:
 
 ```bash
-git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui
-./install-ubuntu.sh          # or install-fedora.sh / install-arch.sh / install-mac.sh
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash
 ```
+
+Swap for `install-fedora.sh`, `install-arch.sh` or `install-mac.sh`.
 
 On Windows the GUI runs natively but drives Podium on *other* machines over SSH,
 since there is no local Podium for it to talk to. See

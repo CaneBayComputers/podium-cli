@@ -543,11 +543,9 @@
               <p class="step-sub">Everything above is the CLI and is all you need. <strong>Podium GUI</strong> is a separate, optional desktop front end for it &mdash; same projects, same services, just visible and clickable.</p>
 
               <p class="install-label">Install the GUI</p>
-                  <p class="step-sub">It builds from source, so the checkout you install from is the one that runs, and updating is a <code>git pull</code>. On Linux and macOS it installs the CLI first if <code>podium</code> is missing.</p>
-                  <pre class="install-cmd"><code>git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui
-./install-ubuntu.sh</code></pre>
-                  <p class="step-sub">Swap for <code>install-fedora.sh</code>, <code>install-arch.sh</code> or <code>install-mac.sh</code>. It pulls the npm dependencies, compiles the TypeScript and rebuilds the native terminal module against Electron &mdash; a few minutes, mostly <code>npm install</code>. Re-running it is safe.</p>
+                  <p class="step-sub">One command, the same shape as the CLI above &mdash; it clones the repo for you and builds from source. On Linux and macOS it installs the CLI first if <code>podium</code> is missing.</p>
+                  <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash</code></pre>
+                  <p class="step-sub">Swap for <code>install-fedora.sh</code>, <code>install-arch.sh</code> or <code>install-mac.sh</code>. It pulls the npm dependencies, compiles the TypeScript and rebuilds the native terminal module against Electron &mdash; a few minutes, mostly <code>npm install</code>. Re-running it is safe, and running it from inside an existing checkout installs that checkout instead of cloning.</p>
                   <p class="step-sub"><strong>Windows works differently.</strong> The GUI runs natively, but there is no local Podium for it to drive &mdash; it connects over SSH to machines that have one, added under <strong>Settings &rarr; SSH Hosts</strong>. From an elevated PowerShell: <code>irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex</code> &nbsp;<a href="/guide/downloads/">Full details &rarr;</a></p>
             </div>
           </li>
