@@ -12,7 +12,7 @@ On Windows, `install-windows.ps1` enables WSL2, installs Ubuntu, and installs
 Podium inside it. It runs in two stages because enabling the WSL Windows
 features needs a reboot; the installer schedules itself to resume automatically
 after you log back in, so you reboot once and it finishes on its own. Run it
-from an elevated PowerShell.
+PowerShell as administrator: right-click it and choose Run as administrator.
 
 WSL2 needs hardware virtualization: VT-x/AMD-V turned on in BIOS/UEFI, plus
 SLAT. If the hypervisor cannot start, the Ubuntu download succeeds and then

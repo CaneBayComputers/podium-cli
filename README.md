@@ -53,7 +53,7 @@ reach a project by the port `podium status` prints rather than by container IP.
 
 Podium is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
 kernel — so container IPs are directly routable, exactly as on a Linux host.
-From an **elevated** PowerShell:
+Right-click PowerShell and choose **Run as administrator**, then:
 
 ```powershell
 irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex

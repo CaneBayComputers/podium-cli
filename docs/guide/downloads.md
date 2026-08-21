@@ -34,8 +34,8 @@ missing.
 
 **Windows**
 
-Podium is a Linux tool; on Windows it runs inside WSL2. From an **elevated**
-PowerShell:
+Podium is a Linux tool; on Windows it runs inside WSL2. Right-click PowerShell
+and choose **Run as administrator**, then:
 
 ```powershell
 irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex

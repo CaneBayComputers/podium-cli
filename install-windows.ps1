@@ -20,8 +20,8 @@
 # supported by this one script; nothing in it is Windows 11 specific. Older
 # builds are refused up front by Assert-WindowsBuild.
 #
-# Must be run from an ELEVATED PowerShell: enabling Windows optional features
-# and writing the machine RunOnce key both require it.
+# Must be run from a PowerShell started with Run as administrator: enabling the
+# Windows optional features and writing the machine RunOnce key both require it.
 #
 # TESTING STATUS. Stage 1, the RunOnce reboot-resume, and the elevation it needs
 # are verified on a Windows 11 VM: the reboot fires stage 2 automatically in an
@@ -82,7 +82,7 @@ function Assert-Elevated {
     $id = [Security.Principal.WindowsIdentity]::GetCurrent()
     $pr = New-Object Security.Principal.WindowsPrincipal($id)
     if (-not $pr.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Die "Run this from an elevated PowerShell (right-click > Run as administrator)."
+        Die "Right-click PowerShell and choose Run as administrator, then run this again."
     }
 }
 
