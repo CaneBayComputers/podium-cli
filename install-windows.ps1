@@ -16,6 +16,10 @@
 #   Stage 2 runs itself after the reboot. To run it by hand:
 #     powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Stage 2
 #
+# Windows 10 (version 2004 / build 19041 and newer) and Windows 11 are both
+# supported by this one script; nothing in it is Windows 11 specific. Older
+# builds are refused up front by Assert-WindowsBuild.
+#
 # Must be run from an ELEVATED PowerShell: enabling Windows optional features
 # and writing the machine RunOnce key both require it.
 #
@@ -82,6 +86,51 @@ function Assert-Elevated {
     }
 }
 
+# Windows 10 is supported and always was -- nothing in this script is Windows 11
+# specific, and the whole sequence was first done by hand on a Windows 10 Home
+# box. What actually matters is the BUILD number, because "wsl --update" and
+# "wsl --install" did not exist before version 2004.
+#
+# Without this gate an old Windows 10 machine enables the features, reboots,
+# resumes into stage 2, and only THEN dies at "wsl --update" -- having already
+# made the user reboot for nothing. Check before touching anything.
+function Assert-WindowsBuild {
+    $cv    = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+    $build = [int]$cv.CurrentBuildNumber
+    $name  = $cv.ProductName
+    $disp  = $cv.DisplayVersion
+    if (-not $disp) { $disp = $cv.ReleaseId }
+
+    # 18362 = Windows 10 1903, the first build with WSL2 at all.
+    if ($build -lt 18362) {
+        Die @"
+WSL2 needs Windows 10 version 1903 (build 18362) or newer.
+This machine reports $name $disp (build $build).
+
+There is no workaround here: WSL2 requires the Virtual Machine Platform, which
+this build does not have. Update Windows and re-run.
+"@
+    }
+
+    # 19041 = Windows 10 2004, the first build shipping "wsl --install" and
+    # "wsl --update". Earlier builds can run WSL2 but need the kernel MSI
+    # installed by hand, which this installer does not do.
+    if ($build -lt 19041) {
+        Die @"
+This Windows build is too old for an unattended install.
+This machine reports $name $disp (build $build).
+
+WSL2 itself works here, but the "wsl --update" and "wsl --install" commands did
+not arrive until Windows 10 version 2004 (build 19041), and this installer
+depends on both. Updating Windows to 21H2 or 22H2 is far less work than the
+manual kernel-MSI route, so that is the recommended fix.
+"@
+    }
+
+    if ($build -ge 22000) { $label = "Windows 11" } else { $label = "Windows 10" }
+    Ok "$label $disp (build $build) supports WSL2"
+}
+
 function Assert-Virtualization {
     # These flags inverting is not a hardware change, it is the OS losing sight
     # of the hardware. Measured on one machine, before and after enabling WSL:
@@ -132,6 +181,7 @@ function Assert-Virtualization {
 function Invoke-Stage1 {
     Assert-Elevated
     Start-Log
+    Assert-WindowsBuild
     Assert-Virtualization
 
     $wsl = (Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux).State
@@ -186,6 +236,7 @@ function Invoke-Stage1 {
 function Invoke-Stage2 {
     Assert-Elevated
     Start-Log
+    Assert-WindowsBuild
     Say "Stage 2: installing WSL runtime, $Distro, and Podium"
 
     if (Test-Path $StateFile) {
