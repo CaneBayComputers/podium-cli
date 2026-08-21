@@ -47,7 +47,8 @@
       "applicationSubCategory": "CLI tool",
       "operatingSystem": [
         "Linux",
-        "macOS"
+        "macOS",
+        "Windows"
       ],
       "url": "https://podiumcli.com/",
       "downloadUrl": "https://github.com/CaneBayComputers/podium-cli",
@@ -106,7 +107,9 @@
       "applicationCategory": "DeveloperApplication",
       "applicationSubCategory": "Desktop application",
       "operatingSystem": [
-        "Linux"
+        "Linux",
+        "macOS",
+        "Windows"
       ],
       "softwareVersion": "1.0.0-beta.1",
       "description": "Optional desktop front end for Podium CLI. Create projects with AI, install from the app library, manage shared services and reopen AI sessions without using the terminal.",
@@ -125,7 +128,7 @@
       "publisher": {
         "@id": "https://podiumcli.com/#org"
       },
-      "requirements": "Requires Podium CLI, which it installs automatically if missing.",
+      "requirements": "Requires Podium CLI. On Linux and macOS the installer adds it if missing; on Windows the GUI drives Podium on remote machines over SSH.",
       "url": "https://podiumcli.com/#download"
     }
   ]
@@ -136,8 +139,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <!-- Umami Cloud: cookieless, no consent banner needed -->
-  <script defer src="https://cloud.umami.is/script.js" data-website-id="7726036c-09fd-4a3e-a076-faa8bf43bd70"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-2XPEQ2DY7R"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-2XPEQ2DY7R');
+  </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -179,7 +189,7 @@
           <div class="cta">
             <a class="btn primary" href="#download">Download</a>
           </div>
-          <p class="meta">Open source &middot; Linux &amp; macOS &middot; Free forever</p>
+          <p class="meta">Open source &middot; Linux, macOS &amp; Windows &middot; Free forever</p>
         </div>
 
         <div class="hero-visual" aria-hidden="true">
@@ -224,41 +234,26 @@
 
     <section class="download-band" id="download" aria-labelledby="download-title">
       <div class="wrap">
-        <h2 id="download-title" class="band-title">Download Podium GUI</h2>
-        <p class="band-sub">The desktop app. Installs the Podium CLI too, so this is the only download you need. <span class="band-beta">v1.0.0-beta.1 &middot; Linux x86_64</span></p>
+        <h2 id="download-title" class="band-title">Install Podium</h2>
+        <p class="band-sub">Two pieces. The <strong>CLI</strong> does the work; the <strong>GUI</strong> is an optional desktop front end. Neither ships as a package &mdash; both install from source, so what you install is what runs, and updating is a <code>git pull</code>.</p>
 
         <div class="dl-grid">
-          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb">
-            <span class="dl-for">Download for Debian</span>
-            <span class="dl-distros">Ubuntu &middot; Mint &middot; Zorin &middot; Pop!_OS &middot; elementary</span>
-            <span class="dl-ext">.deb</span>
+          <a class="dl-card" href="/guide/downloads/#podium-cli">
+            <span class="dl-for">Podium CLI</span>
+            <span class="dl-distros">Linux &middot; macOS &middot; Windows via WSL2</span>
+            <span class="dl-ext">one command</span>
           </a>
-          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1.x86_64.rpm">
-            <span class="dl-for">Download for Fedora</span>
-            <span class="dl-distros">RHEL &middot; Rocky &middot; Alma &middot; openSUSE &middot; Nobara</span>
-            <span class="dl-ext">.rpm</span>
-          </a>
-          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst">
-            <span class="dl-for">Download for Arch</span>
-            <span class="dl-distros">Manjaro &middot; EndeavourOS &middot; Garuda &middot; CachyOS</span>
-            <span class="dl-ext">.pkg.tar.zst</span>
-          </a>
-          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1-arm64.dmg">
-            <span class="dl-for">Download for macOS</span>
-            <span class="dl-distros">Apple Silicon &mdash; M1, M2, M3, M4</span>
-            <span class="dl-ext">.dmg</span>
-          </a>
-          <a class="dl-card" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/Podium-1.0.0-beta.1.dmg">
-            <span class="dl-for">Download for macOS</span>
-            <span class="dl-distros">Intel Macs</span>
-            <span class="dl-ext">.dmg</span>
+          <a class="dl-card" href="/guide/downloads/#podium-gui">
+            <span class="dl-for">Podium GUI</span>
+            <span class="dl-distros">Desktop app &middot; brings the CLI with it</span>
+            <span class="dl-ext">git clone</span>
           </a>
         </div>
 
         <p class="band-note">
-          Prefer the terminal? <a href="#install">Install the CLI on its own</a> with one curl &mdash; the GUI is optional.
+          Straight to it? <a href="#install">The steps are below</a> &mdash; the GUI is optional.
           <br>
-          <span class="band-fine"><a href="/guide/downloads/">Checksums, platform notes and what has actually been tested</a>.</span>
+          <span class="band-fine"><a href="/guide/downloads/">Every platform, and what differs on each</a>.</span>
         </p>
       </div>
     </section>
@@ -454,13 +449,14 @@
 
               <p class="install-label">Choose your platform</p>
               <p class="chip-row" aria-label="Choose your platform">
-                <button type="button" class="fw-chip distro-chip active" data-script="install-ubuntu.sh">Ubuntu / Debian / Mint</button>
-                <button type="button" class="fw-chip distro-chip" data-script="install-fedora.sh">Fedora / RHEL</button>
-                <button type="button" class="fw-chip distro-chip" data-script="install-arch.sh">Arch / Manjaro</button>
-                <button type="button" class="fw-chip distro-chip" data-script="install-mac.sh">macOS</button>
+                <button type="button" class="fw-chip distro-chip active" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash" data-note="Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.">Ubuntu / Debian / Mint</button>
+                <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-fedora.sh | bash" data-note="Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.">Fedora / RHEL</button>
+                <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-arch.sh | bash" data-note="Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.">Arch / Manjaro</button>
+                <button type="button" class="fw-chip distro-chip" data-cmd="curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash" data-note="Pulls in the Xcode command line tools, Homebrew and Docker Desktop if any are missing.">macOS</button>
+                <button type="button" class="fw-chip distro-chip" data-cmd="irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex" data-note="Run this from an <strong>elevated</strong> PowerShell. Podium runs inside WSL2; the installer enables it, asks for one reboot, then resumes and finishes on its own. Needs Windows 10 build 19041 or newer.">Windows</button>
               </p>
-              <pre class="install-cmd"><code>curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/<span id="cliScript">install-ubuntu.sh</span> | bash</code></pre>
-              <p class="step-sub" style="margin-top:10px">Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.</p>
+              <pre class="install-cmd"><code id="cliCmd">curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash</code></pre>
+              <p class="step-sub" style="margin-top:10px" id="cliCmdNote">Installs the CLI only. The desktop app is optional and comes later &mdash; see step 5.</p>
             </div>
           </li>
 
@@ -546,17 +542,13 @@
               <h3>Optional: the desktop app</h3>
               <p class="step-sub">Everything above is the CLI and is all you need. <strong>Podium GUI</strong> is a separate, optional desktop front end for it &mdash; same projects, same services, just visible and clickable.</p>
 
-              <p class="install-label">Download the GUI &mdash; v1.0.0-beta.1 <span class="muted-cmd">(Linux x86_64, beta)</span></p>
-              <p class="chip-row" aria-label="Choose your package format">
-                <button type="button" class="fw-chip gui-chip active" data-pkg="podium-gui_1.0.0-beta.1_amd64.deb" data-note="Installed and launched on a real machine.">.deb &mdash; Debian / Ubuntu / Mint</button>
-                <button type="button" class="fw-chip gui-chip" data-pkg="podium-gui-1.0.0-beta.1.x86_64.rpm" data-note="Built and inspected, but not yet installed on a Fedora machine.">.rpm &mdash; Fedora / RHEL</button>
-                <button type="button" class="fw-chip gui-chip" data-pkg="podium-gui-1.0.0-beta.1-x86_64.pkg.tar.zst" data-note="Built and inspected, but not yet installed on an Arch machine.">.pkg.tar.zst &mdash; Arch</button>
-              </p>
-              <p style="margin:12px 0 6px">
-                <a class="btn-download" id="guiDownload" href="https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/podium-gui_1.0.0-beta.1_amd64.deb">Download <span id="guiPkgName">.deb</span></a>
-              </p>
-              <p class="step-sub" id="guiNote">Installed and launched on a real machine.</p>
-              <p class="step-sub">No macOS or arm64 build yet &mdash; the packages are built on Linux and a <code>.dmg</code> needs a macOS host. The <strong>CLI works fine on macOS</strong>; only the desktop app is missing. <a href="/guide/downloads/">Checksums and full details &rarr;</a></p>
+              <p class="install-label">Install the GUI</p>
+                  <p class="step-sub">It builds from source, so the checkout you install from is the one that runs, and updating is a <code>git pull</code>. On Linux and macOS it installs the CLI first if <code>podium</code> is missing.</p>
+                  <pre class="install-cmd"><code>git clone https://github.com/CaneBayComputers/podium-gui.git
+cd podium-gui
+./install-ubuntu.sh</code></pre>
+                  <p class="step-sub">Swap for <code>install-fedora.sh</code>, <code>install-arch.sh</code> or <code>install-mac.sh</code>. It pulls the npm dependencies, compiles the TypeScript and rebuilds the native terminal module against Electron &mdash; a few minutes, mostly <code>npm install</code>. Re-running it is safe.</p>
+                  <p class="step-sub"><strong>Windows works differently.</strong> The GUI runs natively, but there is no local Podium for it to drive &mdash; it connects over SSH to machines that have one, added under <strong>Settings &rarr; SSH Hosts</strong>. From an elevated PowerShell: <code>irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex</code> &nbsp;<a href="/guide/downloads/">Full details &rarr;</a></p>
             </div>
           </li>
         </ol>
@@ -892,34 +884,22 @@
     })();
 
     /* GUI package chip -> swap the download link, name and honesty note */
-    (function () {
-      var link = document.getElementById('guiDownload');
-      var name = document.getElementById('guiPkgName');
-      var note = document.getElementById('guiNote');
-      if (!link) return;
-      var base = 'https://github.com/CaneBayComputers/podium-gui/releases/download/v1.0.0-beta.1/';
-      var chips = document.querySelectorAll('.gui-chip[data-pkg]');
-      chips.forEach(function (chip) {
-        chip.addEventListener('click', function () {
-          chips.forEach(function (c) { c.classList.remove('active'); });
-          chip.classList.add('active');
-          link.href = base + chip.dataset.pkg;
-          name.textContent = '.' + chip.dataset.pkg.split('.').slice(1).join('.');
-          note.textContent = chip.dataset.note;
-        });
-      });
-    })();
+    
 
     /* Platform chip -> swap the CLI install script name */
     (function () {
-      var slot = document.getElementById('cliScript');
+      var slot = document.getElementById('cliCmd');
+      var note = document.getElementById('cliCmdNote');
       if (!slot) return;
-      var chips = document.querySelectorAll('.distro-chip[data-script]');
+      // Windows is `irm ... | iex`, not `curl ... | bash`, so the whole command
+      // gets swapped rather than just the script filename.
+      var chips = document.querySelectorAll('.distro-chip[data-cmd]');
       chips.forEach(function (chip) {
         chip.addEventListener('click', function () {
           chips.forEach(function (c) { c.classList.remove('active'); });
           chip.classList.add('active');
-          slot.textContent = chip.dataset.script;
+          slot.textContent = chip.dataset.cmd;
+          if (note && chip.dataset.note) { note.innerHTML = chip.dataset.note; }
         });
       });
     })();
