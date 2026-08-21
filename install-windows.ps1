@@ -313,7 +313,7 @@ chmod 440 /etc/sudoers.d/$LinuxUser
     Say "Installing Podium inside $Distro..."
     $install = @"
 set -e
-cd "\$HOME"
+cd ~
 curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh -o /tmp/install-ubuntu.sh
 bash /tmp/install-ubuntu.sh
 "@
@@ -350,7 +350,11 @@ bash /tmp/install-ubuntu.sh
 function Invoke-InDistro {
     param([string]$Script, [string]$User = "root")
     $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Script))
-    $cmd = "echo $b64 | base64 -d > /tmp/podium-step.sh; chmod +x /tmp/podium-step.sh; /tmp/podium-step.sh < /dev/null; rc=`$?; rm -f /tmp/podium-step.sh; exit `$rc"
+    # No $? or $rc here on purpose. Neither survives the trip into bash through
+    # wsl.exe -- they arrive empty, which silently turned every failure into a
+    # success. `trap ... EXIT` removes the temp file without needing to capture
+    # a status, and bash -c already exits with the status of the last command.
+    $cmd = "echo $b64 | base64 -d > /tmp/podium-step.sh; chmod +x /tmp/podium-step.sh; trap 'rm -f /tmp/podium-step.sh' EXIT; /tmp/podium-step.sh < /dev/null"
     wsl -d $Distro -u $User -- bash -c $cmd
     if ($LASTEXITCODE -ne 0) { Die "Step failed inside $Distro (exit $LASTEXITCODE)" }
 }
