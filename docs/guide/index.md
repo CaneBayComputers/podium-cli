@@ -15,8 +15,8 @@ It does three things, and they reinforce each other.
 
 One `zeltro-postgres`, one `zeltro-mariadb`, one `zeltro-redis`, one `zeltro-mongo`, one `zeltro-memcached` — used by every Zeltro project on the machine. Run ten projects, you still have one of each.
 
-- **Projects talk to each other for free.** The same hostnames resolve from your browser (`http://my-api/`) and from inside containers (`psql -h zeltro-postgres`, `fetch('http://my-api/')`). A Laravel app can read another project's database with no networking setup.
-- **No port roulette.** Every project lives at `http://project-name`. No `localhost:3001` vs `:3002` vs `:3003`, no `host.docker.internal` hacks. Ports only enter the picture when you want to reach a project from another machine on the LAN.
+- **Projects talk to each other for free.** Every project joins one Docker network and resolves by name on it, so a container can `fetch('http://my-api/')` or `psql -h zeltro-postgres` with no networking configuration.
+- **No port roulette.** You never choose a port. Each project is assigned its own address when it is created, and `zeltro ps` prints it — no `localhost:3001` vs `:3002` vs `:3003`, no `host.docker.internal` hacks.
 - **Resource consolidation.** Seven duplicate Postgres containers eating ~700MB becomes one eating ~100MB.
 - **No conflicts.** Upstream compose files binding `5432:5432` or `80:80` get rewired to the shared services automatically.
 
@@ -32,7 +32,7 @@ See [Architecture](architecture/) for what each image ships.
 
 Left alone, an AI agent will scaffold a project however it likes — its own ports, its own bundled database, its own compose file — with no regard for the other twelve projects on your machine. Zeltro gives the agent a fixed environment to work in:
 
-- **A stable platform.** Shared services, hostname routing, `/etc/hosts` wiring, and known runtime images mean the agent builds your app instead of reinventing infrastructure.
+- **A stable platform.** Shared services, one network, assigned addresses, and known runtime images mean the agent builds your app instead of reinventing infrastructure.
 - **Fewer tokens.** Framework scaffolding, networking, secret generation and 200+ app installs are pre-baked. The agent doesn't rediscover how to wire nginx + php-fpm every session.
 - **Context that survives.** Every project gets an `AGENTS.md` describing its URL, database and commands, so a new agent session picks the project up cold.
 

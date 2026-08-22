@@ -75,14 +75,22 @@ Use these hostnames and credentials directly when configuring a project — ther
 
 ---
 
-## Two-layer hostname resolution
+## How a project is reached
 
-Every project is reachable at `http://<project-name>/` from two directions, using one naming scheme:
+Two different mechanisms, and it is worth keeping them apart:
 
-- **Host → project.** Zeltro adds an `/etc/hosts` entry (`10.x.x.219  my-api`). Your browser and host tooling use this.
-- **Container → container.** Docker's embedded DNS resolves container names on the shared network. Code inside a project can `psql -h zeltro-postgres` or `fetch('http://other-project/')` with no extra configuration.
+- **Container → container: by name.** Docker's embedded DNS resolves container names on the shared network. Code inside a project can `psql -h zeltro-postgres` or `fetch('http://other-project/')` with no extra configuration. This is how projects share databases and call each other.
+- **Host or LAN → project: by address.** Your browser is not on the Docker network, so it uses an address. `zeltro ps` prints two for every project:
 
-Ports only matter when reaching a project from *another machine* on your LAN, where each project also gets a mapped port (`http://192.168.1.20:219`).
+| From | Address | Why |
+|---|---|---|
+| The machine running Zeltro | `http://10.x.x.219` | The container's own IP. No port — nothing else is on that address. |
+| Another device on the LAN | `http://192.168.1.20:219` | This machine's IP plus the project's published port. |
+
+On macOS and Windows, Docker runs containers inside a virtual machine and the container IP is not routable from the host, so the local address is `http://localhost:<port>` instead. `zeltro ps` detects this and prints whichever one works.
+
+{: .note }
+> Zeltro does **not** write to `/etc/hosts`, and has not since the entries were removed. Nothing about running a project needs sudo. Earlier versions added a host entry so `http://my-api/` worked in the browser; that is gone, and the addresses above replace it.
 
 ---
 
