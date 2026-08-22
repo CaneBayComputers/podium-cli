@@ -126,8 +126,8 @@ if [[ -n "$FLAG_VPC_SUBNET" ]]; then
 	if [[ ! "$FLAG_VPC_SUBNET" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 		error "Invalid --vpc-subnet '$FLAG_VPC_SUBNET'. Format must be A.B.C (e.g. 10.247.177)."
 	fi
-	if [[ "$FLAG_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect zeltro-cli_vpc >/dev/null 2>&1; then
-		echo-yellow "The zeltro-cli_vpc network already exists at $VPC_SUBNET."
+	if [[ "$FLAG_VPC_SUBNET" != "$VPC_SUBNET" ]] && docker network inspect "$(zeltro_network_name)" >/dev/null 2>&1; then
+		echo-yellow "The $(zeltro_network_name) network already exists at $VPC_SUBNET."
 		echo-white "Changing the subnet requires recreating it: run 'zeltro uninstall'"
 		echo-white "(preserves projects), then re-run 'zeltro configure --vpc-subnet $FLAG_VPC_SUBNET'."
 		echo-return

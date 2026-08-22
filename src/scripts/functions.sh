@@ -94,6 +94,16 @@ echo-white() { if [[ "$JSON_OUTPUT" == "1" ]]; then return; fi; if [[ "$NO_COLOR
 # look like the command simply produced nothing.
 echo-return() { if [[ "$JSON_OUTPUT" != "1" ]]; then echo "$@"; fi; return 0; }
 
+# The external Docker network every project attaches to. Derived from the
+# compose project name, which is the config directory unless COMPOSE_PROJECT_NAME
+# says otherwise -- and on a machine upgraded from the old name it does, because
+# every existing project's compose file names that network explicitly. Baking
+# the current product name in here meant a freshly created project asked for a
+# network that does not exist on such a machine and refused to start.
+zeltro_network_name() {
+    echo "${VPC_NETWORK_NAME:-${COMPOSE_PROJECT_NAME:-zeltro-cli}_vpc}"
+}
+
 # Optional shared services are addressed as <prefix>-<service>. The always-on
 # services each have their own *_CONTAINER_NAME override, but the optional ones
 # had the prefix hardcoded, so a machine whose containers are named differently
@@ -571,7 +581,7 @@ check_docker_compose_type() {
     fi
     
     # Check if this is a Zeltro project
-    if grep -q "zeltro-cli_vpc" "$compose_file" 2>/dev/null; then
+    if grep -q "$(zeltro_network_name)" "$compose_file" 2>/dev/null; then
         echo "zeltro-project"
         return 0
     fi

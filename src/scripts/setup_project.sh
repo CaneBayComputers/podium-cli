@@ -439,6 +439,9 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" = "1" ] && [ -f "$ORIGINAL_COMPOSE_TMPFILE" 
     # Complex project: adapt the original docker-compose for Zeltro instead of using a cbc template.
     # Removes bundled DB/cache services, wires remaining services to zeltro-cli_vpc, assigns static IP.
     echo-cyan "Complex docker-compose detected — adapting for Zeltro environment..."
+    # The python below writes the project's networks key; it reads the name
+    # from the environment so an upgraded machine keeps its existing network.
+    export ZELTRO_NETWORK_NAME="$(zeltro_network_name)"
     ADAPT_SUMMARY=$(python3 - "$IP_ADDRESS" "$PROJECT_NAME" "$D_CLASS" "$ORIGINAL_COMPOSE_TMPFILE" docker-compose.yaml "$CUSTOM_IMAGE" 2>/dev/null << 'PYEOF'
 import sys, yaml, re, json
 
@@ -548,7 +551,7 @@ if top_vols:
     else:
         doc.pop('volumes', None)
 
-doc['networks'] = {'default': {'external': True, 'name': 'zeltro-cli_vpc'}}
+doc['networks'] = {'default': {'external': True, 'name': os.environ.get('ZELTRO_NETWORK_NAME', 'zeltro-cli_vpc')}}
 
 with open(dst, 'w') as f:
     yaml.dump(doc, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
@@ -580,10 +583,13 @@ if [ "$ORIGINAL_COMPOSE_IS_COMPLEX" != "1" ]; then
     rm -f "$ORIGINAL_COMPOSE_TMPFILE" 2>/dev/null || true
     if [ "$FRAMEWORK_IS_PYTHON" = "1" ]; then
         cp -f "$ZELTRO_DIR/docker-stack/docker-compose.python3-project.yaml" docker-compose.yaml
+        sed -i "s|name: zeltro-cli_vpc|name: $(zeltro_network_name)|" docker-compose.yaml
     elif [ "$FRAMEWORK_IS_NODE" = "1" ]; then
         cp -f "$ZELTRO_DIR/docker-stack/docker-compose.node-project.yaml" docker-compose.yaml
+        sed -i "s|name: zeltro-cli_vpc|name: $(zeltro_network_name)|" docker-compose.yaml
     else
         cp -f "$ZELTRO_DIR/docker-stack/docker-compose.php8.yaml" docker-compose.yaml
+        sed -i "s|name: zeltro-cli_vpc|name: $(zeltro_network_name)|" docker-compose.yaml
     fi
     _compose_file_created=1
 
