@@ -2,22 +2,22 @@
 
 Vikunja is distributed as `vikunja/vikunja:latest`. It is a self-hosted task manager that listens on port **3456**. Use an nginx reverse proxy to expose it at port 80.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB: host `zeltro-mariadb`, port `3306`, user `root`, password `` (empty).
 
 Create the database before starting:
 ```bash
-docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
+docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
 ```
 
 `VIKUNJA_SERVICE_JWTSECRET` must be set to any random string (at least 32 characters).
 
 ## Setup workflow
 
-1. Create DB: `docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"`
-2. `mkdir -p ~/podium-projects/vikunja`
+1. Create DB: `docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"`
+2. `mkdir -p ~/zeltro-projects/vikunja`
 3. Write `docker-compose.yaml` and `nginx.conf` (see below).
-4. `cd ~/podium-projects/vikunja && podium setup vikunja --no-startup`
-5. `podium up vikunja`
+4. `cd ~/zeltro-projects/vikunja && zeltro setup vikunja --no-startup`
+5. `zeltro up vikunja`
 6. Verify: `curl -sI http://vikunja/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     environment:
       VIKUNJA_DATABASE_TYPE: mysql
-      VIKUNJA_DATABASE_HOST: podium-mariadb
+      VIKUNJA_DATABASE_HOST: zeltro-mariadb
       VIKUNJA_DATABASE_USER: root
       VIKUNJA_DATABASE_PASSWORD: ""
       VIKUNJA_DATABASE_DATABASE: vikunja
@@ -58,7 +58,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

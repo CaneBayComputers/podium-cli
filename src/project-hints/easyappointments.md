@@ -2,7 +2,7 @@
 
 **Image**: `alextselegidis/easyappointments:1.6.0`
 **Port**: 80 (Apache — served directly, no proxy)
-**Database**: MariaDB (`podium-mariadb`, database `easyappointments`, user `root`, empty password)
+**Database**: MariaDB (`zeltro-mariadb`, database `easyappointments`, user `root`, empty password)
 **Credentials**: Created by you in the installation wizard on first visit
 
 ## Key Notes
@@ -12,4 +12,4 @@
 - The empty root password is passed as `DB_PASSWORD: ""`; the database itself must pre-exist (the installer creates it).
 - First request redirects to `/index.php/installation`; that wizard creates the schema and the admin account.
 - No volume is mounted — all state lives in MariaDB.
-- The installer exists: run `podium install easyappointments`.
+- The installer exists: run `zeltro install easyappointments`.

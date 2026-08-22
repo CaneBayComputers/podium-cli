@@ -6,7 +6,7 @@ INSTALL_NOTES="Connect an IMAP / Google Workspace / M365 mailbox under Ingestion
 INSTALL_READY_RETRIES=24
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"open_archiver\";" 2>/dev/null || true
 }
 
@@ -29,10 +29,10 @@ services:
       APP_URL: http://open-archiver
       ORIGIN: http://open-archiver
       SYNC_FREQUENCY: "* * * * *"
-      DATABASE_URL: "postgresql://root:password@podium-postgres:5432/open_archiver"
+      DATABASE_URL: "postgresql://root:password@zeltro-postgres:5432/open_archiver"
       MEILI_HOST: http://open-archiver-meilisearch:7700
       MEILI_MASTER_KEY: "$meili_key"
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       REDIS_TLS_ENABLED: "false"
       STORAGE_TYPE: local

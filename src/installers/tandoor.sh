@@ -1,8 +1,8 @@
 INSTALL_DISPLAY="Tandoor Recipes"
-INSTALL_NOTES="Create the admin user via: podium exec python3 manage.py createsuperuser"
+INSTALL_NOTES="Create the admin user via: zeltro exec python3 manage.py createsuperuser"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE tandoor;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE tandoor;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,7 +17,7 @@ services:
     environment:
       SECRET_KEY: "$secret_key"
       DB_ENGINE: django.db.backends.postgresql
-      POSTGRES_HOST: podium-postgres
+      POSTGRES_HOST: zeltro-postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password

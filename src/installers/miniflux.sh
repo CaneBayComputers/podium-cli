@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Miniflux"
 INSTALL_CREDENTIALS="admin / admin123"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE miniflux;" 2>/dev/null || true
 }
 
 write_files() {
@@ -12,7 +12,7 @@ services:
     image: miniflux/miniflux:latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://root:password@podium-postgres:5432/miniflux?sslmode=disable
+      DATABASE_URL: postgres://root:password@zeltro-postgres:5432/miniflux?sslmode=disable
       RUN_MIGRATIONS: "1"
       CREATE_ADMIN: "1"
       ADMIN_USERNAME: admin

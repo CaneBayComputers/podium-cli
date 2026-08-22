@@ -14,7 +14,7 @@ source scripts/pre_check.sh
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} <project>"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} <project>"
     echo-white ""
     echo-white "Reopen the AI session for a project, in that project's directory."
     echo-white "Resumes the previous conversation where the agent supports it,"
@@ -34,7 +34,7 @@ esac
 # A project name is required — no interactive picker.
 if [[ -z "$1" ]]; then
     echo-red "No project specified."
-    echo-white "Usage: podium resume <project>"
+    echo-white "Usage: zeltro resume <project>"
     exit 1
 fi
 PROJECT_NAME="$1"
@@ -81,7 +81,7 @@ cd "$PROJECT_DIR"
 AI_AGENT_CLI_NAME="$AI_AGENT"
 
 if [[ -z "$AI_AGENT_CLI_NAME" ]]; then
-    echo-cyan "AI agent is not configured. Run 'podium ai-set' to choose an agent."
+    echo-cyan "AI agent is not configured. Run 'zeltro ai-set' to choose an agent."
     exit 1
 fi
 

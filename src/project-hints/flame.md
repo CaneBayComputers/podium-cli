@@ -6,10 +6,10 @@ No external database is needed — Flame uses SQLite stored at `/app/data`. Pers
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/flame`
+1. `mkdir -p ~/zeltro-projects/flame`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/flame && podium setup flame --no-startup`
-4. `podium up flame`
+3. `cd ~/zeltro-projects/flame && zeltro setup flame --no-startup`
+4. `zeltro up flame`
 5. Verify: `curl -sI http://flame/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -44,7 +44,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

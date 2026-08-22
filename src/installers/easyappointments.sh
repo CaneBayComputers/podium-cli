@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="set your admin account in the installation wizard on first 
 INSTALL_NOTES="First visit lands on /index.php/installation — fill in the form to create the schema and admin user."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS easyappointments CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS easyappointments CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -15,12 +15,12 @@ services:
     environment:
       BASE_URL: http://easyappointments
       DEBUG_MODE: "FALSE"
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_NAME: easyappointments
       DB_USERNAME: root
       DB_PASSWORD: ""
       MAIL_PROTOCOL: smtp
-      MAIL_SMTP_HOST: podium-mailhog
+      MAIL_SMTP_HOST: zeltro-mailhog
       MAIL_SMTP_PORT: "1025"
       MAIL_SMTP_CRYPTO: ""
       MAIL_FROM_ADDRESS: noreply@easyappointments.local

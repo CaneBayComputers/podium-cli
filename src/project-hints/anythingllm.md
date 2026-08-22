@@ -13,4 +13,4 @@ All-in-one private RAG/chat workspace: ingest documents, pick any LLM provider, 
 - `cap_add: SYS_ADMIN` is what upstream's `docker run` uses — the collector's headless Chromium needs it for link scraping.
 - Vector storage is LanceDB (embedded). No external vector DB service is required or wired in.
 - Nothing works until a provider is chosen in the wizard; there is no bundled model.
-- The installer exists: run `podium install anythingllm`.
+- The installer exists: run `zeltro install anythingllm`.

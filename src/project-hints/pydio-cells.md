@@ -4,7 +4,7 @@ Enterprise-style document sharing and collaboration platform (Go).
 
 **Image**: `pydio/cells:5.0.2`
 **Port**: 8080 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password, db `pydio_cells`)
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password, db `pydio_cells`)
 **Credentials**: `admin` / `admin123`
 
 ## Key Notes
@@ -14,4 +14,4 @@ Enterprise-style document sharing and collaboration platform (Go).
 - Cells does **not** create the database; `pydio_cells` must exist first.
 - v5 supports PostgreSQL as a first-class primary DB (the docs page listing MySQL-only is stale v4 content). MongoDB is optional and only tested through v7 — leave it off.
 - Heaviest app of the file-sync family: ~1-2 GB RAM, 30-60s first boot. Everything persists under `/var/cells`.
-- The installer exists: run `podium install pydio-cells`.
+- The installer exists: run `zeltro install pydio-cells`.

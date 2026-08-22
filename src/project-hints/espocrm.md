@@ -2,7 +2,7 @@
 
 **Image**: `espocrm/espocrm:10.0.3-apache`
 **Port**: 80 (Apache inside the container — no proxy needed)
-**Database**: MariaDB (`podium-mariadb`), dedicated user `espocrm` / `espocrm`
+**Database**: MariaDB (`zeltro-mariadb`), dedicated user `espocrm` / `espocrm`
 **Credentials**: admin / admin123
 
 ## Key Notes
@@ -12,4 +12,4 @@
 - **Do not mount `/var/www/html` wholesale.** That triggers a "LEGACY INSTALLATION METHOD DETECTED" warning and blocks future upgrades; mount the three sub-paths separately as this installer does.
 - The `espocrm-daemon` sidecar is not needed to browse the UI, but without it scheduled jobs, workflows, reminders and inbound email never run. It shares the same volumes as the web container.
 - `ESPOCRM_DATABASE_NAME` and `ESPOCRM_DATABASE_PORT` are real variables even though they are missing from the Docker Hub README.
-- The installer exists: run `podium install espocrm`.
+- The installer exists: run `zeltro install espocrm`.

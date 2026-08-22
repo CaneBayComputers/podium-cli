@@ -13,7 +13,7 @@ echo-return; echo-return
 
 # Usage function to explain the script
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [options]"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} [project_name] [options]"
     echo-white "Removes a project and associated settings"
     echo-white ""
     echo-white ""
@@ -30,10 +30,10 @@ usage() {
     echo-white "  --no-colors              Disable colored output"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-$0} my-project                     # Remove project, keep the database"
-    echo-white "  ${PODIUM_CMD:-$0} my-project --force-db-delete   # Remove project and database without prompting"
-    echo-white "  ${PODIUM_CMD:-$0} my-project --preserve-database # Remove project, keep database"
-    echo-white "  ${PODIUM_CMD:-$0} my-project --json-output       # Remove with JSON output"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project                     # Remove project, keep the database"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project --force-db-delete   # Remove project and database without prompting"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project --preserve-database # Remove project, keep database"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project --json-output       # Remove with JSON output"
 }
 
 # Initialize variables
@@ -111,12 +111,12 @@ if [ -z "$PROJECT_NAME" ]; then
         debug "No project name provided in JSON mode"
     fi
     echo-red "No project specified."
-    echo-white "Usage: podium remove <project> [--force-db-delete] [--preserve-database]"
+    echo-white "Usage: zeltro remove <project> [--force-db-delete] [--preserve-database]"
     exit 1
 fi
 
 PROJECT_DIR="$PROJECTS_DIR_PATH/$PROJECT_NAME"
-# No /etc/hosts cleanup: Podium does not write that file any more.
+# No /etc/hosts cleanup: Zeltro does not write that file any more.
 
 debug "Project directory: $PROJECT_DIR"
 debug "Force trash project: $FORCE_TRASH_PROJECT"
@@ -133,8 +133,8 @@ if [ -f "$PROJECT_DIR/.env" ]; then
     _DB_HINTS=$(grep -E "^(DB_HOST|DB_CONNECTION)=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ' | tr '\n' ' ')
 fi
 if [ -z "$_DB_HINTS" ]; then
-    # No root .env or no DB vars — scan env files and docker-compose.yaml for Podium shared service hostnames
-    _DB_HINTS=$(grep -rh "podium-postgres\|podium-mongo\|podium-mariadb" \
+    # No root .env or no DB vars — scan env files and docker-compose.yaml for Zeltro shared service hostnames
+    _DB_HINTS=$(grep -rh "zeltro-postgres\|zeltro-mongo\|zeltro-mariadb" \
         "$PROJECT_DIR"/*.env "$PROJECT_DIR"/.env.* "$PROJECT_DIR"/env/ \
         "$PROJECT_DIR"/docker-compose.yaml "$PROJECT_DIR"/docker-compose.yml \
         2>/dev/null | head -5 | tr '\n' ' ')
@@ -145,10 +145,10 @@ elif echo "$_DB_HINTS" | grep -qiE "mongo"; then
     DB_ENGINE="mongo"
 fi
 
-# A project only uses a shared Podium DB if its config references one of the
-# podium-* hostnames. Bundled-DB projects (e.g. budibase) don't, so we should
+# A project only uses a shared Zeltro DB if its config references one of the
+# zeltro-* hostnames. Bundled-DB projects (e.g. budibase) don't, so we should
 # skip the start-services + DROP DATABASE step entirely for those.
-if echo "$_DB_HINTS" | grep -q "podium-postgres\|podium-mongo\|podium-mariadb"; then
+if echo "$_DB_HINTS" | grep -q "zeltro-postgres\|zeltro-mongo\|zeltro-mariadb"; then
     HAS_SHARED_DB=true
 fi
 debug "Detected database engine: $DB_ENGINE, uses shared DB: $HAS_SHARED_DB"
@@ -189,7 +189,7 @@ fi
 # remedy cannot touch the cause.
 #
 # --force-db-delete already means "destroy this project's data", so the volumes
-# belong in that promise. Plain `podium remove` still keeps them, matching the
+# belong in that promise. Plain `zeltro remove` still keeps them, matching the
 # fact that it keeps the database.
 #
 # Must run BEFORE the directory is trashed: compose needs its own file to know
@@ -260,7 +260,7 @@ fi
 
 # 3. (was: remove the /etc/hosts entry)
 #
-# Nothing to do. Podium no longer writes /etc/hosts, so there is no entry to
+# Nothing to do. Zeltro no longer writes /etc/hosts, so there is no entry to
 # clean up. Installs that predate this may still have stale entries; they are
 # harmless — the name simply resolves to an address with nothing behind it —
 # and removing them would need the sudo this change exists to avoid.
@@ -287,8 +287,8 @@ if [ "$PRESERVE_DATABASE" = true ]; then
     echo-white
     DELETE_DB_CONFIRM="n"
 elif [ "$HAS_SHARED_DB" = false ]; then
-    debug "Project has no shared Podium DB hostnames — skipping database step"
-    echo-cyan "Project '$PROJECT_NAME' does not use a Podium shared database (bundled DB or none). Skipping database step."
+    debug "Project has no shared Zeltro DB hostnames — skipping database step"
+    echo-cyan "Project '$PROJECT_NAME' does not use a Zeltro shared database (bundled DB or none). Skipping database step."
     echo-white
     DELETE_DB_CONFIRM="n"
 elif [ "$FORCE_DB_DELETE" = true ]; then

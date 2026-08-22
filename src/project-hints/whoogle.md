@@ -13,4 +13,4 @@ Self-hosted, ad-free, privacy-respecting Google search front-end (no JS, no cook
 - Settings are per-browser (stored in a cookie or a URL config), so there is no shared state to back up.
 - It scrapes Google live — expect occasional CAPTCHA/rate-limit pages from a residential IP, and none of it works offline.
 - `WHOOGLE_CONFIG_*` env vars preset the defaults shown on the config page; the `WHOOGLE_ALT_*` vars redirect Twitter/YouTube/Reddit links to farside.link front-ends.
-- The installer exists: run `podium install whoogle`.
+- The installer exists: run `zeltro install whoogle`.

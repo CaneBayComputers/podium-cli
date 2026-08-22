@@ -3,9 +3,9 @@ INSTALL_CREDENTIALS="admin@freescout.local / freescout-admin"
 INSTALL_NOTES="FreeScout is a help desk / shared inbox. Visit http://$PROJECT_NAME/ to access."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS freescout CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS freescout CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     # FreeScout requires a dedicated DB user — the tiredofit image rejects root
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'freescout'@'%' IDENTIFIED BY 'freescout';
         ALTER USER 'freescout'@'%' IDENTIFIED BY 'freescout';
         GRANT ALL PRIVILEGES ON freescout.* TO 'freescout'@'%';
@@ -28,7 +28,7 @@ services:
       SITE_URL: http://freescout
       SETUP_TYPE: AUTO
       DB_TYPE: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_NAME: freescout
       DB_USER: freescout

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Decide whether a project's docker-compose.yaml is too complex to adapt.
 
-Prints 1 (complex, preserve the file) or 0 (Podium may use its own template).
+Prints 1 (complex, preserve the file) or 0 (Zeltro may use its own template).
 
 Lives in a file rather than a heredoc inside setup_project.sh because bash 3.2 —
 what macOS ships — could not parse the `$( ... << 'PYEOF' ... )` form once the
@@ -32,7 +32,7 @@ def main():
 
     try:
         # Laravel Sail composes need vendor/ to exist before the container can
-        # build, so adaptation is impossible — let Podium use its own template.
+        # build, so adaptation is impossible — let Zeltro use its own template.
         if "laravel/sail" in raw:
             print(0)
             return

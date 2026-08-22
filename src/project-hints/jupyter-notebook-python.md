@@ -13,4 +13,4 @@ Jupyter Notebook 7 on the official Jupyter Docker Stacks SciPy image (numpy, pan
 - `DOCKER_STACKS_JUPYTER_CMD=notebook` selects the Notebook 7 UI instead of the default JupyterLab.
 - The kernel connection is a WebSocket — nginx **must** send `Upgrade`/`Connection` headers and use a long `proxy_read_timeout`, or cells will hang in "connecting".
 - Only `/home/jovyan/work` is on a volume; anything written elsewhere in the container is lost on rebuild. `--ServerApp.root_dir` points the file browser there.
-- The installer exists: run `podium install jupyter-notebook-python`.
+- The installer exists: run `zeltro install jupyter-notebook-python`.

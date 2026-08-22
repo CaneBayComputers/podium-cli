@@ -9,16 +9,16 @@ cd ..
 
 DEV_DIR=$(pwd)
 
-# Run standard pre-checks (loads /etc/podium-cli/.env, validates projects dir, etc.)
+# Run standard pre-checks (loads /etc/zeltro-cli/.env, validates projects dir, etc.)
 source scripts/pre_check.sh
 
 SCRIPT_DIR="$DEV_DIR/scripts"
 
 usage() {
-    echo-white "Usage: podium create [--one-off] [-f|--file PATH] [\"project idea\"]"
+    echo-white "Usage: zeltro create [--one-off] [-f|--file PATH] [\"project idea\"]"
     echo-white ""
     echo-white "Describe a project in plain English and your configured AI agent will"
-    echo-white "create a working Podium-managed project for you."
+    echo-white "create a working Zeltro-managed project for you."
     echo-white ""
     echo-white "The AI creates the project, writes an AGENTS.md handoff file into it,"
     echo-white "then cd's into the new project directory and hands off to your agent"
@@ -31,19 +31,19 @@ usage() {
     echo-white "                   and never prompts. Combine with --json-output for a"
     echo-white "                   machine-readable result (for GUIs and other front ends)."
     echo-white ""
-    echo-white "If neither a positional idea nor --file is given, podium create reads"
+    echo-white "If neither a positional idea nor --file is given, zeltro create reads"
     echo-white "from stdin if it's piped or redirected. Falls back to an interactive"
     echo-white "prompt only when stdin is a terminal."
     echo-white ""
     echo-white "Examples:"
-    echo-white "  podium create"
-    echo-white "  podium create \"A task tracker with user auth\""
-    echo-white "  podium create \"https://github.com/user/repo\""
-    echo-white "  podium create --one-off \"A notes app in Express with postgres\""
-    echo-white "  podium create -f big-prompt.md            # read idea from file"
-    echo-white "  podium create < big-prompt.md             # via redirection"
-    echo-white "  cat big-prompt.md | podium create         # via pipe"
-    echo-white "  podium create <<< \"\$(cat big-prompt.md)\"  # via here-string"
+    echo-white "  zeltro create"
+    echo-white "  zeltro create \"A task tracker with user auth\""
+    echo-white "  zeltro create \"https://github.com/user/repo\""
+    echo-white "  zeltro create --one-off \"A notes app in Express with postgres\""
+    echo-white "  zeltro create -f big-prompt.md            # read idea from file"
+    echo-white "  zeltro create < big-prompt.md             # via redirection"
+    echo-white "  cat big-prompt.md | zeltro create         # via pipe"
+    echo-white "  zeltro create <<< \"\$(cat big-prompt.md)\"  # via here-string"
 }
 
 SKIP_INTERACTIVE=0
@@ -85,10 +85,10 @@ while [[ $# -gt 0 ]]; do
             # Previously any argument, flags included, was swallowed into the
             # idea text. That made a typo silently change the prompt, and made
             # an older CLI handed a newer flag BUILD A PROJECT rather than
-            # reject the flag -- `podium create --classify-only "..."` on a CLI
+            # reject the flag -- `zeltro create --classify-only "..."` on a CLI
             # without that flag created the project instead of classifying it.
             echo-red "Unknown option: $1"
-            echo-white "Use '$PODIUM_CMD --help' for the option list, or '--' before an idea that starts with a dash."
+            echo-white "Use '$ZELTRO_CMD --help' for the option list, or '--' before an idea that starts with a dash."
             exit 1
             ;;
         *)
@@ -117,7 +117,7 @@ if [[ -z "$USER_IDEA" && ! -t 0 ]]; then
 fi
 
 # 3. Still nothing? Ask, but only when a human is definitely there.
-#    `podium create` already prompts for framework, database and project name,
+#    `zeltro create` already prompts for framework, database and project name,
 #    so refusing to ask for the idea itself was the odd one out. The agent
 #    guarantee is preserved by gating on exactly the same conditions the menus
 #    use: scripts, CI, --one-off and --json-output still get a hard error.
@@ -132,7 +132,7 @@ if [[ -z "$USER_IDEA" ]]; then
             read USER_IDEA || USER_IDEA=""
             # Blank input on a terminal means they changed their mind.
             if [[ -z "$USER_IDEA" ]]; then
-                echo-white "Nothing entered — run 'podium create \"<idea>\"' when you're ready."
+                echo-white "Nothing entered — run 'zeltro create \"<idea>\"' when you're ready."
                 exit 1
             fi
         done
@@ -143,7 +143,7 @@ if [[ -z "$USER_IDEA" ]]; then
         json_error "no project idea provided; pass it as an argument, via -f <file>, or on stdin"
     else
         echo-red "No project idea provided."
-        echo-white "Usage: podium create \"<idea>\"   |   podium create -f <file>   |   ... | podium create"
+        echo-white "Usage: zeltro create \"<idea>\"   |   zeltro create -f <file>   |   ... | zeltro create"
         exit 1
     fi
 fi
@@ -162,14 +162,14 @@ fi
 # ---------------------------------------------------------------------------
 # Phase 1: classify — decide the stack, confirm with the user
 # ---------------------------------------------------------------------------
-# The AI is asked ONLY which stack fits, and answers in JSON. Podium then does
+# The AI is asked ONLY which stack fits, and answers in JSON. Zeltro then does
 # the creating itself. Previously one prompt had to hold the 100-app catalogue
 # AND build the app, and a wrong stack guess wasn't visible until after a full
 # build had been paid for.
 source "$SCRIPT_DIR/classify.sh"
 
 # Menus need a human. Anything scripted takes the top recommendation silently,
-# preserving the promise that no podium command ever blocks an agent.
+# preserving the promise that no zeltro command ever blocks an agent.
 # --classify-only stops here: run phase 1, report, and create nothing. Placed
 # before the menus rather than inside classify_project so no interactive code
 # path is reachable at all.
@@ -188,13 +188,13 @@ CHOSEN_KIND=""; CHOSEN_SLUG=""; CHOSEN_DB=""; CHOSEN_NAME=""; CHOSEN_CUSTOMIZE="
 if ! classify_project "$USER_IDEA" "$CLASSIFY_NONINTERACTIVE"; then
     echo-yellow "Could not determine a stack automatically."
     echo-white "Create the project yourself, then describe what to build:"
-    echo-white "  podium new <framework> <name>   or   podium install <app>"
-    echo-white "  cd \"$PROJECTS_DIR_PATH/<name>\" && podium ai \"$USER_IDEA\""
+    echo-white "  zeltro new <framework> <name>   or   zeltro install <app>"
+    echo-white "  cd \"$PROJECTS_DIR_PATH/<name>\" && zeltro ai \"$USER_IDEA\""
     exit 1
 fi
 
 # ---------------------------------------------------------------------------
-# Phase 2: create — Podium does this, not the AI
+# Phase 2: create — Zeltro does this, not the AI
 # ---------------------------------------------------------------------------
 echo-return
 if [[ "$CHOSEN_KIND" == "app" ]]; then
@@ -233,7 +233,7 @@ fi
 # Skipped entirely for a plain app install. install.sh has already polled until
 # the app answered 2xx/3xx and printed its URL, credentials (INSTALL_CREDENTIALS)
 # and gotchas (INSTALL_NOTES) — so an agent session here would spend real tokens
-# re-deriving what Podium reported seconds ago. It only earns its keep when the
+# re-deriving what Zeltro reported seconds ago. It only earns its keep when the
 # user asked for something beyond standing the software up.
 write_project_agents_md "$CHOSEN_NAME" "$PROJECT_DIR"
 
@@ -244,7 +244,7 @@ if [[ "$CHOSEN_KIND" == "app" && "$CHOSEN_CUSTOMIZE" != "yes" ]]; then
     echo-return
     echo-cyan "To customize it from here:"
     echo-white "  cd \"$PROJECT_DIR\""
-    echo-white "  podium ai \"<what you want changed>\""
+    echo-white "  zeltro ai \"<what you want changed>\""
     echo-return
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         echo "{\"action\": \"create\", \"project_name\": \"$CHOSEN_NAME\", \"kind\": \"app\", \"slug\": \"$CHOSEN_SLUG\", \"build_step\": \"skipped\", \"status\": \"success\"}"
@@ -257,12 +257,12 @@ fi
 # rules the old single-phase prompt needed. The per-project AGENTS.md written
 # above supplies the URL, database and command patterns.
 COMMON_RULES="Rules:
-- Run project tooling inside the container (podium exec / podium art / podium django manage / podium npm ...), never on the host.
-- Python containers provide python3, not python. For Django use 'podium django manage <args>'.
-- To restart processes use 'podium supervisor restart all', never 'podium exec supervisorctl'.
-- Never pass --json-output to a podium command; it hides the success/failure distinction.
+- Run project tooling inside the container (zeltro exec / zeltro art / zeltro django manage / zeltro npm ...), never on the host.
+- Python containers provide python3, not python. For Django use 'zeltro django manage <args>'.
+- To restart processes use 'zeltro supervisor restart all', never 'zeltro exec supervisorctl'.
+- Never pass --json-output to a zeltro command; it hides the success/failure distinction.
 - Before verifying, RESTART the app so your changes are actually loaded:
-  'podium supervisor restart all'. A long-running server keeps serving the code
+  'zeltro supervisor restart all'. A long-running server keeps serving the code
   it started with, so curling without restarting can return 200 from the
   pre-edit process and hide a broken app.
 - If you imported a package, add it to requirements.txt / package.json /
@@ -274,9 +274,9 @@ if [[ "$CHOSEN_KIND" == "app" ]]; then
     # The software is already installed, configured and serving. Framing this as
     # "build X" invites the agent to rebuild the whole app from scratch, so the
     # install is stated as done and only the leftover work is asked for.
-    BUILD_PROMPT="This Podium project is an existing, already-running install of '$CHOSEN_SLUG'. It is installed, configured and serving at http://$CHOSEN_NAME/.
+    BUILD_PROMPT="This Zeltro project is an existing, already-running install of '$CHOSEN_SLUG'. It is installed, configured and serving at http://$CHOSEN_NAME/.
 
-Do NOT install, reinstall, rebuild or scaffold it. Do NOT run podium new, podium clone or podium install. The software itself is finished.
+Do NOT install, reinstall, rebuild or scaffold it. Do NOT run zeltro new, zeltro clone or zeltro install. The software itself is finished.
 
 Read AGENTS.md in this directory first: it has the local URL, the database and the command patterns to use inside the container.
 
@@ -288,7 +288,7 @@ The install part of that request is already complete. Address ONLY the remaining
 
 $COMMON_RULES"
 else
-    BUILD_PROMPT="You are the developer on an existing Podium project. The project has been created and is running — do NOT run podium new, podium clone or podium install, and do not create another project.
+    BUILD_PROMPT="You are the developer on an existing Zeltro project. The project has been created and is running — do NOT run zeltro new, zeltro clone or zeltro install, and do not create another project.
 
 Read AGENTS.md in this directory first: it has the local URL, the database, and the command patterns to use inside the container.
 
@@ -311,7 +311,7 @@ echo-return
 # Asked for once, here, at the moment something actually worked -- not on `up`,
 # `status` or anything else people run all day. echo-white is a no-op under
 # --json-output, so machine consumers never see it.
-echo-white "Podium is free and always will be. If it saved you time: https://ko-fi.com/canebaycomputers"
+echo-white "Zeltro is free and always will be. If it saved you time: https://ko-fi.com/canebaycomputers"
 echo-return
 
 if [[ "$JSON_OUTPUT" == "1" ]]; then

@@ -4,10 +4,10 @@ IT Tools is a collection of handy online utilities, distributed as `corentinth/i
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/it-tools`
+1. `mkdir -p ~/zeltro-projects/it-tools`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/it-tools && podium setup it-tools --no-startup`
-4. `podium up it-tools`
+3. `cd ~/zeltro-projects/it-tools && zeltro setup it-tools --no-startup`
+4. `zeltro up it-tools`
 5. Verify: `curl -sI http://it-tools/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -25,7 +25,7 @@ services:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## Admin

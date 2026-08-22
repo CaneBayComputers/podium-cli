@@ -4,7 +4,7 @@ Self-hosted authentication core — a headless API, not a web app.
 
 **Image**: `supertokens/supertokens-postgresql:12.0.9`
 **Port**: 3567 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password, db `supertokens`)
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password, db `supertokens`)
 **Credentials**: none — there is no UI. `GET http://supertokens/hello` returns `Hello` when it is healthy.
 
 ## Key Notes
@@ -12,4 +12,4 @@ Self-hosted authentication core — a headless API, not a web app.
 - Use the `-postgresql` image variant; the plain `supertokens/supertokens-*` tags are per-database builds and the MySQL one will not read `POSTGRESQL_CONNECTION_URI`.
 - The empty database must exist first; the core creates and migrates its own tables on boot.
 - Set `API_KEYS` if you want the core locked down — without it any container on the network can call it.
-- The installer exists: run `podium install supertokens`.
+- The installer exists: run `zeltro install supertokens`.

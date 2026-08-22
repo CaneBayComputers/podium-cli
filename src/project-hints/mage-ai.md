@@ -9,8 +9,8 @@ Notebook-style data pipeline tool (ETL/orchestration) — build blocks in Python
 
 ## Key Notes
 - The command **must** be `/app/run_app.sh mage start <project>`; running `mage start` directly skips the image's init wrapper.
-- `USER_CODE_PATH` has to match the project name in the command (`/home/src/podium_project`), otherwise the UI opens an empty project.
+- `USER_CODE_PATH` has to match the project name in the command (`/home/src/zeltro_project`), otherwise the UI opens an empty project.
 - Everything persistent lives under `/home/src` — that single volume covers both pipeline code and the metadata db.
 - The editor and terminal use WebSockets; nginx needs the upgrade headers and a long read timeout.
 - Set `REQUIRE_USER_AUTHENTICATION=1` if you want the login screen (default owner is `admin@admin.com` / `admin`).
-- The installer exists: run `podium install mage-ai`.
+- The installer exists: run `zeltro install mage-ai`.

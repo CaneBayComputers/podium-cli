@@ -4,7 +4,7 @@ Personal finance and wealth-management app (Rails) — accounts, budgets, transa
 
 **Image**: `ghcr.io/maybe-finance/maybe:0.6.0` (web + Sidekiq worker) with an `nginx:1.29-alpine` proxy
 **Port**: 3000 inside the web container (via nginx proxy on 80)
-**Database**: PostgreSQL (`podium-postgres`, db `maybe`) + Redis (`podium-redis`, database 1)
+**Database**: PostgreSQL (`zeltro-postgres`, db `maybe`) + Redis (`zeltro-redis`, database 1)
 **Credentials**: Register on first visit
 
 ## Key Notes
@@ -16,4 +16,4 @@ Personal finance and wealth-management app (Rails) — accounts, budgets, transa
 - The Sidekiq `worker` container is required for imports, syncs and rules; it shares the `/rails/storage` volume with web.
 - First boot runs migrations before Puma binds — expect a minute or two of 502s. `/` redirects to `/registration/new` until the first user exists.
 - `OPENAI_ACCESS_TOKEN` is optional and only powers the AI chat/rules features (and costs money).
-- The installer exists: run `podium install maybe`.
+- The installer exists: run `zeltro install maybe`.

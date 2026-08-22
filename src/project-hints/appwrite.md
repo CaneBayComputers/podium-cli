@@ -2,7 +2,7 @@
 
 **Image**: `appwrite/appwrite:1.5.7`
 **Port**: 80 (direct — Apache inside the container)
-**Database**: MariaDB (`podium-mariadb`) + Redis (`podium-redis`)
+**Database**: MariaDB (`zeltro-mariadb`) + Redis (`zeltro-redis`)
 **Credentials**: Create first admin on first visit
 
 ## Key Notes
@@ -11,4 +11,4 @@
 - Domain settings must all match the project name: `_APP_DOMAIN=appwrite`, `_APP_DOMAIN_TARGET=appwrite`.
 - Set `_APP_OPTIONS_FORCE_HTTPS=disabled` for local HTTP.
 - MariaDB database `appwrite` must be created before first start.
-- The installer exists: run `podium install appwrite`.
+- The installer exists: run `zeltro install appwrite`.

@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="DokuWiki"
 INSTALL_CREDENTIALS="Create the admin at http://dokuwiki/install.php"
-INSTALL_NOTES="Delete install.php from the container once setup finishes: podium exec dokuwiki rm /app/dokuwiki/install.php"
+INSTALL_NOTES="Delete install.php from the container once setup finishes: zeltro exec dokuwiki rm /app/dokuwiki/install.php"
 INSTALL_READY_RETRIES=30
 
 write_files() {

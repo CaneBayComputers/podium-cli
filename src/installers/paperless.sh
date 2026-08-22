@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Paperless-ngx"
 INSTALL_CREDENTIALS="admin / admin"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE paperless;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE paperless;" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,12 +15,12 @@ services:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: unless-stopped
     environment:
-      PAPERLESS_DBHOST: podium-postgres
+      PAPERLESS_DBHOST: zeltro-postgres
       PAPERLESS_DBPORT: 5432
       PAPERLESS_DBUSER: root
       PAPERLESS_DBPASS: password
       PAPERLESS_DBNAME: paperless
-      PAPERLESS_REDIS: redis://podium-redis:6379
+      PAPERLESS_REDIS: redis://zeltro-redis:6379
       PAPERLESS_SECRET_KEY: "$secret_key"
       PAPERLESS_URL: http://paperless
       PAPERLESS_ADMIN_USER: admin

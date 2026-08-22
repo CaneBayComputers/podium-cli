@@ -3,12 +3,12 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="First boot runs a long migration — give it a few minutes before the page answers."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"weblate\";" 2>/dev/null || true
 }
 
 write_files() {
-    # NOTE: the app service must NOT be called weblate-* — Podium's web-service
+    # NOTE: the app service must NOT be called weblate-* — Zeltro's web-service
     # detection regex is ^(nginx|web|app|api|server|frontend|backend|http) and
     # "weblate-app" matches on "web", which would hand the project IP to the
     # wrong container. Hence "translate-server".
@@ -29,17 +29,17 @@ services:
       WEBLATE_SERVER_EMAIL: weblate@example.com
       WEBLATE_DEFAULT_FROM_EMAIL: weblate@example.com
       WEBLATE_REGISTRATION_OPEN: "1"
-      WEBLATE_EMAIL_HOST: podium-mailhog
+      WEBLATE_EMAIL_HOST: zeltro-mailhog
       WEBLATE_EMAIL_PORT: "1025"
       WEBLATE_EMAIL_USE_TLS: "0"
       WEBLATE_EMAIL_USE_SSL: "0"
-      POSTGRES_HOST: podium-postgres
+      POSTGRES_HOST: zeltro-postgres
       POSTGRES_PORT: "5432"
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: weblate
       POSTGRES_DATABASE: weblate
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       REDIS_DB: "1"
       CLIENT_MAX_BODY_SIZE: 200M

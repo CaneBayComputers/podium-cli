@@ -1,20 +1,20 @@
 # BookStack
 
 Do **not** clone the BookStack source repo (`BookStackApp/BookStack`). It ships only a
-dev Dockerfile that builds from source — slow, heavy, and fragile in Podium.
+dev Dockerfile that builds from source — slow, heavy, and fragile in Zeltro.
 
 Use the **LinuxServer.io** pre-built image instead: `lscr.io/linuxserver/bookstack`.
 It runs Apache on port 80 (no nginx proxy needed), uses MariaDB, and installs in seconds.
 
 ## Setup workflow
 
-1. Create the database on Podium's shared MariaDB:
+1. Create the database on Zeltro's shared MariaDB:
    ```
-   podium mysql -e "CREATE DATABASE IF NOT EXISTS bookstack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   zeltro mysql -e "CREATE DATABASE IF NOT EXISTS bookstack CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
    ```
-2. Create `~/podium-projects/bookstack/` with the docker-compose below.
-3. `cd ~/podium-projects/bookstack && podium setup bookstack --no-startup`
-4. `podium up bookstack`
+2. Create `~/zeltro-projects/bookstack/` with the docker-compose below.
+3. `cd ~/zeltro-projects/bookstack && zeltro setup bookstack --no-startup`
+4. `zeltro up bookstack`
 5. Verify with `curl -sI http://bookstack/` — expect a 302 redirect to `/login`.
 
 ## docker-compose.yaml
@@ -29,7 +29,7 @@ services:
       PUID: 1000
       PGID: 1000
       APP_URL: http://bookstack
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: bookstack
       DB_USERNAME: root
@@ -46,10 +46,10 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
-The container listens on port 80 internally; Podium assigns the static VPC IP directly
+The container listens on port 80 internally; Zeltro assigns the static VPC IP directly
 to the bookstack service (no nginx proxy needed).
 
 ## Admin

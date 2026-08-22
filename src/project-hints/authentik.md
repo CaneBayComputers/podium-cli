@@ -4,7 +4,7 @@ Identity provider / SSO (OAuth2, SAML, LDAP, proxy outposts).
 
 **Image**: `ghcr.io/goauthentik/server:2026.5.6`
 **Port**: 9000 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password, db `authentik`)
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password, db `authentik`)
 **Credentials**: `akadmin` / `admin123` — first run finishes at `http://authentik/if/flow/initial-setup/`
 
 ## Key Notes
@@ -14,4 +14,4 @@ Identity provider / SSO (OAuth2, SAML, LDAP, proxy outposts).
 - `AUTHENTIK_BOOTSTRAP_PASSWORD` / `AUTHENTIK_BOOTSTRAP_EMAIL` are only read on the very first startup, before any user exists.
 - The server listens on 9000 (HTTP) and 9443 (HTTPS) — proxy to **9000** only.
 - Env var nesting uses double underscores: `AUTHENTIK_POSTGRESQL__HOST`.
-- The installer exists: run `podium install authentik`.
+- The installer exists: run `zeltro install authentik`.

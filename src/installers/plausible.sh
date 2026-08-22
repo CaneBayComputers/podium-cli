@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Plausible Analytics"
 INSTALL_NOTES="Privacy-first web analytics. First startup takes ~30 seconds for migrations. Create your account on first visit."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE plausible_db;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE plausible_db;" 2>/dev/null || true
 }
 
 write_files() {
@@ -29,7 +29,7 @@ EOF
 BASE_URL=http://plausible
 SECRET_KEY_BASE=$secret_key
 TMPDIR=/var/lib/plausible/tmp
-DATABASE_URL=postgres://root:password@podium-postgres:5432/plausible_db
+DATABASE_URL=postgres://root:password@zeltro-postgres:5432/plausible_db
 CLICKHOUSE_DATABASE_URL=http://plausible-clickhouse:8123/plausible_events_db
 MAILER_ADAPTER=Bamboo.LocalAdapter
 DISABLE_REGISTRATION=false

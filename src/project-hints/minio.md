@@ -9,4 +9,4 @@
 - Command: `server /data --console-address ":9001"` — both API (9000) and console (9001) start.
 - nginx proxies port 80 → MinIO console (9001). API clients connect to port 9000 internally.
 - S3-compatible API endpoint for applications: `http://minio:9000` (internal VPC, not proxied).
-- The installer exists: run `podium install minio`.
+- The installer exists: run `zeltro install minio`.

@@ -17,8 +17,8 @@ services:
       APP_LISTEN_PORT: 9157
       SESSION_KEY: "$session_key"
       FORM_ENCRYPTION_KEY: "$form_key"
-      MONGO_URI: "mongodb://root:password@podium-mongo:27017/heyform?authSource=admin"
-      REDIS_HOST: podium-redis
+      MONGO_URI: "mongodb://root:password@zeltro-mongo:27017/heyform?authSource=admin"
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: 6379
       REDIS_DB: 0
     volumes:

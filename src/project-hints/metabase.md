@@ -11,5 +11,5 @@
 - `JAVA_TIMEZONE: UTC` prevents timezone-related query issues.
 - First startup takes ~60 seconds for JVM initialization — nginx `proxy_read_timeout 300s` prevents gateway timeouts.
 - Persist `metabase-data` volume at `/metabase-data`.
-- For production, switch to PostgreSQL: `MB_DB_TYPE=postgres`, `MB_DB_HOST=podium-postgres`, etc.
-- The installer exists: run `podium install metabase`.
+- For production, switch to PostgreSQL: `MB_DB_TYPE=postgres`, `MB_DB_HOST=zeltro-postgres`, etc.
+- The installer exists: run `zeltro install metabase`.

@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Cap (CAPTCHA)"
-INSTALL_CREDENTIALS="admin key: podium-cap-admin-key"
+INSTALL_CREDENTIALS="admin key: zeltro-cap-admin-key"
 INSTALL_NOTES="The admin key IS the dashboard login; all state lives in the shared Redis under the 'cap:' prefix."
 
 write_files() {
@@ -9,10 +9,10 @@ services:
     image: tiago2/cap:3.1.9
     restart: unless-stopped
     environment:
-      ADMIN_KEY: podium-cap-admin-key
+      ADMIN_KEY: zeltro-cap-admin-key
       SERVER_PORT: "3000"
       SERVER_HOSTNAME: 0.0.0.0
-      REDIS_URL: redis://podium-redis:6379/9
+      REDIS_URL: redis://zeltro-redis:6379/9
       REDIS_PREFIX: "cap:"
       CORS_ORIGIN: "*"
     volumes:

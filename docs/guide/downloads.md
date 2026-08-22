@@ -1,24 +1,23 @@
 ---
 title: Downloads
-layout: default
 nav_order: 3
 ---
 
 # Downloads
 
-Podium is two pieces. The **CLI** does the work; the **GUI** is an optional
+Zeltro is two pieces. The **CLI** does the work; the **GUI** is an optional
 desktop front end for it. Neither ships as a package — both install from source
 with one command, so the checkout you install from is the one that runs, and
 updating is a `git pull`.
 
 ---
 
-## Podium CLI
+## Zeltro CLI
 
 **Linux**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-ubuntu.sh | bash
 ```
 
 Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
@@ -26,7 +25,7 @@ Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
 **macOS**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-mac.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-mac.sh | bash
 ```
 
 Installs the Xcode command line tools, Homebrew and Docker Desktop if any are
@@ -34,30 +33,30 @@ missing.
 
 **Windows**
 
-Podium is a Linux tool; on Windows it runs inside WSL2. Right-click PowerShell
+Zeltro is a Linux tool; on Windows it runs inside WSL2. Right-click PowerShell
 and choose **Run as administrator**, then:
 
 ```powershell
-irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex
+irm https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-windows.ps1 | iex
 ```
 
 Requires Windows 10 version 2004 (build 19041) or newer — the installer checks
 the build before it changes anything, rather than failing after the reboot.
 
-Then run `podium configure` once. Full details in **[Installation](../installation/)**.
+Then run `zeltro configure` once. Full details in **[Installation](../installation/)**.
 
 ---
 
-## Podium GUI
+## Zeltro GUI
 
 Installed the same way as the CLI — one command, which clones the repo for you.
-On Linux and macOS it installs the CLI first if `podium` is missing, so this is
+On Linux and macOS it installs the CLI first if `zeltro` is missing, so this is
 the only thing you need to run:
 
 **Linux**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-ubuntu.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-gui/master/install-ubuntu.sh | bash
 ```
 
 Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
@@ -65,21 +64,21 @@ Swap the script for your distro: `install-fedora.sh` or `install-arch.sh`.
 **macOS**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/install-mac.sh | bash
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-gui/master/install-mac.sh | bash
 ```
 
 To install a checkout you already have rather than a fresh clone, run the script
 from inside it — it detects the local repository and builds that instead:
 
 ```bash
-git clone https://github.com/CaneBayComputers/podium-gui.git
-cd podium-gui && ./install-ubuntu.sh
+git clone https://github.com/CaneBayComputers/zeltro-gui.git
+cd zeltro-gui && ./install-ubuntu.sh
 ```
 
 **Windows**
 
 ```powershell
-irm https://raw.githubusercontent.com/CaneBayComputers/podium-gui/master/scripts/install-windows.ps1 | iex
+irm https://raw.githubusercontent.com/CaneBayComputers/zeltro-gui/master/scripts/install-windows.ps1 | iex
 ```
 
 The installer pulls the npm dependencies, compiles the TypeScript, rebuilds the
@@ -91,15 +90,15 @@ entry. It takes a few minutes, mostly `npm install`. Re-running it is safe.
 Create with AI, the full app library, new project and clone, start/stop of the
 shared services, embedded tabbed terminals for AI sessions, and a Settings panel
 with AI agent configuration and a theme picker. Five themes ship — Retro (the
-default), Dark, Light, Matrix and Podium — each with its own 16-colour terminal
+default), Dark, Light, Matrix and Zeltro — each with its own 16-colour terminal
 palette so output stays readable, including on Light.
 
 ### Windows works differently
 
-On Linux and macOS the GUI drives a Podium on the same machine. On Windows there
-is no local Podium and the installer does not try to add one — the GUI drives
-Podium on *other* machines over SSH: a Linux box, a Mac, a Raspberry Pi, an EC2
-instance. Add them under **Settings → SSH Hosts**; each needs Podium already
+On Linux and macOS the GUI drives a Zeltro on the same machine. On Windows there
+is no local Zeltro and the installer does not try to add one — the GUI drives
+Zeltro on *other* machines over SSH: a Linux box, a Mac, a Raspberry Pi, an EC2
+instance. Add them under **Settings → SSH Hosts**; each needs Zeltro already
 installed and configured. Projects, containers and files live on the host that
 runs them.
 
@@ -129,7 +128,7 @@ quarantine attribute, so there is nothing to work around.
 
 ## Versions
 
-`podium --version` reports the CLI version. The GUI's About panel shows both.
+`zeltro --version` reports the CLI version. The GUI's About panel shows both.
 
 **The two version independently and are not expected to match.** Compatibility is
 handled by feature detection, not by comparing version numbers — the GUI asks the
@@ -141,15 +140,15 @@ whenever you like.
 
 ## Source
 
-- [CaneBayComputers/podium-cli](https://github.com/CaneBayComputers/podium-cli) — MIT
-- [CaneBayComputers/podium-gui](https://github.com/CaneBayComputers/podium-gui) — MIT
+- [CaneBayComputers/zeltro-cli](https://github.com/CaneBayComputers/zeltro-cli) — MIT
+- [CaneBayComputers/zeltro-gui](https://github.com/CaneBayComputers/zeltro-gui) — MIT
 
 ## Support
 
-Podium is free and always will be — both parts are MIT. If it saves you time and
+Zeltro is free and always will be — both parts are MIT. If it saves you time and
 you want to chip in:
 
 - [GitHub Sponsors](https://github.com/sponsors/shrimpwagon) — GitHub covers the fees
 - [Ko-fi](https://ko-fi.com/canebaycomputers) — quickest, no account needed
 - [Patreon](https://patreon.com/canebaycomputers) — monthly
-- [Credit card](https://donate.podiumcli.com) — direct, via Cane Bay Computers' processor
+- [Credit card](https://donate.zeltro.build) — direct, via Cane Bay Computers' processor

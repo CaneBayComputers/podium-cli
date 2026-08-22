@@ -2,7 +2,7 @@
 
 **Image**: `glpi/glpi:11.0.8`
 **Port**: 80 (Apache under supervisord — no proxy needed)
-**Database**: MariaDB (`podium-mariadb`), dedicated user `glpi` / `glpi`
+**Database**: MariaDB (`zeltro-mariadb`), dedicated user `glpi` / `glpi`
 **Credentials**: glpi / glpi (also ships `tech`, `normal` and `post-only` demo accounts)
 
 ## Key Notes
@@ -11,4 +11,4 @@
 - The extra `GRANT SELECT ON mysql.time_zone_name` is needed before timezone support can be enabled with `bin/console database:enable_timezones`; without it GLPI warns on the health page.
 - `/var/glpi` is a single volume covering config, files, logs and marketplace on the 11.x line. (On 10.0.x you would additionally need `/var/www/glpi/marketplace`.)
 - There are no admin-account env vars — the entrypoint prints the default credentials in its startup banner.
-- The installer exists: run `podium install glpi`.
+- The installer exists: run `zeltro install glpi`.

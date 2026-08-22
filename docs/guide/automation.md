@@ -1,6 +1,5 @@
 ---
 title: Automation & JSON
-layout: default
 nav_order: 11
 ---
 
@@ -10,9 +9,9 @@ nav_order: 11
 
 ## No interactive prompts
 
-Every command except `podium configure` fails with a clear "required argument" error rather than prompting. Nothing ever blocks a script or an agent waiting for input.
+Every command except `zeltro configure` fails with a clear "required argument" error rather than prompting. Nothing ever blocks a script or an agent waiting for input.
 
-Use `podium up-all` / `podium down-all` to act on every project rather than looping.
+Use `zeltro up-all` / `zeltro down-all` to act on every project rather than looping.
 
 ---
 
@@ -21,8 +20,8 @@ Use `podium up-all` / `podium down-all` to act on every project rather than loop
 `--json-output` produces clean machine-readable output for GUIs and scripts.
 
 ```bash
-podium status --json-output
-podium new laravel myapp --version 11.x --json-output
+zeltro status --json-output
+zeltro new laravel myapp --version 11.x --json-output
 ```
 
 ```json
@@ -39,13 +38,13 @@ Scripting examples:
 
 ```bash
 # wait for the database to be up
-if podium status --json-output | jq -r '.shared_services.mariadb.status' | grep -q RUNNING; then
+if zeltro status --json-output | jq -r '.shared_services.mariadb.status' | grep -q RUNNING; then
     echo "Database is ready"
 fi
 
 # start every project, including stopped ones
-for project in $(podium status --all --json-output | jq -r '.projects[].name'); do
-    podium up "$project" --json-output
+for project in $(zeltro status --all --json-output | jq -r '.projects[].name'); do
+    zeltro up "$project" --json-output
 done
 ```
 
@@ -56,15 +55,15 @@ done
 **Not supported** — anything that runs inside a container or connects straight to a service: `composer`, `art`, `wp`, `php`, `npm`, `npx`, `node`, `python`, `pip`, `shell`, `django`, `exec`, `supervisor`, `redis`, `memcache`.
 
 {: .warning }
-**If you are an AI agent, never use `--json-output`.** It suppresses all human-readable output including the success/failure distinction, so you cannot tell whether a command actually worked. It exists for external programs that parse Podium's output, not for agents driving the CLI.
+**If you are an AI agent, never use `--json-output`.** It suppresses all human-readable output including the success/failure distinction, so you cannot tell whether a command actually worked. It exists for external programs that parse Zeltro's output, not for agents driving the CLI.
 
 ---
 
 ## Debugging
 
 ```bash
-podium new laravel test-project --debug
-tail -f /tmp/podium-cli-debug.log
+zeltro new laravel test-project --debug
+tail -f /tmp/zeltro-cli-debug.log
 ```
 
 `--debug` works on every command. Each invocation starts a fresh session and logs script flow, function calls and exit codes across scripts.
@@ -77,19 +76,19 @@ tail -f /tmp/podium-cli-debug.log
 |---|---|
 | Services won't start | Docker is running; you're in the `docker` group (log out and back in after install) |
 | Permission errors | Same — `docker` group membership needs a fresh login |
-| Can't reach `http://project/` | `podium status <project>`; then `docker logs <project-name>` |
-| Database connection refused | `podium status` — is the shared service running? |
-| Project 502s after a restart | A dependency isn't in the base image. See [Architecture → Base images]({{ site.baseurl }}/guide/architecture/#base-images) |
-| Fedora: permission denied on project files | SELinux — re-run `podium configure` to relabel. See [Installation]({{ site.baseurl }}/guide/installation/#fedora--rhel--selinux) |
+| Can't reach `http://project/` | `zeltro status <project>`; then `docker logs <project-name>` |
+| Database connection refused | `zeltro status` — is the shared service running? |
+| Project 502s after a restart | A dependency isn't in the base image. See [Architecture → Base images](../architecture/#base-images) |
+| Fedora: permission denied on project files | SELinux — re-run `zeltro configure` to relabel. See [Installation](../installation/#fedora--rhel--selinux) |
 | Arch: Docker won't start after install | The system upgrade replaced the running kernel — reboot |
 
 Useful probes:
 
 ```bash
-podium status                       # everything
-podium status <project> --all       # include stopped projects
+zeltro status                       # everything
+zeltro status <project> --all       # include stopped projects
 docker logs <project-name>
-podium exec "ping podium-mariadb"   # networking from inside the container
+zeltro exec "ping zeltro-mariadb"   # networking from inside the container
 ```
 
 ---
@@ -105,4 +104,4 @@ rsvg-convert sprite.svg -o sprite.png                        # best SVG → PNG 
 convert -size 1200x800 gradient:'#1e3a8a-#04081d' bg.png     # procedural backgrounds
 ```
 
-These are host tools — run them directly, not through `podium exec`.
+These are host tools — run them directly, not through `zeltro exec`.

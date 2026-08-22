@@ -2,7 +2,7 @@
 
 **Image**: `jhumanj/opnform-api:2.2.4` (PHP-FPM) + `jhumanj/opnform-client:2.2.4` (Nuxt SSR)
 **Port**: nginx 80 → client 3000 and api 9000 (FastCGI, not HTTP)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password), database `opnform`, plus shared `podium-redis`
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password), database `opnform`, plus shared `zeltro-redis`
 **Credentials**: Create the admin account on the first-visit setup page
 
 ## Key Notes
@@ -15,4 +15,4 @@
 - `APP_KEY` must be `base64:` + base64 of 32 bytes (Laravel format); `JWT_SECRET` is a plain 40-char string.
 - The three api containers share one image and one storage volume, differing only by command.
 - Free self-hosted instances are capped at 2 users; more needs an Enterprise license.
-- The installer exists: run `podium install opnform`.
+- The installer exists: run `zeltro install opnform`.

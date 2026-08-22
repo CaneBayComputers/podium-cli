@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Coolify"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create your admin account. Requires Docker socket access to manage deployments."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE coolify;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE coolify;" 2>/dev/null || true
 }
 
 write_files() {
@@ -24,12 +24,12 @@ services:
       APP_KEY: "base64:$app_key"
       APP_URL: http://coolify
       DB_CONNECTION: pgsql
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       DB_DATABASE: coolify
       DB_USERNAME: root
       DB_PASSWORD: password
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
       PUSHER_APP_ID: $pusher_id
       PUSHER_APP_KEY: $pusher_key

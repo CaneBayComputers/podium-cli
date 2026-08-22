@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="register the first account on first visit"
 INSTALL_NOTES="nginx fronts three services: / -> Nuxt frontend, /api/ -> Go backend, /alexandrie/ -> RustFS object storage."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS alexandrie CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS alexandrie CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -40,7 +40,7 @@ services:
       ALLOW_UNSECURE: "true"
       CONFIG_DISABLE_SIGNUP: "false"
       CONFIG_DISABLE_NATIVE_LOGIN: "false"
-      DATABASE_HOST: podium-mariadb
+      DATABASE_HOST: zeltro-mariadb
       DATABASE_PORT: "3306"
       DATABASE_NAME: alexandrie
       DATABASE_USER: root

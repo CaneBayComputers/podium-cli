@@ -4,7 +4,7 @@ Multi-provider AI chat UI (OpenAI, Anthropic, Google, Ollama, custom endpoints) 
 
 **Image**: `ghcr.io/danny-avila/librechat:v0.8.7` + `nginx:1.30.4-alpine`
 **Port**: 3080 (behind the nginx reverse proxy on 80)
-**Database**: MongoDB (`podium-mongo`, database `librechat`, `authSource=admin`)
+**Database**: MongoDB (`zeltro-mongo`, database `librechat`, `authSource=admin`)
 **Credentials**: Register on first visit
 
 ## Key Notes
@@ -14,4 +14,4 @@ Multi-provider AI chat UI (OpenAI, Anthropic, Google, Ollama, custom endpoints) 
 - Out of the box no model provider is configured — add `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or an Ollama base URL to the compose environment and restart before endpoints appear.
 - The first registered user is an ordinary user; promotion to admin is done with the in-container `npm run ban-user`/user scripts.
 - `proxy_buffering off` keeps token streaming smooth through nginx.
-- The installer exists: run `podium install librechat`.
+- The installer exists: run `zeltro install librechat`.

@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Cal.com"
 INSTALL_NOTES="Open-source scheduling platform. First startup takes ~60 seconds for migrations. Visit http://$PROJECT_NAME/ to create your account."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE calcom;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE calcom;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,8 +20,8 @@ services:
       NEXTAUTH_URL: http://cal-com/api/auth
       NEXTAUTH_SECRET: $nextauth_secret
       CALENDSO_ENCRYPTION_KEY: $encryption_key
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/calcom
-      DATABASE_DIRECT_URL: postgresql://root:password@podium-postgres:5432/calcom
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/calcom
+      DATABASE_DIRECT_URL: postgresql://root:password@zeltro-postgres:5432/calcom
       NEXT_PUBLIC_LICENSE_CONSENT: agree
       LICENSE_CONSENT: agree
       NODE_ENV: production

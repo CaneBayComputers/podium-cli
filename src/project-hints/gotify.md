@@ -12,4 +12,4 @@ Simple self-hosted push-notification server with a REST API and a web UI.
 - `GOTIFY_DEFAULTUSER_PASS` only applies on the very first boot, while the database is being created. Changing it later does nothing.
 - Create an "application" in the UI to get a token, then push with `curl -F "message=hi" "http://gotify/message?token=<apptoken>"`.
 - API tokens are shown once, at creation time — v3 no longer returns them from GET endpoints.
-- The installer exists: run `podium install gotify`.
+- The installer exists: run `zeltro install gotify`.

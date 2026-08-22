@@ -7,7 +7,7 @@
 #
 # It shipped as an installer previously, but the only image upstream publishes
 # bundles its own MariaDB internally and ignores external DB env, so a project
-# could never use Podium's shared services. Installing from source fixes that.
+# could never use Zeltro's shared services. Installing from source fixes that.
 #
 # Laravel underneath, so everything except the scaffold and migrations is
 # inherited.
@@ -63,5 +63,5 @@ framework_run_migrations() {
     fi
     echo-green 'Migrations complete.'; echo-white
     echo-white "Backend is at http://$PROJECT_NAME/backend — create the admin user with:"
-    echo-white "  podium art october:passwd <email> <password>"
+    echo-white "  zeltro art october:passwd <email> <password>"
 }

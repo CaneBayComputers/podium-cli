@@ -11,4 +11,4 @@ Highly configurable application dashboard with service widgets and bookmarks (ge
 - Since v1.0 `HOMEPAGE_ALLOWED_HOSTS` is **required** for any host other than `localhost`. It is set to `*` here; without it every page load returns a host-validation error.
 - On first boot the container writes default `services.yaml`, `bookmarks.yaml`, `widgets.yaml`, `settings.yaml` into `/app/config` — edit those in the `homepage-config` volume, the app hot-reloads them.
 - Docker-socket integration is deliberately not wired up; add `/var/run/docker.sock` yourself if you want container widgets.
-- The installer exists: run `podium install homepage`.
+- The installer exists: run `zeltro install homepage`.

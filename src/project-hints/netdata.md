@@ -21,10 +21,10 @@ No external database is needed. Persist Netdata's config and data with named vol
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/netdata`
+1. `mkdir -p ~/zeltro-projects/netdata`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/netdata && podium setup netdata --no-startup`
-4. `podium up netdata`
+3. `cd ~/zeltro-projects/netdata && zeltro setup netdata --no-startup`
+4. `zeltro up netdata`
 5. Verify: `curl -sI http://netdata/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -72,7 +72,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

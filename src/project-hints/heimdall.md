@@ -6,15 +6,15 @@ No external database is needed — Heimdall uses SQLite. Persist `/config` with 
 
 ## Non-obvious gotchas
 
-- **`ALLOW_INTERNAL_REQUESTS=true`** is required if you want Heimdall to "ping" other Podium projects on the VPC (the default `false` blocks all RFC1918 destinations, including sibling project containers). Set it to `"true"` (quoted — it's read as a string).
+- **`ALLOW_INTERNAL_REQUESTS=true`** is required if you want Heimdall to "ping" other Zeltro projects on the VPC (the default `false` blocks all RFC1918 destinations, including sibling project containers). Set it to `"true"` (quoted — it's read as a string).
 - The `:latest` tag drifts. Pin to a specific stable like `2.7.6`. Never use `:latest` in committed installers.
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/heimdall`
+1. `mkdir -p ~/zeltro-projects/heimdall`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/heimdall && podium setup heimdall --no-startup`
-4. `podium up heimdall`
+3. `cd ~/zeltro-projects/heimdall && zeltro setup heimdall --no-startup`
+4. `zeltro up heimdall`
 5. Verify: `curl -sI http://heimdall/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -36,7 +36,7 @@ volumes:
   heimdall-config:
 ```
 
-`setup_project.sh` adds the `container_name`, the static IP on `podium-cli_vpc`, and the external network block.
+`setup_project.sh` adds the `container_name`, the static IP on `zeltro-cli_vpc`, and the external network block.
 
 ## Admin
 

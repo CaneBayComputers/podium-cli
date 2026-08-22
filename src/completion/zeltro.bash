@@ -1,5 +1,5 @@
-# Bash completion for the Podium CLI.
-# Installed to /etc/bash_completion.d/podium by `podium configure` (and the
+# Bash completion for the Zeltro CLI.
+# Installed to /etc/bash_completion.d/zeltro by `zeltro configure` (and the
 # platform installers). Provides:
 #   - subcommand (verb) completion
 #   - project-name completion for up/down/status/remove/setup/resume
@@ -13,20 +13,20 @@
 [ -n "$BASH_VERSION" ] || return 0
 
 # List project directories (reads PROJECTS_DIR from the env file directly so we
-# don't pay the cost of invoking `podium` on every TAB).
-_podium_projects() {
+# don't pay the cost of invoking `zeltro` on every TAB).
+_zeltro_projects() {
     local dir=""
-    if [ -f /etc/podium-cli/.env ]; then
-        dir=$(grep -E '^[[:space:]]*PROJECTS_DIR=' /etc/podium-cli/.env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"'"'"' ')
+    if [ -f /etc/zeltro-cli/.env ]; then
+        dir=$(grep -E '^[[:space:]]*PROJECTS_DIR=' /etc/zeltro-cli/.env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"'"'"' ')
         dir="${dir/#\~/$HOME}"
     fi
-    [ -z "$dir" ] && dir="$HOME/podium-projects"
+    [ -z "$dir" ] && dir="$HOME/zeltro-projects"
     [ -d "$dir" ] && find -L "$dir" -maxdepth 1 -mindepth 1 -type d ! -name '.*' -printf '%f\n' 2>/dev/null
 }
 
 # List available installer slugs.
-_podium_installers() {
-    local d="/usr/local/share/podium-cli/src/installers"
+_zeltro_installers() {
+    local d="/usr/local/share/zeltro-cli/src/installers"
     [ -d "$d" ] || return 0
     local f
     for f in "$d"/*.sh; do
@@ -35,7 +35,7 @@ _podium_installers() {
     done
 }
 
-_podium() {
+_zeltro() {
     local cur prev verb cword
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -51,7 +51,7 @@ up up-all update update-installer wp"
 
     local frameworks="laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node"
 
-    # First token after `podium` → the verb.
+    # First token after `zeltro` → the verb.
     if [ "$cword" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
         return 0
@@ -75,7 +75,7 @@ up up-all update update-installer wp"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--json-output --no-colors --debug" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_projects)" -- "$cur") )
             fi ;;
         up-all|down-all)
             COMPREPLY=( $(compgen -W "--json-output --no-colors --debug" -- "$cur") ) ;;
@@ -83,33 +83,33 @@ up up-all update update-installer wp"
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--all --running --json-output --no-colors --debug" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_projects)" -- "$cur") )
             fi ;;
         remove)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--force-db-delete --preserve-database --force --json-output" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_projects)" -- "$cur") )
             fi ;;
         resume)
-            COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") ) ;;
+            COMPREPLY=( $(compgen -W "$(_zeltro_projects)" -- "$cur") ) ;;
         setup)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--framework --db-name --overwrite-env --no-migration --no-storage-symlink --no-startup --overwrite-docker-compose --json-output --no-colors --debug" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_projects)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_projects)" -- "$cur") )
             fi ;;
         install)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--list --one-off" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_installers)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_installers)" -- "$cur") )
             fi ;;
         update-installer)
             if [[ "$cur" == -* ]]; then
                 COMPREPLY=( $(compgen -W "--all --one-off --print" -- "$cur") )
             else
-                COMPREPLY=( $(compgen -W "$(_podium_installers)" -- "$cur") )
+                COMPREPLY=( $(compgen -W "$(_zeltro_installers)" -- "$cur") )
             fi ;;
         new)
             # First positional = framework.
@@ -149,4 +149,4 @@ up up-all update update-installer wp"
     return 0
 }
 
-complete -F _podium podium
+complete -F _zeltro zeltro

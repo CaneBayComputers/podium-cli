@@ -1,6 +1,6 @@
 INSTALL_DISPLAY="Mage AI"
 INSTALL_CREDENTIALS="No login by default — open the editor and start building pipelines"
-INSTALL_NOTES="The pipeline project lives in /home/src/podium_project inside the container."
+INSTALL_NOTES="The pipeline project lives in /home/src/zeltro_project inside the container."
 
 # First boot scaffolds the project directory and starts the Python server.
 INSTALL_READY_RETRIES=24
@@ -11,9 +11,9 @@ services:
   mage-app:
     image: mageai/mageai:0.9.79
     restart: unless-stopped
-    command: /app/run_app.sh mage start podium_project
+    command: /app/run_app.sh mage start zeltro_project
     environment:
-      USER_CODE_PATH: /home/src/podium_project
+      USER_CODE_PATH: /home/src/zeltro_project
       MAGE_DATA_DIR: /home/src/mage_data
       ENV: production
     volumes:

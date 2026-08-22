@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit"
 INSTALL_NOTES="First boot runs database migrations and can take 2-3 minutes before the UI answers."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE twenty;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE twenty;" 2>/dev/null || true
 }
 
 write_files() {
@@ -19,8 +19,8 @@ services:
     environment:
       NODE_PORT: "3000"
       SERVER_URL: http://twenty
-      PG_DATABASE_URL: postgres://root:password@podium-postgres:5432/twenty
-      REDIS_URL: redis://podium-redis:6379
+      PG_DATABASE_URL: postgres://root:password@zeltro-postgres:5432/twenty
+      REDIS_URL: redis://zeltro-redis:6379
       STORAGE_TYPE: local
       ENCRYPTION_KEY: "$encryption_key"
       APP_SECRET: "$app_secret"
@@ -41,8 +41,8 @@ services:
     command: ["yarn", "worker:prod"]
     environment:
       SERVER_URL: http://twenty
-      PG_DATABASE_URL: postgres://root:password@podium-postgres:5432/twenty
-      REDIS_URL: redis://podium-redis:6379
+      PG_DATABASE_URL: postgres://root:password@zeltro-postgres:5432/twenty
+      REDIS_URL: redis://zeltro-redis:6379
       STORAGE_TYPE: local
       ENCRYPTION_KEY: "$encryption_key"
       APP_SECRET: "$app_secret"

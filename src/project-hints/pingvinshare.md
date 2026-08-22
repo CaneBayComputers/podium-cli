@@ -12,4 +12,4 @@ Self-hosted file-sharing platform, a WeTransfer-style drop with expiring links.
 - `TRUST_PROXY: "true"` is set because nginx sits in front; without it the app records the proxy's IP for every visitor and reverse-proxy-aware links break.
 - Everything else (app URL, share size limits, SMTP, OAuth) is configured from the admin UI, not env vars.
 - Large uploads stream through nginx with buffering off and a 900s timeout.
-- The installer exists: run `podium install pingvinshare`.
+- The installer exists: run `zeltro install pingvinshare`.

@@ -11,5 +11,5 @@
 - Uses a `.env` file (not inline compose env) due to the number of variables.
 - `LOCKBOX_MASTER_KEY` (64 hex chars) and `SECRET_KEY_BASE` (128 hex chars) are required.
 - Start command: `npm run start:prod`.
-- Also uses podium-redis for background jobs.
-- The installer exists: run `podium install tooljet`.
+- Also uses zeltro-redis for background jobs.
+- The installer exists: run `zeltro install tooljet`.

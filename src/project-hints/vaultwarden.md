@@ -6,10 +6,10 @@ No external database is needed — Vaultwarden uses SQLite stored at `/data`. Pe
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/vaultwarden`
+1. `mkdir -p ~/zeltro-projects/vaultwarden`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/vaultwarden && podium setup vaultwarden --no-startup`
-4. `podium up vaultwarden`
+3. `cd ~/zeltro-projects/vaultwarden && zeltro setup vaultwarden --no-startup`
+4. `zeltro up vaultwarden`
 5. Verify: `curl -sI http://vaultwarden/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -35,7 +35,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## Admin

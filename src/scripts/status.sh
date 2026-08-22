@@ -19,7 +19,7 @@ source scripts/pre_check.sh
 
 # Function to display usage
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} [project_name] [options]"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} [project_name] [options]"
     echo-white "Shows status of running Docker projects"
     echo-white ""
     echo-white "Arguments:"
@@ -29,15 +29,15 @@ usage() {
     echo-white "  --all            Show every project (default: only active/running projects)"
     echo-white "  --running        Only show projects whose container is running (the default)"
     echo-white "  --json-output    Output JSON responses (for programmatic use)"
-    echo-white "  --debug          Enable debug logging to /tmp/podium-cli-debug.log"
+    echo-white "  --debug          Enable debug logging to /tmp/zeltro-cli-debug.log"
     echo-white "  --no-colors      Disable colored output"
     echo-white "  --help           Show this help message"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-$0}                    # Show only active (running) projects"
-    echo-white "  ${PODIUM_CMD:-$0} --all              # Show every project"
-    echo-white "  ${PODIUM_CMD:-$0} my-project         # Show specific project (shown even if stopped)"
-    echo-white "  ${PODIUM_CMD:-$0} --json-output      # JSON output for active projects"
+    echo-white "  ${ZELTRO_CMD:-$0}                    # Show only active (running) projects"
+    echo-white "  ${ZELTRO_CMD:-$0} --all              # Show every project"
+    echo-white "  ${ZELTRO_CMD:-$0} my-project         # Show specific project (shown even if stopped)"
+    echo-white "  ${ZELTRO_CMD:-$0} --json-output      # JSON output for active projects"
 }
 
 # Initialize variables
@@ -159,7 +159,7 @@ ping_host() {
     # macOS takes milliseconds and uses -t for the deadline). It must still be
     # bounded: a hostname that resolves but never answers -- stale /etc/hosts
     # entries after a subnet change, say -- blocks for the OS default of ~10s,
-    # which across the shared services turned `podium status` into a ~60s hang.
+    # which across the shared services turned `zeltro status` into a ~60s hang.
     if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || timeout 2 ping -c 1 "$hostname" >/dev/null 2>&1; then
         if [ -n "$resolved_ip" ]; then
             echo-green "OK ($resolved_ip)"
@@ -198,7 +198,7 @@ ping_status() {
     # macOS takes milliseconds and uses -t for the deadline). It must still be
     # bounded: a hostname that resolves but never answers -- stale /etc/hosts
     # entries after a subnet change, say -- blocks for the OS default of ~10s,
-    # which across the shared services turned `podium status` into a ~60s hang.
+    # which across the shared services turned `zeltro status` into a ~60s hang.
     if ping -c 1 -W 1 "$hostname" >/dev/null 2>&1 || timeout 2 ping -c 1 "$hostname" >/dev/null 2>&1; then
         return 0
     else
@@ -206,7 +206,7 @@ ping_status() {
     fi
 }
 
-# One quick attempt by default, so `podium status` (and `--all` across many
+# One quick attempt by default, so `zeltro status` (and `--all` across many
 # projects) stays fast and a stopped project doesn't stall the report.
 #
 # Callers that have JUST started a container set HTTP_WAIT_SECS to give the app
@@ -336,15 +336,15 @@ get_project_status() {
     # `{}` for projects with no block, which is most of the ones created before
     # x-metadata existed.
     local _meta_file _meta_json
-    _meta_file="$(podium_project_compose "$proj_name" 2>/dev/null)"
+    _meta_file="$(zeltro_project_compose "$proj_name" 2>/dev/null)"
     _meta_json="$(read_x_metadata_json "$_meta_file")"
     [ -n "$_meta_json" ] || _meta_json="{}"
     project_data=$(echo "$project_data" | jq --argjson meta "$_meta_json" '. + {metadata: $meta}')
 
     # Host entry check
     local resolved_ip=""
-    EXT_PORT="$(podium_project_port "$proj_name")"
-    resolved_ip="$(podium_project_ip "$proj_name")"
+    EXT_PORT="$(zeltro_project_port "$proj_name")"
+    resolved_ip="$(zeltro_project_ip "$proj_name")"
     if [ -n "$EXT_PORT" ]; then
         project_data=$(echo "$project_data" | jq --arg port "$EXT_PORT" --arg ip "$resolved_ip" '. + {external_port: $port, project_ip: $ip}')
     else
@@ -363,7 +363,7 @@ get_project_status() {
         # container IPs at all. Reporting failed would be true and useless: a
         # consumer cannot tell a broken project from a platform that has never
         # supported this route, and would mark every healthy macOS project down.
-        if podium_host_reaches_containers; then
+        if zeltro_host_reaches_containers; then
             if ping_status "$proj_name"; then
                 ping_state="ok"
             else
@@ -378,7 +378,7 @@ get_project_status() {
             project_data=$(echo "$project_data" | jq '. + {port_mapped: true}')
             # Probe whichever URL actually works on this host — the hostname on
             # Linux, the published port on macOS.
-            if podium_host_reaches_containers; then
+            if zeltro_host_reaches_containers; then
                 _probe_url="http://$resolved_ip"
             else
                 _probe_url="http://localhost:$EXT_PORT"
@@ -400,14 +400,14 @@ get_project_status() {
     
     # URLs
     if [ -n "$EXT_PORT" ]; then
-        # local_url is always an address now, never a hostname — Podium no longer
+        # local_url is always an address now, never a hostname — Zeltro no longer
         # writes /etc/hosts, so a name would not resolve anywhere.
         #
         # Where the host can route to container IPs (Linux, and inside WSL) the
         # container address is the direct route. Where it cannot (macOS, and
         # Windows looking into WSL) the published port on localhost is the only
         # one that exists.
-        if podium_host_reaches_containers && [ -n "$resolved_ip" ]; then
+        if zeltro_host_reaches_containers && [ -n "$resolved_ip" ]; then
             _local_url="http://$resolved_ip"
         else
             _local_url="http://localhost:$EXT_PORT"
@@ -441,11 +441,11 @@ project_status() {
   fi
 
   echo-white -n ADDRESS: 
-  EXT_PORT="$(podium_project_port "$PROJ_NAME")"
-  RESOLVED_IP="$(podium_project_ip "$PROJ_NAME")"
+  EXT_PORT="$(zeltro_project_port "$PROJ_NAME")"
+  RESOLVED_IP="$(zeltro_project_ip "$PROJ_NAME")"
   if [ -z "$EXT_PORT" ]; then
     echo-red " NOT FOUND"
-    echo-white -n SUGGESTION:; echo-yellow " cd \$(podium projects-dir)/$PROJ_NAME && podium setup $PROJ_NAME"
+    echo-white -n SUGGESTION:; echo-yellow " cd \$(zeltro projects-dir)/$PROJ_NAME && zeltro setup $PROJ_NAME"
     return 1
   else
     echo-green " FOUND"
@@ -454,7 +454,7 @@ project_status() {
   echo-white -n DOCKER STATUS:
   if ! [ "$(docker ps -q -f name=$PROJ_NAME)" ]; then
     echo-red " NOT RUNNING"
-    echo-white -n SUGGESTION:; echo-yellow " cd \$(podium projects-dir)/$PROJ_NAME && podium up"
+    echo-white -n SUGGESTION:; echo-yellow " cd \$(zeltro projects-dir)/$PROJ_NAME && zeltro up"
     return 1
   else
     echo-green " RUNNING"
@@ -465,7 +465,7 @@ project_status() {
   # Check if Docker container has port mapping
   if ! docker port "$PROJ_NAME" 80/tcp > /dev/null 2>&1; then
     echo-red " NOT MAPPED"
-    echo-white -n SUGGESTION:; echo-yellow " cd \$(podium projects-dir)/$PROJ_NAME && podium down && podium up"
+    echo-white -n SUGGESTION:; echo-yellow " cd \$(zeltro projects-dir)/$PROJ_NAME && zeltro down && zeltro up"
     return 1
   else
     echo-green " MAPPED"
@@ -476,8 +476,8 @@ project_status() {
   # On a host that cannot route to container IPs (macOS), checking the hostname
   # is guaranteed to fail and tells the user nothing. Check the published port
   # instead, which is the only route that exists there.
-  if podium_host_reaches_containers; then
-    # Probe the address, not the name. Podium no longer writes /etc/hosts, so
+  if zeltro_host_reaches_containers; then
+    # Probe the address, not the name. Zeltro no longer writes /etc/hosts, so
     # the project name resolves nowhere and testing it would always fail.
     echo-white -n "PING: "
     if [ -n "$RESOLVED_IP" ] && ping_status "$RESOLVED_IP"; then
@@ -504,14 +504,14 @@ project_status() {
     fi
   fi
 
-  # Two addresses, always shown, never a hostname — Podium no longer writes
+  # Two addresses, always shown, never a hostname — Zeltro no longer writes
   # /etc/hosts, so a name would resolve nowhere.
   #
   # LOCAL is the route from this machine; LAN is the route from another machine
   # on the network. They differ, and conflating them is how someone ends up
   # sending a colleague a link only they can open.
   echo-white -n "LOCAL ACCESS:"
-  if podium_host_reaches_containers && [ -n "$RESOLVED_IP" ]; then
+  if zeltro_host_reaches_containers && [ -n "$RESOLVED_IP" ]; then
     # Linux, and inside WSL: the container address is directly routable.
     echo-yellow " http://$RESOLVED_IP"
   else
@@ -534,12 +534,12 @@ fi
 
 
 # Check if this environment is installed
-if ! [ -f /etc/podium-cli/.env ]; then
-    error "Development environment has not been configured! Run: podium configure"
+if ! [ -f /etc/zeltro-cli/.env ]; then
+    error "Development environment has not been configured! Run: zeltro configure"
 fi
 
-if ! [ -f /etc/podium-cli/docker-compose.yaml ]; then
-    error "Development environment has not been configured! Run: podium configure"
+if ! [ -f /etc/zeltro-cli/docker-compose.yaml ]; then
+    error "Development environment has not been configured! Run: zeltro configure"
 fi
 
 # Services are profile-gated and enabled on demand, so "mariadb is not running"
@@ -549,7 +549,7 @@ fi
 if [ -z "${OPTIONAL_SERVICES:-}" ]; then
     echo-yellow "No shared services are enabled yet."
     echo-white  "They are enabled automatically when a project needs one, or turn one on with:"
-    echo-white  "  podium enable-service <name>"
+    echo-white  "  zeltro enable-service <name>"
     echo-return
 fi
 
@@ -558,15 +558,15 @@ fi
 if [[ "$JSON_OUTPUT" == "1" ]]; then
     # Get VPC subnet from .env file
     VPC_SUBNET=""
-    if [ -f "/etc/podium-cli/.env" ]; then
-        VPC_SUBNET=$(grep "^VPC_SUBNET=" /etc/podium-cli/.env | cut -d'=' -f2)
+    if [ -f "/etc/zeltro-cli/.env" ]; then
+        VPC_SUBNET=$(grep "^VPC_SUBNET=" /etc/zeltro-cli/.env | cut -d'=' -f2)
     fi
     
     # Initialize JSON structure
     JSON_DATA='{"shared_services": {}, "projects": []}'
     
     # Parse docker-compose.yaml to get all services dynamically
-    COMPOSE_FILE="/etc/podium-cli/docker-compose.yaml"
+    COMPOSE_FILE="/etc/zeltro-cli/docker-compose.yaml"
     if [ ! -f "$COMPOSE_FILE" ]; then
         # Try fallback location
         COMPOSE_FILE="$DEV_DIR/docker-stack/docker-compose.services.yaml"
@@ -667,7 +667,7 @@ fi
 # Docker Desktop keeps containers in a VM — so running them produces a screen
 # of FAILED for services that are healthy, and reports a running MariaDB as
 # "enabled but NOT RUNNING". Say so once instead.
-if podium_host_reaches_containers; then
+if zeltro_host_reaches_containers; then
     echo-cyan "SHARED SERVICES CONNECTIVITY:"
     echo-return
 
@@ -725,15 +725,15 @@ if podium_host_reaches_containers; then
     # it deliberately does not run.
     for _opt in ${OPTIONAL_SERVICES:-}; do
         case "$_opt" in
-            minio)       _opt_host="${MINIO_CONTAINER_NAME:-podium-minio}"; _opt_label="MinIO" ;;
-            meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-podium-meilisearch}"; _opt_label="Meilisearch" ;;
-            *)           _opt_host="podium-$_opt"; _opt_label="$_opt" ;;
+            minio)       _opt_host="${MINIO_CONTAINER_NAME:-zeltro-minio}"; _opt_label="MinIO" ;;
+            meilisearch) _opt_host="${MEILISEARCH_CONTAINER_NAME:-zeltro-meilisearch}"; _opt_label="Meilisearch" ;;
+            *)           _opt_host="${SERVICE_PREFIX:-zeltro}-$_opt"; _opt_label="$_opt" ;;
         esac
         if service_running "$_opt_host"; then
             echo-white -n "PING ($_opt_label): "
             ping_host "$_opt_host"
         else
-            echo-yellow "PING ($_opt_label): enabled but NOT RUNNING — try 'podium start-services'"
+            echo-yellow "PING ($_opt_label): enabled but NOT RUNNING — try 'zeltro start-services'"
         fi
     done
 
@@ -793,10 +793,10 @@ else
         echo-return
         if [ "$RUNNING_ONLY" = "1" ]; then
             echo-yellow "No running projects."
-            echo-white "Start one with: podium up <project>"
+            echo-white "Start one with: zeltro up <project>"
         else
             echo-yellow "No projects found in $(pwd)"
-            echo-white "Create your first project with: podium new"
+            echo-white "Create your first project with: zeltro new"
         fi
         divider
     else

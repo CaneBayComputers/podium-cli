@@ -1,10 +1,10 @@
 INSTALL_DISPLAY="DocuSeal"
 INSTALL_CREDENTIALS="Create the admin account on first visit"
-INSTALL_NOTES="Do not set FORCE_SSL — Podium serves the app over plain http."
+INSTALL_NOTES="Do not set FORCE_SSL — Zeltro serves the app over plain http."
 INSTALL_READY_RETRIES=40
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE docuseal;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE docuseal;" 2>/dev/null || true
 }
 
 write_files() {
@@ -14,7 +14,7 @@ services:
     image: docuseal/docuseal:3.1.7
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/docuseal
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/docuseal
     volumes:
       - docuseal-data:/data/docuseal
 

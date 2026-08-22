@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin1234"
 INSTALL_NOTES="Startup takes up to 5 minutes — the health check waits for Django to be ready."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE wger;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE wger;" 2>/dev/null || true
 }
 
 write_files() {
@@ -24,8 +24,8 @@ ALLOW_REGISTRATION=True
 ALLOW_GUEST_USERS=True
 
 USE_CELERY=True
-CELERY_BROKER=redis://podium-redis:6379/2
-CELERY_BACKEND=redis://podium-redis:6379/2
+CELERY_BROKER=redis://zeltro-redis:6379/2
+CELERY_BACKEND=redis://zeltro-redis:6379/2
 CELERY_FLOWER_PASSWORD=adminadmin
 CELERY_WORKER_CONCURRENCY=2
 
@@ -33,12 +33,12 @@ DJANGO_DB_ENGINE=django.db.backends.postgresql
 DJANGO_DB_DATABASE=wger
 DJANGO_DB_USER=root
 DJANGO_DB_PASSWORD=password
-DJANGO_DB_HOST=podium-postgres
+DJANGO_DB_HOST=zeltro-postgres
 DJANGO_DB_PORT=5432
 DJANGO_PERFORM_MIGRATIONS=True
 
 DJANGO_CACHE_BACKEND=django_redis.cache.RedisCache
-DJANGO_CACHE_LOCATION=redis://podium-redis:6379/1
+DJANGO_CACHE_LOCATION=redis://zeltro-redis:6379/1
 DJANGO_CACHE_TIMEOUT=1296000
 DJANGO_CACHE_CLIENT_CLASS=django_redis.client.DefaultClient
 

@@ -1,6 +1,6 @@
 # Portainer CE
 
-Portainer is distributed as `portainer/portainer-ce:latest`. It provides a Docker management UI on port **9000** (HTTP). Do **not** use port 9443 (HTTPS) — it is unnecessary for local Podium use.
+Portainer is distributed as `portainer/portainer-ce:latest`. It provides a Docker management UI on port **9000** (HTTP). Do **not** use port 9443 (HTTPS) — it is unnecessary for local Zeltro use.
 
 **Critical requirement**: The container must mount the Docker socket:
 `/var/run/docker.sock:/var/run/docker.sock:ro`
@@ -13,10 +13,10 @@ No external database is needed. No nginx proxy is needed — use a single servic
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/portainer`
+1. `mkdir -p ~/zeltro-projects/portainer`
 2. Write `docker-compose.yaml` (see below).
-3. `cd ~/podium-projects/portainer && podium setup portainer --no-startup`
-4. `podium up portainer`
+3. `cd ~/zeltro-projects/portainer && zeltro setup portainer --no-startup`
+4. `zeltro up portainer`
 5. Verify: `curl -sI http://portainer/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -42,7 +42,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 Because Portainer serves HTTP on port 9000 but the VPC resolves `http://portainer/` on port 80, add a port mapping or use the nginx proxy pattern below. The simplest approach is a minimal nginx proxy:
@@ -76,7 +76,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

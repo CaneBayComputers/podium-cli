@@ -4,7 +4,7 @@ INSTALL_NOTES="Install wizard appears on first visit at /install/admin — creat
 pre_install() {
     echo-white "  Generating Lychee APP_KEY..."
     LYCHEE_APP_KEY="base64:$(openssl rand -base64 32)"
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE DATABASE IF NOT EXISTS lychee;
         CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass';
         ALTER USER 'lychee'@'%' IDENTIFIED BY 'lycheepass';
@@ -21,7 +21,7 @@ services:
     restart: unless-stopped
     environment:
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: lychee
       DB_USERNAME: lychee

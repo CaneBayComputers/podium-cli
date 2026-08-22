@@ -1,12 +1,12 @@
 # Ghost
 
 Ghost 5 does **not** support MariaDB. Use SQLite (development) or PostgreSQL (production).
-Podium's shared database is MariaDB, so always set `database__client: sqlite3` for local dev.
+Zeltro's shared database is MariaDB, so always set `database__client: sqlite3` for local dev.
 
-Ghost's official Docker image listens on port **2368**, not port 80. The Podium URL MUST be
+Ghost's official Docker image listens on port **2368**, not port 80. The Zeltro URL MUST be
 `http://ghost/` (port 80). You MUST add an nginx reverse-proxy service that owns the static
 VPC IP and proxies port 80 → Ghost port 2368. Do NOT give Ghost the static VPC IP directly.
-Do NOT use `http://ghost:2368/` as the URL — `podium create` always verifies on port 80.
+Do NOT use `http://ghost:2368/` as the URL — `zeltro create` always verifies on port 80.
 
 ## Recommended docker-compose structure
 
@@ -25,7 +25,7 @@ services:
     volumes:
       - ghost-content:/var/lib/ghost/content
     networks:
-      podium-cli_vpc:
+      zeltro-cli_vpc:
 
   nginx:
     image: nginx:alpine
@@ -34,14 +34,14 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      podium-cli_vpc:
+      zeltro-cli_vpc:
         ipv4_address: <ASSIGNED_IP>
 
 volumes:
   ghost-content:
 
 networks:
-  podium-cli_vpc:
+  zeltro-cli_vpc:
     external: true
 ```
 

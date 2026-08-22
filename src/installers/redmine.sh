@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Redmine"
 INSTALL_CREDENTIALS="admin / admin (forced to change on first login)"
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS redmine CHARACTER SET utf8mb4;"
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     image: redmine:latest
     restart: unless-stopped
     environment:
-      REDMINE_DB_MYSQL: podium-mariadb
+      REDMINE_DB_MYSQL: zeltro-mariadb
       REDMINE_DB_PORT: 3306
       REDMINE_DB_USERNAME: root
       REDMINE_DB_PASSWORD: ""

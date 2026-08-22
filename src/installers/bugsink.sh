@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin@example.com / admin123"
 INSTALL_NOTES="Self-hosted Sentry-compatible error tracker. Create a project in the UI to get a DSN pointing at http://bugsink/."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE bugsink;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE bugsink;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,13 +17,13 @@ services:
     restart: unless-stopped
     environment:
       SECRET_KEY: "$secret_key"
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/bugsink
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/bugsink
       BASE_URL: http://bugsink
       PORT: "8000"
       CREATE_SUPERUSER: "admin@example.com:admin123"
       BEHIND_HTTPS_PROXY: "false"
       USE_X_FORWARDED_HOST: "false"
-      EMAIL_HOST: podium-mailhog
+      EMAIL_HOST: zeltro-mailhog
       EMAIL_PORT: "1025"
       EMAIL_USE_TLS: "false"
       DEFAULT_FROM_EMAIL: bugsink@example.com

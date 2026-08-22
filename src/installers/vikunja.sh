@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Vikunja"
 INSTALL_NOTES="First user to register becomes admin."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS vikunja;"
 }
 
 write_files() {
@@ -13,7 +13,7 @@ write_files() {
     # owned by root — the app then crash-loops on
     # "storage validation failed: permission denied [process uid=1000, dir owner uid=0]".
     # A bind mount inside the project is writable, keeps uploads with the
-    # project like every other Podium data path, and can be chmod'd here.
+    # project like every other Zeltro data path, and can be chmod'd here.
     mkdir -p files
     chmod 777 files
 
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     environment:
       VIKUNJA_DATABASE_TYPE: mysql
-      VIKUNJA_DATABASE_HOST: podium-mariadb
+      VIKUNJA_DATABASE_HOST: zeltro-mariadb
       VIKUNJA_DATABASE_USER: root
       VIKUNJA_DATABASE_PASSWORD: ""
       VIKUNJA_DATABASE_DATABASE: vikunja

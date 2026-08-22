@@ -4,12 +4,12 @@ case "$1" in
     configure)
         # Docker is Recommends, not Depends, so it may genuinely be absent.
         if ! command -v docker >/dev/null 2>&1; then
-            echo "podium-cli: Docker was not found. Podium needs it to run anything."
-            echo "            Install Docker, then run: podium configure"
-        elif [ ! -f /etc/podium-cli/.env ]; then
-            echo "podium-cli: installed. Run 'podium configure' once to set up."
+            echo "zeltro-cli: Docker was not found. Zeltro needs it to run anything."
+            echo "            Install Docker, then run: zeltro configure"
+        elif [ ! -f /etc/zeltro-cli/.env ]; then
+            echo "zeltro-cli: installed. Run 'zeltro configure' once to set up."
         fi
-        # An existing /etc/podium-cli/.env is left exactly as it is: it holds the
+        # An existing /etc/zeltro-cli/.env is left exactly as it is: it holds the
         # projects dir, VPC subnet and AI settings, and is not ours to rewrite.
         ;;
 esac

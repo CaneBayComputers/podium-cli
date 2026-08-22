@@ -11,4 +11,4 @@
 - The master key is printed during install — save it to use with client apps.
 - nginx WebSocket upgrade headers and a high `proxy_read_timeout` (86400) are recommended for streaming search.
 - Persist `meilisearch-data` at `/meili_data`.
-- The installer exists: run `podium install meilisearch`.
+- The installer exists: run `zeltro install meilisearch`.

@@ -4,7 +4,7 @@ INSTALL_NOTES="Change the default admin password immediately; sync clients point
 INSTALL_READY_RETRIES=40
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE joplin;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE joplin;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,13 +17,13 @@ services:
       APP_PORT: 22300
       APP_BASE_URL: http://joplin
       DB_CLIENT: pg
-      POSTGRES_HOST: podium-postgres
+      POSTGRES_HOST: zeltro-postgres
       POSTGRES_PORT: 5432
       POSTGRES_DATABASE: joplin
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       MAILER_ENABLED: 1
-      MAILER_HOST: podium-mailhog
+      MAILER_HOST: zeltro-mailhog
       MAILER_PORT: 1025
       MAILER_SECURITY: none
       MAILER_NOREPLY_EMAIL: joplin@example.com

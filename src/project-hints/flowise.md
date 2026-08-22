@@ -10,4 +10,4 @@
 - `FLOWISE_USERNAME` and `FLOWISE_PASSWORD` enable basic auth.
 - nginx must include WebSocket upgrade headers for real-time chatbot interactions.
 - First startup takes ~15 seconds.
-- The installer exists: run `podium install flowise`.
+- The installer exists: run `zeltro install flowise`.

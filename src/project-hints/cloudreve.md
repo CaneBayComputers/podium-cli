@@ -4,7 +4,7 @@ Self-hosted cloud storage / file sharing with multi-backend support.
 
 **Image**: `cloudreve/cloudreve:4.18.0`
 **Port**: 5212 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, user=root, password=password, db `cloudreve`) + Redis db 4
+**Database**: PostgreSQL (`zeltro-postgres`, user=root, password=password, db `cloudreve`) + Redis db 4
 **Credentials**: register on first visit — the first registered account is elevated to administrator
 
 ## Key Notes
@@ -14,4 +14,4 @@ Self-hosted cloud storage / file sharing with multi-backend support.
 - `CR_CONF_OptionOverwrite.siteURL=http://cloudreve` overrides the DB-stored site URL (default `http://localhost:5212`) without touching the admin panel.
 - Cloudreve does not create its own database — it must exist beforehand. The PG connection is hardcoded `sslmode=disable`.
 - Aria2 remote download would need port 6888; it is not published, everything else lives on 5212.
-- The installer exists: run `podium install cloudreve`.
+- The installer exists: run `zeltro install cloudreve`.

@@ -4,7 +4,7 @@ OpenAI-compatible gateway in front of 100+ LLM providers, with keys, budgets, ro
 
 **Image**: `ghcr.io/berriai/litellm:v1.95.0` + `nginx:1.30.4-alpine`
 **Port**: 4000 (behind the nginx reverse proxy on 80)
-**Database**: PostgreSQL (`podium-postgres`, database `litellm`) + Redis (`podium-redis`, DB 7) for router caching
+**Database**: PostgreSQL (`zeltro-postgres`, database `litellm`) + Redis (`zeltro-redis`, DB 7) for router caching
 **Credentials**: `admin` / `admin123` — the admin UI is at `http://litellm/ui/`, not at `/`
 
 ## Key Notes
@@ -14,4 +14,4 @@ OpenAI-compatible gateway in front of 100+ LLM providers, with keys, budgets, ro
 - The entrypoint runs Prisma migrations against `DATABASE_URL` on every boot; first start takes ~30 s longer than later ones.
 - `/` returns a small JSON health payload — that is normal; the dashboard lives under `/ui/`.
 - The `-stable` tags on this image lag the release line by many versions; `v1.95.0` matches the current GitHub release.
-- The installer exists: run `podium install litellm`.
+- The installer exists: run `zeltro install litellm`.

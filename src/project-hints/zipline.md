@@ -4,7 +4,7 @@ ShareX/file upload server with a dashboard — screenshot and file host with sho
 
 **Image**: `ghcr.io/diced/zipline:4.6.5` (behind `nginx:alpine`)
 **Port**: 3000 (via nginx proxy)
-**Database**: PostgreSQL (`podium-postgres`, db `zipline`, user=root, password=password)
+**Database**: PostgreSQL (`zeltro-postgres`, db `zipline`, user=root, password=password)
 **Credentials**: administrator / password
 
 ## Key Notes
@@ -13,4 +13,4 @@ ShareX/file upload server with a dashboard — screenshot and file host with sho
 - The env var is `DATABASE_URL` in v4; v3 called it `CORE_DATABASE_URL`. Old guides will mislead you.
 - Over plain HTTP the "copy link" buttons are dead — `navigator.clipboard` is gated behind a browser secure context, and Zipline uses it in ~19 components. Uploads, viewing, sharing and password login all work; passkey MFA does not (WebAuthn is secure-context-only too). Use TOTP if you want MFA.
 - Three volumes: uploads, public and themes. Losing `zipline-uploads` loses every uploaded file.
-- The installer exists: run `podium install zipline`.
+- The installer exists: run `zeltro install zipline`.

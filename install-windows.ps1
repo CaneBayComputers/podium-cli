@@ -1,17 +1,17 @@
-# Podium CLI installer for Windows, via WSL2.
+# Zeltro CLI installer for Windows, via WSL2.
 #
-# Podium is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
+# Zeltro is a Linux tool. On Windows it runs inside WSL2, which is a real Linux
 # kernel rather than an emulation layer, so everything behaves as it does on a
 # Linux host -- including container IPs being directly routable, which is NOT
 # true on macOS.
 #
 # TWO STAGES, because enabling the WSL Windows features requires a reboot.
 # Stage 1 enables them and schedules stage 2 to resume automatically at the next
-# logon; stage 2 installs the distro and Podium. The user reboots once and the
+# logon; stage 2 installs the distro and Zeltro. The user reboots once and the
 # install continues on its own.
 #
 #   Stage 1 (what a user runs):
-#     irm https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1 | iex
+#     irm https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-windows.ps1 | iex
 #
 #   Stage 2 runs itself after the reboot. To run it by hand:
 #     powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Stage 2
@@ -45,8 +45,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ScriptPath = $MyInvocation.MyCommand.Path
-$StateFile  = "$env:ProgramData\podium-install-state.json"
-$LogFile    = "$env:ProgramData\podium-install\install.log"
+$StateFile  = "$env:ProgramData\zeltro-install-state.json"
+$LogFile    = "$env:ProgramData\zeltro-install\install.log"
 
 function Say  ($m) { Write-Host $m -ForegroundColor Cyan }
 function Ok   ($m) { Write-Host "OK  $m" -ForegroundColor Green }
@@ -200,13 +200,13 @@ function Invoke-Stage1 {
 
     # Copy ourselves somewhere durable. The user may have run this piped from
     # the internet, in which case there is no file on disk to resume from.
-    $resumeDir = "$env:ProgramData\podium-install"
+    $resumeDir = "$env:ProgramData\zeltro-install"
     New-Item -ItemType Directory -Force -Path $resumeDir | Out-Null
     $resumeScript = "$resumeDir\install-windows.ps1"
     if ($ScriptPath) {
         Copy-Item $ScriptPath $resumeScript -Force
     } else {
-        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-windows.ps1" -OutFile $resumeScript
+        Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-windows.ps1" -OutFile $resumeScript
     }
 
     @{ stage = 2; distro = $Distro; linuxUser = $LinuxUser } |
@@ -217,7 +217,7 @@ function Invoke-Stage1 {
     # have to be cleaned up afterwards and can outlive a failed install.
     $cmd = "powershell -ExecutionPolicy Bypass -NoProfile -File `"$resumeScript`" -Stage 2"
     Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" `
-                     -Name "PodiumInstallStage2" -Value $cmd
+                     -Name "ZeltroInstallStage2" -Value $cmd
     Ok "Stage 2 scheduled to resume automatically after reboot"
 
     Write-Host ""
@@ -231,13 +231,13 @@ function Invoke-Stage1 {
 }
 
 ###############################################################################
-# Stage 2 -- WSL runtime, distro, Podium
+# Stage 2 -- WSL runtime, distro, Zeltro
 ###############################################################################
 function Invoke-Stage2 {
     Assert-Elevated
     Start-Log
     Assert-WindowsBuild
-    Say "Stage 2: installing WSL runtime, $Distro, and Podium"
+    Say "Stage 2: installing WSL runtime, $Distro, and Zeltro"
 
     if (Test-Path $StateFile) {
         $st = Get-Content $StateFile -Raw | ConvertFrom-Json
@@ -291,7 +291,7 @@ The exact reason is in the System event log under Hyper-V-Hypervisor.
     }
 
     # Configure the distro: systemd (Docker needs it) and a non-root user with
-    # passwordless sudo, because the Podium installer refuses to run as root.
+    # passwordless sudo, because the Zeltro installer refuses to run as root.
     Say "Configuring the distro..."
     $setup = @"
 set -e
@@ -310,35 +310,35 @@ chmod 440 /etc/sudoers.d/$LinuxUser
     Start-Sleep -Seconds 5
     Ok "systemd enabled, user '$LinuxUser' created"
 
-    Say "Installing Podium inside $Distro..."
+    Say "Installing Zeltro inside $Distro..."
     $install = @"
 set -e
 cd ~
-curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/podium-cli/master/install-ubuntu.sh -o /tmp/install-ubuntu.sh
+curl -fsSL https://raw.githubusercontent.com/CaneBayComputers/zeltro-cli/master/install-ubuntu.sh -o /tmp/install-ubuntu.sh
 bash /tmp/install-ubuntu.sh
 "@
     Invoke-InDistro -Script $install -User $LinuxUser
-    Ok "Podium installed"
+    Ok "Zeltro installed"
 
     # Docker's group membership only applies to new sessions.
     wsl --terminate $Distro 2>&1 | Out-Null
     Start-Sleep -Seconds 5
 
-    Say "Running podium configure..."
-    Invoke-InDistro -Script "podium configure --projects-dir /home/$LinuxUser/podium-projects" -User $LinuxUser
+    Say "Running zeltro configure..."
+    Invoke-InDistro -Script "zeltro configure --projects-dir /home/$LinuxUser/zeltro-projects" -User $LinuxUser
 
     Remove-Item $StateFile -ErrorAction SilentlyContinue
     try { Stop-Transcript | Out-Null } catch { }
     Write-Host ""
     Ok "Installation complete."
     Write-Host ""
-    Write-Host "  Open a Podium shell:   wsl -d $Distro"
-    Write-Host "  Create a project:      podium new php my-project"
+    Write-Host "  Open a Zeltro shell:   wsl -d $Distro"
+    Write-Host "  Create a project:      zeltro new php my-project"
     Write-Host ""
     Warn "Two things specific to Windows:"
     Write-Host "  1. WSL shuts an idle distro down and stops its containers with it."
     Write-Host "     Keep a terminal open, or run:  wsl -d $Distro -u root -e sleep infinity"
-    Write-Host "  2. Browse projects using the LAN ACCESS address that 'podium status'"
+    Write-Host "  2. Browse projects using the LAN ACCESS address that 'zeltro status'"
     Write-Host "     prints. It is the WSL VM's address and changes when WSL restarts,"
     Write-Host "     so read it from status rather than bookmarking it."
 }
@@ -354,7 +354,7 @@ function Invoke-InDistro {
     # wsl.exe -- they arrive empty, which silently turned every failure into a
     # success. `trap ... EXIT` removes the temp file without needing to capture
     # a status, and bash -c already exits with the status of the last command.
-    $cmd = "echo $b64 | base64 -d > /tmp/podium-step.sh; chmod +x /tmp/podium-step.sh; trap 'rm -f /tmp/podium-step.sh' EXIT; /tmp/podium-step.sh < /dev/null"
+    $cmd = "echo $b64 | base64 -d > /tmp/zeltro-step.sh; chmod +x /tmp/zeltro-step.sh; trap 'rm -f /tmp/zeltro-step.sh' EXIT; /tmp/zeltro-step.sh < /dev/null"
     wsl -d $Distro -u $User -- bash -c $cmd
     if ($LASTEXITCODE -ne 0) { Die "Step failed inside $Distro (exit $LASTEXITCODE)" }
 }

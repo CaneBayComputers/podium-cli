@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit"
 INSTALL_NOTES="Open-source project management (Jira alternative). First startup takes ~60 seconds for migrations."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE plane;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE plane;" 2>/dev/null || true
 }
 
 write_files() {
@@ -19,17 +19,17 @@ APP_DOMAIN=plane
 WEB_URL=http://plane
 CORS_ALLOWED_ORIGINS=http://plane
 
-PGHOST=podium-postgres
+PGHOST=zeltro-postgres
 PGDATABASE=plane
 POSTGRES_USER=root
 POSTGRES_PASSWORD=password
 POSTGRES_DB=plane
 POSTGRES_PORT=5432
-DATABASE_URL=postgresql://root:password@podium-postgres:5432/plane
+DATABASE_URL=postgresql://root:password@zeltro-postgres:5432/plane
 
-REDIS_HOST=podium-redis
+REDIS_HOST=zeltro-redis
 REDIS_PORT=6379
-REDIS_URL=redis://podium-redis:6379/
+REDIS_URL=redis://zeltro-redis:6379/
 
 RABBITMQ_HOST=plane-mq
 RABBITMQ_PORT=5672
@@ -64,7 +64,7 @@ EOF
 
     cat > docker-compose.yaml << 'EOF'
 x-db-env: &db-env
-  PGHOST: ${PGHOST:-podium-postgres}
+  PGHOST: ${PGHOST:-zeltro-postgres}
   PGDATABASE: ${PGDATABASE:-plane}
   POSTGRES_USER: ${POSTGRES_USER:-root}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
@@ -72,9 +72,9 @@ x-db-env: &db-env
   POSTGRES_PORT: ${POSTGRES_PORT:-5432}
 
 x-redis-env: &redis-env
-  REDIS_HOST: ${REDIS_HOST:-podium-redis}
+  REDIS_HOST: ${REDIS_HOST:-zeltro-redis}
   REDIS_PORT: ${REDIS_PORT:-6379}
-  REDIS_URL: ${REDIS_URL:-redis://podium-redis:6379/}
+  REDIS_URL: ${REDIS_URL:-redis://zeltro-redis:6379/}
 
 x-minio-env: &minio-env
   MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
@@ -116,7 +116,7 @@ x-app-env: &app-env
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://plane}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
   USE_MINIO: ${USE_MINIO:-1}
-  DATABASE_URL: ${DATABASE_URL:-postgresql://root:password@podium-postgres:5432/plane}
+  DATABASE_URL: ${DATABASE_URL:-postgresql://root:password@zeltro-postgres:5432/plane}
   SECRET_KEY: ${SECRET_KEY}
   AMQP_URL: ${AMQP_URL:-amqp://plane:plane@plane-mq:5672/plane}
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}

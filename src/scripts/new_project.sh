@@ -102,7 +102,7 @@ validate_wordpress_version() {
 
 # Function to display usage
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} <framework> <name> [options]"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} <framework> <name> [options]"
     echo-white "Creates a new greenfield project from a framework skeleton"
     echo-white ""
     echo-white "Arguments:"
@@ -124,17 +124,17 @@ usage() {
     echo-white "  --one-off               Skip the interactive AI session at the end (for automation)"
     echo-white "  --json-output           Output JSON responses (for programmatic use)"
     echo-white "  --no-colors             Disable colored output"
-    echo-white "  --debug                 Enable debug logging to /tmp/podium-cli-debug.log"
+    echo-white "  --debug                 Enable debug logging to /tmp/zeltro-cli-debug.log"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-$0} laravel my-app --database postgres --github"
-    echo-white "  ${PODIUM_CMD:-$0} wordpress my-blog --github-org myorg"
-    echo-white "  ${PODIUM_CMD:-$0} flask my-api --database sqlite"
+    echo-white "  ${ZELTRO_CMD:-$0} laravel my-app --database postgres --github"
+    echo-white "  ${ZELTRO_CMD:-$0} wordpress my-blog --github-org myorg"
+    echo-white "  ${ZELTRO_CMD:-$0} flask my-api --database sqlite"
 }
 
-# Resolve Laravel repository URL (allows HTTPS or SSH via /etc/podium-cli/.env)
-if [ -z "$LARAVEL_REPOSITORY_URL" ] && [ -f "/etc/podium-cli/.env" ]; then
-    LARAVEL_REPOSITORY_URL=$(grep "^LARAVEL_REPOSITORY_URL=" "/etc/podium-cli/.env" 2>/dev/null | cut -d'=' -f2-)
+# Resolve Laravel repository URL (allows HTTPS or SSH via /etc/zeltro-cli/.env)
+if [ -z "$LARAVEL_REPOSITORY_URL" ] && [ -f "/etc/zeltro-cli/.env" ]; then
+    LARAVEL_REPOSITORY_URL=$(grep "^LARAVEL_REPOSITORY_URL=" "/etc/zeltro-cli/.env" 2>/dev/null | cut -d'=' -f2-)
 fi
 # Initialize variables
 PROJECT_NAME=""
@@ -148,9 +148,9 @@ SKIP_STORAGE_SYMLINK=0
 SKIP_INTERACTIVE=0
 DB_NAME_OVERRIDE=""
 CUSTOM_IMAGE=""
-# Greenfield projects: Podium owns the .env, so always (re)write it. Some
+# Greenfield projects: Zeltro owns the .env, so always (re)write it. Some
 # scaffolders (e.g. Laravel's composer create-project) drop a stock .env that
-# must be replaced with Podium's configured one.
+# must be replaced with Zeltro's configured one.
 OVERWRITE_ENV=1
 RUN_MIGRATIONS=1
 
@@ -259,7 +259,7 @@ debug "Script started: new_project.sh with args: $ORIGINAL_ARGS"
 
 # --- Required arguments (no interactive prompts; 'configure' is the only wizard) ---
 if [ -z "$FRAMEWORK" ]; then
-    error "Error: framework is required. Usage: podium new <framework> <name> [--database <type>] [--version X]
+    error "Error: framework is required. Usage: zeltro new <framework> <name> [--database <type>] [--version X]
 Frameworks: laravel kavera octobercms wordpress php fastapi flask django python express nestjs fastify node nextjs nuxt sveltekit astro hono react vue"
 fi
 case "$FRAMEWORK" in
@@ -275,15 +275,15 @@ case "$FRAMEWORK" in
             echo-white "${_disp:-$FRAMEWORK} ships as a ready-to-run install rather than something you scaffold."
             echo-return
             echo-cyan "Run this instead:"
-            echo-white "  podium install $FRAMEWORK${PROJECT_NAME:+ $PROJECT_NAME}"
+            echo-white "  zeltro install $FRAMEWORK${PROJECT_NAME:+ $PROJECT_NAME}"
             echo-return
-            error "Wrong command for '$FRAMEWORK' — use 'podium install'."
+            error "Wrong command for '$FRAMEWORK' — use 'zeltro install'."
         fi
         error "Error: invalid framework '$FRAMEWORK'. Choose: laravel, kavera, octobercms, drupal, wordpress, php, fastapi, flask, django, python, express, nestjs, fastify, node, nextjs, nuxt, sveltekit, astro, hono, react, vue."
         ;;
 esac
 if [ -z "$PROJECT_NAME" ]; then
-    error "Error: project name is required. Usage: podium new $FRAMEWORK <name>"
+    error "Error: project name is required. Usage: zeltro new $FRAMEWORK <name>"
 fi
 
 # Resolve database: 'auto' (or empty) → sensible per-framework default.
@@ -393,7 +393,7 @@ fi
 # Interactive mode if no project name provided
 if [ -z "$PROJECT_NAME" ]; then
     echo-return
-    echo-cyan "🚀 Create a New Podium Project"
+    echo-cyan "🚀 Create a New Zeltro Project"
     echo-return
     echo-white -n "Enter project name: "
     read PROJECT_NAME
@@ -542,7 +542,7 @@ case $FRAMEWORK in
                 echo-white "  $GITHUB_API_ERROR"
                 echo-white ""
                 echo-white "Workaround: pin a version explicitly, which skips the lookup entirely:"
-                echo-white "  podium new laravel $PROJECT_NAME --version 12.0.0"
+                echo-white "  zeltro new laravel $PROJECT_NAME --version 12.0.0"
                 error "Aborting — refusing to download with an unknown version."
             fi
             CUR_LARAVEL_BRANCH="v${LATEST_VERSION}"

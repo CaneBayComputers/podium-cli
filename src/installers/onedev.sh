@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="Git-over-SSH (port 6611) is not published — clone over HTTP."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"onedev\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"onedev\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
     environment:
       hibernate_dialect: io.onedev.server.persistence.PostgreSQLDialect
       hibernate_connection_driver_class: org.postgresql.Driver
-      hibernate_connection_url: jdbc:postgresql://podium-postgres:5432/onedev
+      hibernate_connection_url: jdbc:postgresql://zeltro-postgres:5432/onedev
       hibernate_connection_username: root
       hibernate_connection_password: password
       initial_user: admin

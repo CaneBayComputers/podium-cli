@@ -6,10 +6,10 @@ No external database is needed — Mealie uses SQLite by default. Persist `/app/
 
 ## Setup workflow
 
-1. `mkdir -p ~/podium-projects/mealie`
+1. `mkdir -p ~/zeltro-projects/mealie`
 2. Write `docker-compose.yaml` and `nginx.conf` (see below).
-3. `cd ~/podium-projects/mealie && podium setup mealie --no-startup`
-4. `podium up mealie`
+3. `cd ~/zeltro-projects/mealie && zeltro setup mealie --no-startup`
+4. `zeltro up mealie`
 5. Verify: `curl -sI http://mealie/` — expect HTTP 200.
 
 ## docker-compose.yaml
@@ -46,7 +46,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

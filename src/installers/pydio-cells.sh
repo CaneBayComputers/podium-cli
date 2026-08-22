@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin123"
 INSTALL_NOTES="Heavy first boot — Cells runs its headless installer from install.yml, which can take a minute or two."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"pydio_cells\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"pydio_cells\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -42,7 +42,7 @@ frontendrepeatpassword: admin123
 frontendapplicationtitle: Pydio Cells
 externalurl: http://pydio-cells
 dbconnectiontype: manual
-dbmanualdsn: "postgres://root:password@podium-postgres:5432/pydio_cells?sslmode=disable&prefix={{.Meta.prefix}}&policies={{.Meta.policies}}&singular={{.Meta.singular}}"
+dbmanualdsn: "postgres://root:password@zeltro-postgres:5432/pydio_cells?sslmode=disable&prefix={{.Meta.prefix}}&policies={{.Meta.policies}}&singular={{.Meta.singular}}"
 YAML
 
     cat > nginx.conf << 'NGINX'

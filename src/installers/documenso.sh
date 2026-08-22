@@ -4,7 +4,7 @@ INSTALL_NOTES="A self-signed signing certificate is generated into cert.p12 — 
 INSTALL_READY_RETRIES=60
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE documenso;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE documenso;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,7 +20,7 @@ write_files() {
     # OpenSSL 3's AES-256 default produces a file Documenso rejects.
     openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
         -keyout documenso-signing.key -out documenso-signing.crt \
-        -subj "/CN=Documenso Podium Dev" >/dev/null 2>&1
+        -subj "/CN=Documenso Zeltro Dev" >/dev/null 2>&1
     openssl pkcs12 -export -out cert.p12 \
         -inkey documenso-signing.key -in documenso-signing.crt \
         -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 \
@@ -42,11 +42,11 @@ services:
       NEXT_PRIVATE_ENCRYPTION_SECONDARY_KEY: "$enc_secondary"
       NEXT_PUBLIC_WEBAPP_URL: http://documenso
       NEXT_PRIVATE_INTERNAL_WEBAPP_URL: http://localhost:3000
-      NEXT_PRIVATE_DATABASE_URL: postgresql://root:password@podium-postgres:5432/documenso
-      NEXT_PRIVATE_DIRECT_DATABASE_URL: postgresql://root:password@podium-postgres:5432/documenso
+      NEXT_PRIVATE_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/documenso
+      NEXT_PRIVATE_DIRECT_DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/documenso
       NEXT_PUBLIC_UPLOAD_TRANSPORT: database
       NEXT_PRIVATE_SMTP_TRANSPORT: smtp-auth
-      NEXT_PRIVATE_SMTP_HOST: podium-mailhog
+      NEXT_PRIVATE_SMTP_HOST: zeltro-mailhog
       NEXT_PRIVATE_SMTP_PORT: 1025
       NEXT_PRIVATE_SMTP_SECURE: "false"
       NEXT_PRIVATE_SMTP_UNSAFE_IGNORE_TLS: "true"

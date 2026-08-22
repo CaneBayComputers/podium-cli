@@ -5,19 +5,19 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 export PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"
 
-mkdir -p /tmp/podium-tests/installers3-sessions
-LOG=/tmp/podium-tests/installers3-master.log
-PODIUM="/usr/local/bin/podium"
+mkdir -p /tmp/zeltro-tests/installers3-sessions
+LOG=/tmp/zeltro-tests/installers3-master.log
+ZELTRO="/usr/local/bin/zeltro"
 
 run_install() {
     local name="$1"
-    local logfile="/tmp/podium-tests/installers3-sessions/${name}.log"
+    local logfile="/tmp/zeltro-tests/installers3-sessions/${name}.log"
 
     echo "[$(date '+%H:%M:%S')] === Starting: $name ===" | tee -a "$LOG"
 
-    TERM=xterm $PODIUM remove "$name" --force-db-delete > /dev/null 2>&1 || true
+    TERM=xterm $ZELTRO remove "$name" --force-db-delete > /dev/null 2>&1 || true
 
-    TERM=xterm $PODIUM install "$name" > "$logfile" 2>&1
+    TERM=xterm $ZELTRO install "$name" > "$logfile" 2>&1
     local code=$?
     echo "EXIT:$code" >> "$logfile"
 

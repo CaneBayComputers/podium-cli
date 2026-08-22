@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Gitea"
 INSTALL_NOTES="Register the first user through the web UI — that account becomes admin."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS gitea;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS gitea;"
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
       USER_UID: 1000
       USER_GID: 1000
       GITEA__database__DB_TYPE: mysql
-      GITEA__database__HOST: podium-mariadb:3306
+      GITEA__database__HOST: zeltro-mariadb:3306
       GITEA__database__NAME: gitea
       GITEA__database__USER: root
       GITEA__database__PASSWD: ""

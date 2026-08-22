@@ -9,4 +9,4 @@
 - No external database needed — all data is stored in `/data`.
 - Persist `/data` as a named volume.
 - On first visit you can optionally set a server password to restrict access.
-- The installer exists: run `podium install actual-budget`.
+- The installer exists: run `zeltro install actual-budget`.

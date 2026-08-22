@@ -4,7 +4,7 @@ INSTALL_NOTES="First boot installs the plugin set and can take several minutes."
 INSTALL_READY_RETRIES=90
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE nocobase;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE nocobase;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,7 +20,7 @@ services:
     environment:
       APP_KEY: "$app_key"
       DB_DIALECT: postgres
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: 5432
       DB_DATABASE: nocobase
       DB_USER: root

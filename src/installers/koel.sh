@@ -6,18 +6,18 @@ INSTALL_NOTES="Place your music files in the koel-music volume then scan from th
 KOEL_APP_KEY="base64:$(openssl rand -base64 32)"
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE koel;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE koel;" 2>/dev/null || true
 
     # Koel's init writes back to .env; bind-mounting the file fails due to AppArmor on the host.
     # Write .env inside the ephemeral container and run koel:init there, then use SKIP_INIT for the main container.
-    docker run --rm --network podium-cli_vpc \
+    docker run --rm --network zeltro-cli_vpc \
         --entrypoint /bin/sh \
         phanan/koel:latest \
         -c "cat > /var/www/html/.env << 'ENVEOF'
 APP_KEY=$KOEL_APP_KEY
 APP_URL=http://koel
 DB_CONNECTION=pgsql
-DB_HOST=podium-postgres
+DB_HOST=zeltro-postgres
 DB_PORT=5432
 DB_DATABASE=koel
 DB_USERNAME=root
@@ -36,7 +36,7 @@ write_files() {
 APP_KEY=$KOEL_APP_KEY
 APP_URL=http://koel
 DB_CONNECTION=pgsql
-DB_HOST=podium-postgres
+DB_HOST=zeltro-postgres
 DB_PORT=5432
 DB_DATABASE=koel
 DB_USERNAME=root

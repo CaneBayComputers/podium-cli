@@ -33,7 +33,7 @@ DB_NAME_OVERRIDE=""
 OVERWRITE_ENV=0
 RUN_MIGRATIONS=1
 GIT_CLONE_ARGS=()
-# Fold = hand the cloned repo to the AI agent to adapt for Podium instead of
+# Fold = hand the cloned repo to the AI agent to adapt for Zeltro instead of
 # running it through framework classification and the regex compose adapter.
 # Default on when an agent is configured; falls back automatically when not.
 FOLD=""
@@ -41,8 +41,8 @@ SKIP_PREFLIGHT=0
 
 # Function to display usage
 usage() {
-    echo-white "Usage: ${PODIUM_CMD:-$0} <mode> <repository> [project_name] [OPTIONS]"
-    echo-white "Clone a Git repository and set it up as a Podium project"
+    echo-white "Usage: ${ZELTRO_CMD:-$0} <mode> <repository> [project_name] [OPTIONS]"
+    echo-white "Clone a Git repository and set it up as a Zeltro project"
     echo-white ""
     echo-white "Arguments:"
     echo-white "  mode              Required. How to handle the repo (git-remote style):"
@@ -53,14 +53,14 @@ usage() {
     echo-white "  project_name      Optional: Local project name (defaults to repo name)"
     echo-white ""
     echo-white "Examples:"
-    echo-white "  ${PODIUM_CMD:-$0} work-directly https://github.com/user/app"
-    echo-white "  ${PODIUM_CMD:-$0} fork https://github.com/user/app"
-    echo-white "  ${PODIUM_CMD:-$0} new-repo https://github.com/user/app my-app"
+    echo-white "  ${ZELTRO_CMD:-$0} work-directly https://github.com/user/app"
+    echo-white "  ${ZELTRO_CMD:-$0} fork https://github.com/user/app"
+    echo-white "  ${ZELTRO_CMD:-$0} new-repo https://github.com/user/app my-app"
     echo-white ""
     echo-white "Options:"
     echo-white "  --json-output                Output results in JSON format"
     echo-white "  --no-colors                  Disable colored output"
-    echo-white "  --debug                      Enable debug logging to /tmp/podium-cli-debug.log"
+    echo-white "  --debug                      Enable debug logging to /tmp/zeltro-cli-debug.log"
     echo-white "  --overwrite-docker-compose   Overwrite existing docker-compose.yaml without prompting"
     echo-white "  --database ENGINE            Database type: mysql, postgres, mongo, sqlite (default: mysql)"
     echo-white "  --db-name NAME               Database name (default: project name with dashes as underscores)"
@@ -74,7 +74,7 @@ usage() {
     echo-white "  --no-startup                 Clone and register project but do not start the container"
     echo-white "  --image REF                  Override the project's Docker image (default: framework cbc base image)"
     echo-white "  --one-off                    Skip the interactive AI session at the end (for automation)"
-    echo-white "  --fold                       Force the AI fold (adapt the repo for Podium). Default when an agent is set."
+    echo-white "  --fold                       Force the AI fold (adapt the repo for Zeltro). Default when an agent is set."
     echo-white "  --no-fold                    Skip the AI fold; use the built-in framework/compose heuristics instead"
     echo-white "  --no-preflight               Skip the compatibility check and set up the repo regardless"
     echo-white "  --fork                       Prefer forking GitHub repo via gh (non-interactive)"
@@ -243,7 +243,7 @@ case "$CLONE_MODE" in
         REQUEST_FORK=0
         if [ -n "$ORGANIZATION" ]; then CREATE_GITHUB="org"; else CREATE_GITHUB="yes"; fi ;;
     "")
-        error "Error: clone mode is required. Usage: podium clone <work-directly|fork|new-repo> <url> [name]" ;;
+        error "Error: clone mode is required. Usage: zeltro clone <work-directly|fork|new-repo> <url> [name]" ;;
     *)
         error "Error: invalid clone mode '$CLONE_MODE'. Use one of: work-directly, fork, new-repo." ;;
 esac
@@ -277,7 +277,7 @@ fi
 # An HTTPS remote needs a credential helper or a token for anything private and
 # for every push; SSH just uses the key they already have. Since the cloned
 # repo keeps whatever remote it was cloned with, an HTTPS clone quietly commits
-# the user to re-authenticating on their first push — the URL Podium picks here
+# the user to re-authenticating on their first push — the URL Zeltro picks here
 # is a long-lived decision, not a transport detail.
 #
 # Only GitHub URLs are touched, and only when the probe succeeds; otherwise this
@@ -455,14 +455,14 @@ echo-return
 # after the fold it has already burned a model call and left a dead project.
 if [ "$SKIP_PREFLIGHT" != "1" ]; then
     cd "$PROJECT_NAME"
-    if ! podium_preflight_check; then
+    if ! zeltro_preflight_check; then
         cd "$PROJECTS_DIR_PATH"
         echo-return
         echo-white "The clone is left in place for inspection:"
         echo-white "  $PROJECTS_DIR_PATH/$PROJECT_NAME"
-        echo-white "Nothing was registered with Podium — delete that directory to undo it."
+        echo-white "Nothing was registered with Zeltro — delete that directory to undo it."
         if [[ "$JSON_OUTPUT" == "1" ]]; then
-            json_error "Repository is not compatible with Podium (see preflight output)"
+            json_error "Repository is not compatible with Zeltro (see preflight output)"
         fi
         exit 1
     fi
@@ -473,20 +473,20 @@ cd ..
 
 # Decide whether to fold. The fold is the good path — it reads the actual repo
 # instead of pattern-matching service names — but it needs an agent. With none
-# configured, fall back to the framework/compose heuristics so `podium clone`
+# configured, fall back to the framework/compose heuristics so `zeltro clone`
 # still works for someone with no AI credentials at all.
 if [ -z "$FOLD" ]; then
     if [ -n "$AI_AGENT" ]; then FOLD=1; else FOLD=0; fi
 fi
 if [ "$FOLD" = "1" ] && [ -z "$AI_AGENT" ]; then
     echo-yellow "--fold requested but no AI agent is configured. Falling back to built-in heuristics."
-    echo-white  "Configure one with: podium ai-set --agent claude"
+    echo-white  "Configure one with: zeltro ai-set --agent claude"
     FOLD=0
 fi
 if [ "$FOLD" = "0" ] && [ -z "$AI_AGENT" ]; then
     echo-yellow "No AI agent configured — using built-in framework/compose heuristics."
     echo-white  "These guess from service names and do not rewrite connection strings inside DSNs."
-    echo-white  "For arbitrary repos, 'podium ai-set --agent claude' then re-clone gives a much better result."
+    echo-white  "For arbitrary repos, 'zeltro ai-set --agent claude' then re-clone gives a much better result."
 fi
 
 # When folding, setup_project must NOT start the container: its generated compose
@@ -525,7 +525,7 @@ fi
 if [[ "$DEBUG" == "1" ]]; then
     SETUP_ARGS+=("--debug")
 fi
-# podium clone always registers a project with Podium, so overwrite is implicit.
+# zeltro clone always registers a project with Zeltro, so overwrite is implicit.
 # The flag is still forwarded if the user passed it explicitly.
 SETUP_ARGS+=("--overwrite-docker-compose")
 if [[ "$NO_STORAGE_SYMLINK" == "1" ]]; then
@@ -574,19 +574,19 @@ if [ "$FOLD" = "1" ]; then
     # Read the allocation back from the project's compose rather than relying on
     # setup_project's variables: in JSON mode it runs in a subshell, so its
     # locals never reach this scope.
-    FOLD_IP="$(podium_project_ip "$PROJECT_NAME")"
-    FOLD_PORT="$(podium_project_port "$PROJECT_NAME")"
+    FOLD_IP="$(zeltro_project_ip "$PROJECT_NAME")"
+    FOLD_PORT="$(zeltro_project_port "$PROJECT_NAME")"
 
     if [ -z "$FOLD_IP" ]; then
         echo-yellow "Could not determine the allocated IP for $PROJECT_NAME — skipping fold."
     else
-        if podium_fold_project "$PROJECT_NAME" "$FOLD_IP" "$FOLD_PORT"; then
+        if zeltro_fold_project "$PROJECT_NAME" "$FOLD_IP" "$FOLD_PORT"; then
             FOLD_OK=1
         else
             FOLD_OK=0
             echo-yellow "Fold did not complete cleanly. The project is registered and the"
             echo-yellow "original compose is at docker-compose.upstream.yaml — fix and run:"
-            echo-white  "  podium up $PROJECT_NAME"
+            echo-white  "  zeltro up $PROJECT_NAME"
         fi
 
         # Start, install dependencies and migrate — the steps setup_project
@@ -607,9 +607,9 @@ if [ "$FOLD" = "1" ]; then
                         echo-yellow "Migrations failed — run them manually once the app config is settled."
                 fi
 
-                podium_report_container_capabilities "$PROJECT_NAME"
+                zeltro_report_container_capabilities "$PROJECT_NAME"
             else
-                echo-yellow "Container failed to start. Inspect docker-compose.yaml, then: podium up $PROJECT_NAME"
+                echo-yellow "Container failed to start. Inspect docker-compose.yaml, then: zeltro up $PROJECT_NAME"
             fi
         fi
     fi

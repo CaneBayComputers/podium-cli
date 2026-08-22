@@ -2,8 +2,8 @@ INSTALL_DISPLAY="Standard Notes"
 INSTALL_NOTES="Self-hosted encrypted notes server. Connect with the Standard Notes app at http://$PROJECT_NAME/. Use the Standard Notes desktop/mobile app to register and sync."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS standard_notes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    docker exec podium-mariadb mariadb -u root -e "
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS standard_notes CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "
         CREATE USER IF NOT EXISTS 'standard_notes'@'%' IDENTIFIED BY 'SnDbPass123!';
         ALTER USER 'standard_notes'@'%' IDENTIFIED BY 'SnDbPass123!';
         GRANT ALL PRIVILEGES ON standard_notes.* TO 'standard_notes'@'%';
@@ -28,15 +28,15 @@ services:
       EXPOSED_PORT: "3000"
       PUBLIC_URL: http://standard-notes
       DB_TYPE: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: "3306"
       DB_USERNAME: standard_notes
       DB_PASSWORD: "SnDbPass123!"
       DB_DATABASE: standard_notes
       DB_MIGRATIONS_PATH: dist/migrations/*.js
-      REDIS_HOST: podium-redis
+      REDIS_HOST: zeltro-redis
       REDIS_PORT: "6379"
-      REDIS_URL: redis://podium-redis:6379
+      REDIS_URL: redis://zeltro-redis:6379
       CACHE_TYPE: redis
       AUTH_JWT_SECRET: $auth_secret
       AUTH_SERVER_ENCRYPTION_SERVER_KEY: $enc_server_key

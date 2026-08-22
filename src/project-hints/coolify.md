@@ -2,7 +2,7 @@
 
 **Image**: `ghcr.io/coollabsio/coolify:latest`
 **Port**: 8080 (nginx reverse proxy — internal PHP-FPM+nginx listens on 8080)
-**Database**: PostgreSQL (`podium-postgres`) + Redis (`podium-redis`)
+**Database**: PostgreSQL (`zeltro-postgres`) + Redis (`zeltro-redis`)
 **Credentials**: Create first admin on first visit
 
 ## Key Notes
@@ -11,4 +11,4 @@
 - `APP_KEY` must be `base64:<openssl rand -base64 32>`.
 - Pusher keys (`PUSHER_APP_ID`, `PUSHER_APP_KEY`, `PUSHER_APP_SECRET`) are required random values for Soketi WebSockets.
 - `AUTOUPDATE=false` prevents Coolify from updating itself inside the container.
-- The installer exists: run `podium install coolify`.
+- The installer exists: run `zeltro install coolify`.

@@ -1,20 +1,19 @@
 ---
 title: Frameworks
-layout: default
 nav_order: 5
 ---
 
-# Frameworks — `podium new`
+# Frameworks — `zeltro new`
 
-`podium new <framework> <name>` scaffolds a greenfield project **you write**. Both arguments are required positionals.
+`zeltro new <framework> <name>` scaffolds a greenfield project **you write**. Both arguments are required positionals.
 
 ```bash
-podium new laravel my-shop
-podium new flask my-api --database sqlite
-podium new express my-service --database postgres --version latest
+zeltro new laravel my-shop
+zeltro new flask my-api --database sqlite
+zeltro new express my-service --database postgres --version latest
 ```
 
-For ready-made third-party apps you *run* rather than write, see [App library]({{ site.baseurl }}/guide/app-library/) instead.
+For ready-made third-party apps you *run* rather than write, see [App library](../app-library/) instead.
 
 ---
 
@@ -56,7 +55,7 @@ front-end project should not start a database server it never queries. Ask for
 one explicitly when you need it:
 
 ```bash
-podium new nextjs my-app --database postgres
+zeltro new nextjs my-app --database postgres
 ```
 
 `react` and `vue` are plain single-page apps on Vite with no server rendering.
@@ -76,13 +75,13 @@ because it shares the same Node base image.
 It exists because an agent editing page *files* beats an agent driving a CMS admin UI. Reach for it over plain Laravel for marketing sites, brochure sites, portfolios and galleries — and for plain Laravel when you need a real application with custom models and business logic.
 
 ```bash
-podium new kavera my-site
+zeltro new kavera my-site
 ```
 
 Pages live in `resources/views/content`. After adding or removing one, refresh the registry so routes resolve:
 
 ```bash
-podium art app:update-content-list
+zeltro art app:update-content-list
 ```
 
 ## Options
@@ -107,12 +106,12 @@ podium art app:update-content-list
 ### SQLite
 
 ```bash
-podium new flask notes --database sqlite
-podium new django blog --database sqlite
-podium new laravel shop --database sqlite
+zeltro new flask notes --database sqlite
+zeltro new django blog --database sqlite
+zeltro new laravel shop --database sqlite
 ```
 
-SQLite needs no shared service — it's a single file. Podium creates it, points the project's `.env` at it, and runs migrations normally.
+SQLite needs no shared service — it's a single file. Zeltro creates it, points the project's `.env` at it, and runs migrations normally.
 
 The file always lives **inside the project directory**:
 
@@ -122,13 +121,13 @@ The file always lives **inside the project directory**:
 | Laravel | `database/database.sqlite` |
 | Everything else | `database.sqlite` |
 
-That location is deliberate. The project directory is the only path bind-mounted into the container, so a database anywhere else would be destroyed every time the container is recreated on `podium up`. It is also gitignored by default.
+That location is deliberate. The project directory is the only path bind-mounted into the container, so a database anywhere else would be destroyed every time the container is recreated on `zeltro up`. It is also gitignored by default.
 
 Good for prototypes, single-user tools, and test fixtures. For anything concurrent, use Postgres or MySQL.
 
 ### Shared server databases
 
-`mysql`, `postgres` and `mongodb` connect to the shared service containers. Podium creates the database and writes the connection settings into the project's `.env` — you never configure credentials by hand. See [Architecture → Shared services]({{ site.baseurl }}/guide/architecture/#shared-services) for hostnames and credentials.
+`mysql`, `postgres` and `mongodb` connect to the shared service containers. Zeltro creates the database and writes the connection settings into the project's `.env` — you never configure credentials by hand. See [Architecture → Shared services](../architecture/#shared-services) for hostnames and credentials.
 
 ---
 
@@ -139,21 +138,21 @@ Run these **from the project directory**. They execute inside the container, wit
 ### PHP
 
 ```bash
-podium composer install
-podium art migrate
-podium wp plugin list --status=active
-podium php script.php
-podium tinker
+zeltro composer install
+zeltro art migrate
+zeltro wp plugin list --status=active
+zeltro php script.php
+zeltro tinker
 ```
 
 ### Python
 
 ```bash
-podium python -c "import sys; print(sys.version)"
-podium pip install httpx
-podium django manage migrate
-podium django manage createsuperuser
-podium shell
+zeltro python -c "import sys; print(sys.version)"
+zeltro pip install httpx
+zeltro django manage migrate
+zeltro django manage createsuperuser
+zeltro shell
 ```
 
 Python containers provide `python3`, not `python`.
@@ -161,34 +160,34 @@ Python containers provide `python3`, not `python`.
 ### Node
 
 ```bash
-podium npm install
-podium npx tsc --init
-podium node script.js
-podium shell
+zeltro npm install
+zeltro npx tsc --init
+zeltro node script.js
+zeltro shell
 ```
 
 ### Any framework
 
 ```bash
-podium exec <cmd>              # run a command, no TTY — good for scripts and CI
-podium exec-root <cmd>         # as root
-podium bash                    # interactive shell
-podium shell                   # framework-aware REPL (tinker / django shell / node / python3)
-podium supervisor restart all  # restart in-container processes
-podium supervisor-status
+zeltro exec <cmd>              # run a command, no TTY — good for scripts and CI
+zeltro exec-root <cmd>         # as root
+zeltro bash                    # interactive shell
+zeltro shell                   # framework-aware REPL (tinker / django shell / node / python3)
+zeltro supervisor restart all  # restart in-container processes
+zeltro supervisor-status
 ```
 
-Use `podium supervisor`, never `podium exec supervisorctl` — the latter runs as the developer user and is denied on the supervisor socket.
+Use `zeltro supervisor`, never `zeltro exec supervisorctl` — the latter runs as the developer user and is denied on the supervisor socket.
 
 ### Laravel extras
 
 ```bash
-podium db-refresh      # fresh migration + seed
-podium cache-refresh   # clear all caches
-podium phpcs app/      # static analysis
-podium phpcbf app/     # auto-fix
-podium phpmd app/File.php
-podium php -l app/File.php
+zeltro db-refresh      # fresh migration + seed
+zeltro cache-refresh   # clear all caches
+zeltro phpcs app/      # static analysis
+zeltro phpcbf app/     # auto-fix
+zeltro phpmd app/File.php
+zeltro php -l app/File.php
 ```
 
 ---
@@ -196,10 +195,10 @@ podium php -l app/File.php
 ## Adopting an existing project
 
 ```bash
-podium setup my-project                          # a folder already in ~/podium-projects/
-podium setup my-project --framework django       # force detection
-podium setup my-project --overwrite-env          # repoint an existing .env at shared services
-podium setup my-project --no-startup             # register without starting, to review the compose
+zeltro setup my-project                          # a folder already in ~/zeltro-projects/
+zeltro setup my-project --framework django       # force detection
+zeltro setup my-project --overwrite-env          # repoint an existing .env at shared services
+zeltro setup my-project --no-startup             # register without starting, to review the compose
 ```
 
 Framework detection reads the project's files — `artisan`, `manage.py`, `main.py`, `app.py`, `package.json`, `wp-config.php`. Flask and FastAPI are distinguished by which one the file actually imports, not by filename.

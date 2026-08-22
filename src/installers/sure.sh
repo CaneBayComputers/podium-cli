@@ -1,12 +1,12 @@
 INSTALL_DISPLAY="Sure"
 INSTALL_CREDENTIALS="Register the first account on first visit"
-INSTALL_NOTES="First boot runs Rails db:prepare against podium-postgres — allow ~60 seconds."
+INSTALL_NOTES="First boot runs Rails db:prepare against zeltro-postgres — allow ~60 seconds."
 
 # db:prepare + asset boot on a cold Rails container.
 INSTALL_READY_RETRIES=24
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"sure\";" 2>/dev/null || true
 }
 
@@ -25,12 +25,12 @@ services:
       RAILS_FORCE_SSL: "false"
       RAILS_ASSUME_SSL: "false"
       SECRET_KEY_BASE: "$secret_key_base"
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: sure
-      REDIS_URL: "redis://podium-redis:6379/1"
+      REDIS_URL: "redis://zeltro-redis:6379/1"
     volumes:
       - sure-storage:/rails/storage
 
@@ -43,12 +43,12 @@ services:
       RAILS_FORCE_SSL: "false"
       RAILS_ASSUME_SSL: "false"
       SECRET_KEY_BASE: "$secret_key_base"
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: sure
-      REDIS_URL: "redis://podium-redis:6379/1"
+      REDIS_URL: "redis://zeltro-redis:6379/1"
     depends_on:
       - sure-app
     volumes:

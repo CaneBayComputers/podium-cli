@@ -9,7 +9,7 @@ pre_install() {
         exit 1
     fi
     echo-green "  APP_KEY generated."
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
 }
 
 write_files() {
@@ -24,7 +24,7 @@ services:
       APP_KEY: "$SNIPEIT_APP_KEY"
       APP_URL: http://snipe-it
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: snipeit
       DB_USERNAME: root

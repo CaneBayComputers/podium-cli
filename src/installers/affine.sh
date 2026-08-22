@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit (first account becomes the server o
 INSTALL_NOTES="A one-shot migration container runs before the server; the first boot takes about a minute."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE affine;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE affine;" 2>/dev/null || true
 }
 
 write_files() {
@@ -14,8 +14,8 @@ services:
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
     restart: on-failure
     environment:
-      REDIS_SERVER_HOST: podium-redis
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/affine
+      REDIS_SERVER_HOST: zeltro-redis
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/affine
       AFFINE_INDEXER_ENABLED: "false"
     volumes:
       - affine-storage:/root/.affine/storage
@@ -25,8 +25,8 @@ services:
     image: ghcr.io/toeverything/affine:0.27.0
     restart: unless-stopped
     environment:
-      REDIS_SERVER_HOST: podium-redis
-      DATABASE_URL: postgresql://root:password@podium-postgres:5432/affine
+      REDIS_SERVER_HOST: zeltro-redis
+      DATABASE_URL: postgresql://root:password@zeltro-postgres:5432/affine
       AFFINE_INDEXER_ENABLED: "false"
       AFFINE_SERVER_EXTERNAL_URL: http://affine
       AFFINE_SERVER_HTTPS: "false"

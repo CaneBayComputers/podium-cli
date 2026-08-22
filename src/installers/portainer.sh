@@ -29,7 +29,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 EOF
 
     cat > nginx.conf << 'EOF'

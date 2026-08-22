@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
-# Deliberately does NOT remove /etc/podium-cli/.env or any project directory.
+# Deliberately does NOT remove /etc/zeltro-cli/.env or any project directory.
 # Those are user data; a package removal must not destroy someone's projects.
 exit 0

@@ -9,4 +9,4 @@
 - Persist `/home/node/trilium-data` as a bind mount or named volume.
 - First visit shows a setup page to set the login password.
 - No external database or cache needed.
-- The installer exists: run `podium install trilium`.
+- The installer exists: run `zeltro install trilium`.

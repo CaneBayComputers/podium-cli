@@ -43,13 +43,13 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo-white "Usage: ${PODIUM_CMD:-$0} [OPTIONS]"
-            echo-white "Start Podium shared services"
+            echo-white "Usage: ${ZELTRO_CMD:-$0} [OPTIONS]"
+            echo-white "Start Zeltro shared services"
             echo-white ""
             echo-white "Options:"
             echo-white "  --json-output     Output results in JSON format"
             echo-white "  --no-colors       Disable colored output"
-            echo-white "  --debug           Enable debug logging to /tmp/podium-cli-debug.log"
+            echo-white "  --debug           Enable debug logging to /tmp/zeltro-cli-debug.log"
             echo-white "  --help            Show this help message"
             exit 0
             ;;
@@ -81,14 +81,14 @@ source "$DEV_DIR/scripts/pre_check.sh"
 # Postgres-only machine. Check the always-on trio plus whatever is enabled.
 _services_up=1
 for _svc in redis memcached mailhog ${OPTIONAL_SERVICES:-}; do
-    _cname="podium-$_svc"
-    [ "$_svc" = "mysql" ] && _cname="podium-mariadb"
+    _cname="${SERVICE_PREFIX:-zeltro}-$_svc"
+    [ "$_svc" = "mysql" ] && _cname="zeltro-mariadb"
     docker container inspect -f '{{.State.Running}}' "$_cname" 2>/dev/null | grep -q true || _services_up=0
 done
 
 if [ "$_services_up" = "0" ]; then
     echo-cyan "Starting services ..."; echo-white
-    cd /etc/podium-cli
+    cd /etc/zeltro-cli
     dockerup
     cd "$DEV_DIR"
 fi

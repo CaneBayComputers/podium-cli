@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Wiki.js"
 INSTALL_NOTES="Complete the setup wizard on first visit to create the admin account."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE wikijs;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE wikijs;" 2>/dev/null || true
 }
 
 write_files() {
@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     environment:
       DB_TYPE: postgres
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: 5432
       DB_USER: root
       DB_PASS: password

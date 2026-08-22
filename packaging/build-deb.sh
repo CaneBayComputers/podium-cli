@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build a .deb for the Podium CLI.
+# Build a .deb for the Zeltro CLI.
 #
 # Layout note: packages must NOT install into /usr/local -- Debian policy
 # reserves that for the local administrator, and the shell installer already
-# owns it. A packaged install therefore lives in /opt/podium-cli with a symlink
-# at /usr/bin/podium, so the two install methods cannot collide on disk.
+# owns it. A packaged install therefore lives in /opt/zeltro-cli with a symlink
+# at /usr/bin/zeltro, so the two install methods cannot collide on disk.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,14 +16,14 @@ OUT_DIR="${1:-$REPO_ROOT/dist}"
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 
-echo "Building podium-cli ${VERSION_DEB}"
+echo "Building zeltro-cli ${VERSION_DEB}"
 
-install -d "$BUILD/opt/podium-cli" "$BUILD/usr/bin" "$BUILD/DEBIAN"
+install -d "$BUILD/opt/zeltro-cli" "$BUILD/usr/bin" "$BUILD/DEBIAN"
 # Ship the runtime tree only: no .git, no docs site, no packaging scaffolding.
 for item in src VERSION LICENSE README.md; do
-    [ -e "$REPO_ROOT/$item" ] && cp -r "$REPO_ROOT/$item" "$BUILD/opt/podium-cli/"
+    [ -e "$REPO_ROOT/$item" ] && cp -r "$REPO_ROOT/$item" "$BUILD/opt/zeltro-cli/"
 done
-ln -s /opt/podium-cli/src/podium "$BUILD/usr/bin/podium"
+ln -s /opt/zeltro-cli/src/zeltro "$BUILD/usr/bin/zeltro"
 
 INSTALLED_KB=$(du -sk "$BUILD/opt" | cut -f1)
 
@@ -33,7 +33,7 @@ install -m 0755 "$REPO_ROOT/packaging/debian/postinst" "$BUILD/DEBIAN/postinst"
 install -m 0755 "$REPO_ROOT/packaging/debian/prerm"    "$BUILD/DEBIAN/prerm"
 
 mkdir -p "$OUT_DIR"
-DEB="$OUT_DIR/podium-cli_${VERSION_DEB}_all.deb"
+DEB="$OUT_DIR/zeltro-cli_${VERSION_DEB}_all.deb"
 dpkg-deb --build --root-owner-group "$BUILD" "$DEB" >/dev/null
 echo "  -> $DEB"
 dpkg-deb --info "$DEB" | sed -n '2,12p'

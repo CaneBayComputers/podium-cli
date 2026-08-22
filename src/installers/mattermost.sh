@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Mattermost"
 INSTALL_NOTES="Create the System Admin account on first visit."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE mattermost;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE mattermost;" 2>/dev/null || true
 }
 
 write_files() {
@@ -18,7 +18,7 @@ services:
     environment:
       TZ: UTC
       MM_SQLSETTINGS_DRIVERNAME: postgres
-      MM_SQLSETTINGS_DATASOURCE: "postgres://root:password@podium-postgres:5432/mattermost?sslmode=disable&connect_timeout=10"
+      MM_SQLSETTINGS_DATASOURCE: "postgres://root:password@zeltro-postgres:5432/mattermost?sslmode=disable&connect_timeout=10"
       MM_BLEVESETTINGS_INDEXDIR: /mattermost/bleve-indexes
       MM_SERVICESETTINGS_SITEURL: http://mattermost
       MM_SERVICESETTINGS_LISTENADDRESS: ":8065"

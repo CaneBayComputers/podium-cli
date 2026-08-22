@@ -1,9 +1,9 @@
 INSTALL_DISPLAY="Tolgee"
 INSTALL_CREDENTIALS="admin / admin123"
-INSTALL_NOTES="Tolgee's embedded Postgres is disabled — it uses the shared podium-postgres instead."
+INSTALL_NOTES="Tolgee's embedded Postgres is disabled — it uses the shared zeltro-postgres instead."
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"tolgee\";" 2>/dev/null || true
 }
 
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     environment:
       TOLGEE_POSTGRES_AUTOSTART_ENABLED: "false"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://podium-postgres:5432/tolgee
+      SPRING_DATASOURCE_URL: jdbc:postgresql://zeltro-postgres:5432/tolgee
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: password
       TOLGEE_AUTHENTICATION_ENABLED: "true"

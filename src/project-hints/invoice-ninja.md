@@ -2,7 +2,7 @@
 
 **Image**: `invoiceninja/invoiceninja:5`
 **Port**: 9000 PHP-FPM (nginx uses fastcgi, NOT proxy_pass)
-**Database**: MariaDB (`podium-mariadb`, user=root, password=empty, db=ninja)
+**Database**: MariaDB (`zeltro-mariadb`, user=root, password=empty, db=ninja)
 **Credentials**: `admin@example.com / changeme!` (set via `IN_USER_EMAIL` / `IN_PASSWORD`)
 
 ## Key Notes
@@ -12,4 +12,4 @@
 - `IS_DOCKER: "true"` and `NINJA_ENVIRONMENT: selfhost` are required.
 - `REQUIRE_HTTPS: "false"` and `TRUSTED_PROXIES: "*"` are needed for local HTTP.
 - Persist `invoice-ninja-public` and `invoice-ninja-storage` volumes.
-- The installer exists: run `podium install invoice-ninja`.
+- The installer exists: run `zeltro install invoice-ninja`.

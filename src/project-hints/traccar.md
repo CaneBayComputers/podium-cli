@@ -13,4 +13,4 @@ Open-source GPS tracking platform — fleet/asset dashboard with maps, geofences
 - Persist both `/opt/traccar/data` (the H2 database files) and `/opt/traccar/logs`.
 - Tag variants exist (`-alpine`, `-debian`, `-ubuntu`); the plain numeric tag is the default build.
 - Change the `admin` password immediately in Settings → Users; the default is well known.
-- The installer exists: run `podium install traccar`.
+- The installer exists: run `zeltro install traccar`.

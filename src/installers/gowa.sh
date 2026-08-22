@@ -12,7 +12,7 @@ services:
     environment:
       APP_PORT: "3000"
       APP_DEBUG: "false"
-      APP_OS: Podium
+      APP_OS: Zeltro
       APP_BASIC_AUTH: admin:admin123
       DB_URI: file:storages/whatsapp.db?_foreign_keys=on
     volumes:

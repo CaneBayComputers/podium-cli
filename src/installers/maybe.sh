@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Register on first visit"
 INSTALL_NOTES="Rails app — the first boot runs migrations and asset setup, which takes a couple of minutes."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE maybe;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE maybe;" 2>/dev/null || true
 }
 
 write_files() {
@@ -20,12 +20,12 @@ services:
       RAILS_FORCE_SSL: "false"
       RAILS_ASSUME_SSL: "false"
       SECRET_KEY_BASE: "$secret_key_base"
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: maybe
-      REDIS_URL: redis://podium-redis:6379/1
+      REDIS_URL: redis://zeltro-redis:6379/1
     volumes:
       - maybe-storage:/rails/storage
 
@@ -38,12 +38,12 @@ services:
       RAILS_FORCE_SSL: "false"
       RAILS_ASSUME_SSL: "false"
       SECRET_KEY_BASE: "$secret_key_base"
-      DB_HOST: podium-postgres
+      DB_HOST: zeltro-postgres
       DB_PORT: "5432"
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
       POSTGRES_DB: maybe
-      REDIS_URL: redis://podium-redis:6379/1
+      REDIS_URL: redis://zeltro-redis:6379/1
     volumes:
       - maybe-storage:/rails/storage
     depends_on:

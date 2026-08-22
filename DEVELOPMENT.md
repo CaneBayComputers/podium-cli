@@ -1,51 +1,51 @@
 # DEVELOPMENT.md
 
-> For modifying Podium's source code itself.
-> If you're using Podium to install/build/deploy projects, see [AGENTS.md](AGENTS.md).
+> For modifying Zeltro's source code itself.
+> If you're using Zeltro to install/build/deploy projects, see [AGENTS.md](AGENTS.md).
 
 ## Initial Reading
 
 Read these first to understand the codebase:
 
 1. `src/scripts/functions.sh` — shared helpers used across all scripts (echo wrappers, JSON output, sudo helpers, color detection).
-2. `src/scripts/configure.sh` — sets up Podium and the dev environment; reference for conventions.
-3. `src/podium` — the Bash entrypoint that wires subcommands.
+2. `src/scripts/configure.sh` — sets up Zeltro and the dev environment; reference for conventions.
+3. `src/zeltro` — the Bash entrypoint that wires subcommands.
 
-Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `podium clone` → `src/scripts/clone_project.sh`). Read the relevant script when working on a specific command.
+Each subcommand maps directly to `src/scripts/<command>.sh` (e.g. `zeltro clone` → `src/scripts/clone_project.sh`). Read the relevant script when working on a specific command.
 
 ## Project Structure & Module Organization
 
 | Path | Purpose |
 |---|---|
-| `src/podium` | Bash entrypoint; dispatches subcommands. |
+| `src/zeltro` | Bash entrypoint; dispatches subcommands. |
 | `src/scripts/` | Per-subcommand logic. Group related workflows beside their support files. |
 | `src/docker-stack/` | Compose templates and defaults for shared services. Update `env.example` when adding variables. |
 | `src/installers/` | Curated installers for OSS apps. Format documented in [AGENTS.md → Writing Installers](AGENTS.md#writing-installers). |
-| `src/project-hints/` | Per-project setup hints used by `podium create`. |
-| `src/catalog/` | Stack catalogue driving `podium create`'s classifier. `frameworks.json` is hand-maintained (including each framework's supported databases); `apps.json` is **generated** — re-run `bash src/scripts/build_catalog.sh` after adding, removing or re-pointing an installer. |
+| `src/project-hints/` | Per-project setup hints used by `zeltro create`. |
+| `src/catalog/` | Stack catalogue driving `zeltro create`'s classifier. `frameworks.json` is hand-maintained (including each framework's supported databases); `apps.json` is **generated** — re-run `bash src/scripts/build_catalog.sh` after adding, removing or re-pointing an installer. |
 | `install-ubuntu.sh` / `install-arch.sh` / `install-fedora.sh` / `install-mac.sh` | The only scripts that touch host package managers. Adding one means wiring its distro IDs into `update.sh`'s `--full` platform detection too. |
 | `logs/` | Runtime logs land here, not the repo root. |
-| `/etc/podium-cli/.env` | Resolved runtime configuration. Ship defaults via `env.example`, never commit secrets. |
+| `/etc/zeltro-cli/.env` | Resolved runtime configuration. Ship defaults via `env.example`, never commit secrets. |
 
 ## Build, Test, and Development Commands
 
-- Run the CLI as `podium <command>`. Do **not** invoke `./src/podium` directly.
-- Use `podium <command> --json-output` to exercise automation outputs (some commands lack this — check `--help` first).
-- Regression coverage: `podium test-json-output [case]`. Tear down fixtures with `podium cleanup-test-environment`.
+- Run the CLI as `zeltro <command>`. Do **not** invoke `./src/zeltro` directly.
+- Use `zeltro <command> --json-output` to exercise automation outputs (some commands lack this — check `--help` first).
+- Regression coverage: `zeltro test-json-output [case]`. Tear down fixtures with `zeltro cleanup-test-environment`.
 - Static analysis runs inside the project container (run from the project root, paths relative):
-  - `podium phpcs <relative-path>` — PHPCS with the default ruleset.
-  - `podium phpcbf <relative-path>` — PHPCBF auto-fix.
-  - `podium phpmd <relative-path>` — PHPMD against a file.
-  - `podium php -l <relative-path>` — PHP lint.
-- `--debug` enables logging to `/tmp/podium-cli-debug.log`. Each new command starts a fresh session. Useful for diagnosing script-flow issues.
+  - `zeltro phpcs <relative-path>` — PHPCS with the default ruleset.
+  - `zeltro phpcbf <relative-path>` — PHPCBF auto-fix.
+  - `zeltro phpmd <relative-path>` — PHPMD against a file.
+  - `zeltro php -l <relative-path>` — PHP lint.
+- `--debug` enables logging to `/tmp/zeltro-cli-debug.log`. Each new command starts a fresh session. Useful for diagnosing script-flow issues.
 
-Use `podium` commands freely when testing or validating changes — spinning up a project, running exec commands, checking output — just as a user would.
+Use `zeltro` commands freely when testing or validating changes — spinning up a project, running exec commands, checking output — just as a user would.
 
 ## Coding Style & Naming Conventions
 
 - Author scripts with `#!/bin/bash`, `set -e`, four-space indentation, snake_case helpers (`init_projects_dir`).
 - Prefer extending shared utilities in `functions.sh` so color handling, JSON quiet mode, and logging stay consistent.
-- New commands follow verb-first naming (`podium cleanup-test-environment`) and reuse the echo wrappers (`echo-cyan`, `echo-yellow`, etc.) instead of raw `echo`.
+- New commands follow verb-first naming (`zeltro cleanup-test-environment`) and reuse the echo wrappers (`echo-cyan`, `echo-yellow`, etc.) instead of raw `echo`.
 
 ### `set -e` traps
 
@@ -59,55 +59,55 @@ When using a command that can fail this way, wrap in `if !` / `|| true` or detec
 ## Adding a New Subcommand
 
 1. Create `src/scripts/<verb>.sh` with the standard preamble (`set -e`, source `functions.sh`).
-2. Wire dispatch in `src/podium` — add a `case` arm matching the verb.
-3. Update help text in `src/podium` (the `--help` block) and the README's "Commands Overview" table.
+2. Wire dispatch in `src/zeltro` — add a `case` arm matching the verb.
+3. Update help text in `src/zeltro` (the `--help` block) and the README's "Commands Overview" table.
 4. If the command exposes structured output, support `--json-output`.
 5. If the command is agent-relevant, mention it in [AGENTS.md → Commands You'll Use Most](AGENTS.md#commands-youll-use-most).
 
 ## Adding or Modifying a Shared Service
 
-Shared services live in `src/docker-stack/docker-compose.services.yaml`. Each service gets a static IP in `.2`–`.8`, a `container_name` of `podium-<service>`, and attaches to `podium-cli_vpc`.
+Shared services live in `src/docker-stack/docker-compose.services.yaml`. Each service gets a static IP in `.2`–`.8`, a `container_name` of `zeltro-<service>`, and attaches to `zeltro-cli_vpc`.
 
 When editing the file:
 
-- Optional services go behind a compose `profiles: ["<name>"]` key and take a static IP in `.9`–`.15`. Add the name to `AVAILABLE_OPTIONAL_SERVICES` in `src/scripts/enable_service.sh`. They are enabled per machine via `podium enable-service`, which persists the list in `OPTIONAL_SERVICES` in `/etc/podium-cli/.env` — write that value **quoted**, since the file is `source`d by bash and a bare space-separated list would execute the second word as a command.
+- Optional services go behind a compose `profiles: ["<name>"]` key and take a static IP in `.9`–`.15`. Add the name to `AVAILABLE_OPTIONAL_SERVICES` in `src/scripts/enable_service.sh`. They are enabled per machine via `zeltro enable-service`, which persists the list in `OPTIONAL_SERVICES` in `/etc/zeltro-cli/.env` — write that value **quoted**, since the file is `source`d by bash and a bare space-separated list would execute the second word as a command.
 - Preserve the `ip_range: ${VPC_SUBNET}.32/27` block on the network. Without it, Docker hands out dynamic IPs starting at `.2` and helper containers in multi-service projects squat on shared-service IPs whenever those services are temporarily down — blocking them from coming back up.
-- The deployed copy lives at `/etc/podium-cli/docker-compose.yaml`, copied once on first `podium configure`. It does **not** auto-resync on `podium update`. To pick up changes on existing installs:
+- The deployed copy lives at `/etc/zeltro-cli/docker-compose.yaml`, copied once on first `zeltro configure`. It does **not** auto-resync on `zeltro update`. To pick up changes on existing installs:
 
   ```bash
-  sudo cp src/docker-stack/docker-compose.services.yaml /etc/podium-cli/docker-compose.yaml
-  docker network rm podium-cli_vpc
-  podium start-services
+  sudo cp src/docker-stack/docker-compose.services.yaml /etc/zeltro-cli/docker-compose.yaml
+  docker network rm zeltro-cli_vpc
+  zeltro start-services
   ```
 
 ## Updating cbc Base Docker Images
 
 The three cbc images are documented in [AGENTS.md → cbc Base Docker Images](AGENTS.md#cbc-base-docker-images). All of them live in the single `CaneBayComputers/docker-images` repo, one directory per image (`cbc-docker-php8-nginx/`, `cbc-docker-python3-nginx/`, `cbc-docker-node-nginx/`, `cbc-docker-php8-nginx-vector/`).
 
-**When adding a framework to `podium new`, check whether its runtime is in the image.** Project containers are recreated from the base image on every `podium up`, so anything pip/npm installed into a running container is lost. If the framework's package isn't baked into the Dockerfile, projects come back as a 502 after their first restart. `startup.sh` reinstalls `requirements.txt` as a safety net, but the image is the correct fix (this is exactly what Flask hit).
+**When adding a framework to `zeltro new`, check whether its runtime is in the image.** Project containers are recreated from the base image on every `zeltro up`, so anything pip/npm installed into a running container is lost. If the framework's package isn't baked into the Dockerfile, projects come back as a 502 after their first restart. `startup.sh` reinstalls `requirements.txt` as a safety net, but the image is the correct fix (this is exactly what Flask hit).
 
 To rebuild and publish:
 
 1. Edit the relevant file in `docker-images/<image-dir>/`.
 2. Commit and push the repo.
 3. From the repo directory: `sudo bash build_push.sh` — builds, tags, and pushes to Docker Hub.
-4. Existing running containers will not pick up the new image automatically. They need `podium down <name> && podium up <name>`.
+4. Existing running containers will not pick up the new image automatically. They need `zeltro down <name> && zeltro up <name>`.
 
 ## Testing Guidelines
 
 - Add new coverage by extending `src/scripts/test_json_output.sh`. Name scenarios after the command under test (`new_laravel_latest`).
-- Keep Docker noise isolated by using the `podium_test_` container/network prefixes and call `cleanup-test-environment` from failure handlers.
-- Capture debug data with the `--debug` flag and attach the relevant portion of `/tmp/podium-cli-debug.log` to reviews when issues arise.
+- Keep Docker noise isolated by using the `zeltro_test_` container/network prefixes and call `cleanup-test-environment` from failure handlers.
+- Capture debug data with the `--debug` flag and attach the relevant portion of `/tmp/zeltro-cli-debug.log` to reviews when issues arise.
 
 ## OSS Project Testing
 
-Podium is validated against real OSS apps by deploying them end-to-end across multiple machines using AI agents.
+Zeltro is validated against real OSS apps by deploying them end-to-end across multiple machines using AI agents.
 
 ### Workflow
 
 1. Write a `tests/oss-<machine>.sh` harness — one `run_project()` call per app, all run in parallel via `&` + `wait`.
-2. Each `run_project` call runs `podium create --one-off "<idea>"` and curls the result. Each idea includes a `SUMMARY_SUFFIX` instructing the agent to write `SETUP_SUMMARY.md` in the project dir.
-3. After runs complete, read the master log (`/tmp/podium-tests/oss-master.log`) and `SETUP_SUMMARY.md` files to assess results.
+2. Each `run_project` call runs `zeltro create --one-off "<idea>"` and curls the result. Each idea includes a `SUMMARY_SUFFIX` instructing the agent to write `SETUP_SUMMARY.md` in the project dir.
+3. After runs complete, read the master log (`/tmp/zeltro-tests/oss-master.log`) and `SETUP_SUMMARY.md` files to assess results.
 4. For any app that failed or needed agent workarounds, create or update a `src/project-hints/<slug>.md` file so future runs succeed first-try.
 
 ### Test fleet
@@ -120,15 +120,15 @@ See `machines.local` in the repo root for the current machine list. Canonical se
 | cami | codex | `tests/oss-cami.sh`, `tests/oss2-cami.sh`, `tests/custom-cami.sh`, `tests/installers-cami.sh`, `tests/installers2-cami.sh` |
 | cassie | gemini/codex | `tests/oss-cassie.sh`, `tests/oss2-cassie.sh`, `tests/custom-cassie.sh`, `tests/installers-cassie.sh`, `tests/installers2-cassie.sh` |
 
-SSH access: `ssh cami@cami`, `ssh cassie@cassie`. Pull repo on remotes: `ssh cami@cami "sudo git -C /usr/local/share/podium-cli pull"`.
+SSH access: `ssh cami@cami`, `ssh cassie@cassie`. Pull repo on remotes: `ssh cami@cami "sudo git -C /usr/local/share/zeltro-cli pull"`.
 
 ### Adding more OSS apps to test
 
 1. Add `run_project "<name>" "$IDEA_<NAME>"` entries to the relevant `tests/oss-<machine>.sh`.
 2. Write the `IDEA_*` variable following the established pattern: exact project name, image, port, nginx-or-direct, DB requirements, step-by-step instructions, `$SUMMARY_SUFFIX`.
-3. Always spell out `mkdir -p ~/podium-projects/<name>` in the steps to prevent agent renaming.
+3. Always spell out `mkdir -p ~/zeltro-projects/<name>` in the steps to prevent agent renaming.
 4. Run: `bash tests/oss-<machine>.sh`
-5. After completion, check `/tmp/podium-tests/oss-master.log` and `SETUP_SUMMARY.md` files.
+5. After completion, check `/tmp/zeltro-tests/oss-master.log` and `SETUP_SUMMARY.md` files.
 6. Create/update `src/project-hints/<slug>.md` for any app that needed workarounds.
 7. Commit updated hints and test scripts.
 
@@ -190,14 +190,14 @@ The following have been deployed successfully and have `src/project-hints/` file
 ## Configuration & Security Notes
 
 - Document new environment variables in `src/docker-stack/env.example` and keep defaults non-sensitive.
-- Any credentials belong in `/etc/podium-cli/.env` or developer-specific overrides, never in tracked files or example data.
+- Any credentials belong in `/etc/zeltro-cli/.env` or developer-specific overrides, never in tracked files or example data.
 
 ## Keeping Docs in Sync
 
 Three doc surfaces, three audiences:
 
-- **`README.md`** — humans deciding whether to use Podium and learning how. Update when adding/changing user-visible commands or capabilities.
-- **`AGENTS.md`** — agents *using* Podium. Update when adding agent-relevant features (commands, shared services, installer conventions, networking rules).
-- **`DEVELOPMENT.md`** (this file) — developers/agents *modifying* Podium. Update when changing internals (file layout, dispatch, testing infra).
+- **`README.md`** — humans deciding whether to use Zeltro and learning how. Update when adding/changing user-visible commands or capabilities.
+- **`AGENTS.md`** — agents *using* Zeltro. Update when adding agent-relevant features (commands, shared services, installer conventions, networking rules).
+- **`DEVELOPMENT.md`** (this file) — developers/agents *modifying* Zeltro. Update when changing internals (file layout, dispatch, testing infra).
 
-Keep AGENTS.md tight. Every byte added there is paid for in tokens on every `podium create` / `podium update-installer` / `podium create-installer` run.
+Keep AGENTS.md tight. Every byte added there is paid for in tokens on every `zeltro create` / `zeltro update-installer` / `zeltro create-installer` run.

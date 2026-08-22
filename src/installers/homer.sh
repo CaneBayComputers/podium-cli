@@ -1,5 +1,5 @@
 INSTALL_DISPLAY="Homer"
-INSTALL_NOTES="Edit ~/podium-projects/homer/assets/config.yml to customize your dashboard."
+INSTALL_NOTES="Edit ~/zeltro-projects/homer/assets/config.yml to customize your dashboard."
 
 write_files() {
     cat > docker-compose.yaml << 'EOF'

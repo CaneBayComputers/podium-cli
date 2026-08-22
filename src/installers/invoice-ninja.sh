@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Invoice Ninja"
 INSTALL_CREDENTIALS="admin@example.com / changeme!"
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS ninja CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS ninja CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -22,7 +22,7 @@ services:
       APP_KEY: $app_key
       APP_CIPHER: AES-256-CBC
       DB_TYPE: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: ninja
       DB_USERNAME: root
@@ -36,7 +36,7 @@ services:
       SESSION_DRIVER: file
       QUEUE_CONNECTION: database
       MAIL_MAILER: smtp
-      MAIL_HOST: podium-mailhog
+      MAIL_HOST: zeltro-mailhog
       MAIL_PORT: 1025
       MAIL_ENCRYPTION: "null"
       MAIL_FROM_ADDRESS: admin@invoice-ninja.local

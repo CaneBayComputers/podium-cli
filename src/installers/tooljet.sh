@@ -2,8 +2,8 @@ INSTALL_DISPLAY="Tooljet"
 INSTALL_NOTES="Low-code app builder. First startup takes ~60 seconds for migrations. Create your admin account on first visit."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE tooljet_production;" 2>/dev/null || true
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE tooljet_db;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE tooljet_production;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE tooljet_db;" 2>/dev/null || true
 }
 
 write_files() {
@@ -22,16 +22,16 @@ DISABLE_TOOLJET_TELEMETRY=true
 LOCKBOX_MASTER_KEY=$lockbox_key
 SECRET_KEY_BASE=$secret_key
 
-PG_HOST=podium-postgres
+PG_HOST=zeltro-postgres
 PG_PORT=5432
 PG_DB=tooljet_production
 PG_USER=root
 PG_PASS=password
 PGSSLMODE=disable
-DATABASE_URL=postgres://root:password@podium-postgres:5432/tooljet_production?sslmode=disable
+DATABASE_URL=postgres://root:password@zeltro-postgres:5432/tooljet_production?sslmode=disable
 
 TOOLJET_DB=tooljet_db
-TOOLJET_DB_HOST=podium-postgres
+TOOLJET_DB_HOST=zeltro-postgres
 TOOLJET_DB_PORT=5432
 TOOLJET_DB_USER=root
 TOOLJET_DB_PASS=password
@@ -39,16 +39,16 @@ TOOLJET_DB_BULK_UPLOAD_MAX_ROWS=5000
 TOOLJET_DB_BULK_UPLOAD_MAX_CSV_FILE_SIZE_MB=5
 
 PGRST_JWT_SECRET=$pgrst_secret
-PGRST_DB_URI=postgres://root:password@podium-postgres:5432/tooljet_db
+PGRST_DB_URI=postgres://root:password@zeltro-postgres:5432/tooljet_db
 PGRST_LOG_LEVEL=info
 PGRST_DB_PRE_CONFIG=postgrest.pre_config
 
-REDIS_HOST=podium-redis
+REDIS_HOST=zeltro-redis
 REDIS_PORT=6379
 REDIS_USER=default
 REDIS_PASSWORD=
 
-SMTP_DOMAIN=podium-mailhog
+SMTP_DOMAIN=zeltro-mailhog
 SMTP_PORT=1025
 DEFAULT_FROM_EMAIL=tooljet@tooljet.local
 EOF

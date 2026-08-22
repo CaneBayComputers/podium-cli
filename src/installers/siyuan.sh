@@ -17,7 +17,7 @@ services:
       SIYUAN_LANG: en
       # With an access auth code set, SiYuan answers / with a bare 401 JSON body
       # instead of a login page, which fails the readiness probe and looks broken
-      # in a browser. Bypass it; Podium projects are local-network only.
+      # in a browser. Bypass it; Zeltro projects are local-network only.
       # Note the auth code must ALSO be absent from the command — a command-line
       # --accessAuthCode is written into conf.json and wins over this variable.
       SIYUAN_ACCESS_AUTH_CODE_BYPASS: "true"

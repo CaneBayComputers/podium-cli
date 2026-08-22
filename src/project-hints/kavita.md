@@ -11,4 +11,4 @@
 - WebSocket upgrade headers are needed in nginx for real-time UI updates.
 - Persist `kavita-config` (at `/kavita/config`) and `kavita-books` (at `/books`) volumes.
 - Upload books to the `kavita-books` volume, then scan libraries from the admin panel.
-- The installer exists: run `podium install kavita`.
+- The installer exists: run `zeltro install kavita`.

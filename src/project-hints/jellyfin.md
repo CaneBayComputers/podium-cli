@@ -10,4 +10,4 @@
 - Mount a `/media` directory for your media library (optional at install time).
 - First visit launches the setup wizard to create the admin account and add media libraries.
 - curl HEAD check may return 302; a GET returns 200.
-- The installer exists: run `podium install jellyfin`.
+- The installer exists: run `zeltro install jellyfin`.

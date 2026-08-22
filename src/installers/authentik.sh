@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="akadmin / admin123 (finish setup at http://authentik/if/flo
 INSTALL_NOTES="The worker container is required — it applies the blueprints that create the default login flows."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"authentik\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"authentik\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -18,14 +18,14 @@ services:
     command: server
     environment:
       AUTHENTIK_SECRET_KEY: "$secret_key"
-      AUTHENTIK_POSTGRESQL__HOST: podium-postgres
+      AUTHENTIK_POSTGRESQL__HOST: zeltro-postgres
       AUTHENTIK_POSTGRESQL__PORT: 5432
       AUTHENTIK_POSTGRESQL__NAME: authentik
       AUTHENTIK_POSTGRESQL__USER: root
       AUTHENTIK_POSTGRESQL__PASSWORD: password
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
-      AUTHENTIK_EMAIL__HOST: podium-mailhog
+      AUTHENTIK_EMAIL__HOST: zeltro-mailhog
       AUTHENTIK_EMAIL__PORT: 1025
       AUTHENTIK_EMAIL__USE_TLS: "false"
       AUTHENTIK_EMAIL__FROM: authentik@example.com
@@ -42,14 +42,14 @@ services:
     user: root
     environment:
       AUTHENTIK_SECRET_KEY: "$secret_key"
-      AUTHENTIK_POSTGRESQL__HOST: podium-postgres
+      AUTHENTIK_POSTGRESQL__HOST: zeltro-postgres
       AUTHENTIK_POSTGRESQL__PORT: 5432
       AUTHENTIK_POSTGRESQL__NAME: authentik
       AUTHENTIK_POSTGRESQL__USER: root
       AUTHENTIK_POSTGRESQL__PASSWORD: password
       AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
       AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
-      AUTHENTIK_EMAIL__HOST: podium-mailhog
+      AUTHENTIK_EMAIL__HOST: zeltro-mailhog
       AUTHENTIK_EMAIL__PORT: 1025
       AUTHENTIK_EMAIL__USE_TLS: "false"
       AUTHENTIK_EMAIL__FROM: authentik@example.com

@@ -13,4 +13,4 @@ Self-hosted machine translation API and web UI, built on Argos Translate.
 - Models land in `/home/libretranslate/.local`, which is on a named volume — otherwise every container restart re-downloads them.
 - The container reports unhealthy/unreachable until the models finish downloading and loading; that is normal on first start.
 - API test: `curl -X POST http://libretranslate/translate -H 'Content-Type: application/json' -d '{"q":"hello","source":"en","target":"es"}'`.
-- The installer exists: run `podium install libretranslate`.
+- The installer exists: run `zeltro install libretranslate`.

@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="no login — headless auth API; GET http://supertokens/hell
 INSTALL_NOTES="This is the SuperTokens core only. There is no web UI: point your app's SuperTokens backend SDK at http://supertokens as the connectionURI."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE \"supertokens\";" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE \"supertokens\";" 2>/dev/null || true
 }
 
 write_files() {
@@ -13,7 +13,7 @@ services:
     image: supertokens/supertokens-postgresql:12.0.9
     restart: unless-stopped
     environment:
-      POSTGRESQL_CONNECTION_URI: "postgresql://root:password@podium-postgres:5432/supertokens"
+      POSTGRESQL_CONNECTION_URI: "postgresql://root:password@zeltro-postgres:5432/supertokens"
       DISABLE_TELEMETRY: "true"
 
   nginx:

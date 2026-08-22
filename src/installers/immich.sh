@@ -14,7 +14,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE_NAME: immich
-      REDIS_HOSTNAME: podium-redis
+      REDIS_HOSTNAME: zeltro-redis
     volumes:
       - ./upload:/usr/src/app/upload
     depends_on:

@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="Create the admin account on the first-visit setup page"
 INSTALL_NOTES="Free self-hosted instances are limited to 2 users total. Migrations run automatically on first boot (~60 seconds)."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE opnform;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE opnform;" 2>/dev/null || true
 }
 
 write_files() {
@@ -24,12 +24,12 @@ x-api-env: &api-env
   LOG_CHANNEL: errorlog
   LOG_LEVEL: error
   DB_CONNECTION: pgsql
-  DB_HOST: podium-postgres
+  DB_HOST: zeltro-postgres
   DB_PORT: 5432
   DB_DATABASE: opnform
   DB_USERNAME: root
   DB_PASSWORD: password
-  REDIS_HOST: podium-redis
+  REDIS_HOST: zeltro-redis
   REDIS_PORT: 6379
   CACHE_DRIVER: redis
   QUEUE_CONNECTION: redis
@@ -37,7 +37,7 @@ x-api-env: &api-env
   FILESYSTEM_DRIVER: local
   LOCAL_FILESYSTEM_VISIBILITY: public
   MAIL_MAILER: smtp
-  MAIL_HOST: podium-mailhog
+  MAIL_HOST: zeltro-mailhog
   MAIL_PORT: 1025
   MAIL_FROM_ADDRESS: opnform@example.com
   MAIL_FROM_NAME: OpnForm

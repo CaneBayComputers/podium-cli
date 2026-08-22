@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="lemmy / lemmylemmy (admin account created on first start)"
 INSTALL_NOTES="Federated link aggregator (Reddit alternative). Admin account set in lemmy.hjson setup block."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE lemmy;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE lemmy;" 2>/dev/null || true
 }
 
 write_files() {
@@ -52,7 +52,7 @@ services:
     hostname: pictrs
     restart: unless-stopped
     environment:
-      PICTRS__SERVER__API_KEY: podium-pictrs-key
+      PICTRS__SERVER__API_KEY: zeltro-pictrs-key
       RUST_BACKTRACE: full
       PICTRS__MEDIA__VIDEO__VIDEO_CODEC: vp9
       PICTRS__MEDIA__ANIMATION__MAX_WIDTH: 256
@@ -136,7 +136,7 @@ PARAMS
   }
 
   database: {
-    uri: "postgresql://root:password@podium-postgres:5432/lemmy"
+    uri: "postgresql://root:password@zeltro-postgres:5432/lemmy"
   }
 
   hostname: "lemmy"
@@ -147,7 +147,7 @@ PARAMS
 
   pictrs: {
     url: "http://pictrs:8080/"
-    api_key: "podium-pictrs-key"
+    api_key: "zeltro-pictrs-key"
   }
 }
 HJSON

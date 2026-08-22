@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Shlink"
 INSTALL_NOTES="Shlink is a URL shortener API. Access the REST API at http://$PROJECT_NAME/rest/v3/. The API key is printed below. Use Shlink Web Client or the shlink CLI to manage links."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS shlink CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS shlink CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -24,9 +24,9 @@ services:
       DB_NAME: shlink
       DB_USER: root
       DB_PASSWORD: ""
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
-      REDIS_SERVERS: podium-redis:6379
+      REDIS_SERVERS: zeltro-redis:6379
       TRUSTED_PROXIES: 1
       TIMEZONE: UTC
 

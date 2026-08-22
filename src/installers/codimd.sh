@@ -4,7 +4,7 @@ INSTALL_NOTES="CodiMD has no admin account or admin UI — every user self-regis
 INSTALL_READY_RETRIES=30
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE codimd;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE codimd;" 2>/dev/null || true
 }
 
 write_files() {
@@ -17,7 +17,7 @@ services:
     image: hackmdio/hackmd:2.6.1
     restart: unless-stopped
     environment:
-      CMD_DB_URL: postgres://root:password@podium-postgres:5432/codimd
+      CMD_DB_URL: postgres://root:password@zeltro-postgres:5432/codimd
       CMD_DOMAIN: codimd
       CMD_URL_ADDPORT: "false"
       CMD_PROTOCOL_USESSL: "false"

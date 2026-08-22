@@ -43,7 +43,7 @@ UNATTENDED_REQUEST=""
 #       * AI_API_BASE: OPTIONAL — passed as `--openai-api-base "$AI_API_BASE"`, for
 #         OpenAI-compatible servers (Ollama, LM Studio, OpenRouter, vLLM)
 #
-# Initial-prompt behavior (driven by `podium ai "<prompt>"`):
+# Initial-prompt behavior (driven by `zeltro ai "<prompt>"`):
 #   - codex  : `codex [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
 #   - claude : `claude [--model "$AI_MODEL"] [--api-key "$AI_API_KEY"] "<prompt>"`
 #   - gemini : `gemini [--model "$AI_MODEL"] -i "<prompt>"`
@@ -52,12 +52,12 @@ UNATTENDED_REQUEST=""
 #               aider's --message processes the prompt and exits)
 #
 # Approval-bypass flags are NOT passed. Whether an agent runs unattended is the
-# user's decision, recorded in that agent's own config — see `podium ai-unattended`.
+# user's decision, recorded in that agent's own config — see `zeltro ai-unattended`.
 
 usage() {
-    echo-white "Usage: podium ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--api-base URL] [--json-output]"
+    echo-white "Usage: zeltro ai-set [--agent NAME] [--model NAME] [--api-key KEY] [--api-base URL] [--json-output]"
     echo-white ""
-    echo-white "Configure or inspect the global AI agent settings used by Podium."
+    echo-white "Configure or inspect the global AI agent settings used by Zeltro."
     echo-white ""
     echo-white "Options:"
     echo-white "  --agent NAME       Set the AI agent CLI (codex, claude, gemini, qwen, or aider)."
@@ -165,7 +165,7 @@ fi
 NONINTERACTIVE=0
 # No TTY on stdin means nobody can answer a prompt — reading would hit EOF and
 # either abort under `set -e` or spin the selection loop forever. Treat it as
-# non-interactive so scripted runs (and `podium configure < /dev/null`) keep the
+# non-interactive so scripted runs (and `zeltro configure < /dev/null`) keep the
 # existing configuration instead of hanging or dying.
 if [[ "$JSON_OUTPUT" == "1" || -n "$NEW_AGENT" || -n "$NEW_MODEL" || -n "$NEW_API_KEY" || -n "$NEW_API_BASE" || -n "$UNATTENDED_REQUEST" || ! -t 0 ]]; then
     NONINTERACTIVE=1
@@ -192,27 +192,27 @@ select_ai_agent() {
         case "$AI_AGENT_CHOICE" in
             1)
                 AI_AGENT="codex"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+                sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
                 break
                 ;;
             2)
                 AI_AGENT="claude"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+                sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
                 break
                 ;;
             3)
                 AI_AGENT="gemini"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+                sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
                 break
                 ;;
             4)
                 AI_AGENT="aider"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+                sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
                 break
                 ;;
             5)
                 AI_AGENT="qwen"
-                sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+                sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
                 break
                 ;;
             *)
@@ -264,7 +264,7 @@ prompt_ai_model() {
     fi
 
     if [[ "$AI_AGENT" == "aider" && -z "$AI_MODEL" ]]; then
-        echo-yellow "No model set. 'podium ai' will fall back to whatever aider defaults to,"
+        echo-yellow "No model set. 'zeltro ai' will fall back to whatever aider defaults to,"
         echo-yellow "which depends on which API key it finds in the environment."
         echo-return
     fi
@@ -458,11 +458,11 @@ ensure_ai_agent_installed() {
     fi
 
     # If the CLI is already available, nothing to do beyond checking that it can
-    # actually run unattended — Podium's AI commands stall otherwise.
+    # actually run unattended — Zeltro's AI commands stall otherwise.
     if command -v "$exec_command" >/dev/null 2>&1; then
         echo-green "AI agent CLI '$cli_command' is already installed (command: $exec_command)."
         echo-white
-        podium_offer_agent_autonomy "$cli_command"
+        zeltro_offer_agent_autonomy "$cli_command"
         return 0
     fi
 
@@ -495,12 +495,12 @@ ensure_ai_agent_installed() {
     if command -v "$exec_command" >/dev/null 2>&1; then
         echo-green "AI agent CLI '$cli_command' installed successfully (command: $exec_command)."
         echo-white
-        podium_offer_agent_autonomy "$cli_command"
+        zeltro_offer_agent_autonomy "$cli_command"
         return 0
     fi
 
     echo-yellow "AI agent CLI '$cli_command' is still not available on PATH."
-    echo-yellow "You can install it manually and re-run 'podium ai-set' or choose a different CLI."
+    echo-yellow "You can install it manually and re-run 'zeltro ai-set' or choose a different CLI."
     echo-white
 }
 
@@ -508,27 +508,27 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
     # An explicit --allow-unattended / --no-allow-unattended suppresses the
     # interactive consent prompt inside ensure_ai_agent_installed: the caller has
     # already answered, so asking twice is noise.
-    [ -n "$UNATTENDED_REQUEST" ] && export PODIUM_UNATTENDED_EXPLICIT=1
+    [ -n "$UNATTENDED_REQUEST" ] && export ZELTRO_UNATTENDED_EXPLICIT=1
 
     ensure_ai_agent_installed "$AI_AGENT"
 
     case "$UNATTENDED_REQUEST" in
-        allow)  podium_allow_agent_autonomy  "$AI_AGENT" ;;
-        revoke) podium_revoke_agent_autonomy "$AI_AGENT" ;;
+        allow)  zeltro_allow_agent_autonomy  "$AI_AGENT" ;;
+        revoke) zeltro_revoke_agent_autonomy "$AI_AGENT" ;;
     esac
 
     # Persist configuration
     if [[ -n "$AI_AGENT" ]]; then
-        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+        sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
     fi
 
     # Model and endpoint are written unconditionally: switching agents clears
     # them above, and that clearing has to reach the file or the next run picks
     # the old agent's model back up.
-    sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
-    sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
+    sudo-zeltro-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/zeltro-cli/.env
+    sudo-zeltro-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/zeltro-cli/.env
 
-    sudo-podium-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/podium-cli/.env
+    sudo-zeltro-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/zeltro-cli/.env
 
     if [[ "$JSON_OUTPUT" == "1" ]]; then
         has_api_key="false"
@@ -538,7 +538,7 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
         # `unattended` is true/false/unknown — never an error. The GUI renders
         # "unknown" as unchecked with a note, which beats a failed call: a config
         # it cannot parse should not stop the whole settings panel from loading.
-        unattended=$(podium_read_agent_autonomy "${AI_AGENT:-}")
+        unattended=$(zeltro_read_agent_autonomy "${AI_AGENT:-}")
         echo "{\"action\": \"ai_set\", \"status\": \"success\", \"agent\": \"${AI_AGENT:-}\", \"model\": \"${AI_MODEL:-}\", \"api_base\": \"${AI_API_BASE:-}\", \"has_api_key\": $has_api_key, \"unattended\": \"$unattended\"}"
     else
         echo-green "AI agent configuration updated."
@@ -553,7 +553,7 @@ if [[ "$NONINTERACTIVE" -eq 1 ]]; then
 fi
 
 echo-return
-echo-cyan "Podium AI Agent Configuration"; echo-white
+echo-cyan "Zeltro AI Agent Configuration"; echo-white
 
 if [[ -n "$AI_AGENT" ]]; then
     echo-white "Current AI agent: $AI_AGENT"
@@ -565,7 +565,7 @@ if [[ -n "$AI_AGENT" ]]; then
         select_ai_agent
     else
         # Ensure current agent is persisted immediately as well
-        sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+        sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
     fi
 else
     select_ai_agent
@@ -589,26 +589,26 @@ fi
 # An explicit --allow-unattended / --no-allow-unattended suppresses the
 # interactive consent prompt inside ensure_ai_agent_installed: the caller has
 # already answered, so asking twice is noise.
-[ -n "$UNATTENDED_REQUEST" ] && export PODIUM_UNATTENDED_EXPLICIT=1
+[ -n "$UNATTENDED_REQUEST" ] && export ZELTRO_UNATTENDED_EXPLICIT=1
 
 ensure_ai_agent_installed "$AI_AGENT"
 
 case "$UNATTENDED_REQUEST" in
-    allow)  podium_allow_agent_autonomy  "$AI_AGENT" ;;
-    revoke) podium_revoke_agent_autonomy "$AI_AGENT" ;;
+    allow)  zeltro_allow_agent_autonomy  "$AI_AGENT" ;;
+    revoke) zeltro_revoke_agent_autonomy "$AI_AGENT" ;;
 esac
 
 # Persist configuration
 if [[ -n "$AI_AGENT" ]]; then
-    sudo-podium-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/podium-cli/.env
+    sudo-zeltro-sed-change "/^AI_AGENT=/" "AI_AGENT=\"$AI_AGENT\"" /etc/zeltro-cli/.env
 fi
 
 # Written unconditionally so that clearing a value (switching agents, or
 # answering 'none' to the endpoint) actually reaches the file.
-sudo-podium-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/podium-cli/.env
-sudo-podium-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/podium-cli/.env
+sudo-zeltro-env-set "AI_MODEL" "${AI_MODEL:-}" /etc/zeltro-cli/.env
+sudo-zeltro-env-set "AI_API_BASE" "${AI_API_BASE:-}" /etc/zeltro-cli/.env
 
-sudo-podium-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/podium-cli/.env
+sudo-zeltro-env-set "AI_API_KEY" "${AI_API_KEY:-}" /etc/zeltro-cli/.env
 
 echo-green "AI agent configuration complete."
 echo-white "  Agent: ${AI_AGENT:-<none>}"
@@ -618,22 +618,22 @@ echo-return
 if [[ "$AI_AGENT" == "aider" ]]; then
     echo-white "Aider uses the API key above on every run — there is no separate login step."
 else
-    echo-white "Authentication will happen automatically the first time you run 'podium create' or 'podium ai'."
+    echo-white "Authentication will happen automatically the first time you run 'zeltro create' or 'zeltro ai'."
 fi
 echo-return
 
-_unattended_state=$(podium_read_agent_autonomy "$AI_AGENT")
+_unattended_state=$(zeltro_read_agent_autonomy "$AI_AGENT")
 if [ "$_unattended_state" = "true" ]; then
     echo-yellow "IMPORTANT:"
     echo-white "  $AI_AGENT is configured to run WITHOUT approval prompts, so it can edit files"
-    echo-white "  and run commands in your projects unattended. Only use 'podium ai' and"
-    echo-white "  'podium create' in directories you are comfortable letting it modify freely."
-    echo-white "  Turn this off with: podium ai-unattended $AI_AGENT --revoke"
+    echo-white "  and run commands in your projects unattended. Only use 'zeltro ai' and"
+    echo-white "  'zeltro create' in directories you are comfortable letting it modify freely."
+    echo-white "  Turn this off with: zeltro ai-unattended $AI_AGENT --revoke"
 else
     echo-cyan "Note:"
     echo-white "  $AI_AGENT will ask before each action. That is the safe default, but it stalls"
-    echo-white "  unattended runs such as 'podium create'."
-    echo-white "  Allow it to run unattended with: podium ai-unattended $AI_AGENT"
+    echo-white "  unattended runs such as 'zeltro create'."
+    echo-white "  Allow it to run unattended with: zeltro ai-unattended $AI_AGENT"
 fi
 echo-return
 

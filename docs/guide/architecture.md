@@ -1,6 +1,5 @@
 ---
 title: Architecture
-layout: default
 nav_order: 10
 ---
 
@@ -12,11 +11,11 @@ nav_order: 10
 
 One set of service containers serves every project on the machine.
 
-This is Podium's central design decision, and it is a **trade-off rather than a
+This is Zeltro's central design decision, and it is a **trade-off rather than a
 free win** — worth understanding before you build a workflow on it.
 
 **What you gain.** Most per-project Docker setups start a database container per
-project. Twenty projects running means twenty database containers. Podium runs
+project. Twenty projects running means twenty database containers. Zeltro runs
 one. On a developer workstation that is frequently the difference between
 "I can have all my client sites up" and "I can have three." It is also why a
 project's `.env` needs no per-project database plumbing: the hostnames below are
@@ -27,7 +26,7 @@ the same in every project, forever.
 - **One version of each engine, machine-wide.** A project needing MySQL 5.7 and
   another needing MySQL 8 cannot both run against the shared server. Pin the
   version per project and you are back to a container per project.
-- **Shared lifecycle.** `podium down` stops the services for *every* project, not
+- **Shared lifecycle.** `zeltro down` stops the services for *every* project, not
   just the one you were working on.
 - **Shared blast radius.** A corrupted data volume, a runaway migration, or a
   `DROP DATABASE` affects one server that everything else is also using. Project
@@ -36,7 +35,7 @@ the same in every project, forever.
   development tool and the services are not exposed outside the Docker network,
   but it is not a model to copy into production.
 
-**When Podium is the wrong choice:** you need per-project database versions, or
+**When Zeltro is the wrong choice:** you need per-project database versions, or
 you need your local environment to mirror production topology exactly. Tools that
 run a full stack per project — DDEV, Lando, or plain Docker Compose — are a
 better fit for both, at the cost of the resource usage described above.
@@ -47,32 +46,32 @@ of MariaDB.
 
 | Service | Hostname | Port | User | Password |
 |---|---|---|---|---|
-| PostgreSQL | `podium-postgres` | 5432 | `root` | `password` |
-| MariaDB / MySQL | `podium-mariadb` | 3306 | `root` | *(empty)* |
-| Redis | `podium-redis` | 6379 | — | *(none)* |
-| MongoDB | `podium-mongo` | 27017 | `root` | `password` |
-| Memcached | `podium-memcached` | 11211 | — | *(none)* |
-| MailHog | `podium-mailhog` | SMTP 1025 / UI 8025 | — | *(none)* |
-| phpMyAdmin | `podium-phpmyadmin` | 80 | — | — |
+| PostgreSQL | `zeltro-postgres` | 5432 | `root` | `password` |
+| MariaDB / MySQL | `zeltro-mariadb` | 3306 | `root` | *(empty)* |
+| Redis | `zeltro-redis` | 6379 | — | *(none)* |
+| MongoDB | `zeltro-mongo` | 27017 | `root` | `password` |
+| Memcached | `zeltro-memcached` | 11211 | — | *(none)* |
+| MailHog | `zeltro-mailhog` | SMTP 1025 / UI 8025 | — | *(none)* |
+| phpMyAdmin | `zeltro-phpmyadmin` | 80 | — | — |
 
 ### Optional shared services
 
 Most projects need a database, which is what justifies the core services always running. Far fewer need object storage or a search engine, so those sit behind Docker Compose profiles and stay off until a machine asks for them — rather than every install paying that RAM to benefit a few.
 
 ```bash
-podium enable-service minio
-podium enable-service meilisearch
-podium disable-service minio      # data volume is kept
+zeltro enable-service minio
+zeltro enable-service meilisearch
+zeltro disable-service minio      # data volume is kept
 ```
 
-Once enabled they start with every `podium up` and resolve by hostname from inside any project container, exactly like the core services. The enabled list persists in `OPTIONAL_SERVICES` in `/etc/podium-cli/.env`.
+Once enabled they start with every `zeltro up` and resolve by hostname from inside any project container, exactly like the core services. The enabled list persists in `OPTIONAL_SERVICES` in `/etc/zeltro-cli/.env`.
 
 | Service | Host | Port | Credentials |
 |---|---|---|---|
-| MinIO | `podium-minio` | API 9000 / console 9001 | `root` / `password` |
-| Meilisearch | `podium-meilisearch` | 7700 | master key `podium-dev-master-key` |
+| MinIO | `zeltro-minio` | API 9000 / console 9001 | `root` / `password` |
+| Meilisearch | `zeltro-meilisearch` | 7700 | master key `zeltro-dev-master-key` |
 
-Use these hostnames and credentials directly when configuring a project — there's no need to inspect containers to discover them. Podium writes them into each project's `.env` automatically.
+Use these hostnames and credentials directly when configuring a project — there's no need to inspect containers to discover them. Zeltro writes them into each project's `.env` automatically.
 
 ---
 
@@ -80,8 +79,8 @@ Use these hostnames and credentials directly when configuring a project — ther
 
 Every project is reachable at `http://<project-name>/` from two directions, using one naming scheme:
 
-- **Host → project.** Podium adds an `/etc/hosts` entry (`10.x.x.219  my-api`). Your browser and host tooling use this.
-- **Container → container.** Docker's embedded DNS resolves container names on the shared network. Code inside a project can `psql -h podium-postgres` or `fetch('http://other-project/')` with no extra configuration.
+- **Host → project.** Zeltro adds an `/etc/hosts` entry (`10.x.x.219  my-api`). Your browser and host tooling use this.
+- **Container → container.** Docker's embedded DNS resolves container names on the shared network. Code inside a project can `psql -h zeltro-postgres` or `fetch('http://other-project/')` with no extra configuration.
 
 Ports only matter when reaching a project from *another machine* on your LAN, where each project also gets a mapped port (`http://192.168.1.20:219`).
 
@@ -89,7 +88,7 @@ Ports only matter when reaching a project from *another machine* on your LAN, wh
 
 ## VPC and IP allocation
 
-All Podium containers attach to the `podium-cli_vpc` Docker network (`${VPC_SUBNET}.0/24`, set per machine in `/etc/podium-cli/.env`). The address space is partitioned so static IPs never collide with dynamic ones:
+All Zeltro containers attach to the `zeltro-cli_vpc` Docker network (`${VPC_SUBNET}.0/24`, set per machine in `/etc/zeltro-cli/.env`). The address space is partitioned so static IPs never collide with dynamic ones:
 
 | Range | Purpose | Allocation |
 |---|---|---|
@@ -127,19 +126,19 @@ Override the default with `--image <ref>` on `new`, `clone`, `setup` or `install
 - Supervisor runs `NODE_APP_COMMAND`; the app must bind port 3000. Set `PORT=3000` in `.env` for frameworks that default elsewhere.
 
 {: .note }
-Project containers are **recreated from the base image on every `podium up`**. Anything installed into a running container's filesystem is lost — only the bind-mounted project directory survives. That's why every framework's runtime is baked into the image, and why a SQLite database must live in the project directory.
+Project containers are **recreated from the base image on every `zeltro up`**. Anything installed into a running container's filesystem is lost — only the bind-mounted project directory survives. That's why every framework's runtime is baked into the image, and why a SQLite database must live in the project directory.
 
 ---
 
 ## Compose adaptation
 
-When `podium clone` or `podium setup` meets a `docker-compose.yaml` with more than one service or a non-cbc image, Podium adapts it:
+When `zeltro clone` or `zeltro setup` meets a `docker-compose.yaml` with more than one service or a non-cbc image, Zeltro adapts it:
 
 - Bundled `postgres` / `mysql` / `mariadb` / `redis` / `valkey` / `mongodb` services are removed, and env vars referencing them are repointed at the shared hostnames
 - The web-facing service gets a static VPC IP and a `container_name` matching the project
 - Other services attach to the network without a fixed IP
 - The original is preserved as `docker-compose.upstream.yaml` (first run only, so the true original survives re-runs)
-- `docker-compose.yaml` is added to `.gitignore`, so the Podium-managed file isn't committed back to a shared repo
+- `docker-compose.yaml` is added to `.gitignore`, so the Zeltro-managed file isn't committed back to a shared repo
 
 Image type only affects this adaptation. **Framework steps — dependency install, `.env` wiring, storage symlink, migrations — are driven by framework detection** and run for adapted projects too.
 
@@ -150,9 +149,9 @@ Useful flags: `--no-startup` to review the adapted compose before it boots, `--o
 ## Project layout
 
 ```
-~/podium-projects/
+~/zeltro-projects/
 ├── my-api/
-│   ├── docker-compose.yaml          # Podium-managed (gitignored)
+│   ├── docker-compose.yaml          # Zeltro-managed (gitignored)
 │   ├── docker-compose.upstream.yaml # the original, if there was one
 │   ├── AGENTS.md                    # hand-off context for AI agents
 │   ├── .env
@@ -160,4 +159,4 @@ Useful flags: `--no-startup` to review the adapted compose before it boots, `--o
 └── my-shop/
 ```
 
-Runtime configuration lives in `/etc/podium-cli/.env`.
+Runtime configuration lives in `/etc/zeltro-cli/.env`.

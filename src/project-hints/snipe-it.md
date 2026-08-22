@@ -8,15 +8,15 @@ docker run --rm snipe/snipe-it php artisan key:generate --show
 ```
 Copy the output (looks like `base64:...`) and set it as the `APP_KEY` environment variable.
 
-Use the shared MariaDB: host `podium-mariadb`, port `3306`, user `root`, password `` (empty).
+Use the shared MariaDB: host `zeltro-mariadb`, port `3306`, user `root`, password `` (empty).
 
 ## Setup workflow
 
 1. Generate APP_KEY: `docker run --rm snipe/snipe-it php artisan key:generate --show`
-2. `mkdir -p ~/podium-projects/snipe-it`
+2. `mkdir -p ~/zeltro-projects/snipe-it`
 3. Write `docker-compose.yaml` (see below), substituting the generated APP_KEY.
-4. `cd ~/podium-projects/snipe-it && podium setup snipe-it --no-startup`
-5. `podium up snipe-it`
+4. `cd ~/zeltro-projects/snipe-it && zeltro setup snipe-it --no-startup`
+5. `zeltro up snipe-it`
 6. Wait ~60 seconds for first-run migrations to complete.
 7. Verify: `curl -sI http://snipe-it/` — expect HTTP 200 or 302.
 
@@ -34,7 +34,7 @@ services:
       APP_KEY: "base64:REPLACE_WITH_GENERATED_KEY"
       APP_URL: http://snipe-it
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: snipeit
       DB_USERNAME: root
@@ -52,12 +52,12 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 Create the database before starting:
 ```bash
-docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
+docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS snipeit;"
 ```
 
 ## Admin

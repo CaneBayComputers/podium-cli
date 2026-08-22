@@ -1,9 +1,9 @@
 INSTALL_DISPLAY="PG Back Web"
 INSTALL_CREDENTIALS="Create the first user on first visit"
-INSTALL_NOTES="Add podium-postgres as a backup source with: postgresql://root:password@podium-postgres:5432/<db>?sslmode=disable"
+INSTALL_NOTES="Add zeltro-postgres as a backup source with: postgresql://root:password@zeltro-postgres:5432/<db>?sslmode=disable"
 
 pre_install() {
-    docker exec -e PGPASSWORD=password podium-postgres psql -U root -d postgres \
+    docker exec -e PGPASSWORD=password zeltro-postgres psql -U root -d postgres \
       -c "CREATE DATABASE \"pgbackweb\";" 2>/dev/null || true
 }
 
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
     environment:
       PBW_ENCRYPTION_KEY: "$encryption_key"
-      PBW_POSTGRES_CONN_STRING: "postgresql://root:password@podium-postgres:5432/pgbackweb?sslmode=disable"
+      PBW_POSTGRES_CONN_STRING: "postgresql://root:password@zeltro-postgres:5432/pgbackweb?sslmode=disable"
       TZ: UTC
     volumes:
       - pgbackweb-backups:/backups

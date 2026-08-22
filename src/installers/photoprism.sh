@@ -1,9 +1,9 @@
 INSTALL_DISPLAY="PhotoPrism"
 INSTALL_CREDENTIALS="admin / admin1234"
-INSTALL_NOTES="Place photos in ~/podium-projects/photoprism/originals/ then run 'podium exec photoprism-app photoprism index' to index them."
+INSTALL_NOTES="Place photos in ~/zeltro-projects/photoprism/originals/ then run 'zeltro exec photoprism-app photoprism index' to index them."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS photoprism;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS photoprism;"
 }
 
 write_files() {
@@ -20,7 +20,7 @@ services:
       PHOTOPRISM_ADMIN_USER: admin
       PHOTOPRISM_ADMIN_PASSWORD: admin1234
       PHOTOPRISM_DATABASE_DRIVER: mysql
-      PHOTOPRISM_DATABASE_SERVER: podium-mariadb:3306
+      PHOTOPRISM_DATABASE_SERVER: zeltro-mariadb:3306
       PHOTOPRISM_DATABASE_NAME: photoprism
       PHOTOPRISM_DATABASE_USER: root
       PHOTOPRISM_DATABASE_PASSWORD: ""

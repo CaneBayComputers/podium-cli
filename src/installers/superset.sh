@@ -3,7 +3,7 @@ INSTALL_CREDENTIALS="admin / admin"
 INSTALL_NOTES="First startup takes ~2 minutes while Superset runs migrations and builds the UI. Visit http://$PROJECT_NAME/ when ready."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE superset;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE superset;" 2>/dev/null || true
 }
 
 write_files() {
@@ -39,10 +39,10 @@ services:
     environment:
       SUPERSET_CONFIG_PATH: /app/pythonpath/superset_config.py
       SUPERSET_SECRET_KEY: $secret_key
-      DATABASE_URL: postgresql+psycopg2://root:password@podium-postgres:5432/superset
+      DATABASE_URL: postgresql+psycopg2://root:password@zeltro-postgres:5432/superset
       SUPERSET_ADMIN_USERNAME: admin
       SUPERSET_ADMIN_PASSWORD: admin
-      SUPERSET_ADMIN_FIRSTNAME: Podium
+      SUPERSET_ADMIN_FIRSTNAME: Zeltro
       SUPERSET_ADMIN_LASTNAME: Admin
       SUPERSET_ADMIN_EMAIL: admin@example.com
     command: >
@@ -50,7 +50,7 @@ services:
         superset db upgrade &&
         (superset fab create-admin
           --username admin
-          --firstname Podium
+          --firstname Zeltro
           --lastname Admin
           --email admin@example.com
           --password admin || true) &&

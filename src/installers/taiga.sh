@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Taiga"
 INSTALL_NOTES="Open-source project management. Register at http://$PROJECT_NAME/ to create your account. First startup takes ~60 seconds."
 
 pre_install() {
-    docker exec podium-postgres psql -U root -d postgres -c "CREATE DATABASE taiga;" 2>/dev/null || true
+    docker exec zeltro-postgres psql -U root -d postgres -c "CREATE DATABASE taiga;" 2>/dev/null || true
 }
 
 write_files() {
@@ -21,7 +21,7 @@ SECRET_KEY="$secret_key"
 POSTGRES_USER=root
 POSTGRES_PASSWORD=password
 EMAIL_BACKEND=console
-EMAIL_HOST=podium-mailhog
+EMAIL_HOST=zeltro-mailhog
 EMAIL_PORT=1025
 EMAIL_HOST_USER=
 EMAIL_HOST_PASSWORD=
@@ -41,7 +41,7 @@ x-environment: &common-env
   POSTGRES_DB: taiga
   POSTGRES_USER: ${POSTGRES_USER}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  POSTGRES_HOST: podium-postgres
+  POSTGRES_HOST: zeltro-postgres
   TAIGA_SECRET_KEY: ${SECRET_KEY}
   TAIGA_SITES_SCHEME: ${TAIGA_SCHEME}
   TAIGA_SITES_DOMAIN: ${TAIGA_DOMAIN}

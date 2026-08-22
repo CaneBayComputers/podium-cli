@@ -11,9 +11,9 @@ services:
     environment:
       GRAMPSWEB_TREE: "Gramps Web"
       GRAMPSWEB_BASE_URL: http://gramps-web
-      GRAMPSWEB_CELERY_CONFIG__broker_url: redis://podium-redis:6379/10
-      GRAMPSWEB_CELERY_CONFIG__result_backend: redis://podium-redis:6379/10
-      GRAMPSWEB_RATELIMIT_STORAGE_URI: redis://podium-redis:6379/11
+      GRAMPSWEB_CELERY_CONFIG__broker_url: redis://zeltro-redis:6379/10
+      GRAMPSWEB_CELERY_CONFIG__result_backend: redis://zeltro-redis:6379/10
+      GRAMPSWEB_RATELIMIT_STORAGE_URI: redis://zeltro-redis:6379/11
     volumes:
       - gramps-users:/app/users
       - gramps-index:/app/indexdir
@@ -33,9 +33,9 @@ services:
     environment:
       GRAMPSWEB_TREE: "Gramps Web"
       GRAMPSWEB_BASE_URL: http://gramps-web
-      GRAMPSWEB_CELERY_CONFIG__broker_url: redis://podium-redis:6379/10
-      GRAMPSWEB_CELERY_CONFIG__result_backend: redis://podium-redis:6379/10
-      GRAMPSWEB_RATELIMIT_STORAGE_URI: redis://podium-redis:6379/11
+      GRAMPSWEB_CELERY_CONFIG__broker_url: redis://zeltro-redis:6379/10
+      GRAMPSWEB_CELERY_CONFIG__result_backend: redis://zeltro-redis:6379/10
+      GRAMPSWEB_RATELIMIT_STORAGE_URI: redis://zeltro-redis:6379/11
     volumes:
       - gramps-users:/app/users
       - gramps-index:/app/indexdir

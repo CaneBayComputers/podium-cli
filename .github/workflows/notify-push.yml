@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Notify ntfy on push
         env:
-          NTFY_URL: https://notify.canebaycomputers.com/podium-cli-push
+          NTFY_URL: https://notify.canebaycomputers.com/zeltro-cli-push
         run: |
           set -euo pipefail
           BRANCH="${GITHUB_REF_NAME}"

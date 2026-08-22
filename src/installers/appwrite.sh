@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Appwrite"
 INSTALL_NOTES="Visit http://$PROJECT_NAME/ to create your first admin account. Background workers are not included — use for API/SDK development and testing."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS appwrite CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS appwrite CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -23,14 +23,14 @@ services:
       _APP_DOMAIN_TARGET: appwrite
       _APP_DOMAIN_TARGET_CNAME: appwrite
       _APP_OPTIONS_FORCE_HTTPS: disabled
-      _APP_DB_HOST: podium-mariadb
+      _APP_DB_HOST: zeltro-mariadb
       _APP_DB_PORT: "3306"
       _APP_DB_SCHEMA: appwrite
       _APP_DB_USER: root
       _APP_DB_PASS: ""
-      _APP_REDIS_HOST: podium-redis
+      _APP_REDIS_HOST: zeltro-redis
       _APP_REDIS_PORT: "6379"
-      _APP_SMTP_HOST: podium-mailhog
+      _APP_SMTP_HOST: zeltro-mailhog
       _APP_SMTP_PORT: "1025"
       _APP_STORAGE_LIMIT: "30000000"
       _APP_FUNCTIONS_SIZE_LIMIT: "30000000"

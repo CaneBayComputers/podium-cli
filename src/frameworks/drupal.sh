@@ -5,7 +5,7 @@
 # scaffold only writes composer.json — `composer install` runs later, inside the
 # container, via setup_project's dependency step. Same shape as Laravel.
 #
-# THE DOCROOT. Drupal's convention is `web/`, and Podium's nginx always serves
+# THE DOCROOT. Drupal's convention is `web/`, and Zeltro's nginx always serves
 # /usr/share/nginx/html/public: a project with a public/ dir is mounted at html
 # (so project/public lands on the docroot), one without is mounted straight into
 # html/public. `web/` fits neither.
@@ -14,7 +14,7 @@
 # docroot to public/ at scaffold time. That is a supported, first-class Composer
 # setting — every path below is the stock recommended-project layout with web/
 # swapped for public/ — and it makes Drupal indistinguishable from Laravel as far
-# as the rest of Podium is concerned. Nothing in the container or compose
+# as the rest of Zeltro is concerned. Nothing in the container or compose
 # templates needs to know Drupal exists.
 
 FRAMEWORK_IS_PYTHON=0
@@ -40,14 +40,14 @@ framework_scaffold() {
     # The list must cover every composer-plugin in the RESOLVED tree, not just
     # Drupal's own. symfony/runtime is the easy one to miss: nothing in the
     # require block names it, it arrives transitively through drush, and omitting
-    # it failed the first real `podium new drupal` here. If a future dependency
+    # it failed the first real `zeltro new drupal` here. If a future dependency
     # adds another plugin, find it with:
     #   python3 -c "import json;print([p['name'] for p in
     #     json.load(open('composer.lock'))['packages'] if p.get('type')=='composer-plugin'])"
     cat > composer.json << 'COMPOSEREOF'
 {
-    "name": "podium/drupal-project",
-    "description": "Drupal project managed by Podium",
+    "name": "zeltro/drupal-project",
+    "description": "Drupal project managed by Zeltro",
     "type": "project",
     "license": "GPL-2.0-or-later",
     "require": {
@@ -96,7 +96,7 @@ framework_scaffold() {
 COMPOSEREOF
 
     if [ "$DRUPAL_CORE_CONSTRAINT" != "^11" ]; then
-        podium-sed "s|\"\\^11\"|\"$DRUPAL_CORE_CONSTRAINT\"|g" composer.json
+        zeltro-sed "s|\"\\^11\"|\"$DRUPAL_CORE_CONSTRAINT\"|g" composer.json
     fi
 
     mkdir -p public/sites/default
@@ -141,7 +141,7 @@ framework_run_migrations() {
     [ ! -f "composer.json" ] && return
     if [ ! -f "vendor/bin/drush" ]; then
         echo-yellow "drush not found in vendor/ — skipping site install."
-        echo-white "Run 'podium composer install' then 'podium drush site:install' by hand."
+        echo-white "Run 'zeltro composer install' then 'zeltro drush site:install' by hand."
         return
     fi
 
@@ -153,7 +153,7 @@ framework_run_migrations() {
        grep -q "databases\['default'\]" public/sites/default/settings.php 2>/dev/null; then
         echo-cyan "Drupal is already installed — leaving the existing site alone."
         echo-white "Re-install from scratch with:"
-        echo-white "  podium drush site:install --existing-config -y"
+        echo-white "  zeltro drush site:install --existing-config -y"
         return
     fi
 
@@ -175,7 +175,7 @@ framework_run_migrations() {
 
     # Check the outcome rather than the exit code alone. This was `|| true`, which
     # meant a failed install reported success and left the user at Drupal's web
-    # installer with a site Podium claimed was ready — the exact thing that hid
+    # installer with a site Zeltro claimed was ready — the exact thing that hid
     # the drush invocation bug on the first real run. settings.php is the
     # artifact site:install writes last, so its absence is the reliable signal.
     if [ "$install_ok" = "0" ] || [ ! -f "public/sites/default/settings.php" ]; then
@@ -184,7 +184,7 @@ framework_run_migrations() {
         echo-white "Composer finished, so the codebase is fine — this is the install step."
         echo-white "The site will show Drupal's web installer until it succeeds. Retry with:"
         echo-white "  cd $PROJECTS_DIR_PATH/$PROJECT_NAME"
-        echo-white "  podium drush site:install standard --db-url=$db_url -y"
+        echo-white "  zeltro drush site:install standard --db-url=$db_url -y"
         return 1
     fi
 
@@ -201,7 +201,7 @@ framework_run_migrations() {
             cat >> public/sites/default/settings.php << EOF
 
 /**
- * Added by Podium — the project is served at http://$PROJECT_NAME/.
+ * Added by Zeltro — the project is served at http://$PROJECT_NAME/.
  */
 \$settings['trusted_host_patterns'] = [
   '^${PROJECT_NAME//./\\.}\$',
@@ -214,7 +214,7 @@ EOF
     echo-green "Drupal installed."; echo-white
     echo-white "  Site:  http://$PROJECT_NAME/"
     echo-white "  Admin: http://$PROJECT_NAME/user/login  ($DRUPAL_ADMIN_USER / $DRUPAL_ADMIN_PASS)"
-    echo-white "  Change the password with: podium drush user:password $DRUPAL_ADMIN_USER '<new>'"
+    echo-white "  Change the password with: zeltro drush user:password $DRUPAL_ADMIN_USER '<new>'"
 }
 
 framework_setup_gitignore() {

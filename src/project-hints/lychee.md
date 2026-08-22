@@ -12,7 +12,7 @@ Lychee is a self-hosted photo management system distributed as `lycheeorg/lychee
 
 2. **Dedicated DB user** — Lychee's entrypoint rejects an empty password. Create a dedicated user:
    ```bash
-   docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS lychee; CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass'; GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%'; FLUSH PRIVILEGES;"
+   docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS lychee; CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass'; GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%'; FLUSH PRIVILEGES;"
    ```
 
 3. **Port 8000** — the default CMD starts on port 8000. Use an nginx proxy or override the CMD to `--port=80`.
@@ -20,11 +20,11 @@ Lychee is a self-hosted photo management system distributed as `lycheeorg/lychee
 ## Setup workflow
 
 1. Generate APP_KEY: `openssl rand -base64 32` → prepend `base64:`
-2. Create DB: `docker exec podium-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS lychee; CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass'; GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%'; FLUSH PRIVILEGES;"`
-3. `mkdir -p ~/podium-projects/lychee`
+2. Create DB: `docker exec zeltro-mariadb mysql -u root -e "CREATE DATABASE IF NOT EXISTS lychee; CREATE USER IF NOT EXISTS 'lychee'@'%' IDENTIFIED BY 'lycheepass'; GRANT ALL PRIVILEGES ON lychee.* TO 'lychee'@'%'; FLUSH PRIVILEGES;"`
+3. `mkdir -p ~/zeltro-projects/lychee`
 4. Write `docker-compose.yaml` and `nginx.conf` (see below).
-5. `cd ~/podium-projects/lychee && podium setup lychee --no-startup`
-6. `podium up lychee`
+5. `cd ~/zeltro-projects/lychee && zeltro setup lychee --no-startup`
+6. `zeltro up lychee`
 7. Verify: `curl -sI http://lychee/` — expect HTTP 200 or 302.
 
 ## docker-compose.yaml
@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
     environment:
       DB_CONNECTION: mysql
-      DB_HOST: podium-mariadb
+      DB_HOST: zeltro-mariadb
       DB_PORT: 3306
       DB_DATABASE: lychee
       DB_USERNAME: lychee
@@ -69,7 +69,7 @@ volumes:
 networks:
   default:
     external: true
-    name: podium-cli_vpc
+    name: zeltro-cli_vpc
 ```
 
 ## nginx.conf

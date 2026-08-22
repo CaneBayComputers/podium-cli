@@ -2,7 +2,7 @@
 
 **Image**: `inovector/mixpost:v2.6.0`
 **Port**: 80 (Apache inside the container — no proxy needed)
-**Database**: MariaDB (`podium-mariadb`), dedicated user `mixpost` / `mixpost`, plus shared `podium-redis`
+**Database**: MariaDB (`zeltro-mariadb`), dedicated user `mixpost` / `mixpost`, plus shared `zeltro-redis`
 **Credentials**: admin@example.com / changeme (built-in default — change it immediately)
 
 ## Key Notes
@@ -11,4 +11,4 @@
 - Mixpost is MySQL/MariaDB only; it does not support PostgreSQL.
 - No separate worker, scheduler, or queue container: the image supervises them internally. Adding one would double-process the queue.
 - `APP_DOMAIN` and `SSL_EMAIL` from the upstream docs only matter for their Traefik/SSL compose variants and are deliberately omitted here.
-- The installer exists: run `podium install mixpost`.
+- The installer exists: run `zeltro install mixpost`.

@@ -2,7 +2,7 @@ INSTALL_DISPLAY="Forgejo"
 INSTALL_NOTES="Complete the install wizard on first visit — the DB fields are pre-filled; the first registered user becomes admin."
 
 pre_install() {
-    docker exec podium-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS forgejo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    docker exec zeltro-mariadb mariadb -u root -e "CREATE DATABASE IF NOT EXISTS forgejo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 }
 
 write_files() {
@@ -15,7 +15,7 @@ services:
       USER_UID: 1000
       USER_GID: 1000
       FORGEJO__database__DB_TYPE: mysql
-      FORGEJO__database__HOST: podium-mariadb:3306
+      FORGEJO__database__HOST: zeltro-mariadb:3306
       FORGEJO__database__NAME: forgejo
       FORGEJO__database__USER: root
       FORGEJO__database__PASSWD: ""
@@ -25,7 +25,7 @@ services:
       FORGEJO__server__SSH_DOMAIN: forgejo
       FORGEJO__mailer__ENABLED: "true"
       FORGEJO__mailer__PROTOCOL: smtp
-      FORGEJO__mailer__SMTP_ADDR: podium-mailhog
+      FORGEJO__mailer__SMTP_ADDR: zeltro-mailhog
       FORGEJO__mailer__SMTP_PORT: 1025
       FORGEJO__mailer__FROM: forgejo@example.com
     volumes:
