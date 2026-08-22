@@ -29,7 +29,7 @@ zeltro ai-set --json-output          # inspect current settings
 | `--api-base <url>` | Custom endpoint. OpenAI-compatible for `codex`, `qwen` and `aider`; Anthropic-compatible for `claude` |
 
 **Running cheaper or local models?** See
-[Cheap and local models](cheap-models/) — Qwen Coder is roughly 30x cheaper than
+[Cheap and local models](../cheap-models/) — Qwen Coder is roughly 30x cheaper than
 Claude Sonnet, and Ollama is free.
 
 Settings live in `/etc/zeltro-cli/.env`. Always change them with `zeltro ai-set` rather than editing the file.
