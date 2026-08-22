@@ -152,13 +152,4 @@ you want to chip in:
 - [GitHub Sponsors](https://github.com/sponsors/shrimpwagon) — GitHub covers the fees
 - [Ko-fi](https://ko-fi.com/canebaycomputers) — quickest, no account needed
 - [Patreon](https://patreon.com/canebaycomputers) — monthly
-- [Credit card](https://donate.podiumcli.com) — direct, via Cane Bay Computers' processor
-
-<!-- REBRAND FOLLOW-UP: donate.podiumcli.com and packages.podiumcli.com still
-     carry the old name on purpose. Both are served from the EC2 box and have
-     Let's Encrypt certificates issued for those exact hostnames. DNS for
-     donate.zeltro.build and packages.zeltro.build already points at the same
-     server, so all that remains is issuing certs and adding the server_name
-     aliases there. Until that is done these links must keep the old hostname:
-     pointed at zeltro.build they return no response at all, which would have
-     silently broken the donate button. -->
+- [Credit card](https://donate.zeltro.build) — direct, via Cane Bay Computers' processor
