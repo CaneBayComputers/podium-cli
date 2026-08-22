@@ -1,6 +1,5 @@
 ---
 title: Cheap and local models
-layout: default
 nav_order: 8
 ---
 

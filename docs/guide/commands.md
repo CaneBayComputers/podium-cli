@@ -1,6 +1,5 @@
 ---
 title: Command reference
-layout: default
 nav_order: 9
 ---
 
@@ -761,4 +760,4 @@ tail -f /tmp/zeltro-cli-debug.log
 | `--no-colors` | Disable coloured output |
 | `--debug` | Log to `/tmp/zeltro-cli-debug.log` |
 
-See [Automation & JSON]({{ site.baseurl }}/guide/automation/) for which commands support JSON and how to script against them.
+See [Automation & JSON](../automation/) for which commands support JSON and how to script against them.

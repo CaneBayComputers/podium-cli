@@ -1,6 +1,5 @@
 ---
 title: Quick start
-layout: default
 nav_order: 4
 ---
 
@@ -44,7 +43,7 @@ zeltro create < spec.md
 cat spec.md | zeltro create
 ```
 
-Set your agent first with [`zeltro ai-set`]({{ site.baseurl }}/guide/ai-workflow/#choosing-an-agent). See [AI workflow]({{ site.baseurl }}/guide/ai-workflow/) for the full picture.
+Set your agent first with [`zeltro ai-set`](../ai-workflow/#choosing-an-agent). See [AI workflow](../ai-workflow/) for the full picture.
 
 ---
 
@@ -66,7 +65,7 @@ zeltro new flask notes --database sqlite
 zeltro new express api --database postgres
 ```
 
-Full list of frameworks and options: [Frameworks]({{ site.baseurl }}/guide/frameworks/).
+Full list of frameworks and options: [Frameworks](../frameworks/).
 
 ---
 
@@ -78,7 +77,7 @@ zeltro install gitea
 zeltro install n8n
 ```
 
-Fully configured and reachable at `http://grafana/` in under two minutes. Browse all 200+: [App library]({{ site.baseurl }}/guide/app-library/).
+Fully configured and reachable at `http://grafana/` in under two minutes. Browse all 200+: [App library](../app-library/).
 
 **`new` vs `install`:** `new` scaffolds an empty project *you write*. `install` deploys a finished app *someone else wrote*. If you guess wrong, Zeltro tells you the right command.
 
@@ -97,7 +96,7 @@ zeltro setup my-project
 zeltro up my-project
 ```
 
-Zeltro adapts a project's existing `docker-compose.yaml` automatically — bundled databases are removed and repointed at the shared services, and the original is preserved as `docker-compose.upstream.yaml`. See [Architecture → Compose adaptation]({{ site.baseurl }}/guide/architecture/#compose-adaptation).
+Zeltro adapts a project's existing `docker-compose.yaml` automatically — bundled databases are removed and repointed at the shared services, and the original is preserved as `docker-compose.upstream.yaml`. See [Architecture → Compose adaptation](../architecture/#compose-adaptation).
 
 ---
 

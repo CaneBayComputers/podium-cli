@@ -1,8 +1,6 @@
 ---
 title: Overview
-layout: default
 nav_order: 1
-permalink: /guide/
 ---
 
 # Zeltro CLI
@@ -28,7 +26,7 @@ Three base images cover every supported stack — PHP 8.3, Python 3, Node 22 —
 
 You never hunt down an image, compare tags, or write a Dockerfile. `pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`, `redis`, `mongodb`, `gunicorn`, `uvicorn` — all present, on every project, from the first command.
 
-See [Architecture]({{ site.baseurl }}/guide/architecture/) for what each image ships.
+See [Architecture](architecture/) for what each image ships.
 
 ## Built for AI agents to work inside
 
@@ -44,14 +42,14 @@ Left alone, an AI agent will scaffold a project however it likes — its own por
 
 | | |
 |---|---|
-| [Installation]({{ site.baseurl }}/guide/installation/) | Install Zeltro on Linux or macOS |
-| [Quick start]({{ site.baseurl }}/guide/quick-start/) | Your first project in one command |
-| [Frameworks]({{ site.baseurl }}/guide/frameworks/) | `zeltro new` — scaffold a project you write |
-| [App library]({{ site.baseurl }}/guide/app-library/) | `zeltro install` — 200+ ready-to-run apps |
-| [AI workflow]({{ site.baseurl }}/guide/ai-workflow/) | `zeltro create`, `ai`, `resume` |
-| [Command reference]({{ site.baseurl }}/guide/commands/) | Every command and flag |
-| [Architecture]({{ site.baseurl }}/guide/architecture/) | Services, networking, base images |
-| [Automation & JSON]({{ site.baseurl }}/guide/automation/) | Scripting, JSON output, debugging |
+| [Installation](installation/) | Install Zeltro on Linux or macOS |
+| [Quick start](quick-start/) | Your first project in one command |
+| [Frameworks](frameworks/) | `zeltro new` — scaffold a project you write |
+| [App library](app-library/) | `zeltro install` — 200+ ready-to-run apps |
+| [AI workflow](ai-workflow/) | `zeltro create`, `ai`, `resume` |
+| [Command reference](commands/) | Every command and flag |
+| [Architecture](architecture/) | Services, networking, base images |
+| [Automation & JSON](automation/) | Scripting, JSON output, debugging |
 
 ## Where Zeltro doesn't add much
 

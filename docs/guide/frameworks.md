@@ -1,6 +1,5 @@
 ---
 title: Frameworks
-layout: default
 nav_order: 5
 ---
 
@@ -14,7 +13,7 @@ zeltro new flask my-api --database sqlite
 zeltro new express my-service --database postgres --version latest
 ```
 
-For ready-made third-party apps you *run* rather than write, see [App library]({{ site.baseurl }}/guide/app-library/) instead.
+For ready-made third-party apps you *run* rather than write, see [App library](../app-library/) instead.
 
 ---
 
@@ -128,7 +127,7 @@ Good for prototypes, single-user tools, and test fixtures. For anything concurre
 
 ### Shared server databases
 
-`mysql`, `postgres` and `mongodb` connect to the shared service containers. Zeltro creates the database and writes the connection settings into the project's `.env` — you never configure credentials by hand. See [Architecture → Shared services]({{ site.baseurl }}/guide/architecture/#shared-services) for hostnames and credentials.
+`mysql`, `postgres` and `mongodb` connect to the shared service containers. Zeltro creates the database and writes the connection settings into the project's `.env` — you never configure credentials by hand. See [Architecture → Shared services](../architecture/#shared-services) for hostnames and credentials.
 
 ---
 

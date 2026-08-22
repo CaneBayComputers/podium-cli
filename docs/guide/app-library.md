@@ -1,6 +1,5 @@
 ---
 title: App library
-layout: default
 nav_order: 6
 ---
 
@@ -16,7 +15,7 @@ zeltro install nextcloud     # file hosting
 zeltro install --list        # everything available
 ```
 
-For scaffolding a project *you write*, see [Frameworks]({{ site.baseurl }}/guide/frameworks/) instead. Guess wrong and Zeltro points you at the right command.
+For scaffolding a project *you write*, see [Frameworks](../frameworks/) instead. Guess wrong and Zeltro points you at the right command.
 
 ---
 

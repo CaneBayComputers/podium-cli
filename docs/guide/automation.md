@@ -1,6 +1,5 @@
 ---
 title: Automation & JSON
-layout: default
 nav_order: 11
 ---
 
@@ -79,8 +78,8 @@ tail -f /tmp/zeltro-cli-debug.log
 | Permission errors | Same — `docker` group membership needs a fresh login |
 | Can't reach `http://project/` | `zeltro status <project>`; then `docker logs <project-name>` |
 | Database connection refused | `zeltro status` — is the shared service running? |
-| Project 502s after a restart | A dependency isn't in the base image. See [Architecture → Base images]({{ site.baseurl }}/guide/architecture/#base-images) |
-| Fedora: permission denied on project files | SELinux — re-run `zeltro configure` to relabel. See [Installation]({{ site.baseurl }}/guide/installation/#fedora--rhel--selinux) |
+| Project 502s after a restart | A dependency isn't in the base image. See [Architecture → Base images](../architecture/#base-images) |
+| Fedora: permission denied on project files | SELinux — re-run `zeltro configure` to relabel. See [Installation](../installation/#fedora--rhel--selinux) |
 | Arch: Docker won't start after install | The system upgrade replaced the running kernel — reboot |
 
 Useful probes:
