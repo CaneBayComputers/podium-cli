@@ -170,6 +170,6 @@ sudo rm -rf /etc/zeltro-cli         # optional: also remove configuration
 
 On macOS with Homebrew, `brew uninstall zeltro-cli` runs the cleanup for you.
 
-**Removed:** Zeltro service containers, project containers, volumes, networks, `/etc/hosts` entries. Project `docker-compose.yaml` files are backed up as `.backup`.
+**Removed:** Zeltro service containers, project containers, volumes, networks. Project `docker-compose.yaml` files are backed up as `.backup`.
 
 **Kept:** all your project source code, non-Zeltro containers and images, and Docker itself.

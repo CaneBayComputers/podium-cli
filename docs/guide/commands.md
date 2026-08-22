@@ -393,7 +393,7 @@ They mean different things, and one of them is easy to misuse:
 | Field | Meaning |
 |---|---|
 | `external_port` | The published port. **The only portable field** — a port is the same number no matter where you ask from. |
-| `local_url` | `http://<project>` — works on the machine running Zeltro, via its `/etc/hosts` entry. |
+| `local_url` | The address that works on the machine running Zeltro: the container's IP (`http://10.x.x.219`), or `http://localhost:<port>` where Docker keeps containers in a VM, as on macOS and Windows. |
 | `lan_url` | The host's own view of itself: its LAN address and the published port. |
 | `metadata` | Display metadata from the project's `x-metadata` block; `{}` when it has none. |
 
@@ -577,10 +577,10 @@ const data = JSON.parse(result.stdout);
 ### Network Configuration
 
 Each project gets:
-- Unique Docker IP address (10.236.58.x)
-- Automatic `/etc/hosts` entry
+- Unique Docker IP address (10.x.x.x)
+- A name that resolves on the shared network, from inside any container
 - Mapped external port for LAN access
-- Local URL: `http://project-name`
+- Local URL: the container IP, e.g. `http://10.247.177.219`
 - LAN URL: `http://your-ip:port`
 
 
@@ -667,7 +667,7 @@ zeltro clone <TAB>         → work-directly  fork  new-repo
 - **JSON Output**: Use `--json-output` for programmatic integration (GUI, scripts, automation)
 - **Non-Interactive Mode**: Use `--json-output` for fully non-interactive automated deployment
 - **Database Creation**: Databases are automatically created and configured for each project
-- **Host Entries**: Local DNS entries are automatically managed in `/etc/hosts`
+- **Addressing**: Each project is assigned a container IP and a published port; nothing is written to `/etc/hosts`
 
 ## 🚦 Getting Help
 
